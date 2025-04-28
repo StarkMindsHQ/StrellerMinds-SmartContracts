@@ -1,11 +1,16 @@
 #![no_std]
-
 use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec};
 
 // Storage keys
 const INITIALIZED: Symbol = symbol_short!("INIT");
 const CERTIFICATES: Symbol = symbol_short!("CERT");
 const USER_CERTS: Symbol = symbol_short!("UCERT");
+
+
+// Event names
+const EVENT_CERTIFICATE_MINTED: Symbol = symbol_short!("CertMintd");
+const EVENT_CERTIFICATE_REVOKED: Symbol = symbol_short!("CertRevtd");
+const EVENT_CERTIFICATE_UPDATED: Symbol = symbol_short!("CertUpdtd");
 
 // Use the contracterror macro to define errors
 #[contracterror]
@@ -50,8 +55,17 @@ impl Certificate {
         }
         
         // Store certificate
-        env.storage().instance().set(&key, &true);
+        env.storage().instance().set(&key, &true);      
         
+        // Emit CertificateMinted event
+        env.events().publish(
+            (EVENT_CERTIFICATE_MINTED,),
+            (
+                certificate_id, 
+                None::<Address>,
+                symbol_short!("MINTED"),
+                env.ledger().timestamp()),
+        );
         Ok(())
     }
 
@@ -79,6 +93,16 @@ impl Certificate {
         // Remove certificate
         env.storage().instance().remove(&key);
         
+        // Emit CertificateRevoked event
+        env.events().publish(
+            (EVENT_CERTIFICATE_REVOKED,),  
+            (
+               certificate_id, 
+               None::<Address>,
+               symbol_short!("REVOKED"),
+               env.ledger().timestamp()),  
+        );
+                
         Ok(())
     }
 
@@ -110,11 +134,21 @@ impl Certificate {
         };
         
         // Add certificate to user's list
-        user_certs.push_back(certificate_id);
+        user_certs.push_back(certificate_id.clone());
         
         // Store updated list
         env.storage().instance().set(&key, &user_certs);
-        
+
+        // Emit event when certificate is added to the user
+        env.events().publish(
+            (EVENT_CERTIFICATE_UPDATED,),  
+            (
+               certificate_id, 
+               user_certs,
+               None::<Address>,
+               symbol_short!("REVOKED"),
+               env.ledger().timestamp()),  
+        );
         Ok(())
     }
 }
