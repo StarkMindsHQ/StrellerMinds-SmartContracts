@@ -1,6 +1,7 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec, contracttype, String};
+
+use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec, Map, String};
 
 // Storage keys
 const INITIALIZED: Symbol = symbol_short!("INIT");
@@ -31,6 +32,12 @@ pub enum CertificateStatus {
     Active,
     Revoked
 }
+
+
+// Event names
+const EVENT_CERTIFICATE_MINTED: Symbol = symbol_short!("CertMintd");
+const EVENT_CERTIFICATE_REVOKED: Symbol = symbol_short!("CertRevtd");
+const EVENT_CERTIFICATE_UPDATED: Symbol = symbol_short!("CertUpdtd");
 
 // Use the contracterror macro to define errors
 #[contracterror]
@@ -139,11 +146,9 @@ impl Certificate {
             return Err(Error::CertificateAlreadyExists);
         }
         
-        // Generate unique token ID using ledger sequence
-        // We'll use the certificate_id itself instead of creating new bytes
-        // This ensures a unique ID while avoiding byte manipulation issues
-        let token_id = certificate_id.clone();
-
+        // Generate unique token ID for NFT
+        let token_id = env.crypto().sha256(&env.ledger().sequence().to_be_bytes());
+        
         // Create certificate metadata
         let metadata = CertificateMetadata {
             course_id,
@@ -176,6 +181,7 @@ impl Certificate {
             )
         );
         
+
         Ok(())
     }
 
@@ -266,6 +272,16 @@ impl Certificate {
             (metadata.student_id, caller)
         );
         
+        // Emit CertificateRevoked event
+        env.events().publish(
+            (EVENT_CERTIFICATE_REVOKED,),  
+            (
+               certificate_id, 
+               None::<Address>,
+               symbol_short!("REVOKED"),
+               env.ledger().timestamp()),  
+        );
+                
         Ok(())
     }
 
@@ -294,11 +310,21 @@ impl Certificate {
         };
         
         // Add certificate to user's list
-        user_certs.push_back(certificate_id);
+        user_certs.push_back(certificate_id.clone());
         
         // Store updated list
         env.storage().instance().set(&key, &user_certs);
-        
+
+        // Emit event when certificate is added to the user
+        env.events().publish(
+            (EVENT_CERTIFICATE_UPDATED,),  
+            (
+               certificate_id, 
+               user_certs,
+               None::<Address>,
+               symbol_short!("REVOKED"),
+               env.ledger().timestamp()),  
+        );
         Ok(())
     }
 }
