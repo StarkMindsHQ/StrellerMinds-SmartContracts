@@ -1,7 +1,7 @@
 #![no_std]
 
 
-use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec, Map, String};
+use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec, contracttype, Map, String};
 
 // Storage keys
 const INITIALIZED: Symbol = symbol_short!("INIT");
@@ -147,7 +147,9 @@ impl Certificate {
         }
         
         // Generate unique token ID for NFT
-        let token_id = env.crypto().sha256(&env.ledger().sequence().to_be_bytes());
+        // We'll use the certificate_id itself instead of creating new bytes
+        // This ensures a unique ID while avoiding byte manipulation issues
+        let token_id = certificate_id.clone();
         
         // Create certificate metadata
         let metadata = CertificateMetadata {
