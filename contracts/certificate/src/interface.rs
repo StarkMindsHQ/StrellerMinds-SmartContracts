@@ -111,7 +111,17 @@ pub trait CertificateTrait {
         title: String,
         description: String,
         metadata_uri: String,
+        expiry_date: u64,
     ) -> Result<(), CertificateError>;
+
+    /// Check if a certificate is expired   
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `certificate_id` - Unique identifier for the certificate
+    ///
+    /// # Returns
+    fn is_certificate_expired(env: Env, certificate_id: BytesN<32>) -> bool;
 
     /// Verify a certificate
     ///

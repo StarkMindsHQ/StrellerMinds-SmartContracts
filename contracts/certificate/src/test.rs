@@ -1,6 +1,7 @@
 #![cfg(test)]
 use crate::types::{CertificateStatus, Permission, Role};
 use crate::{errors::CertificateError, Certificate, CertificateClient};
+use soroban_sdk::testutils::Ledger;
 use soroban_sdk::IntoVal;
 use soroban_sdk::{
     testutils::{Address as _, MockAuth, MockAuthInvoke},
@@ -259,6 +260,7 @@ fn test_certificate_mint_and_verify() {
     let title = create_test_string(&env, "Intro to Computer Science");
     let desc = create_test_string(&env, "Fundamentals of Computer Science");
     let uri = create_test_string(&env, "ipfs://certificate-metadata-uri");
+    let expiry_date = env.ledger().timestamp() + 1000000000;
 
     // Mint certificate
     env.mock_auths(&[MockAuth {
@@ -274,13 +276,22 @@ fn test_certificate_mint_and_verify() {
                 title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
     }]);
 
-    let mint_result =
-        client.try_mint_certificate(&issuer, &cert_id, &course_id, &student, &title, &desc, &uri);
+    let mint_result = client.try_mint_certificate(
+        &issuer,
+        &cert_id,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
+    );
     assert!(mint_result.is_ok());
     // Verify certificate data
     let metadata = client.try_verify_certificate(&cert_id).unwrap();
@@ -312,13 +323,22 @@ fn test_certificate_mint_and_verify() {
                 title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
     }]);
 
-    let mint_fail =
-        client.try_mint_certificate(&issuer, &cert_id, &course_id, &student, &title, &desc, &uri);
+    let mint_fail = client.try_mint_certificate(
+        &issuer,
+        &cert_id,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
+    );
     assert_eq!(
         mint_fail,
         Err(Ok(CertificateError::CertificateAlreadyExists))
@@ -339,6 +359,7 @@ fn test_certificate_mint_and_verify() {
                 empty_title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
@@ -352,6 +373,7 @@ fn test_certificate_mint_and_verify() {
         &empty_title,
         &desc,
         &uri,
+        &expiry_date,
     );
     assert_eq!(mint_invalid, Err(Ok(CertificateError::InvalidMetadata)));
 }
@@ -394,6 +416,7 @@ fn test_certificate_revocation() {
     let title = create_test_string(&env, "Intro Certificate");
     let desc = create_test_string(&env, "Description");
     let uri = create_test_string(&env, "ipfs://...");
+    let expiry_date = env.ledger().timestamp() + 1000000000;
 
     // Mint certificate
     env.mock_auths(&[MockAuth {
@@ -409,11 +432,22 @@ fn test_certificate_revocation() {
                 title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
     }]);
-    client.mint_certificate(&issuer, &cert_id, &course_id, &student, &title, &desc, &uri);
+
+    client.mint_certificate(
+        &issuer,
+        &cert_id,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
+    );
 
     // Try to revoke with issuer (should fail)
     env.mock_auths(&[MockAuth {
@@ -444,8 +478,11 @@ fn test_certificate_revocation() {
     assert!(revoke_result.is_ok());
 
     // Verify certificate is revoked
-    let revoked_metadata = client.try_verify_certificate(&cert_id).unwrap();
-    assert_eq!(revoked_metadata.unwrap().status, CertificateStatus::Revoked);
+    let revoked_metadata = client.try_verify_certificate(&cert_id);
+    assert_eq!(
+        revoked_metadata,
+        Err(Ok(CertificateError::CertificateRevoked))
+    );
 
     // Revoke non-existent certificate
     let non_existent_cert = create_test_certificate_id(&env, 99);
@@ -492,6 +529,7 @@ fn test_track_certificates() {
     let title = create_test_string(&env, "TITLE");
     let desc = create_test_string(&env, "DESC");
     let uri = create_test_string(&env, "URI");
+    let expiry_date = env.ledger().timestamp() + 1000000000;
 
     // Mint certificates for first student
     env.mock_auths(&[MockAuth {
@@ -507,13 +545,23 @@ fn test_track_certificates() {
                 title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
     }]);
+
     client.mint_certificate(
-        &issuer, &cert_id1, &course_id, &student, &title, &desc, &uri,
+        &issuer,
+        &cert_id1,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
     );
+
     env.mock_auths(&[MockAuth {
         address: &issuer,
         invoke: &MockAuthInvoke {
@@ -527,12 +575,20 @@ fn test_track_certificates() {
                 title.to_val(),
                 desc.to_val(),
                 uri.to_val(),
+                expiry_date.into_val(&env),
             ],
             sub_invokes: &[],
         },
     }]);
     client.mint_certificate(
-        &issuer, &cert_id2, &course_id, &student, &title, &desc, &uri,
+        &issuer,
+        &cert_id2,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
     );
 
     // Track certificates for student
@@ -546,4 +602,129 @@ fn test_track_certificates() {
     // Track certificates for other student (should be empty)
     let other_certs = client.track_certificates(&other_student);
     assert_eq!(other_certs.len(), 0);
+}
+
+#[test]
+fn test_certificate_expiry() {
+    let (env, client, admin, student) = setup_test();
+    let issuer = Address::generate(&env);
+
+    // Grant issuer role
+    let issuer_role = create_issuer_role();
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "grant_role",
+            args: vec![&env, issuer.to_val(), issuer_role.into_val(&env)],
+            sub_invokes: &[],
+        },
+    }]);
+    client.grant_role(&issuer, &issuer_role);
+
+    // Certificate data
+    let cert_id = create_test_certificate_id(&env, 1);
+    let course_id = create_test_string(&env, "CS101");
+    let title = create_test_string(&env, "Intro to Computer Science");
+    let desc = create_test_string(&env, "Fundamentals of Computer Science");
+    let uri = create_test_string(&env, "ipfs://certificate-metadata-uri");
+
+    // Set expiry date to current time + 1000 seconds
+    let current_time = env.ledger().timestamp();
+    let expiry_date = current_time + 1000;
+
+    // Mint certificate with future expiry date
+    env.mock_auths(&[MockAuth {
+        address: &issuer,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "mint_certificate",
+            args: vec![
+                &env,
+                cert_id.to_val(),
+                course_id.to_val(),
+                student.to_val(),
+                title.to_val(),
+                desc.to_val(),
+                uri.to_val(),
+                expiry_date.into_val(&env),
+            ],
+            sub_invokes: &[],
+        },
+    }]);
+
+    client.mint_certificate(
+        &issuer,
+        &cert_id,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &expiry_date,
+    );
+
+    // Check certificate is not expired
+    assert!(!client.is_certificate_expired(&cert_id));
+
+    // Verify certificate should work
+    let result = client.try_verify_certificate(&cert_id);
+    assert!(result.is_ok());
+
+    // Fast forward time past expiry date
+    env.ledger().set_timestamp(expiry_date + 10);
+
+    // Check certificate is now expired
+    assert!(client.is_certificate_expired(&cert_id));
+
+    // Verify certificate should now fail due to expiration
+    let result = client.try_verify_certificate(&cert_id);
+    assert_eq!(result, Err(Ok(CertificateError::CertificateExpired)));
+
+    // Test permanent certificate (expiry_date = 0)
+    let permanent_cert_id = create_test_certificate_id(&env, 2);
+    let permanent_expiry = 0u64;
+
+    env.mock_auths(&[MockAuth {
+        address: &issuer,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "mint_certificate",
+            args: vec![
+                &env,
+                permanent_cert_id.to_val(),
+                course_id.to_val(),
+                student.to_val(),
+                title.to_val(),
+                desc.to_val(),
+                uri.to_val(),
+                permanent_expiry.into_val(&env),
+            ],
+            sub_invokes: &[],
+        },
+    }]);
+
+    client.mint_certificate(
+        &issuer,
+        &permanent_cert_id,
+        &course_id,
+        &student,
+        &title,
+        &desc,
+        &uri,
+        &permanent_expiry,
+    );
+
+    // Check permanent certificate is never expired, even when time advances
+    assert!(!client.is_certificate_expired(&permanent_cert_id));
+
+    // Fast forward time significantly (1 year in seconds)
+    env.ledger().set_timestamp(current_time + 31536000);
+
+    // Check permanent certificate is still not expired
+    assert!(!client.is_certificate_expired(&permanent_cert_id));
+
+    // Verify permanent certificate should still be valid
+    let result = client.try_verify_certificate(&permanent_cert_id);
+    assert!(result.is_ok());
 }

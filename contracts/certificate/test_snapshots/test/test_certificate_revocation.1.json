@@ -190,6 +190,14 @@
                             },
                             {
                               "key": {
+                                "symbol": "expiry_date"
+                              },
+                              "val": {
+                                "u64": 1000000000
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "instructor_id"
                               },
                               "val": {

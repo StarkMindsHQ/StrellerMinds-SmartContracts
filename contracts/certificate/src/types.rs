@@ -13,6 +13,7 @@ pub struct CertificateMetadata {
     pub title: String,             // Certificate title
     pub description: String,       // Certificate description
     pub status: CertificateStatus, // Certificate status (Active/Revoked)
+    pub expiry_date: u64,
 }
 
 #[contracttype]

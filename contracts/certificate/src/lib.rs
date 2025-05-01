@@ -134,6 +134,7 @@ impl CertificateTrait for Certificate {
         title: String,
         description: String,
         metadata_uri: String,
+        expiry_date: u64,
     ) -> Result<(), CertificateError> {
         // Check if initialized
         if !CertificateStorage::is_initialized(&env) {
@@ -172,6 +173,7 @@ impl CertificateTrait for Certificate {
             title,
             description,
             status: CertificateStatus::Active,
+            expiry_date,
         };
 
         // Store certificate metadata
@@ -193,13 +195,37 @@ impl CertificateTrait for Certificate {
         Ok(())
     }
 
+    fn is_certificate_expired(env: Env, certificate_id: BytesN<32>) -> bool {
+        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
+            if metadata.expiry_date == 0 {
+                return false;
+            }
+
+            metadata.expiry_date < env.ledger().timestamp()
+        } else {
+            true
+        }
+    }
+
     fn verify_certificate(
         env: Env,
         certificate_id: BytesN<32>,
     ) -> Result<CertificateMetadata, CertificateError> {
         // Check if certificate exists and get metadata
-        CertificateStorage::get_certificate(&env, &certificate_id)
-            .ok_or(CertificateError::CertificateNotFound)
+        let metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        // Check if certificate is revoked
+        if metadata.status == CertificateStatus::Revoked {
+            return Err(CertificateError::CertificateRevoked);
+        }
+
+        // Check if certificate is expired
+        if Self::is_certificate_expired(env, certificate_id) {
+            return Err(CertificateError::CertificateExpired);
+        }
+
+        Ok(metadata)
     }
 
     fn revoke_certificate(

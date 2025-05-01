@@ -27,6 +27,8 @@ pub enum CertificateError {
     TransferNotAllowed = 10,
     /// User's role was not found
     RoleNotFound = 11,
+    /// Certificate has expired
+    CertificateExpired = 12,
 }
 
 /// Implementation to convert ConversionError to CertificateError

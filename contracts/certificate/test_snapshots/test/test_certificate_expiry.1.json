@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 5,
+    "address": 4,
     "nonce": 3
   },
   "auth": [
@@ -69,12 +69,17 @@
     [],
     [],
     [],
+    [],
+    [],
+    [],
+    [],
+    [],
     []
   ],
   "ledger": {
     "protocol_version": 22,
     "sequence_number": 0,
-    "timestamp": 0,
+    "timestamp": 31536000,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
     "base_reserve": 0,
     "min_persistent_entry_ttl": 4096,
@@ -134,7 +139,7 @@
                                 "symbol": "course_id"
                               },
                               "val": {
-                                "string": "COURSE"
+                                "string": "CS101"
                               }
                             },
                             {
@@ -142,7 +147,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "DESC"
+                                "string": "Fundamentals of Computer Science"
                               }
                             },
                             {
@@ -150,7 +155,7 @@
                                 "symbol": "expiry_date"
                               },
                               "val": {
-                                "u64": 1000000000
+                                "u64": 1000
                               }
                             },
                             {
@@ -174,7 +179,7 @@
                                 "symbol": "metadata_uri"
                               },
                               "val": {
-                                "string": "URI"
+                                "string": "ipfs://certificate-metadata-uri"
                               }
                             },
                             {
@@ -202,7 +207,7 @@
                                 "symbol": "title"
                               },
                               "val": {
-                                "string": "TITLE"
+                                "string": "Intro to Computer Science"
                               }
                             },
                             {
@@ -234,7 +239,7 @@
                                 "symbol": "course_id"
                               },
                               "val": {
-                                "string": "COURSE"
+                                "string": "CS101"
                               }
                             },
                             {
@@ -242,7 +247,7 @@
                                 "symbol": "description"
                               },
                               "val": {
-                                "string": "DESC"
+                                "string": "Fundamentals of Computer Science"
                               }
                             },
                             {
@@ -250,7 +255,7 @@
                                 "symbol": "expiry_date"
                               },
                               "val": {
-                                "u64": 1000000000
+                                "u64": 0
                               }
                             },
                             {
@@ -266,7 +271,7 @@
                                 "symbol": "issue_date"
                               },
                               "val": {
-                                "u64": 0
+                                "u64": 1010
                               }
                             },
                             {
@@ -274,7 +279,7 @@
                                 "symbol": "metadata_uri"
                               },
                               "val": {
-                                "string": "URI"
+                                "string": "ipfs://certificate-metadata-uri"
                               }
                             },
                             {
@@ -302,7 +307,7 @@
                                 "symbol": "title"
                               },
                               "val": {
-                                "string": "TITLE"
+                                "string": "Intro to Computer Science"
                               }
                             },
                             {
