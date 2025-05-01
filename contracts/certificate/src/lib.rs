@@ -15,7 +15,7 @@ use interface::CertificateTrait;
 use storage::CertificateStorage;
 use types::{CertificateMetadata, CertificateStatus, Permission, Role};
 
-use soroban_sdk::{contract, contractimpl, Address, Bytes, BytesN, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
 #[contract]
 pub struct Certificate;
