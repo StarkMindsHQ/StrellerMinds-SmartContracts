@@ -158,11 +158,8 @@ impl CertificateTrait for Certificate {
         if CertificateStorage::has_certificate(&env, &certificate_id) {
             return Err(CertificateError::CertificateAlreadyExists);
         }
-        // ledger().sequence().to_be_bytes()
-        // Generate unique token ID for NFT
-        let sequence_bytes = env.ledger().sequence().to_be_bytes();
-        let bytes = Bytes::from_slice(&env, &sequence_bytes);
-        let token_id: BytesN<32> = env.crypto().sha256(&bytes).into();
+
+        let token_id = certificate_id.clone();
 
         // Create certificate metadata
         let metadata = CertificateMetadata {
