@@ -1,11 +1,9 @@
 [workspace]
-members = [
-    "contracts/*",
-]
+members = ["contracts/*"]
 resolver = "2"
 
 [workspace.dependencies]
-soroban-sdk = { version = "20.0.0" }
+soroban-sdk = "22"
 soroban-auth = "20.0.0"
 stellar-strkey = "0.0.7"
 ed25519-dalek = "2.0.0"

@@ -1,343 +1,267 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, BytesN, Env, Symbol, Vec, Map, String};
+mod errors;
+mod events;
+mod interface;
+mod storage;
+mod types;
 
-// Storage keys
-const INITIALIZED: Symbol = symbol_short!("INIT");
-const CERTIFICATES: Symbol = symbol_short!("CERT");
-const USER_CERTS: Symbol = symbol_short!("UCERT");
-const INSTRUCTORS: Symbol = symbol_short!("INST");
-const ADMIN: Symbol = symbol_short!("ADMIN");
+#[cfg(test)]
+mod test;
 
-// Certificate metadata structure
-#[derive(Clone)]
-pub struct CertificateMetadata {
-    pub course_id: String,
-    pub student_id: Address,
-    pub instructor_id: Address,
-    pub issue_date: u64,
-    pub metadata_uri: String,
-    pub token_id: BytesN<32>,     // Unique NFT identifier
-    pub title: String,            // Certificate title
-    pub description: String,      // Certificate description
-    pub status: CertificateStatus // Certificate status (Active/Revoked)
-}
+use errors::CertificateError;
+use events::CertificateEvents;
+use interface::CertificateTrait;
+use storage::CertificateStorage;
+use types::{CertificateMetadata, CertificateStatus, Permission, Role};
 
-#[derive(Clone, Eq, PartialEq)]
-pub enum CertificateStatus {
-    Active,
-    Revoked
-}
-
-// Use the contracterror macro to define errors
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Error {
-    AlreadyInitialized = 1,
-    CertificateAlreadyExists = 2,
-    CertificateNotFound = 3,
-    NotInitialized = 4,
-    Unauthorized = 5,
-    NotInstructor = 6,
-    InvalidTokenId = 7,
-    InvalidMetadata = 8,
-    CertificateRevoked = 9,
-    TransferNotAllowed = 10,
-}
+use soroban_sdk::{contract, contractimpl, Address, Bytes, BytesN, Env, String, Vec};
 
 #[contract]
 pub struct Certificate;
 
 #[contractimpl]
-impl Certificate {
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+impl CertificateTrait for Certificate {
+    fn initialize(env: Env, admin: Address) -> Result<(), CertificateError> {
         // Check if already initialized
-        if env.storage().instance().has(&INITIALIZED) {
-            return Err(Error::AlreadyInitialized);
+        if CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::AlreadyInitialized);
         }
-        
+
         // Require authorization from the admin
         admin.require_auth();
-        
+
         // Store admin address and mark as initialized
-        env.storage().instance().set(&ADMIN, &admin);
-        env.storage().instance().set(&INITIALIZED, &true);
-        
+        CertificateStorage::set_admin(&env, &admin);
+        CertificateStorage::set_initialized(&env);
+
+        // Emit initialization event
+        CertificateEvents::emit_contract_initialized(&env, &admin);
+
         Ok(())
     }
 
-    pub fn add_instructor(env: Env, instructor: Address) -> Result<(), Error> {
-        // Get admin and check authorization
-        let admin: Address = env.storage().instance().get(&ADMIN).unwrap_or_else(|| {
-            return Err(Error::NotInitialized);
-        })?;
+    fn get_admin(env: Env) -> Result<Address, CertificateError> {
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
+        }
+
+        Ok(CertificateStorage::get_admin(&env))
+    }
+
+    fn grant_role(env: Env, user: Address, role: Role) -> Result<(), CertificateError> {
+        // Check if contract is initialized and get admin
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
+        }
+
+        let admin = CertificateStorage::get_admin(&env);
         admin.require_auth();
-        
-        // Add instructor to the list
-        env.storage().instance().set(&(INSTRUCTORS, instructor.clone()), &true);
-        
+
+        // Set the role
+        CertificateStorage::set_role(&env, &user, &role);
+
+        // Emit role added event
+        CertificateEvents::emit_role_added(&env, &user, &role);
+
         Ok(())
     }
 
-    pub fn remove_instructor(env: Env, instructor: Address) -> Result<(), Error> {
-        // Get admin and check authorization
-        let admin: Address = env.storage().instance().get(&ADMIN).unwrap_or_else(|| {
-            return Err(Error::NotInitialized);
-        })?;
+    fn update_role(env: Env, user: Address, new_role: Role) -> Result<(), CertificateError> {
+        // Check if contract is initialized and get admin
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
+        }
+
+        let admin = CertificateStorage::get_admin(&env);
         admin.require_auth();
-        
-        // Remove instructor from the list
-        env.storage().instance().remove(&(INSTRUCTORS, instructor.clone()));
-        
+
+        // Ensure the role exists before updating
+        if CertificateStorage::get_role(&env, &user).is_none() {
+            return Err(CertificateError::RoleNotFound);
+        }
+
+        // Update the role
+        CertificateStorage::set_role(&env, &user, &new_role);
+
+        // Emit role updated event
+        CertificateEvents::emit_role_updated(&env, &user, &new_role);
+
         Ok(())
     }
 
-    fn is_instructor(env: &Env, address: &Address) -> bool {
-        env.storage().instance().has(&(INSTRUCTORS, address.clone()))
+    fn revoke_role(env: Env, user: Address) -> Result<(), CertificateError> {
+        // Check if contract is initialized and get admin
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
+        }
+
+        let admin = CertificateStorage::get_admin(&env);
+        admin.require_auth();
+
+        // Ensure the role exists before revoking
+        if CertificateStorage::get_role(&env, &user).is_none() {
+            return Err(CertificateError::RoleNotFound);
+        }
+
+        // Remove the role
+        CertificateStorage::remove_role(&env, &user);
+
+        // Emit role removed event
+        CertificateEvents::emit_role_removed(&env, &user);
+
+        Ok(())
     }
 
-    pub fn mint_certificate(
+    fn get_role(env: Env, user: Address) -> Option<Role> {
+        CertificateStorage::get_role(&env, &user)
+    }
+
+    fn has_permission(env: Env, user: Address, permission: Permission) -> bool {
+        if let Some(role) = CertificateStorage::get_role(&env, &user) {
+            role.has(permission)
+        } else {
+            false
+        }
+    }
+
+    fn mint_certificate(
         env: Env,
+        issuer: Address,
         certificate_id: BytesN<32>,
         course_id: String,
         student: Address,
         title: String,
         description: String,
-        metadata_uri: String
-    ) -> Result<(), Error> {
+        metadata_uri: String,
+    ) -> Result<(), CertificateError> {
         // Check if initialized
-        if !env.storage().instance().has(&INITIALIZED) {
-            return Err(Error::NotInitialized);
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
         }
-        
-        // Get instructor (caller) and verify authorization
-        let instructor = env.invoker().unwrap_or_else(|| {
-            return Err(Error::Unauthorized);
-        })?;
-        
-        if !Self::is_instructor(&env, &instructor) {
-            return Err(Error::NotInstructor);
+
+        // Get caller and check permission
+        if !Self::has_permission(env.clone(), issuer.clone(), Permission::Issue) {
+            return Err(CertificateError::Unauthorized);
         }
-        
+
         // Validate inputs
-        if title.is_empty() || description.is_empty() || metadata_uri.is_empty() {
-            return Err(Error::InvalidMetadata);
+        if title.is_empty()
+            || description.is_empty()
+            || metadata_uri.is_empty()
+            || course_id.is_empty()
+        {
+            return Err(CertificateError::InvalidMetadata);
         }
-        
-        // Create a storage key for this certificate
-        let key = (CERTIFICATES, certificate_id.clone());
-        
+
         // Check if certificate already exists
-        if env.storage().instance().has(&key) {
-            return Err(Error::CertificateAlreadyExists);
+        if CertificateStorage::has_certificate(&env, &certificate_id) {
+            return Err(CertificateError::CertificateAlreadyExists);
         }
-        
+        // ledger().sequence().to_be_bytes()
         // Generate unique token ID for NFT
-        let token_id = env.crypto().sha256(&env.ledger().sequence().to_be_bytes());
-        
+        let sequence_bytes = env.ledger().sequence().to_be_bytes();
+        let bytes = Bytes::from_slice(&env, &sequence_bytes);
+        let token_id: BytesN<32> = env.crypto().sha256(&bytes).into();
+
         // Create certificate metadata
         let metadata = CertificateMetadata {
             course_id,
             student_id: student.clone(),
-            instructor_id: instructor.clone(),
+            instructor_id: issuer.clone(),
             issue_date: env.ledger().timestamp(),
             metadata_uri,
             token_id: token_id.clone(),
             title,
             description,
-            status: CertificateStatus::Active
+            status: CertificateStatus::Active,
         };
-        
+
         // Store certificate metadata
-        env.storage().instance().set(&key, &metadata);
-        
+        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+
         // Add to user's certificates
-        Self::add_user_certificate(env.clone(), student.clone(), certificate_id)?;
-        
-        // Emit certificate minted event with enhanced metadata
-        env.events().publish(
-            (Symbol::new(&env, "nft_certificate_minted"),
-             certificate_id.clone()),
-            (
-                metadata.clone(),
-                student,
-                instructor,
-                token_id
-            )
+        CertificateStorage::add_user_certificate(&env, &student, &certificate_id);
+
+        // Emit certificate minted event
+        CertificateEvents::emit_certificate_minted(
+            &env,
+            &certificate_id,
+            &metadata,
+            &student,
+            &issuer,
+            &token_id,
         );
-        
+
         Ok(())
     }
 
-    pub fn verify_certificate(env: Env, certificate_id: BytesN<32>) -> Result<CertificateMetadata, Error> {
-        // Create a storage key for this certificate
-        let key = (CERTIFICATES, certificate_id.clone());
-        
+    fn verify_certificate(
+        env: Env,
+        certificate_id: BytesN<32>,
+    ) -> Result<CertificateMetadata, CertificateError> {
         // Check if certificate exists and get metadata
-        if let Some(metadata) = env.storage().instance().get::<_, CertificateMetadata>(&key) {
-            Ok(metadata)
-        } else {
-            Err(Error::CertificateNotFound)
-        }
+        CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)
     }
 
-    pub fn revoke_certificate(env: Env, certificate_id: BytesN<32>) -> Result<(), Error> {
-        // Get instructor (caller) and verify authorization
-        let instructor = env.invoker().unwrap_or_else(|| {
-            return Err(Error::Unauthorized);
-        })?;
-        
-        if !Self::is_instructor(&env, &instructor) {
-            return Err(Error::NotInstructor);
+    fn revoke_certificate(
+        env: Env,
+        revoker: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<(), CertificateError> {
+        // Check if initialized
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
         }
-        
-        // Create a storage key for this certificate
-        let key = (CERTIFICATES, certificate_id.clone());
-        
+
+        // Get caller and check permission
+        if !Self::has_permission(env.clone(), revoker.clone(), Permission::Revoke) {
+            return Err(CertificateError::Unauthorized);
+        }
+
         // Check if certificate exists and get metadata
-        let mut metadata = env.storage().instance().get::<_, CertificateMetadata>(&key)
-            .ok_or(Error::CertificateNotFound)?;
-        
+        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
         // Update certificate status
         metadata.status = CertificateStatus::Revoked;
-        
+
         // Store updated metadata
-        env.storage().instance().set(&key, &metadata);
-        
-        // Emit enhanced certificate revoked event
-        env.events().publish(
-            (Symbol::new(&env, "nft_certificate_revoked"), certificate_id.clone()),
-            (
-                metadata.clone(),
-                instructor.clone(),
-                env.ledger().timestamp()
-            )
+        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+
+        // Get current timestamp
+        let timestamp = env.ledger().timestamp();
+
+        // Emit certificate revoked event
+        CertificateEvents::emit_certificate_revoked(
+            &env,
+            &certificate_id,
+            &metadata,
+            &revoker,
+            timestamp,
         );
-        
+
         Ok(())
     }
 
-    pub fn track_certificates(env: Env, user_address: Address) -> Vec<BytesN<32>> {
-        let key = (USER_CERTS, user_address.clone());
-        
-        // Check if user has any certificates
-        if env.storage().instance().has(&key) {
-            // Get existing certificates
-            env.storage().instance().get(&key).unwrap()
-        } else {
-            // Return empty vector
-            Vec::new(&env)
-        }
+    fn track_certificates(env: Env, user_address: Address) -> Vec<BytesN<32>> {
+        CertificateStorage::get_user_certificates(&env, &user_address)
     }
-    
-    pub fn add_user_certificate(env: Env, user_address: Address, certificate_id: BytesN<32>) -> Result<(), Error> {
+
+    fn add_user_certificate(
+        env: Env,
+        user_address: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<(), CertificateError> {
         // Verify certificate exists
-        Self::verify_certificate(env.clone(), certificate_id.clone())?;
-        
-        // Create storage key for user certificates
-        let key = (USER_CERTS, user_address.clone());
-        
-        // Get or create user certificates list
-        let mut user_certs = if env.storage().instance().has(&key) {
-            env.storage().instance().get(&key).unwrap()
-        } else {
-            Vec::new(&env)
-        };
-        
-        // Add certificate to user's list
-        user_certs.push_back(certificate_id);
-        
-        // Store updated list
-        env.storage().instance().set(&key, &user_certs);
-        
-        Ok(())
-    }
-}
+        if !CertificateStorage::has_certificate(&env, &certificate_id) {
+            return Err(CertificateError::CertificateNotFound);
+        }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use soroban_sdk::testutils::{Address as _, BytesN as _};
-    
-    #[test]
-    fn test_initialize() {
-        let env = Env::default();
-        let contract_id = env.register_contract(None, Certificate);
-        let client = CertificateClient::new(&env, &contract_id);
-        let admin = Address::random(&env);
-        
-        // Test successful initialization
-        let result = client.initialize(&admin);
-        assert!(result.is_ok());
-        
-        // Test re-initialization (should fail)
-        let result = client.initialize(&admin);
-        assert_eq!(result, Err(Error::AlreadyInitialized));
-    }
-    
-    #[test]
-    fn test_certificate_lifecycle() {
-        let env = Env::default();
-        let contract_id = env.register_contract(None, Certificate);
-        let client = CertificateClient::new(&env, &contract_id);
-        let admin = Address::random(&env);
-        
-        // Initialize
-        client.initialize(&admin).unwrap();
-        
-        // Create a certificate ID
-        let cert_id = BytesN::random(&env);
-        
-        // Issue certificate
-        client.issue_certificate(&cert_id).unwrap();
-        
-        // Verify certificate
-        client.verify_certificate(&cert_id).unwrap();
-        
-        // Try to issue same certificate again (should fail)
-        let result = client.issue_certificate(&cert_id);
-        assert_eq!(result, Err(Error::CertificateAlreadyExists));
-        
-        // Revoke certificate
-        client.revoke_certificate(&cert_id).unwrap();
-        
-        // Verify revoked certificate (should fail)
-        let result = client.verify_certificate(&cert_id);
-        assert_eq!(result, Err(Error::CertificateNotFound));
-    }
-    
-    #[test]
-    fn test_user_certificates() {
-        let env = Env::default();
-        let contract_id = env.register_contract(None, Certificate);
-        let client = CertificateClient::new(&env, &contract_id);
-        let admin = Address::random(&env);
-        
-        // Initialize
-        client.initialize(&admin).unwrap();
-        
-        // Create a user
-        let user = Address::random(&env);
-        
-        // Create certificate IDs
-        let cert_id1 = BytesN::random(&env);
-        let cert_id2 = BytesN::random(&env);
-        
-        // Issue certificates
-        client.issue_certificate(&cert_id1).unwrap();
-        client.issue_certificate(&cert_id2).unwrap();
-        
-        // Add certificates to user
-        client.add_user_certificate(&user, &cert_id1).unwrap();
-        client.add_user_certificate(&user, &cert_id2).unwrap();
-        
-        // Get user certificates
-        let user_certs = client.track_certificates(&user);
-        
-        // Verify user has both certificates
-        assert_eq!(user_certs.len(), 2);
-        assert!(user_certs.contains(&cert_id1));
-        assert!(user_certs.contains(&cert_id2));
+        // Add certificate to user's list
+        CertificateStorage::add_user_certificate(&env, &user_address, &certificate_id);
+
+        Ok(())
     }
 }
