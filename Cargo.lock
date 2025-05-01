@@ -157,13 +157,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "asset-registry"
-version = "0.0.1"
-dependencies = [
- "soroban-sdk",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
