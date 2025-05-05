@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 // Enum to represent the status of each module (Not Started, In Progress, Completed)
 #[derive(Debug, Clone)]
 enum ModuleStatus {
@@ -39,13 +41,51 @@ impl Course {
         if all_completed {
             self.completed = true;
             println!("Course '{}' is marked as completed.", self.name);
+            self.issue_certificate();
+            self.emit_course_completion_event();
         } else {
             println!("Cannot mark '{}' as completed. Some modules are still incomplete.", self.name);
+        }
+    }
+
+    // Issue a certificate upon course completion
+    fn issue_certificate(&self) {
+        println!("Certificate issued for course '{}'. Congratulations!", self.name);
+    }
+
+    // Emit course completion event
+    fn emit_course_completion_event(&self) {
+        println!("Event: Course '{}' completed successfully. Emitting course completion event.", self.name);
+    }
+}
+
+// Global course registry (to simulate a collection of courses)
+struct CourseRegistry {
+    courses: HashMap<u32, Course>,
+}
+
+impl CourseRegistry {
+    // Method to create a new course and add it to the registry
+    fn create_course(&mut self, course: Course) {
+        self.courses.insert(course.id, course);
+    }
+
+    // Method to mark course as completed by its ID
+    fn mark_course_completed_by_id(&mut self, course_id: u32) {
+        if let Some(course) = self.courses.get_mut(&course_id) {
+            course.mark_course_completed();
+        } else {
+            println!("Course with ID {} not found.", course_id);
         }
     }
 }
 
 fn main() {
+    // Create a course registry to manage multiple courses
+    let mut course_registry = CourseRegistry {
+        courses: HashMap::new(),
+    };
+
     // Create some sample modules
     let module1 = Module {
         id: 1,
@@ -64,23 +104,24 @@ fn main() {
     };
 
     // Create a sample course with modules
-    let mut course = Course {
+    let course = Course {
         id: 101,
         name: String::from("Rust Programming Basics"),
         modules: vec![module1, module2, module3],
         completed: false,
     };
 
-    // Calculate and print progress
-    let progress = course.calculate_progress();
-    println!("Course Progress: {:.2}%", progress);
+    // Add the course to the course registry
+    course_registry.create_course(course);
 
-    // Attempt to mark the course as completed (it should fail)
-    course.mark_course_completed();
+    // Mark course as completed by its ID (this will fail initially)
+    course_registry.mark_course_completed_by_id(101);
 
-    // Complete the last module
-    course.modules[2].status = ModuleStatus::Completed;
-    
-    // Now attempt to mark the course as completed (it should succeed)
-    course.mark_course_completed();
+    // Complete the last module in the course
+    if let Some(course) = course_registry.courses.get_mut(&101) {
+        course.modules[2].status = ModuleStatus::Completed;
+    }
+
+    // Mark course as completed by its ID (this will succeed now)
+    course_registry.mark_course_completed_by_id(101);
 }
