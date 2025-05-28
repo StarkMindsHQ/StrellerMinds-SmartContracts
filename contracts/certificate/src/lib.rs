@@ -287,4 +287,19 @@ impl CertificateTrait for Certificate {
 
         Ok(())
     }
+
+    fn isValidCertificate(
+        env: Env,
+        certificate_id: BytesN<32>,
+    ) -> Result<(bool, CertificateMetadata), CertificateError> {
+        // Get certificate metadata
+        let metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        // Check if certificate is valid (active and not expired)
+        let is_valid = metadata.status == CertificateStatus::Active 
+            && !Self::is_certificate_expired(env, certificate_id);
+
+        Ok((is_valid, metadata))
+    }
 }
