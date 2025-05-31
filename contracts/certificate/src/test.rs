@@ -728,3 +728,104 @@ fn test_certificate_expiry() {
     let result = client.try_verify_certificate(&permanent_cert_id);
     assert!(result.is_ok());
 }
+
+#[test]
+fn test_is_valid_certificate() {
+    let (env, client, admin, student) = setup_test();
+    let issuer = Address::generate(&env);
+
+    // Grant issuer role
+    let issuer_role = create_issuer_role();
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "grant_role",
+            args: vec![&env, issuer.to_val(), issuer_role.into_val(&env)],
+            sub_invokes: &[],
+        },
+    }]);
+    client.grant_role(&issuer, &issuer_role);
+
+    // Create a certificate
+    let cert_id = create_test_certificate_id(&env, 1);
+    let current_time = env.ledger().timestamp();
+    let expiry_time = current_time + 1000; // Set expiry 1000 seconds in the future
+
+    env.mock_auths(&[MockAuth {
+        address: &issuer,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "mint_certificate",
+            args: vec![
+                &env,
+                issuer.to_val(),
+                cert_id.to_val(),
+                create_test_string(&env, "course1").to_val(),
+                student.to_val(),
+                create_test_string(&env, "Test Certificate").to_val(),
+                create_test_string(&env, "Test Description").to_val(),
+                create_test_string(&env, "ipfs://test").to_val(),
+                expiry_time.to_val(),
+            ],
+            sub_invokes: &[],
+        },
+    }]);
+
+    client.mint_certificate(
+        &issuer,
+        &cert_id,
+        &create_test_string(&env, "course1"),
+        &student,
+        &create_test_string(&env, "Test Certificate"),
+        &create_test_string(&env, "Test Description"),
+        &create_test_string(&env, "ipfs://test"),
+        &expiry_time,
+    );
+
+    // Test valid certificate
+    let (is_valid, metadata) = client.is_valid_certificate(&cert_id).unwrap();
+    assert!(is_valid);
+    assert_eq!(metadata.status, CertificateStatus::Active);
+    assert_eq!(metadata.student_id, student);
+    assert_eq!(metadata.instructor_id, issuer);
+
+    // Test expired certificate
+    env.ledger().set_timestamp(expiry_time + 1);
+    let (is_valid, _) = client.is_valid_certificate(&cert_id).unwrap();
+    assert!(!is_valid);
+
+    // Test revoked certificate
+    let revoker = Address::generate(&env);
+    let revoker_role = create_revoker_role();
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "grant_role",
+            args: vec![&env, revoker.to_val(), revoker_role.into_val(&env)],
+            sub_invokes: &[],
+        },
+    }]);
+    client.grant_role(&revoker, &revoker_role);
+
+    env.mock_auths(&[MockAuth {
+        address: &revoker,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "revoke_certificate",
+            args: vec![&env, revoker.to_val(), cert_id.to_val()],
+            sub_invokes: &[],
+        },
+    }]);
+    client.revoke_certificate(&revoker, &cert_id);
+
+    let (is_valid, metadata) = client.is_valid_certificate(&cert_id).unwrap();
+    assert!(!is_valid);
+    assert_eq!(metadata.status, CertificateStatus::Revoked);
+
+    // Test non-existent certificate
+    let non_existent_cert_id = create_test_certificate_id(&env, 999);
+    let result = client.try_is_valid_certificate(&non_existent_cert_id);
+    assert_eq!(result, Err(Ok(CertificateError::CertificateNotFound)));
+}

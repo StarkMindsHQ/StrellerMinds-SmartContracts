@@ -177,4 +177,19 @@ pub trait CertificateTrait {
         user_address: Address,
         certificate_id: BytesN<32>,
     ) -> Result<(), CertificateError>;
+
+    /// Check if a certificate is valid
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `certificate_id` - Unique identifier for the certificate
+    ///
+    /// # Returns
+    /// * `Result<(bool, CertificateMetadata), CertificateError>` - Tuple containing validity status and certificate metadata
+    ///   - First element is true if certificate is valid (active and not expired), false otherwise
+    ///   - Second element contains the certificate metadata
+    fn isValidCertificate(
+        env: Env,
+        certificate_id: BytesN<32>,
+    ) -> Result<(bool, CertificateMetadata), CertificateError>;
 }
