@@ -13,7 +13,7 @@ use errors::CertificateError;
 use events::CertificateEvents;
 use interface::CertificateTrait;
 use storage::CertificateStorage;
-use types::{CertificateMetadata, CertificateStatus, Permission, Role};
+use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, Permission, Role};
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
@@ -128,13 +128,7 @@ impl CertificateTrait for Certificate {
     fn mint_certificate(
         env: Env,
         issuer: Address,
-        certificate_id: BytesN<32>,
-        course_id: String,
-        student: Address,
-        title: String,
-        description: String,
-        metadata_uri: String,
-        expiry_date: u64,
+        params: MintCertificateParams,
     ) -> Result<(), CertificateError> {
         // Check if initialized
         if !CertificateStorage::is_initialized(&env) {
@@ -147,47 +141,47 @@ impl CertificateTrait for Certificate {
         }
 
         // Validate inputs
-        if title.is_empty()
-            || description.is_empty()
-            || metadata_uri.is_empty()
-            || course_id.is_empty()
+        if params.title.is_empty()
+            || params.description.is_empty()
+            || params.metadata_uri.is_empty()
+            || params.course_id.is_empty()
         {
             return Err(CertificateError::InvalidMetadata);
         }
 
         // Check if certificate already exists
-        if CertificateStorage::has_certificate(&env, &certificate_id) {
+        if CertificateStorage::has_certificate(&env, &params.certificate_id) {
             return Err(CertificateError::CertificateAlreadyExists);
         }
 
-        let token_id = certificate_id.clone();
+        let token_id = params.certificate_id.clone();
 
         // Create certificate metadata
         let metadata = CertificateMetadata {
-            course_id,
-            student_id: student.clone(),
+            course_id: params.course_id,
+            student_id: params.student.clone(),
             instructor_id: issuer.clone(),
             issue_date: env.ledger().timestamp(),
-            metadata_uri,
+            metadata_uri: params.metadata_uri,
             token_id: token_id.clone(),
-            title,
-            description,
+            title: params.title,
+            description: params.description,
             status: CertificateStatus::Active,
-            expiry_date,
+            expiry_date: params.expiry_date,
         };
 
         // Store certificate metadata
-        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+        CertificateStorage::set_certificate(&env, &params.certificate_id, &metadata);
 
         // Add to user's certificates
-        CertificateStorage::add_user_certificate(&env, &student, &certificate_id);
+        CertificateStorage::add_user_certificate(&env, &params.student, &params.certificate_id);
 
         // Emit certificate minted event
         CertificateEvents::emit_certificate_minted(
             &env,
-            &certificate_id,
+            &params.certificate_id,
             &metadata,
-            &student,
+            &params.student,
             &issuer,
             &token_id,
         );
@@ -288,7 +282,7 @@ impl CertificateTrait for Certificate {
         Ok(())
     }
 
-    fn isValidCertificate(
+    fn is_valid_certificate(
         env: Env,
         certificate_id: BytesN<32>,
     ) -> Result<(bool, CertificateMetadata), CertificateError> {
@@ -297,9 +291,57 @@ impl CertificateTrait for Certificate {
             .ok_or(CertificateError::CertificateNotFound)?;
 
         // Check if certificate is valid (active and not expired)
-        let is_valid = metadata.status == CertificateStatus::Active 
+        let is_valid = metadata.status == CertificateStatus::Active
             && !Self::is_certificate_expired(env, certificate_id);
 
         Ok((is_valid, metadata))
+    }
+
+    fn update_certificate_uri(
+        env: Env,
+        updater: Address,
+        certificate_id: BytesN<32>,
+        new_uri: String,
+    ) -> Result<(), CertificateError> {
+        if !CertificateStorage::is_initialized(&env) {
+            return Err(CertificateError::NotInitialized);
+        }
+
+        updater.require_auth();
+        if new_uri.is_empty() {
+            return Err(CertificateError::InvalidUri);
+        }
+
+        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+        let admin = CertificateStorage::get_admin(&env);
+        if updater != metadata.instructor_id && updater != admin {
+            return Err(CertificateError::Unauthorized);
+        }
+
+        let old_uri = metadata.metadata_uri.clone();
+        let update_entry = MetadataUpdateEntry {
+            updater: updater.clone(),
+            timestamp: env.ledger().timestamp(),
+            old_uri: old_uri.clone(),
+            new_uri: new_uri.clone(),
+        };
+
+        CertificateStorage::add_metadata_history(&env, &certificate_id, &update_entry);
+        metadata.metadata_uri = new_uri.clone();
+        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+        CertificateEvents::emit_metadata_updated(
+            &env,
+            &certificate_id,
+            &updater,
+            &old_uri,
+            &new_uri,
+        );
+
+        Ok(())
+    }
+
+    fn get_metadata_history(env: Env, certificate_id: BytesN<32>) -> Vec<MetadataUpdateEntry> {
+        CertificateStorage::get_metadata_history(&env, &certificate_id)
     }
 }

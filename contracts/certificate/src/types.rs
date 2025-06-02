@@ -23,6 +23,16 @@ pub enum CertificateStatus {
     Revoked,
 }
 
+/// Metadata update history entry
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MetadataUpdateEntry {
+    pub updater: Address, // Who made the update
+    pub timestamp: u64,   // When the update was made
+    pub old_uri: String,  // Previous metadata URI
+    pub new_uri: String,  // New metadata URI
+}
+
 /// Storage keys for the contract
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -39,6 +49,8 @@ pub enum DataKey {
     Instructors(Address),
     /// Key for storing certificate metadata
     Certificates(BytesN<32>),
+    /// Key for storing metadata update history
+    MetadataHistory(BytesN<32>),
 }
 
 /// User role definition
@@ -63,4 +75,16 @@ impl Role {
             Permission::Revoke => self.can_revoke,
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+#[contracttype]
+pub struct MintCertificateParams {
+    pub certificate_id: BytesN<32>,
+    pub course_id: String,
+    pub student: Address,
+    pub title: String,
+    pub description: String,
+    pub metadata_uri: String,
+    pub expiry_date: u64,
 }

@@ -29,6 +29,8 @@ pub enum CertificateError {
     RoleNotFound = 11,
     /// Certificate has expired
     CertificateExpired = 12,
+    /// Invalid URI format provided
+    InvalidUri = 13,
 }
 
 /// Implementation to convert ConversionError to CertificateError
