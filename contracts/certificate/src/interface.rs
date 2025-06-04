@@ -1,7 +1,7 @@
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 use crate::errors::CertificateError;
-use crate::types::{CertificateMetadata, Permission, Role};
+use crate::types::{CertificateMetadata, MetadataUpdateEntry, Permission, Role, MintCertificateParams};
 
 /// Interface for the Certificate contract.
 pub trait CertificateTrait {
@@ -90,31 +90,22 @@ pub trait CertificateTrait {
     ///
     /// # Arguments
     /// * `env` - The contract environment
-    /// * `certificate_id` - Unique identifier for the certificate
-    /// * `course_id` - Course identifier
-    /// * `student` - Address of the student
-    /// * `title` - Title of the certificate
-    /// * `description` - Description of the certificate
-    /// * `metadata_uri` - URI for certificate metadata
+    /// * `issuer` - Address of the issuer
+    /// * `params` - Parameters for minting the certificate
     ///
     /// # Returns
     /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized or invalid input
     ///
     /// # Authentication
     /// * Requires authorization from a user with Issue permission
+    #[allow(clippy::too_many_arguments)]
     fn mint_certificate(
         env: Env,
         issuer: Address,
-        certificate_id: BytesN<32>,
-        course_id: String,
-        student: Address,
-        title: String,
-        description: String,
-        metadata_uri: String,
-        expiry_date: u64,
+        params: MintCertificateParams,
     ) -> Result<(), CertificateError>;
 
-    /// Check if a certificate is expired   
+    /// Check if a certificate is expired
     ///
     /// # Arguments
     /// * `env` - The contract environment
@@ -188,8 +179,38 @@ pub trait CertificateTrait {
     /// * `Result<(bool, CertificateMetadata), CertificateError>` - Tuple containing validity status and certificate metadata
     ///   - First element is true if certificate is valid (active and not expired), false otherwise
     ///   - Second element contains the certificate metadata
-    fn isValidCertificate(
+    fn is_valid_certificate(
         env: Env,
         certificate_id: BytesN<32>,
     ) -> Result<(bool, CertificateMetadata), CertificateError>;
+
+    /// Update the metadata URI of a certificate
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `updater` - Address of the user requesting the update
+    /// * `certificate_id` - Unique identifier for the certificate
+    /// * `new_uri` - New metadata URI
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized or invalid input
+    ///
+    /// # Authentication
+    /// * Requires authorization from the original issuer or admin
+    fn update_certificate_uri(
+        env: Env,
+        updater: Address,
+        certificate_id: BytesN<32>,
+        new_uri: String,
+    ) -> Result<(), CertificateError>;
+
+    /// Get metadata update history for a certificate
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `certificate_id` - Unique identifier for the certificate
+    ///
+    /// # Returns
+    /// * `Vec<MetadataUpdateEntry>` - Collection of metadata update entries, empty if none found
+    fn get_metadata_history(env: Env, certificate_id: BytesN<32>) -> Vec<MetadataUpdateEntry>;
 }
