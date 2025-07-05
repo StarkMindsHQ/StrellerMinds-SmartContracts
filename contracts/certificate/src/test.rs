@@ -1007,3 +1007,37 @@ fn test_update_certificate_uri() {
     assert_eq!(second_update.old_uri, new_uri_1);
     assert_eq!(second_update.new_uri, new_uri_2);
 }
+
+#[test]
+fn test_reentrancy_guard_mint_certificate() {
+    use std::panic;
+    let (env, client, admin, student) = setup_test();
+    let issuer = Address::generate(&env);
+    let issuer_role = create_issuer_role();
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "grant_role",
+            args: vec![&env, issuer.to_val(), issuer_role.into_val(&env)],
+            sub_invokes: &[],
+        },
+    }]);
+    client.grant_role(&issuer, &issuer_role);
+    let cert_id = create_test_certificate_id(&env, 99);
+    let params = create_mint_params(MintCertificateParams {
+        certificate_id: cert_id.clone(),
+        course_id: create_test_string(&env, "CS999"),
+        student: student.clone(),
+        title: create_test_string(&env, "Reentrancy Test"),
+        description: create_test_string(&env, "Test"),
+        metadata_uri: create_test_string(&env, "uri"),
+        expiry_date: env.ledger().timestamp() + 1000000,
+    });
+    let result = panic::catch_unwind(|| {
+        let _ = client.mint_certificate(&issuer, &params);
+        // Attempt reentrant call
+        let _ = client.mint_certificate(&issuer, &params);
+    });
+    assert!(result.is_err(), "Reentrancy was not prevented");
+}

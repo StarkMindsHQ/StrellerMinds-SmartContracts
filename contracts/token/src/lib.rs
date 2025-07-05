@@ -1,6 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, Env, Symbol};
+use shared::reentrancy_guard::ReentrancyLock;
 
 #[contract]
 pub struct Token;
@@ -18,6 +19,7 @@ pub enum Error {
 #[contractimpl]
 impl Token {
     pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         if admin_exists(&env) {
             return Err(Error::AlreadyInitialized);
         }
@@ -29,6 +31,7 @@ impl Token {
     }
 
     pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         let admin = get_admin(&env)?;
         admin.require_auth();
         
@@ -47,6 +50,7 @@ impl Token {
     }
 
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         from.require_auth();
         
         if amount <= 0 {

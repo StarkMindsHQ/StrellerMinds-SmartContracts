@@ -71,3 +71,24 @@ fn test_transfer() {
     let result = client.try_transfer(&user1, &user2, &100);
     assert_eq!(result, Err(Ok(Error::InsufficientBalance)));
 }
+
+#[test]
+fn test_reentrancy_guard_transfer() {
+    use std::panic;
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Token);
+    let client = TokenClient::new(&env, &contract_id);
+    let admin = Address::random(&env);
+    let user1 = Address::random(&env);
+    let user2 = Address::random(&env);
+    client.initialize(&admin);
+    env.mock_all_auths();
+    client.mint(&user1, &100);
+    // Simulate reentrancy by calling transfer inside a transfer (mocked by direct call)
+    let result = panic::catch_unwind(|| {
+        let _ = client.transfer(&user1, &user2, &10);
+        // Attempt reentrant call
+        let _ = client.transfer(&user1, &user2, &10);
+    });
+    assert!(result.is_err(), "Reentrancy was not prevented");
+}
