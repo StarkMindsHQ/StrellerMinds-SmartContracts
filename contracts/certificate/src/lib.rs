@@ -13,9 +13,16 @@ use errors::CertificateError;
 use events::CertificateEvents;
 use interface::CertificateTrait;
 use storage::CertificateStorage;
-use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, Permission, Role};
+use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams};
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
+
+// Import the shared RBAC system
+use shared::{
+    access_control::AccessControl,
+    roles::{Permission, RoleLevel},
+    errors::AccessControlError,
+};
 
 #[contract]
 pub struct Certificate;
@@ -30,6 +37,10 @@ impl CertificateTrait for Certificate {
 
         // Require authorization from the admin
         admin.require_auth();
+
+        // Initialize the RBAC system
+        AccessControl::initialize(&env, &admin)
+            .map_err(|_| CertificateError::InitializationFailed)?;
 
         // Store admin address and mark as initialized
         CertificateStorage::set_admin(&env, &admin);
@@ -49,80 +60,47 @@ impl CertificateTrait for Certificate {
         Ok(CertificateStorage::get_admin(&env))
     }
 
-    fn grant_role(env: Env, user: Address, role: Role) -> Result<(), CertificateError> {
-        // Check if contract is initialized and get admin
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
+    fn grant_role(env: Env, user: Address, role_level: u32) -> Result<(), CertificateError> {
+        // Get the caller's address
+        let caller = env.current_contract_address();
+        
+        // Convert role level to enum
+        let role_level = RoleLevel::from_u32(role_level)
+            .ok_or(CertificateError::InvalidRole)?;
 
-        let admin = CertificateStorage::get_admin(&env);
-        admin.require_auth();
-
-        // Set the role
-        CertificateStorage::set_role(&env, &user, &role);
-
-        // Emit role added event
-        CertificateEvents::emit_role_added(&env, &user, &role);
-
-        Ok(())
-    }
-
-    fn update_role(env: Env, user: Address, new_role: Role) -> Result<(), CertificateError> {
-        // Check if contract is initialized and get admin
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
-
-        let admin = CertificateStorage::get_admin(&env);
-        admin.require_auth();
-
-        // Ensure the role exists before updating
-        if CertificateStorage::get_role(&env, &user).is_none() {
-            return Err(CertificateError::RoleNotFound);
-        }
-
-        // Update the role
-        CertificateStorage::set_role(&env, &user, &new_role);
-
-        // Emit role updated event
-        CertificateEvents::emit_role_updated(&env, &user, &new_role);
+        // Grant role using RBAC system
+        AccessControl::grant_role(&env, &caller, &user, role_level)
+            .map_err(|_| CertificateError::Unauthorized)?;
 
         Ok(())
     }
 
     fn revoke_role(env: Env, user: Address) -> Result<(), CertificateError> {
-        // Check if contract is initialized and get admin
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
+        // Get the caller's address
+        let caller = env.current_contract_address();
 
-        let admin = CertificateStorage::get_admin(&env);
-        admin.require_auth();
-
-        // Ensure the role exists before revoking
-        if CertificateStorage::get_role(&env, &user).is_none() {
-            return Err(CertificateError::RoleNotFound);
-        }
-
-        // Remove the role
-        CertificateStorage::remove_role(&env, &user);
-
-        // Emit role removed event
-        CertificateEvents::emit_role_removed(&env, &user);
+        // Revoke role using RBAC system
+        AccessControl::revoke_role(&env, &caller, &user)
+            .map_err(|_| CertificateError::Unauthorized)?;
 
         Ok(())
     }
 
-    fn get_role(env: Env, user: Address) -> Option<Role> {
-        CertificateStorage::get_role(&env, &user)
+    fn get_role(env: Env, user: Address) -> Option<shared::roles::Role> {
+        AccessControl::get_role(&env, &user)
     }
 
-    fn has_permission(env: Env, user: Address, permission: Permission) -> bool {
-        if let Some(role) = CertificateStorage::get_role(&env, &user) {
-            role.has(permission)
-        } else {
-            false
-        }
+    fn has_permission(env: Env, user: Address, permission: u32) -> bool {
+        // Convert permission to enum
+        let permission = match permission {
+            0 => Permission::IssueCertificate,
+            1 => Permission::RevokeCertificate,
+            2 => Permission::TransferCertificate,
+            3 => Permission::UpdateCertificateMetadata,
+            _ => return false,
+        };
+
+        AccessControl::has_permission(&env, &user, &permission)
     }
 
     fn mint_certificate(
@@ -130,22 +108,15 @@ impl CertificateTrait for Certificate {
         issuer: Address,
         params: MintCertificateParams,
     ) -> Result<(), CertificateError> {
-        // Check if initialized
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
+        // Require authorization from issuer
+        issuer.require_auth();
 
-        // Get caller and check permission
-        if !Self::has_permission(env.clone(), issuer.clone(), Permission::Issue) {
-            return Err(CertificateError::Unauthorized);
-        }
+        // Check if issuer has permission to issue certificates
+        AccessControl::require_permission(&env, &issuer, &Permission::IssueCertificate)
+            .map_err(|_| CertificateError::Unauthorized)?;
 
-        // Validate inputs
-        if params.title.is_empty()
-            || params.description.is_empty()
-            || params.metadata_uri.is_empty()
-            || params.course_id.is_empty()
-        {
+        // Validate certificate metadata
+        if params.course_id.is_empty() || params.title.is_empty() || params.description.is_empty() {
             return Err(CertificateError::InvalidMetadata);
         }
 
@@ -154,58 +125,78 @@ impl CertificateTrait for Certificate {
             return Err(CertificateError::CertificateAlreadyExists);
         }
 
-        let token_id = params.certificate_id.clone();
-
         // Create certificate metadata
         let metadata = CertificateMetadata {
             course_id: params.course_id,
-            student_id: params.student.clone(),
-            instructor_id: issuer.clone(),
+            student_id: params.student,
+            instructor_id: issuer,
             issue_date: env.ledger().timestamp(),
             metadata_uri: params.metadata_uri,
-            token_id: token_id.clone(),
+            token_id: params.certificate_id,
             title: params.title,
             description: params.description,
             status: CertificateStatus::Active,
             expiry_date: params.expiry_date,
         };
 
-        // Store certificate metadata
+        // Store certificate
         CertificateStorage::set_certificate(&env, &params.certificate_id, &metadata);
 
-        // Add to user's certificates
+        // Track certificate ownership
         CertificateStorage::add_user_certificate(&env, &params.student, &params.certificate_id);
+        CertificateStorage::add_instructor_certificate(&env, &issuer, &params.certificate_id);
 
         // Emit certificate minted event
-        CertificateEvents::emit_certificate_minted(
-            &env,
-            &params.certificate_id,
-            &metadata,
-            &params.student,
-            &issuer,
-            &token_id,
-        );
+        CertificateEvents::emit_certificate_minted(&env, &issuer, &params.student, &metadata);
 
         Ok(())
     }
 
-    fn is_certificate_expired(env: Env, certificate_id: BytesN<32>) -> bool {
-        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
-            if metadata.expiry_date == 0 {
-                return false;
-            }
+    fn revoke_certificate(
+        env: Env,
+        revoker: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<(), CertificateError> {
+        // Require authorization from revoker
+        revoker.require_auth();
 
-            metadata.expiry_date < env.ledger().timestamp()
-        } else {
-            true
+        // Check if revoker has permission to revoke certificates
+        AccessControl::require_permission(&env, &revoker, &Permission::RevokeCertificate)
+            .map_err(|_| CertificateError::Unauthorized)?;
+
+        // Get certificate metadata
+        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        // Check if certificate is already revoked
+        if metadata.status == CertificateStatus::Revoked {
+            return Err(CertificateError::CertificateAlreadyRevoked);
         }
+
+        // Update certificate status
+        metadata.status = CertificateStatus::Revoked;
+        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+
+        // Emit certificate revoked event
+        CertificateEvents::emit_certificate_revoked(&env, &revoker, &certificate_id);
+
+        Ok(())
     }
 
-    fn verify_certificate(
+    fn transfer_certificate(
         env: Env,
+        from: Address,
+        to: Address,
         certificate_id: BytesN<32>,
-    ) -> Result<CertificateMetadata, CertificateError> {
-        // Check if certificate exists and get metadata
+    ) -> Result<(), CertificateError> {
+        // Require authorization from sender
+        from.require_auth();
+
+        // Check if sender has permission to transfer certificates
+        AccessControl::require_permission(&env, &from, &Permission::TransferCertificate)
+            .map_err(|_| CertificateError::Unauthorized)?;
+
+        // Get certificate metadata
         let metadata = CertificateStorage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
 
@@ -214,87 +205,19 @@ impl CertificateTrait for Certificate {
             return Err(CertificateError::CertificateRevoked);
         }
 
-        // Check if certificate is expired
-        if Self::is_certificate_expired(env, certificate_id) {
-            return Err(CertificateError::CertificateExpired);
-        }
-
-        Ok(metadata)
-    }
-
-    fn revoke_certificate(
-        env: Env,
-        revoker: Address,
-        certificate_id: BytesN<32>,
-    ) -> Result<(), CertificateError> {
-        // Check if initialized
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
-
-        // Get caller and check permission
-        if !Self::has_permission(env.clone(), revoker.clone(), Permission::Revoke) {
+        // Check if sender owns the certificate
+        if metadata.student_id != from {
             return Err(CertificateError::Unauthorized);
         }
 
-        // Check if certificate exists and get metadata
-        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
-            .ok_or(CertificateError::CertificateNotFound)?;
+        // Update certificate ownership
+        CertificateStorage::remove_user_certificate(&env, &from, &certificate_id);
+        CertificateStorage::add_user_certificate(&env, &to, &certificate_id);
 
-        // Update certificate status
-        metadata.status = CertificateStatus::Revoked;
-
-        // Store updated metadata
-        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
-
-        // Get current timestamp
-        let timestamp = env.ledger().timestamp();
-
-        // Emit certificate revoked event
-        CertificateEvents::emit_certificate_revoked(
-            &env,
-            &certificate_id,
-            &metadata,
-            &revoker,
-            timestamp,
-        );
+        // Emit certificate transferred event
+        CertificateEvents::emit_certificate_transferred(&env, &from, &to, &certificate_id);
 
         Ok(())
-    }
-
-    fn track_certificates(env: Env, user_address: Address) -> Vec<BytesN<32>> {
-        CertificateStorage::get_user_certificates(&env, &user_address)
-    }
-
-    fn add_user_certificate(
-        env: Env,
-        user_address: Address,
-        certificate_id: BytesN<32>,
-    ) -> Result<(), CertificateError> {
-        // Verify certificate exists
-        if !CertificateStorage::has_certificate(&env, &certificate_id) {
-            return Err(CertificateError::CertificateNotFound);
-        }
-
-        // Add certificate to user's list
-        CertificateStorage::add_user_certificate(&env, &user_address, &certificate_id);
-
-        Ok(())
-    }
-
-    fn is_valid_certificate(
-        env: Env,
-        certificate_id: BytesN<32>,
-    ) -> Result<(bool, CertificateMetadata), CertificateError> {
-        // Get certificate metadata
-        let metadata = CertificateStorage::get_certificate(&env, &certificate_id)
-            .ok_or(CertificateError::CertificateNotFound)?;
-
-        // Check if certificate is valid (active and not expired)
-        let is_valid = metadata.status == CertificateStatus::Active
-            && !Self::is_certificate_expired(env, certificate_id);
-
-        Ok((is_valid, metadata))
     }
 
     fn update_certificate_uri(
@@ -303,45 +226,82 @@ impl CertificateTrait for Certificate {
         certificate_id: BytesN<32>,
         new_uri: String,
     ) -> Result<(), CertificateError> {
-        if !CertificateStorage::is_initialized(&env) {
-            return Err(CertificateError::NotInitialized);
-        }
-
+        // Require authorization from updater
         updater.require_auth();
+
+        // Check if updater has permission to update certificate metadata
+        AccessControl::require_permission(&env, &updater, &Permission::UpdateCertificateMetadata)
+            .map_err(|_| CertificateError::Unauthorized)?;
+
+        // Validate new URI
         if new_uri.is_empty() {
-            return Err(CertificateError::InvalidUri);
+            return Err(CertificateError::InvalidMetadata);
         }
 
+        // Get certificate metadata
         let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
-        let admin = CertificateStorage::get_admin(&env);
-        if updater != metadata.instructor_id && updater != admin {
-            return Err(CertificateError::Unauthorized);
+
+        // Check if certificate is revoked
+        if metadata.status == CertificateStatus::Revoked {
+            return Err(CertificateError::CertificateRevoked);
         }
 
+        // Store old URI for history
         let old_uri = metadata.metadata_uri.clone();
-        let update_entry = MetadataUpdateEntry {
-            updater: updater.clone(),
-            timestamp: env.ledger().timestamp(),
-            old_uri: old_uri.clone(),
-            new_uri: new_uri.clone(),
-        };
 
-        CertificateStorage::add_metadata_history(&env, &certificate_id, &update_entry);
+        // Update metadata URI
         metadata.metadata_uri = new_uri.clone();
+
+        // Store updated certificate
         CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
-        CertificateEvents::emit_metadata_updated(
-            &env,
-            &certificate_id,
-            &updater,
-            &old_uri,
-            &new_uri,
-        );
+
+        // Add to metadata history
+        let history_entry = MetadataUpdateEntry {
+            updater,
+            timestamp: env.ledger().timestamp(),
+            old_uri,
+            new_uri,
+        };
+        CertificateStorage::add_metadata_history(&env, &certificate_id, &history_entry);
+
+        // Emit metadata updated event
+        CertificateEvents::emit_metadata_updated(&env, &certificate_id, &old_uri, &new_uri);
 
         Ok(())
     }
 
+    fn get_certificate(env: Env, certificate_id: BytesN<32>) -> Option<CertificateMetadata> {
+        CertificateStorage::get_certificate(&env, &certificate_id)
+    }
+
+    fn get_user_certificates(env: Env, user: Address) -> Vec<BytesN<32>> {
+        CertificateStorage::get_user_certificates(&env, &user)
+    }
+
+    fn get_instructor_certificates(env: Env, instructor: Address) -> Vec<BytesN<32>> {
+        CertificateStorage::get_instructor_certificates(&env, &instructor)
+    }
+
     fn get_metadata_history(env: Env, certificate_id: BytesN<32>) -> Vec<MetadataUpdateEntry> {
         CertificateStorage::get_metadata_history(&env, &certificate_id)
+    }
+
+    fn is_certificate_expired(env: Env, certificate_id: BytesN<32>) -> bool {
+        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
+            let current_time = env.ledger().timestamp();
+            current_time > metadata.expiry_date
+        } else {
+            false
+        }
+    }
+
+    fn is_valid_certificate(env: Env, certificate_id: BytesN<32>) -> bool {
+        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
+            let current_time = env.ledger().timestamp();
+            metadata.status == CertificateStatus::Active && current_time <= metadata.expiry_date
+        } else {
+            false
+        }
     }
 }
