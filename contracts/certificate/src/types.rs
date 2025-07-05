@@ -1,18 +1,26 @@
+/// Packed struct for efficient storage of certificate data
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PackedCertificateData {
+    pub metadata: CertificateMetadata,
+    pub owner: Address,
+    pub history: Vec<MetadataUpdateEntry>,
+}
 use soroban_sdk::{contracttype, Address, BytesN, String};
 
 /// Certificate metadata structure
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CertificateMetadata {
-    pub course_id: String,
+    pub token_id: BytesN<32>,      // Unique NFT identifier
     pub student_id: Address,
     pub instructor_id: Address,
-    pub issue_date: u64,
-    pub metadata_uri: String,
-    pub token_id: BytesN<32>,      // Unique NFT identifier
+    pub course_id: String,
     pub title: String,             // Certificate title
     pub description: String,       // Certificate description
+    pub metadata_uri: String,
     pub status: CertificateStatus, // Certificate status (Active/Revoked)
+    pub issue_date: u64,
     pub expiry_date: u64,
 }
 

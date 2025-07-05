@@ -82,26 +82,17 @@ impl CertificateStorage {
         env.storage().instance().remove(&key);
     }
 
-    /// Stores certificate metadata
-    ///
-    /// # Arguments
-    /// * `env` - Reference to the contract environment
-    /// * `certificate_id` - Certificate identifier
-    /// * `metadata` - Certificate metadata
-    pub fn set_certificate(env: &Env, certificate_id: &BytesN<32>, metadata: &CertificateMetadata) {
+
+    /// Stores packed certificate data (metadata, owner, history)
+    pub fn set_certificate(env: &Env, certificate_id: &BytesN<32>, packed: &PackedCertificateData) {
         let key = DataKey::Certificates(certificate_id.clone());
-        env.storage().instance().set(&key, metadata);
+        env.storage().instance().set(&key, packed);
+        // Emit storage monitoring event
+        env.events().publish(("storage", "set_certificate"), certificate_id);
     }
 
-    /// Retrieves certificate metadata
-    ///
-    /// # Arguments
-    /// * `env` - Reference to the contract environment
-    /// * `certificate_id` - Certificate identifier
-    ///
-    /// # Returns
-    /// * `Option<CertificateMetadata>` - Certificate metadata if found
-    pub fn get_certificate(env: &Env, certificate_id: &BytesN<32>) -> Option<CertificateMetadata> {
+    /// Retrieves packed certificate data
+    pub fn get_certificate(env: &Env, certificate_id: &BytesN<32>) -> Option<PackedCertificateData> {
         let key = DataKey::Certificates(certificate_id.clone());
         if env.storage().instance().has(&key) {
             env.storage().instance().get(&key)

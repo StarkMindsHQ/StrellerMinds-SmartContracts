@@ -1,4 +1,5 @@
 use crate::roles::{Role, RoleLevel, Permission};
+use soroban_sdk::{vec, Vec};
 
 /// Predefined role permissions for different user types
 pub struct RolePermissions;

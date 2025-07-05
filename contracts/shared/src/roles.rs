@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address};
+use soroban_sdk::{contracttype, Address, Vec};
 
 /// Role hierarchy levels (higher number = more permissions)
 #[contracttype]
