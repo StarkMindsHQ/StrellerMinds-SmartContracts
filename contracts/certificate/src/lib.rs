@@ -131,22 +131,27 @@ impl CertificateTrait for Certificate {
             return Err(CertificateError::CertificateAlreadyExists);
         }
 
-        // Create certificate metadata
+
+        // Create packed certificate data
         let metadata = CertificateMetadata {
             course_id: params.course_id,
-            student_id: params.student,
-            instructor_id: issuer,
+            student_id: params.student.clone(),
+            instructor_id: issuer.clone(),
             issue_date: env.ledger().timestamp(),
             metadata_uri: params.metadata_uri,
-            token_id: params.certificate_id,
+            token_id: params.certificate_id.clone(),
             title: params.title,
             description: params.description,
             status: CertificateStatus::Active,
             expiry_date: params.expiry_date,
         };
-
-        // Store certificate
-        CertificateStorage::set_certificate(&env, &params.certificate_id, &metadata);
+        let packed = PackedCertificateData {
+            metadata: metadata.clone(),
+            owner: params.student.clone(),
+            history: Vec::new(&env),
+        };
+        // Store packed certificate
+        CertificateStorage::set_certificate(&env, &params.certificate_id, &packed);
 
         // Track certificate ownership
         CertificateStorage::add_user_certificate(&env, &params.student, &params.certificate_id);
@@ -171,18 +176,19 @@ impl CertificateTrait for Certificate {
         AccessControl::require_permission(&env, &revoker, &Permission::RevokeCertificate)
             .map_err(|_| CertificateError::Unauthorized)?;
 
-        // Get certificate metadata
-        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+
+        // Get packed certificate data
+        let mut packed = CertificateStorage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
 
         // Check if certificate is already revoked
-        if metadata.status == CertificateStatus::Revoked {
+        if packed.metadata.status == CertificateStatus::Revoked {
             return Err(CertificateError::CertificateAlreadyRevoked);
         }
 
         // Update certificate status
-        metadata.status = CertificateStatus::Revoked;
-        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
+        packed.metadata.status = CertificateStatus::Revoked;
+        CertificateStorage::set_certificate(&env, &certificate_id, &packed);
 
         // Emit certificate revoked event
         CertificateEvents::emit_certificate_revoked(&env, &revoker, &certificate_id);
@@ -204,21 +210,25 @@ impl CertificateTrait for Certificate {
         AccessControl::require_permission(&env, &from, &Permission::TransferCertificate)
             .map_err(|_| CertificateError::Unauthorized)?;
 
-        // Get certificate metadata
-        let metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+
+        // Get packed certificate data
+        let mut packed = CertificateStorage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
 
         // Check if certificate is revoked
-        if metadata.status == CertificateStatus::Revoked {
+        if packed.metadata.status == CertificateStatus::Revoked {
             return Err(CertificateError::CertificateRevoked);
         }
 
         // Check if sender owns the certificate
-        if metadata.student_id != from {
+        if packed.owner != from {
             return Err(CertificateError::Unauthorized);
         }
 
-        // Update certificate ownership
+
+        // Update certificate ownership in packed data
+        packed.owner = to.clone();
+        CertificateStorage::set_certificate(&env, &certificate_id, &packed);
         CertificateStorage::remove_user_certificate(&env, &from, &certificate_id);
         CertificateStorage::add_user_certificate(&env, &to, &certificate_id);
 
@@ -247,32 +257,33 @@ impl CertificateTrait for Certificate {
             return Err(CertificateError::InvalidMetadata);
         }
 
-        // Get certificate metadata
-        let mut metadata = CertificateStorage::get_certificate(&env, &certificate_id)
+
+        // Get packed certificate data
+        let mut packed = CertificateStorage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
 
         // Check if certificate is revoked
-        if metadata.status == CertificateStatus::Revoked {
+        if packed.metadata.status == CertificateStatus::Revoked {
             return Err(CertificateError::CertificateRevoked);
         }
 
         // Store old URI for history
-        let old_uri = metadata.metadata_uri.clone();
+        let old_uri = packed.metadata.metadata_uri.clone();
 
         // Update metadata URI
-        metadata.metadata_uri = new_uri.clone();
+        packed.metadata.metadata_uri = new_uri.clone();
 
-        // Store updated certificate
-        CertificateStorage::set_certificate(&env, &certificate_id, &metadata);
-
-        // Add to metadata history
+        // Add to metadata history in packed struct
         let history_entry = MetadataUpdateEntry {
             updater,
             timestamp: env.ledger().timestamp(),
-            old_uri,
-            new_uri,
+            old_uri: old_uri.clone(),
+            new_uri: new_uri.clone(),
         };
-        CertificateStorage::add_metadata_history(&env, &certificate_id, &history_entry);
+        packed.history.push_back(history_entry);
+
+        // Store updated packed certificate
+        CertificateStorage::set_certificate(&env, &certificate_id, &packed);
 
         // Emit metadata updated event
         CertificateEvents::emit_metadata_updated(&env, &certificate_id, &old_uri, &new_uri);
@@ -281,7 +292,7 @@ impl CertificateTrait for Certificate {
     }
 
     fn get_certificate(env: Env, certificate_id: BytesN<32>) -> Option<CertificateMetadata> {
-        CertificateStorage::get_certificate(&env, &certificate_id)
+        CertificateStorage::get_certificate(&env, &certificate_id).map(|packed| packed.metadata)
     }
 
     fn get_user_certificates(env: Env, user: Address) -> Vec<BytesN<32>> {
@@ -297,18 +308,18 @@ impl CertificateTrait for Certificate {
     }
 
     fn is_certificate_expired(env: Env, certificate_id: BytesN<32>) -> bool {
-        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
+        if let Some(packed) = CertificateStorage::get_certificate(&env, &certificate_id) {
             let current_time = env.ledger().timestamp();
-            current_time > metadata.expiry_date
+            current_time > packed.metadata.expiry_date
         } else {
             false
         }
     }
 
     fn is_valid_certificate(env: Env, certificate_id: BytesN<32>) -> bool {
-        if let Some(metadata) = CertificateStorage::get_certificate(&env, &certificate_id) {
+        if let Some(packed) = CertificateStorage::get_certificate(&env, &certificate_id) {
             let current_time = env.ledger().timestamp();
-            metadata.status == CertificateStatus::Active && current_time <= metadata.expiry_date
+            packed.metadata.status == CertificateStatus::Active && current_time <= packed.metadata.expiry_date
         } else {
             false
         }
