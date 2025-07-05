@@ -5,4 +5,5 @@ pub mod roles;
 pub mod permissions;
 pub mod events;
 pub mod storage;
-pub mod errors; 
+pub mod errors;
+pub mod reentrancy_guard; 

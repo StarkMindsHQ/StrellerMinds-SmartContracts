@@ -24,12 +24,15 @@ use shared::{
     errors::AccessControlError,
 };
 
+use shared::reentrancy_guard::ReentrancyLock;
+
 #[contract]
 pub struct Certificate;
 
 #[contractimpl]
 impl CertificateTrait for Certificate {
     fn initialize(env: Env, admin: Address) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Check if already initialized
         if CertificateStorage::is_initialized(&env) {
             return Err(CertificateError::AlreadyInitialized);
@@ -61,6 +64,7 @@ impl CertificateTrait for Certificate {
     }
 
     fn grant_role(env: Env, user: Address, role_level: u32) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Get the caller's address
         let caller = env.current_contract_address();
         
@@ -76,6 +80,7 @@ impl CertificateTrait for Certificate {
     }
 
     fn revoke_role(env: Env, user: Address) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Get the caller's address
         let caller = env.current_contract_address();
 
@@ -108,6 +113,7 @@ impl CertificateTrait for Certificate {
         issuer: Address,
         params: MintCertificateParams,
     ) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Require authorization from issuer
         issuer.require_auth();
 
@@ -157,6 +163,7 @@ impl CertificateTrait for Certificate {
         revoker: Address,
         certificate_id: BytesN<32>,
     ) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Require authorization from revoker
         revoker.require_auth();
 
@@ -189,6 +196,7 @@ impl CertificateTrait for Certificate {
         to: Address,
         certificate_id: BytesN<32>,
     ) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Require authorization from sender
         from.require_auth();
 
@@ -226,6 +234,7 @@ impl CertificateTrait for Certificate {
         certificate_id: BytesN<32>,
         new_uri: String,
     ) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
         // Require authorization from updater
         updater.require_auth();
 
