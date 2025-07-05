@@ -2,6 +2,23 @@
 
 use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol};
 
+pub struct ProxyEvents;
+
+impl ProxyEvents {
+    pub fn emit_initialized(env: &Env, admin: &Address, implementation: &Address) {
+        let topics = (Symbol::new(env, "proxy_initialized"), admin, implementation);
+        env.events().publish(topics, ());
+    }
+    pub fn emit_upgraded(env: &Env, admin: &Address, new_impl: &Address) {
+        let topics = (Symbol::new(env, "proxy_upgraded"), admin, new_impl);
+        env.events().publish(topics, ());
+    }
+    pub fn emit_rollback(env: &Env, admin: &Address, prev_impl: &Address) {
+        let topics = (Symbol::new(env, "proxy_rollback"), admin, prev_impl);
+        env.events().publish(topics, ());
+    }
+}
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
@@ -21,6 +38,7 @@ impl Proxy {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Implementation, &implementation);
         env.storage().instance().set(&DataKey::RollbackStack, &Vec::<Address>::new(&env));
+        ProxyEvents::emit_initialized(&env, &admin, &implementation);
     }
 
     /// Upgrade implementation (admin only)
@@ -32,6 +50,7 @@ impl Proxy {
         stack.push_back(current.clone());
         env.storage().instance().set(&DataKey::RollbackStack, &stack);
         env.storage().instance().set(&DataKey::Implementation, &new_implementation);
+        ProxyEvents::emit_upgraded(&env, &admin, &new_implementation);
     }
 
     /// Rollback to previous implementation (admin only)
@@ -42,6 +61,7 @@ impl Proxy {
         let prev = stack.pop_back().expect("No previous implementation");
         env.storage().instance().set(&DataKey::RollbackStack, &stack);
         env.storage().instance().set(&DataKey::Implementation, &prev);
+        ProxyEvents::emit_rollback(&env, &admin, &prev);
     }
 
     /// Get current implementation address
