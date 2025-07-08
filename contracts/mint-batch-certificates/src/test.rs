@@ -99,3 +99,39 @@ fn test_dynamic_batch_size_and_gas_estimation() {
     // All certificates should be processed
     assert_eq!(results.len() as u32, batch_size);
 }
+
+#[test]
+fn test_error_recovery_and_logging() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let issuer = Address::generate(&env);
+    let owner = Address::generate(&env);
+    let max_batch_size = 10u32;
+    let contract_id = env.register_contract(None, super::CertificateContract);
+    let client = super::CertificateContractClient::new(&env, &contract_id);
+    client.initialize(&admin, &max_batch_size);
+    client.add_issuer(&admin, &issuer);
+    // Create a certificate that will trigger a storage error (simulate by using a duplicate ID)
+    let cert_id = 42u64;
+    let certificate = CertificateData {
+        id: cert_id,
+        metadata_hash: BytesN::from_array(&env, &[42; 32]),
+        valid_from: env.ledger().timestamp(),
+        valid_until: env.ledger().timestamp() + 86400,
+        revocable: true,
+        cert_type: CertificateType::Standard,
+    };
+    // Mint once (should succeed)
+    env.mock_all_auths();
+    let result1 = client.mint_single_certificate(&issuer, &owner, &certificate);
+    assert!(result1.is_ok());
+    // Mint again (should fail with duplicate, and log error)
+    let result2 = client.mint_single_certificate(&issuer, &owner, &certificate);
+    assert!(result2.is_err());
+    // There should be an error event for duplicate certificate
+    // (In a real test, you would check the event log; here, we assert the error type)
+    if let Err(e) = result2 {
+        assert_eq!(e, super::error::Error::DuplicateCertificate);
+    }
+}
