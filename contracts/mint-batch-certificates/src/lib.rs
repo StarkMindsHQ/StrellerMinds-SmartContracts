@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env, Vec, TryFromVal, Val, IntoVal, ConstructorArgs};
+use soroban_sdk::{contract, contractimpl, Address, Env, Vec, TryFromVal, Val, IntoVal, ConstructorArgs, Map as SorobanMap};
 
 mod certificate; // Certificate data structure
 mod auth;        // Authentication utilities
@@ -96,65 +96,51 @@ impl CertificateContract {
         Ok(())
     }
     
-    // Mint multiple certificates in a batch
-    pub fn mint_batch_certificates(
+    /// Helper to split a batch into optimal sub-batches based on gas estimation
+    pub fn split_into_optimal_batches(
+        env: &Env,
+        owners: Vec<Address>,
+        certificates: Vec<CertificateData>,
+        target_gas_limit: u64
+    ) -> Vec<(Vec<Address>, Vec<CertificateData>)> {
+        let mut batches = Vec::new(env);
+        let mut start = 0u32;
+        let total = certificates.len() as u32;
+        while start < total {
+            let remaining = total - start;
+            let batch_owners = owners.slice(start, total);
+            let batch_certs = certificates.slice(start, total);
+            let (_, optimal_size) = Self::estimate_gas_for_batch(
+                env,
+                Address::generate(env), // dummy issuer for estimation
+                batch_owners.clone(),
+                batch_certs.clone(),
+                target_gas_limit,
+            );
+            let end = (start + optimal_size).min(total);
+            batches.push_back((owners.slice(start, end), certificates.slice(start, end)));
+            start = end;
+        }
+        batches
+    }
+
+    // Mint multiple certificates in a batch (dynamically optimized)
+    pub fn mint_batch_certificates_dynamic(
         env: &Env,
         issuer: Address,
         owners: Vec<Address>,
-        certificates: Vec<CertificateData>
+        certificates: Vec<CertificateData>,
+        target_gas_limit: u64
     ) -> Vec<MintResult> {
-        issuer.require_auth();
-        
-        if !auth::is_issuer(env, &issuer) {
-            env.panic_with_error(Error::Unauthorized);
+        let mut all_results = Vec::new(env);
+        let batches = Self::split_into_optimal_batches(env, owners, certificates, target_gas_limit);
+        for (batch_owners, batch_certs) in batches.iter() {
+            let results = Self::mint_batch_certificates(env, issuer.clone(), batch_owners, batch_certs);
+            for r in results.iter() {
+                all_results.push_back(r);
+            }
         }
-        
-        let batch_size = certificates.len();
-        let max_batch_size = storage::get_max_batch_size(env) as u32;
-        
-        // Check batch size limit
-        if batch_size > max_batch_size as u32 {
-            env.panic_with_error(Error::BatchSizeTooLarge);
-        }
-        
-        // Check that owners and certificates have the same length
-        if batch_size != owners.len() {
-            env.panic_with_error(Error::InvalidInput);
-        }
-        
-        let mut results = Vec::new(env);
-        let mut success_count: u32 = 0;
-        let mut failure_count: u32 = 0;
-        
-        // Process each certificate in the batch
-        for i in 0..batch_size {
-            let owner = owners.get(i).unwrap();
-            let certificate = certificates.get(i).unwrap();
-            
-            let result = match Self::mint_single_certificate(env, issuer.clone(), owner, certificate.clone()) {
-                Ok(()) => {
-                    success_count += 1;
-                    MintResult::Success(certificate.id)
-                },
-                Err(e) => {
-                    failure_count += 1;
-                    MintResult::Failure(certificate.id, e)
-                }
-            };
-            
-            results.push_back(result);
-        }
-        
-        // Emit batch completion event
-        events::emit_batch_mint_completed(
-            env, 
-            &issuer, 
-            batch_size, 
-            success_count, 
-            failure_count
-        );
-        
-        results
+        all_results
     }
     
     // Revoke a certificate
@@ -192,6 +178,30 @@ impl CertificateContract {
     pub fn is_issuer(env: &Env, address: Address) -> bool {
         storage::is_issuer(env, &address)
     }
+
+    /// Estimate gas usage for a given batch size and return the optimal batch size for a target gas limit
+    pub fn estimate_gas_for_batch(
+        env: &Env,
+        issuer: Address,
+        owners: Vec<Address>,
+        certificates: Vec<CertificateData>,
+        target_gas_limit: u64
+    ) -> (u64, u32) {
+        // Simulate the batch minting logic to estimate gas usage
+        // For demonstration, we use a simple linear model: base + per_certificate * batch_size
+        // In practice, you would use actual gas metering APIs if available
+        let base_gas: u64 = 10_000; // base cost for batch operation
+        let per_certificate_gas: u64 = 5_000; // estimated cost per certificate
+        let batch_size = certificates.len() as u32;
+        let estimated_gas = base_gas + per_certificate_gas * batch_size as u64;
+
+        // Calculate the largest batch size that fits within the target gas limit
+        let mut optimal_batch_size = batch_size;
+        if estimated_gas > target_gas_limit {
+            optimal_batch_size = ((target_gas_limit - base_gas) / per_certificate_gas) as u32;
+        }
+        (estimated_gas, optimal_batch_size)
+    }
 }
 
 impl TryFromVal<Env, Val> for MintResult {
@@ -207,5 +217,82 @@ impl IntoVal<Env, Val> for MintResult {
     fn into_val(&self, _env: &Env) -> Val {
         // Implement conversion logic here
         Val::from(0) // Placeholder implementation
+    }
+}
+
+#[contractimpl]
+impl CertificateContract {
+    pub fn mint_batch_certificates(
+        env: &Env,
+        issuer: Address,
+        owners: Vec<Address>,
+        certificates: Vec<CertificateData>
+    ) -> Vec<MintResult> {
+        issuer.require_auth();
+        if !auth::is_issuer(env, &issuer) {
+            env.panic_with_error(Error::Unauthorized);
+        }
+        let batch_size = certificates.len();
+        let max_batch_size = storage::get_max_batch_size(env) as u32;
+        if batch_size > max_batch_size as u32 {
+            env.panic_with_error(Error::BatchSizeTooLarge);
+        }
+        if batch_size != owners.len() {
+            env.panic_with_error(Error::InvalidInput);
+        }
+        let mut results = Vec::new(env);
+        let mut success_count: u32 = 0;
+        let mut failure_count: u32 = 0;
+        // Optimization: cache owner certificate lists to minimize storage reads/writes
+        let mut owner_cert_cache = SorobanMap::new(env);
+        for i in 0..batch_size {
+            let owner = owners.get(i).unwrap();
+            let certificate = certificates.get(i).unwrap();
+            // Use cache for owner certificates
+            let mut owner_certs = if let Some(certs) = owner_cert_cache.get(owner.clone()) {
+                certs
+            } else {
+                let certs = storage::get_owner_certificates(env, &owner);
+                owner_cert_cache.set(owner.clone(), certs.clone());
+                certs
+            };
+            let result = match storage::certificate_exists(env, certificate.id) {
+                true => Err(Error::DuplicateCertificate),
+                false => {
+                    // Save certificate data and update cache
+                    match storage::save_certificate(env, &owner, &certificate) {
+                        Ok(()) => {
+                            owner_certs.push_back(certificate.id);
+                            owner_cert_cache.set(owner.clone(), owner_certs.clone());
+                            Ok(())
+                        },
+                        Err(e) => Err(e),
+                    }
+                }
+            };
+            match result {
+                Ok(()) => {
+                    success_count += 1;
+                    results.push_back(MintResult::Success(certificate.id));
+                },
+                Err(e) => {
+                    failure_count += 1;
+                    results.push_back(MintResult::Failure(certificate.id, e));
+                }
+            }
+        }
+        // After batch, update all owner certificate lists in storage
+        for (owner, certs) in owner_cert_cache.iter() {
+            let owner_key = storage::get_owner_key(env, &owner);
+            env.storage().persistent().set(&owner_key, &certs);
+        }
+        events::emit_batch_mint_completed(
+            env, 
+            &issuer, 
+            batch_size, 
+            success_count, 
+            failure_count
+        );
+        results
     }
 }
