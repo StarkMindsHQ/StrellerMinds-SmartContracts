@@ -10,6 +10,7 @@ mod test;        // Test utilities
 
 use certificate::CertificateData;
 use error::{Error, MintResult};
+use crate::events::emit_error_event;
 
 #[contract]
 pub struct CertificateContract;
@@ -74,21 +75,41 @@ impl CertificateContract {
         issuer.require_auth();
         
         if !auth::is_issuer(env, &issuer) {
+            emit_error_event(env, "mint_single_certificate", Error::Unauthorized as u32, Error::Unauthorized.message(), Some(certificate.id));
             return Err(Error::Unauthorized);
         }
         
         // Validate certificate data
         if !certificate.validate(env) {
+            emit_error_event(env, "mint_single_certificate", Error::InvalidTimeRange as u32, Error::InvalidTimeRange.message(), Some(certificate.id));
             return Err(Error::InvalidTimeRange);
         }
         
         // Check for duplicate certificate
         if storage::certificate_exists(env, certificate.id) {
+            emit_error_event(env, "mint_single_certificate", Error::DuplicateCertificate as u32, Error::DuplicateCertificate.message(), Some(certificate.id));
             return Err(Error::DuplicateCertificate);
         }
         
-        // Save certificate
-        storage::save_certificate(env, &owner, &certificate)?;
+        // Save certificate with one retry on storage error
+        match storage::save_certificate(env, &owner, &certificate) {
+            Ok(()) => {},
+            Err(e) if e == Error::StorageError => {
+                emit_error_event(env, "mint_single_certificate", e as u32, "Storage error, retrying once", Some(certificate.id));
+                // Retry once
+                match storage::save_certificate(env, &owner, &certificate) {
+                    Ok(()) => {},
+                    Err(e2) => {
+                        emit_error_event(env, "mint_single_certificate", e2 as u32, e2.message(), Some(certificate.id));
+                        return Err(e2);
+                    }
+                }
+            },
+            Err(e) => {
+                emit_error_event(env, "mint_single_certificate", e as u32, e.message(), Some(certificate.id));
+                return Err(e);
+            }
+        }
         
         // Emit event
         events::emit_certificate_minted(env, &issuer, &owner, &certificate);
@@ -230,25 +251,26 @@ impl CertificateContract {
     ) -> Vec<MintResult> {
         issuer.require_auth();
         if !auth::is_issuer(env, &issuer) {
+            emit_error_event(env, "mint_batch_certificates", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
             env.panic_with_error(Error::Unauthorized);
         }
         let batch_size = certificates.len();
         let max_batch_size = storage::get_max_batch_size(env) as u32;
         if batch_size > max_batch_size as u32 {
+            emit_error_event(env, "mint_batch_certificates", Error::BatchSizeTooLarge as u32, Error::BatchSizeTooLarge.message(), None);
             env.panic_with_error(Error::BatchSizeTooLarge);
         }
         if batch_size != owners.len() {
+            emit_error_event(env, "mint_batch_certificates", Error::InvalidInput as u32, Error::InvalidInput.message(), None);
             env.panic_with_error(Error::InvalidInput);
         }
         let mut results = Vec::new(env);
         let mut success_count: u32 = 0;
         let mut failure_count: u32 = 0;
-        // Optimization: cache owner certificate lists to minimize storage reads/writes
         let mut owner_cert_cache = SorobanMap::new(env);
         for i in 0..batch_size {
             let owner = owners.get(i).unwrap();
             let certificate = certificates.get(i).unwrap();
-            // Use cache for owner certificates
             let mut owner_certs = if let Some(certs) = owner_cert_cache.get(owner.clone()) {
                 certs
             } else {
@@ -257,16 +279,36 @@ impl CertificateContract {
                 certs
             };
             let result = match storage::certificate_exists(env, certificate.id) {
-                true => Err(Error::DuplicateCertificate),
+                true => {
+                    emit_error_event(env, "mint_batch_certificates", Error::DuplicateCertificate as u32, Error::DuplicateCertificate.message(), Some(certificate.id));
+                    Err(Error::DuplicateCertificate)
+                },
                 false => {
-                    // Save certificate data and update cache
+                    // Save certificate with one retry on storage error
                     match storage::save_certificate(env, &owner, &certificate) {
                         Ok(()) => {
                             owner_certs.push_back(certificate.id);
                             owner_cert_cache.set(owner.clone(), owner_certs.clone());
                             Ok(())
                         },
-                        Err(e) => Err(e),
+                        Err(e) if e == Error::StorageError => {
+                            emit_error_event(env, "mint_batch_certificates", e as u32, "Storage error, retrying once", Some(certificate.id));
+                            match storage::save_certificate(env, &owner, &certificate) {
+                                Ok(()) => {
+                                    owner_certs.push_back(certificate.id);
+                                    owner_cert_cache.set(owner.clone(), owner_certs.clone());
+                                    Ok(())
+                                },
+                                Err(e2) => {
+                                    emit_error_event(env, "mint_batch_certificates", e2 as u32, e2.message(), Some(certificate.id));
+                                    Err(e2)
+                                }
+                            }
+                        },
+                        Err(e) => {
+                            emit_error_event(env, "mint_batch_certificates", e as u32, e.message(), Some(certificate.id));
+                            Err(e)
+                        }
                     }
                 }
             };
@@ -281,7 +323,6 @@ impl CertificateContract {
                 }
             }
         }
-        // After batch, update all owner certificate lists in storage
         for (owner, certs) in owner_cert_cache.iter() {
             let owner_key = storage::get_owner_key(env, &owner);
             env.storage().persistent().set(&owner_key, &certs);

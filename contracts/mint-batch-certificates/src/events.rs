@@ -8,6 +8,7 @@ const BATCH_MINT_COMPLETED: &str = "BATCH_MINT_COMPLETED";
 const ISSUER_ADDED: &str = "ISSUER_ADDED";
 const ISSUER_REMOVED: &str = "ISSUER_REMOVED";
 const CONTRACT_INITIALIZED: &str = "CONTRACT_INITIALIZED";
+const ERROR_OCCURRED: &str = "ERROR_OCCURRED";
 
 // Emit event when a certificate is minted
 pub fn emit_certificate_minted(env: &Env, issuer: &Address, owner: &Address, certificate: &CertificateData) {
@@ -87,4 +88,15 @@ pub fn emit_contract_initialized(env: &Env, admin: &Address, max_batch_size: u32
     );
     
     env.events().publish(topics, max_batch_size);
+}
+
+// Emit event when an error occurs
+pub fn emit_error_event(env: &Env, function: &str, error_code: u32, error_message: &str, context: Option<u64>) {
+    let topics = (
+        Symbol::new(env, ERROR_OCCURRED),
+        Symbol::new(env, function),
+    );
+    // Context can be certificate ID or None
+    let data = (error_code, error_message, context);
+    env.events().publish(topics, data);
 }
