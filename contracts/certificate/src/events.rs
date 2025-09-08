@@ -1,4 +1,4 @@
-use crate::types::{CertificateMetadata, Role};
+use crate::types::{CertificateMetadata, Role, NotificationType};
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
 /// Contract event emissions
@@ -137,6 +137,132 @@ impl CertificateEvents {
             new_uri.clone(),
             env.ledger().timestamp(),
         );
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a renewal request is submitted
+    pub fn emit_renewal_requested(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        requester: &Address,
+        requested_extension: u64,
+    ) {
+        let topics = (Symbol::new(env, "renewal_requested"), certificate_id);
+        let data = (requester.clone(), requested_extension, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a renewal request is approved
+    pub fn emit_renewal_approved(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        approver: &Address,
+        requester: &Address,
+        extension_period: u64,
+    ) {
+        let topics = (Symbol::new(env, "renewal_approved"), certificate_id);
+        let data = (approver.clone(), requester.clone(), extension_period, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a renewal request is rejected
+    pub fn emit_renewal_rejected(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        approver: &Address,
+        requester: &Address,
+        reason: String,
+    ) {
+        let topics = (Symbol::new(env, "renewal_rejected"), certificate_id);
+        let data = (approver.clone(), requester.clone(), reason, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when certificate expiry is extended by admin
+    pub fn emit_certificate_extended(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        admin: &Address,
+        owner: &Address,
+        extension_period: u64,
+        reason: String,
+    ) {
+        let topics = (Symbol::new(env, "certificate_extended"), certificate_id);
+        let data = (admin.clone(), owner.clone(), extension_period, reason, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when bulk extension operation is completed
+    pub fn emit_bulk_extension_completed(
+        env: &Env,
+        admin: &Address,
+        certificates_updated: u32,
+        reason: String,
+    ) {
+        let topics = (Symbol::new(env, "bulk_extension_completed"),);
+        let data = (admin.clone(), certificates_updated, reason, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when an expiry notification is created
+    pub fn emit_expiry_notification(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        owner: &Address,
+        notification_type: &NotificationType,
+        expiry_date: u64,
+    ) {
+        let topics = (Symbol::new(env, "expiry_notification"), certificate_id);
+        let notification_type_str = match notification_type {
+            NotificationType::Warning30Days => "warning_30_days",
+            NotificationType::Warning7Days => "warning_7_days",
+            NotificationType::Warning1Day => "warning_1_day",
+            NotificationType::Expired => "expired",
+        };
+        let data = (owner.clone(), notification_type_str, expiry_date, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when certificate status changes to expired
+    pub fn emit_certificate_expired(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        owner: &Address,
+        expiry_date: u64,
+    ) {
+        let topics = (Symbol::new(env, "certificate_expired"), certificate_id);
+        let data = (owner.clone(), expiry_date, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when certificate is automatically renewed
+    pub fn emit_certificate_auto_renewed(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        owner: &Address,
+        new_expiry_date: u64,
+        renewal_count: u32,
+    ) {
+        let topics = (Symbol::new(env, "certificate_auto_renewed"), certificate_id);
+        let data = (owner.clone(), new_expiry_date, renewal_count, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when notification is acknowledged
+    pub fn emit_notification_acknowledged(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        user: &Address,
+        notification_type: &NotificationType,
+    ) {
+        let topics = (Symbol::new(env, "notification_acknowledged"), certificate_id);
+        let notification_type_str = match notification_type {
+            NotificationType::Warning30Days => "warning_30_days",
+            NotificationType::Warning7Days => "warning_7_days",
+            NotificationType::Warning1Day => "warning_1_day",
+            NotificationType::Expired => "expired",
+        };
+        let data = (user.clone(), notification_type_str, env.ledger().timestamp());
         env.events().publish(topics, data);
     }
 }

@@ -22,6 +22,9 @@ pub struct CertificateMetadata {
     pub status: CertificateStatus, // Certificate status (Active/Revoked)
     pub issue_date: u64,
     pub expiry_date: u64,
+    pub original_expiry_date: u64, // Track original expiry for audit
+    pub renewal_count: u32,        // Number of times renewed
+    pub last_renewed_date: u64,    // Last renewal timestamp
 }
 
 #[contracttype]
@@ -29,6 +32,9 @@ pub struct CertificateMetadata {
 pub enum CertificateStatus {
     Active,
     Revoked,
+    Expired,
+    PendingRenewal,
+    Renewed,
 }
 
 /// Metadata update history entry
@@ -59,6 +65,14 @@ pub enum DataKey {
     Certificates(BytesN<32>),
     /// Key for storing metadata update history
     MetadataHistory(BytesN<32>),
+    /// Key for storing renewal requests
+    RenewalRequest(BytesN<32>),
+    /// Key for storing expiry notifications
+    ExpiryNotifications(Address),
+    /// Key for tracking certificates expiring soon
+    ExpiringCertificates(u64), // Timestamp bucket
+    /// Key for bulk operation tracking
+    BulkOperations(BytesN<32>),
 }
 
 /// User role definition
@@ -95,4 +109,70 @@ pub struct MintCertificateParams {
     pub description: String,
     pub metadata_uri: String,
     pub expiry_date: u64,
+}
+
+/// Renewal request structure
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RenewalRequest {
+    pub certificate_id: BytesN<32>,
+    pub requester: Address,
+    pub requested_extension: u64, // Extension period in seconds
+    pub reason: String,
+    pub request_date: u64,
+    pub status: RenewalStatus,
+    pub approver: Option<Address>,
+    pub approval_date: Option<u64>,
+}
+
+/// Renewal request status
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RenewalStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Expired,
+}
+
+/// Expiry notification structure
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExpiryNotification {
+    pub certificate_id: BytesN<32>,
+    pub owner: Address,
+    pub expiry_date: u64,
+    pub notification_type: NotificationType,
+    pub created_at: u64,
+    pub acknowledged: bool,
+}
+
+/// Notification types for expiry warnings
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NotificationType {
+    Warning30Days,  // 30 days before expiry
+    Warning7Days,   // 7 days before expiry
+    Warning1Day,    // 1 day before expiry
+    Expired,        // Certificate has expired
+}
+
+/// Bulk operation parameters
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BulkExpiryOperation {
+    pub certificate_ids: Vec<BytesN<32>>,
+    pub new_expiry_date: u64,
+    pub reason: String,
+    pub operator: Address,
+}
+
+/// Extension parameters
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExtensionParams {
+    pub certificate_id: BytesN<32>,
+    pub extension_period: u64, // Extension in seconds
+    pub reason: String,
+    pub max_renewals: Option<u32>, // Optional limit on renewals
 }
