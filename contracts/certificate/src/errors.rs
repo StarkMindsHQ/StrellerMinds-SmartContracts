@@ -24,14 +24,18 @@ pub enum CertificateError {
     // Metadata errors
     InvalidMetadata = 12,
     InvalidUri = 13,
+    MetadataTooLarge = 14,
+    MetadataTooSmall = 15,
+    InvalidCharacters = 16,
+    InvalidFormat = 17,
     
     // Input validation errors
-    InvalidAddress = 14,
-    InvalidInput = 15,
+    InvalidAddress = 18,
+    InvalidInput = 19,
     
     // Storage errors
-    StorageError = 16,
+    StorageError = 20,
     
     // Event errors
-    EventError = 17,
+    EventError = 21,
 }

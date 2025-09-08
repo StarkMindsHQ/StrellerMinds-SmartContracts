@@ -208,4 +208,22 @@ pub trait CertificateTrait {
     /// # Returns
     /// * `bool` - True if certificate is valid, false otherwise
     fn is_valid_certificate(env: Env, certificate_id: BytesN<32>) -> bool;
+
+    /// Mint multiple certificates in a single transaction
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `issuer` - Address of the issuer
+    /// * `params_list` - Vector of parameters for minting certificates
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized or invalid input
+    ///
+    /// # Authentication
+    /// * Requires authorization from a user with IssueCertificate permission
+    fn mint_certificates_batch(
+        env: Env,
+        issuer: Address,
+        params_list: Vec<MintCertificateParams>,
+    ) -> Result<(), CertificateError>;
 }

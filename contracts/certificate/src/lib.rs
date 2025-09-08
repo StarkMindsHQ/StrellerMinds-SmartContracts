@@ -5,15 +5,23 @@ mod events;
 mod interface;
 mod storage;
 mod types;
+mod validation;
 
 #[cfg(test)]
 mod test;
+
+#[cfg(test)]
+mod metadata_validation_tests;
+
+#[cfg(test)]
+mod integration_tests;
 
 use errors::CertificateError;
 use events::CertificateEvents;
 use interface::CertificateTrait;
 use storage::CertificateStorage;
-use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams};
+use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, PackedCertificateData};
+use validation::MetadataValidator;
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
@@ -121,10 +129,8 @@ impl CertificateTrait for Certificate {
         AccessControl::require_permission(&env, &issuer, &Permission::IssueCertificate)
             .map_err(|_| CertificateError::Unauthorized)?;
 
-        // Validate certificate metadata
-        if params.course_id.is_empty() || params.title.is_empty() || params.description.is_empty() {
-            return Err(CertificateError::InvalidMetadata);
-        }
+        // Comprehensive metadata validation
+        MetadataValidator::validate_mint_params(&env, &params)?;
 
         // Check if certificate already exists
         if CertificateStorage::has_certificate(&env, &params.certificate_id) {
@@ -252,10 +258,8 @@ impl CertificateTrait for Certificate {
         AccessControl::require_permission(&env, &updater, &Permission::UpdateCertificateMetadata)
             .map_err(|_| CertificateError::Unauthorized)?;
 
-        // Validate new URI
-        if new_uri.is_empty() {
-            return Err(CertificateError::InvalidMetadata);
-        }
+        // Comprehensive URI validation
+        MetadataValidator::validate_uri_update(&new_uri)?;
 
 
         // Get packed certificate data
@@ -323,5 +327,67 @@ impl CertificateTrait for Certificate {
         } else {
             false
         }
+    }
+
+    fn mint_certificates_batch(
+        env: Env,
+        issuer: Address,
+        params_list: Vec<MintCertificateParams>,
+    ) -> Result<(), CertificateError> {
+        let _guard = ReentrancyLock::new(&env);
+        // Require authorization from issuer
+        issuer.require_auth();
+
+        // Check if issuer has permission to issue certificates
+        AccessControl::require_permission(&env, &issuer, &Permission::IssueCertificate)
+            .map_err(|_| CertificateError::Unauthorized)?;
+
+        // Convert Vec to slice for validation
+        let params_slice: Vec<MintCertificateParams> = params_list.iter().cloned().collect();
+        
+        // Comprehensive batch validation
+        MetadataValidator::validate_batch_params(&env, &params_slice)?;
+
+        // Check if any certificates already exist
+        for params in params_list.iter() {
+            if CertificateStorage::has_certificate(&env, &params.certificate_id) {
+                return Err(CertificateError::CertificateAlreadyExists);
+            }
+        }
+
+        // Mint all certificates
+        for params in params_list.iter() {
+            // Create packed certificate data
+            let metadata = CertificateMetadata {
+                course_id: params.course_id.clone(),
+                student_id: params.student.clone(),
+                instructor_id: issuer.clone(),
+                issue_date: env.ledger().timestamp(),
+                metadata_uri: params.metadata_uri.clone(),
+                token_id: params.certificate_id.clone(),
+                title: params.title.clone(),
+                description: params.description.clone(),
+                status: CertificateStatus::Active,
+                expiry_date: params.expiry_date,
+            };
+            
+            let packed = PackedCertificateData {
+                metadata: metadata.clone(),
+                owner: params.student.clone(),
+                history: Vec::new(&env),
+            };
+
+            // Store packed certificate
+            CertificateStorage::set_certificate(&env, &params.certificate_id, &packed);
+
+            // Track certificate ownership
+            CertificateStorage::add_user_certificate(&env, &params.student, &params.certificate_id);
+            CertificateStorage::add_instructor_certificate(&env, &issuer, &params.certificate_id);
+
+            // Emit certificate minted event
+            CertificateEvents::emit_certificate_minted(&env, &issuer, &params.student, &metadata);
+        }
+
+        Ok(())
     }
 }
