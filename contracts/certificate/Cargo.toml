@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "*"
+soroban-sdk = { workspace = true }
 shared = { path = "../shared" }
 
 [dev-dependencies]
