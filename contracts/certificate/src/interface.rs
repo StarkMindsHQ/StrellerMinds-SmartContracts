@@ -226,4 +226,149 @@ pub trait CertificateTrait {
         issuer: Address,
         params_list: Vec<MintCertificateParams>,
     ) -> Result<(), CertificateError>;
+
+    /// Request certificate renewal
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `requester` - Address requesting renewal
+    /// * `certificate_id` - Certificate to renew
+    /// * `requested_extension` - Extension period in seconds
+    /// * `reason` - Reason for renewal request
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized or invalid
+    ///
+    /// # Authentication
+    /// * Requires authorization from certificate owner
+    fn request_certificate_renewal(
+        env: Env,
+        requester: Address,
+        certificate_id: BytesN<32>,
+        requested_extension: u64,
+        reason: String,
+    ) -> Result<(), CertificateError>;
+
+    /// Process renewal request (approve/reject)
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `approver` - Address processing the request
+    /// * `certificate_id` - Certificate ID
+    /// * `approved` - Whether to approve or reject
+    /// * `admin_reason` - Optional reason for decision
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized
+    ///
+    /// # Authentication
+    /// * Requires admin privileges
+    fn process_renewal_request(
+        env: Env,
+        approver: Address,
+        certificate_id: BytesN<32>,
+        approved: bool,
+        admin_reason: Option<String>,
+    ) -> Result<(), CertificateError>;
+
+    /// Extend certificate expiry (admin only)
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `admin` - Admin address
+    /// * `certificate_id` - Certificate to extend
+    /// * `extension_period` - Extension in seconds
+    /// * `reason` - Reason for extension
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized
+    ///
+    /// # Authentication
+    /// * Requires admin privileges
+    fn extend_certificate_expiry(
+        env: Env,
+        admin: Address,
+        certificate_id: BytesN<32>,
+        extension_period: u64,
+        reason: String,
+    ) -> Result<(), CertificateError>;
+
+    /// Bulk extend multiple certificates
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `admin` - Admin address
+    /// * `certificate_ids` - List of certificate IDs
+    /// * `new_expiry_date` - New expiry date for all certificates
+    /// * `reason` - Reason for bulk extension
+    ///
+    /// # Returns
+    /// * `Result<Vec<BytesN<32>>, CertificateError>` - Successfully updated certificate IDs
+    ///
+    /// # Authentication
+    /// * Requires admin privileges
+    fn bulk_extend_certificates(
+        env: Env,
+        admin: Address,
+        certificate_ids: Vec<BytesN<32>>,
+        new_expiry_date: u64,
+        reason: String,
+    ) -> Result<Vec<BytesN<32>>, CertificateError>;
+
+    /// Get expiry notifications for a user
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `user` - User address
+    ///
+    /// # Returns
+    /// * `Vec<ExpiryNotification>` - List of notifications
+    fn get_expiry_notifications(env: Env, user: Address) -> Vec<crate::types::ExpiryNotification>;
+
+    /// Acknowledge expiry notification
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `user` - User address
+    /// * `certificate_id` - Certificate ID
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful
+    ///
+    /// # Authentication
+    /// * Requires authorization from user
+    fn acknowledge_notification(
+        env: Env,
+        user: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<(), CertificateError>;
+
+    /// Get certificates expiring within specified time
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `within_seconds` - Time window in seconds
+    ///
+    /// # Returns
+    /// * `Vec<BytesN<32>>` - List of expiring certificate IDs
+    fn get_expiring_certificates(env: Env, within_seconds: u64) -> Vec<BytesN<32>>;
+
+    /// Update expired certificates status
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    ///
+    /// # Returns
+    /// * `Result<u32, CertificateError>` - Number of certificates updated
+    fn update_expired_certificates(env: Env) -> Result<u32, CertificateError>;
+
+    /// Get renewal request for certificate
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `certificate_id` - Certificate ID
+    ///
+    /// # Returns
+    /// * `Option<RenewalRequest>` - Renewal request if exists
+    fn get_renewal_request(env: Env, certificate_id: BytesN<32>) -> Option<crate::types::RenewalRequest>;
 }
