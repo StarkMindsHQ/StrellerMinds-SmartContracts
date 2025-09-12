@@ -83,6 +83,18 @@ pub enum DataKey {
     PendingApprovals(Address),
     /// Key for expired multi-sig requests cleanup
     ExpiredRequests(u64),
+    /// Key for course prerequisite definitions
+    CoursePrerequisites(String),
+    /// Key for prerequisite overrides by student and course
+    PrerequisiteOverride(Address, String),
+    /// Key for prerequisite violations log
+    PrerequisiteViolations(Address),
+    /// Key for course dependency graph
+    CourseDependencies(String),
+    /// Key for learning path recommendations
+    LearningPath(Address, String),
+    /// Key for prerequisite check cache
+    PrerequisiteCheckCache(Address, String),
 }
 
 /// User role definition
@@ -274,4 +286,122 @@ pub enum AuditAction {
     RequestExpired,
     CertificateIssued,
     ConfigUpdated,
+}
+
+/// Course prerequisite definition
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CoursePrerequisite {
+    pub course_id: String,
+    pub prerequisite_courses: Vec<PrerequisiteCourse>,
+    pub minimum_completion_percentage: u32, // Minimum % required for each prerequisite
+    pub enforce_order: bool, // Whether prerequisites must be completed in order
+    pub created_at: u64,
+    pub updated_at: u64,
+    pub created_by: Address,
+}
+
+/// Individual prerequisite course requirement
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrerequisiteCourse {
+    pub course_id: String,
+    pub minimum_percentage: u32, // Override global minimum if needed
+    pub required_certificate: bool, // Whether certificate is required or just progress
+    pub weight: u32, // Weight for weighted prerequisites (1-10)
+}
+
+/// Prerequisite check result
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrerequisiteCheckResult {
+    pub student: Address,
+    pub course_id: String,
+    pub eligible: bool,
+    pub missing_prerequisites: Vec<MissingPrerequisite>,
+    pub completed_prerequisites: Vec<CompletedPrerequisite>,
+    pub check_timestamp: u64,
+    pub override_applied: Option<PrerequisiteOverride>,
+}
+
+/// Missing prerequisite details
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MissingPrerequisite {
+    pub course_id: String,
+    pub current_percentage: u32,
+    pub required_percentage: u32,
+    pub has_certificate: bool,
+    pub requires_certificate: bool,
+    pub estimated_completion_time: Option<u64>, // In seconds
+}
+
+/// Completed prerequisite details
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompletedPrerequisite {
+    pub course_id: String,
+    pub completion_percentage: u32,
+    pub has_certificate: bool,
+    pub completion_date: Option<u64>,
+    pub certificate_id: Option<BytesN<32>>,
+}
+
+/// Admin override for prerequisites
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrerequisiteOverride {
+    pub student: Address,
+    pub course_id: String,
+    pub override_reason: String,
+    pub overridden_prerequisites: Vec<String>,
+    pub granted_by: Address,
+    pub granted_at: u64,
+    pub expires_at: Option<u64>, // Optional expiration
+    pub conditions: Option<String>, // Optional conditions for the override
+}
+
+/// Prerequisite violation attempt
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrerequisiteViolation {
+    pub student: Address,
+    pub attempted_course: String,
+    pub missing_prerequisites: Vec<String>,
+    pub violation_timestamp: u64,
+    pub attempted_by: Address, // Who tried to enroll the student
+}
+
+/// Course dependency graph node
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CourseDependencyNode {
+    pub course_id: String,
+    pub level: u32, // Depth level in dependency tree
+    pub direct_prerequisites: Vec<String>,
+    pub all_prerequisites: Vec<String>, // Flattened list including transitive deps
+    pub dependent_courses: Vec<String>, // Courses that depend on this one
+}
+
+/// Prerequisite enforcement policy
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PrerequisitePolicy {
+    Strict,      // All prerequisites must be met exactly
+    Flexible,    // Allow minor deviations (e.g., 95% instead of 100%)
+    Weighted,    // Use weighted scoring system
+    Progressive, // Allow enrollment with partial completion if actively progressing
+}
+
+/// Learning path recommendation
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LearningPath {
+    pub student: Address,
+    pub target_course: String,
+    pub recommended_sequence: Vec<String>,
+    pub estimated_total_time: u64, // In seconds
+    pub current_position: u32, // Index in the sequence
+    pub generated_at: u64,
+    pub last_updated: u64,
 }

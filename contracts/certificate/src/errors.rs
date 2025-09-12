@@ -54,4 +54,16 @@ pub enum CertificateError {
     InvalidApprovalThreshold = 33,
     TimeoutTooShort = 34,
     TimeoutTooLong = 35,
+    
+    // Prerequisite errors
+    PrerequisiteNotMet = 36,
+    PrerequisiteNotFound = 37,
+    PrerequisiteAlreadyExists = 38,
+    CircularDependency = 39,
+    InvalidPrerequisiteConfig = 40,
+    PrerequisiteOverrideNotFound = 41,
+    PrerequisiteOverrideExpired = 42,
+    InsufficientProgress = 43,
+    CertificateRequired = 44,
+    InvalidLearningPath = 45,
 }

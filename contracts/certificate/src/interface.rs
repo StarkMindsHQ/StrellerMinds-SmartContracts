@@ -496,8 +496,91 @@ pub trait CertificateTrait {
     ///
     /// # Arguments
     /// * `env` - The contract environment
+    /// * `admin` - Admin address
     ///
     /// # Returns
     /// * `Result<u32, CertificateError>` - Number of requests cleaned up
-    fn cleanup_expired_multisig_requests(env: Env) -> Result<u32, CertificateError>;
+    fn cleanup_expired_multisig_requests(env: Env, admin: Address) -> Result<u32, CertificateError>;
+
+    // === Prerequisite Management Methods ===
+
+    /// Define prerequisites for a course
+    fn define_prerequisites(
+        env: Env,
+        admin: Address,
+        course_prerequisite: crate::types::CoursePrerequisite,
+    ) -> Result<(), CertificateError>;
+
+    /// Check if student meets prerequisites for a course
+    fn check_prerequisites(
+        env: Env,
+        student: Address,
+        course_id: String,
+        progress_contract: Address,
+    ) -> Result<crate::types::PrerequisiteCheckResult, CertificateError>;
+
+    /// Grant prerequisite override for a student
+    fn grant_prerequisite_override(
+        env: Env,
+        admin: Address,
+        override_data: crate::types::PrerequisiteOverride,
+    ) -> Result<(), CertificateError>;
+
+    /// Revoke prerequisite override
+    fn revoke_prerequisite_override(
+        env: Env,
+        admin: Address,
+        student: Address,
+        course_id: String,
+        reason: String,
+    ) -> Result<(), CertificateError>;
+
+    /// Generate learning path for a student to reach target course
+    fn generate_learning_path(
+        env: Env,
+        student: Address,
+        target_course: String,
+        progress_contract: Address,
+    ) -> Result<crate::types::LearningPath, CertificateError>;
+
+    /// Get course dependency graph
+    fn get_dependency_graph(
+        env: Env,
+        course_id: String,
+    ) -> Option<crate::types::CourseDependencyNode>;
+
+    /// Validate course enrollment against prerequisites
+    fn validate_enrollment(
+        env: Env,
+        student: Address,
+        course_id: String,
+        enrolled_by: Address,
+        progress_contract: Address,
+    ) -> Result<(), CertificateError>;
+
+    /// Get prerequisites for a course
+    fn get_course_prerequisites(
+        env: Env,
+        course_id: String,
+    ) -> Option<crate::types::CoursePrerequisite>;
+
+    /// Get active prerequisite override for a student and course
+    fn get_prerequisite_override(
+        env: Env,
+        student: Address,
+        course_id: String,
+    ) -> Option<crate::types::PrerequisiteOverride>;
+
+    /// Get prerequisite violations for a student
+    fn get_prerequisite_violations(
+        env: Env,
+        student: Address,
+    ) -> Vec<crate::types::PrerequisiteViolation>;
+
+    /// Get learning path for a student
+    fn get_learning_path(
+        env: Env,
+        student: Address,
+        target_course: String,
+    ) -> Option<crate::types::LearningPath>;
 }
