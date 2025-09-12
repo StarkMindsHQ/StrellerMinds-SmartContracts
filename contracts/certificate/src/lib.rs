@@ -19,25 +19,35 @@ mod metadata_validation_tests;
 mod integration_tests;
 
 #[cfg(test)]
-mod expiry_tests;
-
-#[cfg(test)]
-mod expiry_integration_tests;
-
-#[cfg(test)]
 mod multisig_tests;
 
 #[cfg(test)]
 mod multisig_integration_tests;
 
+#[cfg(test)]
+mod prerequisite_tests;
+
+#[cfg(test)]
+mod prerequisite_integration_tests;
+
+#[cfg(test)]
+mod expiry_tests;
+
+#[cfg(test)]
+mod expiry_integration_tests;
+
+mod multisig;
+mod prerequisites;
+
 use errors::CertificateError;
 use events::CertificateEvents;
 use interface::CertificateTrait;
 use storage::CertificateStorage;
-use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, PackedCertificateData, ExtensionParams, BulkExpiryOperation, ExpiryNotification, RenewalRequest, MultiSigConfig, MultiSigCertificateRequest, MultiSigAuditEntry};
+use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, PackedCertificateData, ExtensionParams, BulkExpiryOperation, ExpiryNotification, RenewalRequest, MultiSigConfig, MultiSigCertificateRequest, MultiSigAuditEntry, CoursePrerequisite, PrerequisiteCheckResult, PrerequisiteOverride, LearningPath, CourseDependencyNode, PrerequisiteViolation};
 use validation::MetadataValidator;
 use expiry_management::ExpiryManager;
 use multisig::MultiSigManager;
+use prerequisites::PrerequisiteManager;
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
@@ -780,6 +790,108 @@ fn get_multisig_audit_trail(env: Env, request_id: BytesN<32>) -> Vec<MultiSigAud
 MultiSigManager::get_audit_trail(&env, &request_id)
 }
 
-fn cleanup_expired_multisig_requests(env: Env) -> Result<u32, CertificateError> {
+fn cleanup_expired_multisig_requests(env: Env, admin: Address) -> Result<u32, CertificateError> {
 MultiSigManager::cleanup_expired_requests(&env)
+}
+
+// === Prerequisite Management Methods ===
+
+fn define_prerequisites(
+    env: Env,
+    admin: Address,
+    course_prerequisite: CoursePrerequisite,
+) -> Result<(), CertificateError> {
+    PrerequisiteManager::define_prerequisites(&env, &admin, course_prerequisite)
+}
+
+fn check_prerequisites(
+    env: Env,
+    student: Address,
+    course_id: String,
+    progress_contract: Address,
+) -> Result<PrerequisiteCheckResult, CertificateError> {
+    PrerequisiteManager::check_prerequisites(&env, &student, &course_id, &progress_contract)
+}
+
+fn grant_prerequisite_override(
+    env: Env,
+    admin: Address,
+    override_data: PrerequisiteOverride,
+) -> Result<(), CertificateError> {
+    PrerequisiteManager::grant_prerequisite_override(&env, &admin, override_data)
+}
+
+fn revoke_prerequisite_override(
+    env: Env,
+    admin: Address,
+    student: Address,
+    course_id: String,
+    reason: String,
+) -> Result<(), CertificateError> {
+    PrerequisiteManager::revoke_prerequisite_override(&env, &admin, &student, &course_id, reason)
+}
+
+fn generate_learning_path(
+    env: Env,
+    student: Address,
+    target_course: String,
+    progress_contract: Address,
+) -> Result<LearningPath, CertificateError> {
+    PrerequisiteManager::generate_learning_path(&env, &student, &target_course, &progress_contract)
+}
+
+fn get_dependency_graph(
+    env: Env,
+    course_id: String,
+) -> Option<CourseDependencyNode> {
+    PrerequisiteManager::get_dependency_graph(&env, &course_id)
+}
+
+fn validate_enrollment(
+    env: Env,
+    student: Address,
+    course_id: String,
+    enrolled_by: Address,
+    progress_contract: Address,
+) -> Result<(), CertificateError> {
+    PrerequisiteManager::validate_enrollment(&env, &student, &course_id, &enrolled_by, &progress_contract)
+}
+
+fn get_course_prerequisites(
+    env: Env,
+    course_id: String,
+) -> Option<CoursePrerequisite> {
+    env.storage()
+        .persistent()
+        .get(&types::DataKey::CoursePrerequisites(course_id))
+}
+
+fn get_prerequisite_override(
+    env: Env,
+    student: Address,
+    course_id: String,
+) -> Option<PrerequisiteOverride> {
+    env.storage()
+        .persistent()
+        .get(&types::DataKey::PrerequisiteOverride(student, course_id))
+}
+
+fn get_prerequisite_violations(
+    env: Env,
+    student: Address,
+) -> Vec<PrerequisiteViolation> {
+    env.storage()
+        .persistent()
+        .get(&types::DataKey::PrerequisiteViolations(student))
+        .unwrap_or_else(|| Vec::new(&env))
+}
+
+fn get_learning_path(
+    env: Env,
+    student: Address,
+    target_course: String,
+) -> Option<LearningPath> {
+    env.storage()
+        .persistent()
+        .get(&types::DataKey::LearningPath(student, target_course))
 }

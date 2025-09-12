@@ -351,4 +351,94 @@ impl CertificateEvents {
         let data = (admin.clone(), required_approvals, approvers_count, env.ledger().timestamp());
         env.events().publish(topics, data);
     }
+
+    /// Emits event when course prerequisites are defined
+    pub fn emit_prerequisite_defined(
+        env: &Env,
+        course_id: &String,
+        admin: &Address,
+        prerequisite_count: u32,
+    ) {
+        let topics = (Symbol::new(env, "prerequisite_defined"), course_id);
+        let data = (admin.clone(), prerequisite_count, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when prerequisite check is performed
+    pub fn emit_prerequisite_checked(
+        env: &Env,
+        student: &Address,
+        course_id: &String,
+        eligible: bool,
+        missing_count: u32,
+    ) {
+        let topics = (Symbol::new(env, "prerequisite_checked"), student, course_id);
+        let data = (eligible, missing_count, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when prerequisite override is granted
+    pub fn emit_prerequisite_override_granted(
+        env: &Env,
+        student: &Address,
+        course_id: &String,
+        admin: &Address,
+        reason: &String,
+    ) {
+        let topics = (Symbol::new(env, "prerequisite_override_granted"), student, course_id);
+        let data = (admin.clone(), reason.clone(), env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when prerequisite override is revoked
+    pub fn emit_prerequisite_override_revoked(
+        env: &Env,
+        student: &Address,
+        course_id: &String,
+        admin: &Address,
+        reason: &String,
+    ) {
+        let topics = (Symbol::new(env, "prerequisite_override_revoked"), student, course_id);
+        let data = (admin.clone(), reason.clone(), env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when prerequisite violation occurs
+    pub fn emit_prerequisite_violation(
+        env: &Env,
+        student: &Address,
+        course_id: &String,
+        attempted_by: &Address,
+        missing_count: u32,
+    ) {
+        let topics = (Symbol::new(env, "prerequisite_violation"), student, course_id);
+        let data = (attempted_by.clone(), missing_count, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when learning path is generated
+    pub fn emit_learning_path_generated(
+        env: &Env,
+        student: &Address,
+        target_course: &String,
+        path_length: u32,
+        estimated_time: u64,
+    ) {
+        let topics = (Symbol::new(env, "learning_path_generated"), student, target_course);
+        let data = (path_length, estimated_time, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when course enrollment is validated
+    pub fn emit_enrollment_validated(
+        env: &Env,
+        student: &Address,
+        course_id: &String,
+        enrolled_by: &Address,
+        validation_result: bool,
+    ) {
+        let topics = (Symbol::new(env, "enrollment_validated"), student, course_id);
+        let data = (enrolled_by.clone(), validation_result, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
 }
