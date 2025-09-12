@@ -73,6 +73,16 @@ pub enum DataKey {
     ExpiringCertificates(u64), // Timestamp bucket
     /// Key for bulk operation tracking
     BulkOperations(BytesN<32>),
+    /// Key for multi-signature certificate requests
+    MultiSigRequest(BytesN<32>),
+    /// Key for multi-signature configurations by course
+    MultiSigConfig(String),
+    /// Key for multi-signature audit trail
+    MultiSigAudit(BytesN<32>),
+    /// Key for pending multi-sig requests by approver
+    PendingApprovals(Address),
+    /// Key for expired multi-sig requests cleanup
+    ExpiredRequests(u64),
 }
 
 /// User role definition
@@ -175,4 +185,93 @@ pub struct ExtensionParams {
     pub extension_period: u64, // Extension in seconds
     pub reason: String,
     pub max_renewals: Option<u32>, // Optional limit on renewals
+}
+
+/// Multi-signature certificate request
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MultiSigCertificateRequest {
+    pub request_id: BytesN<32>,
+    pub certificate_params: MintCertificateParams,
+    pub requester: Address,
+    pub required_approvals: u32,
+    pub current_approvals: u32,
+    pub approvers: Vec<Address>,
+    pub approval_records: Vec<ApprovalRecord>,
+    pub status: MultiSigRequestStatus,
+    pub created_at: u64,
+    pub expires_at: u64,
+    pub reason: String,
+    pub priority: CertificatePriority,
+}
+
+/// Individual approval record
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ApprovalRecord {
+    pub approver: Address,
+    pub approved: bool,
+    pub timestamp: u64,
+    pub signature_hash: Option<BytesN<32>>,
+    pub comments: String,
+}
+
+/// Multi-signature request status
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MultiSigRequestStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Expired,
+    Executed,
+}
+
+/// Certificate priority levels for multi-sig requirements
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CertificatePriority {
+    Standard,    // No multi-sig required
+    Premium,     // 2 approvals required
+    Enterprise,  // 3 approvals required
+    Institutional, // 5 approvals required
+}
+
+/// Multi-signature configuration
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MultiSigConfig {
+    pub course_id: String,
+    pub required_approvals: u32,
+    pub authorized_approvers: Vec<Address>,
+    pub timeout_duration: u64, // In seconds
+    pub priority: CertificatePriority,
+    pub auto_execute: bool,
+}
+
+/// Audit trail entry for multi-sig operations
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MultiSigAuditEntry {
+    pub request_id: BytesN<32>,
+    pub action: AuditAction,
+    pub actor: Address,
+    pub timestamp: u64,
+    pub details: String,
+    pub previous_status: Option<MultiSigRequestStatus>,
+    pub new_status: Option<MultiSigRequestStatus>,
+}
+
+/// Audit action types
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AuditAction {
+    RequestCreated,
+    ApprovalGranted,
+    ApprovalRevoked,
+    RequestApproved,
+    RequestRejected,
+    RequestExpired,
+    CertificateIssued,
+    ConfigUpdated,
 }

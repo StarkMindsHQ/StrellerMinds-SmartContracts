@@ -265,4 +265,90 @@ impl CertificateEvents {
         let data = (user.clone(), notification_type_str, env.ledger().timestamp());
         env.events().publish(topics, data);
     }
+
+    /// Emits event when a multi-signature certificate request is created
+    pub fn emit_multisig_request_created(
+        env: &Env,
+        request_id: &BytesN<32>,
+        requester: &Address,
+        course_id: &String,
+    ) {
+        let topics = (Symbol::new(env, "multisig_request_created"), request_id);
+        let data = (requester.clone(), course_id.clone(), env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a multi-signature request receives approval
+    pub fn emit_multisig_approval_granted(
+        env: &Env,
+        request_id: &BytesN<32>,
+        approver: &Address,
+        current_approvals: u32,
+        required_approvals: u32,
+    ) {
+        let topics = (Symbol::new(env, "multisig_approval_granted"), request_id);
+        let data = (approver.clone(), current_approvals, required_approvals, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a multi-signature request is rejected
+    pub fn emit_multisig_request_rejected(
+        env: &Env,
+        request_id: &BytesN<32>,
+        rejector: &Address,
+        reason: &String,
+    ) {
+        let topics = (Symbol::new(env, "multisig_request_rejected"), request_id);
+        let data = (rejector.clone(), reason.clone(), env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a multi-signature request is fully approved
+    pub fn emit_multisig_request_approved(
+        env: &Env,
+        request_id: &BytesN<32>,
+        certificate_id: &BytesN<32>,
+        final_approvals: u32,
+    ) {
+        let topics = (Symbol::new(env, "multisig_request_approved"), request_id);
+        let data = (certificate_id.clone(), final_approvals, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a multi-signature request expires
+    pub fn emit_multisig_request_expired(
+        env: &Env,
+        request_id: &BytesN<32>,
+        certificate_id: &BytesN<32>,
+    ) {
+        let topics = (Symbol::new(env, "multisig_request_expired"), request_id);
+        let data = (certificate_id.clone(), env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when a certificate is issued via multi-signature approval
+    pub fn emit_multisig_certificate_issued(
+        env: &Env,
+        request_id: &BytesN<32>,
+        certificate_id: &BytesN<32>,
+        student: &Address,
+        approvers: &Vec<Address>,
+    ) {
+        let topics = (Symbol::new(env, "multisig_certificate_issued"), request_id);
+        let data = (certificate_id.clone(), student.clone(), approvers.len() as u32, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
+
+    /// Emits event when multi-signature configuration is updated
+    pub fn emit_multisig_config_updated(
+        env: &Env,
+        course_id: &String,
+        admin: &Address,
+        required_approvals: u32,
+        approvers_count: u32,
+    ) {
+        let topics = (Symbol::new(env, "multisig_config_updated"), course_id);
+        let data = (admin.clone(), required_approvals, approvers_count, env.ledger().timestamp());
+        env.events().publish(topics, data);
+    }
 }

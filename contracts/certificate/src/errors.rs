@@ -38,4 +38,20 @@ pub enum CertificateError {
     
     // Event errors
     EventError = 21,
+    
+    // Multi-signature errors
+    MultiSigRequestNotFound = 22,
+    MultiSigRequestAlreadyExists = 23,
+    MultiSigRequestExpired = 24,
+    MultiSigRequestAlreadyApproved = 25,
+    MultiSigRequestAlreadyRejected = 26,
+    MultiSigRequestAlreadyExecuted = 27,
+    InsufficientApprovals = 28,
+    ApproverNotAuthorized = 29,
+    ApprovalAlreadyExists = 30,
+    InvalidMultiSigConfig = 31,
+    MultiSigConfigNotFound = 32,
+    InvalidApprovalThreshold = 33,
+    TimeoutTooShort = 34,
+    TimeoutTooLong = 35,
 }

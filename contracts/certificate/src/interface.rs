@@ -371,4 +371,133 @@ pub trait CertificateTrait {
     /// # Returns
     /// * `Option<RenewalRequest>` - Renewal request if exists
     fn get_renewal_request(env: Env, certificate_id: BytesN<32>) -> Option<crate::types::RenewalRequest>;
+
+    /// Configure multi-signature requirements for a course
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `admin` - Admin address
+    /// * `config` - Multi-signature configuration
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized
+    ///
+    /// # Authentication
+    /// * Requires admin privileges
+    fn configure_multisig(
+        env: Env,
+        admin: Address,
+        config: crate::types::MultiSigConfig,
+    ) -> Result<(), CertificateError>;
+
+    /// Create a multi-signature certificate request
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `requester` - Address requesting the certificate
+    /// * `params` - Certificate parameters
+    /// * `reason` - Reason for the request
+    ///
+    /// # Returns
+    /// * `Result<BytesN<32>, CertificateError>` - Request ID if successful, Error if unauthorized
+    ///
+    /// # Authentication
+    /// * Requires IssueCertificate permission
+    fn create_multisig_request(
+        env: Env,
+        requester: Address,
+        params: MintCertificateParams,
+        reason: String,
+    ) -> Result<BytesN<32>, CertificateError>;
+
+    /// Approve or reject a multi-signature certificate request
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `approver` - Address of the approver
+    /// * `request_id` - Request ID to approve/reject
+    /// * `approved` - Whether to approve (true) or reject (false)
+    /// * `comments` - Comments for the approval/rejection
+    /// * `signature_hash` - Optional signature hash for verification
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized
+    ///
+    /// # Authentication
+    /// * Requires approver to be in authorized approvers list
+    fn process_multisig_approval(
+        env: Env,
+        approver: Address,
+        request_id: BytesN<32>,
+        approved: bool,
+        comments: String,
+        signature_hash: Option<BytesN<32>>,
+    ) -> Result<(), CertificateError>;
+
+    /// Execute certificate issuance after multi-signature approval
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `executor` - Address executing the request
+    /// * `request_id` - Request ID to execute
+    ///
+    /// # Returns
+    /// * `Result<(), CertificateError>` - Ok if successful, Error if unauthorized or insufficient approvals
+    ///
+    /// # Authentication
+    /// * Requires IssueCertificate permission
+    fn execute_multisig_request(
+        env: Env,
+        executor: Address,
+        request_id: BytesN<32>,
+    ) -> Result<(), CertificateError>;
+
+    /// Get multi-signature configuration for a course
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `course_id` - Course ID
+    ///
+    /// # Returns
+    /// * `Option<MultiSigConfig>` - Configuration if exists
+    fn get_multisig_config(env: Env, course_id: String) -> Option<crate::types::MultiSigConfig>;
+
+    /// Get multi-signature request details
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `request_id` - Request ID
+    ///
+    /// # Returns
+    /// * `Option<MultiSigCertificateRequest>` - Request details if exists
+    fn get_multisig_request(env: Env, request_id: BytesN<32>) -> Option<crate::types::MultiSigCertificateRequest>;
+
+    /// Get pending multi-signature requests for an approver
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `approver` - Approver address
+    ///
+    /// # Returns
+    /// * `Vec<BytesN<32>>` - List of pending request IDs
+    fn get_pending_approvals(env: Env, approver: Address) -> Vec<BytesN<32>>;
+
+    /// Get audit trail for a multi-signature request
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `request_id` - Request ID
+    ///
+    /// # Returns
+    /// * `Vec<MultiSigAuditEntry>` - Audit trail entries
+    fn get_multisig_audit_trail(env: Env, request_id: BytesN<32>) -> Vec<crate::types::MultiSigAuditEntry>;
+
+    /// Clean up expired multi-signature requests
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    ///
+    /// # Returns
+    /// * `Result<u32, CertificateError>` - Number of requests cleaned up
+    fn cleanup_expired_multisig_requests(env: Env) -> Result<u32, CertificateError>;
 }
