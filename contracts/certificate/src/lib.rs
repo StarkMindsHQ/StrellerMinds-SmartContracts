@@ -7,6 +7,7 @@ mod storage;
 mod types;
 mod validation;
 mod expiry_management;
+mod multisig;
 
 #[cfg(test)]
 mod test;
@@ -23,13 +24,20 @@ mod expiry_tests;
 #[cfg(test)]
 mod expiry_integration_tests;
 
+#[cfg(test)]
+mod multisig_tests;
+
+#[cfg(test)]
+mod multisig_integration_tests;
+
 use errors::CertificateError;
 use events::CertificateEvents;
 use interface::CertificateTrait;
 use storage::CertificateStorage;
-use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, PackedCertificateData, ExtensionParams, BulkExpiryOperation, ExpiryNotification, RenewalRequest};
+use types::{CertificateMetadata, CertificateStatus, MetadataUpdateEntry, MintCertificateParams, PackedCertificateData, ExtensionParams, BulkExpiryOperation, ExpiryNotification, RenewalRequest, MultiSigConfig, MultiSigCertificateRequest, MultiSigAuditEntry};
 use validation::MetadataValidator;
 use expiry_management::ExpiryManager;
+use multisig::MultiSigManager;
 
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
@@ -701,4 +709,77 @@ fn get_renewal_request(env: Env, certificate_id: BytesN<32>) -> Option<RenewalRe
 env.storage()
     .persistent()
     .get(&types::DataKey::RenewalRequest(certificate_id))
+}
+
+fn configure_multisig(
+env: Env,
+admin: Address,
+config: MultiSigConfig,
+) -> Result<(), CertificateError> {
+let _guard = ReentrancyLock::new(&env);
+admin.require_auth();
+
+MultiSigManager::configure_multisig(&env, &admin, config)
+}
+
+fn create_multisig_request(
+env: Env,
+requester: Address,
+params: MintCertificateParams,
+reason: String,
+) -> Result<BytesN<32>, CertificateError> {
+let _guard = ReentrancyLock::new(&env);
+requester.require_auth();
+
+MultiSigManager::create_multisig_request(&env, &requester, params, reason)
+}
+
+fn process_multisig_approval(
+env: Env,
+approver: Address,
+request_id: BytesN<32>,
+approved: bool,
+comments: String,
+signature_hash: Option<BytesN<32>>,
+) -> Result<(), CertificateError> {
+let _guard = ReentrancyLock::new(&env);
+approver.require_auth();
+
+MultiSigManager::process_approval(&env, &approver, &request_id, approved, comments, signature_hash)
+}
+
+fn execute_multisig_request(
+env: Env,
+executor: Address,
+request_id: BytesN<32>,
+) -> Result<(), CertificateError> {
+let _guard = ReentrancyLock::new(&env);
+executor.require_auth();
+
+// Check if executor has permission to issue certificates
+AccessControl::require_permission(&env, &executor, &Permission::IssueCertificate)
+    .map_err(|_| CertificateError::Unauthorized)?;
+
+let request = MultiSigManager::get_request(&env, &request_id)?;
+MultiSigManager::execute_certificate_issuance(&env, &request)
+}
+
+fn get_multisig_config(env: Env, course_id: String) -> Option<MultiSigConfig> {
+MultiSigManager::get_config(&env, &course_id).ok()
+}
+
+fn get_multisig_request(env: Env, request_id: BytesN<32>) -> Option<MultiSigCertificateRequest> {
+MultiSigManager::get_request(&env, &request_id).ok()
+}
+
+fn get_pending_approvals(env: Env, approver: Address) -> Vec<BytesN<32>> {
+MultiSigManager::get_pending_approvals(&env, &approver)
+}
+
+fn get_multisig_audit_trail(env: Env, request_id: BytesN<32>) -> Vec<MultiSigAuditEntry> {
+MultiSigManager::get_audit_trail(&env, &request_id)
+}
+
+fn cleanup_expired_multisig_requests(env: Env) -> Result<u32, CertificateError> {
+MultiSigManager::cleanup_expired_requests(&env)
 }
