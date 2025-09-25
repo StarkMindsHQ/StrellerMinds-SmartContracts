@@ -1,6 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Map, Symbol};
+use shared::reentrancy_guard::ReentrancyLock;
 
 #[derive(Clone)]
 #[contracttype]
@@ -32,6 +33,7 @@ impl ProgressTracker {
         module_id: Symbol,
         percent: u32,
     ) {
+        let _guard = ReentrancyLock::new(&env);
         if percent > 100 {
             panic!("percentage cannot be more than 100");
         }

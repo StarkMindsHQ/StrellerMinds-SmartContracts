@@ -10,6 +10,9 @@ mod incentive_tests;
 #[cfg(test)]
 mod incentive_integration_tests;
 
+#[cfg(test)]
+mod reentrancy_tests;
+
 use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, Env, Symbol, String, Vec};
 use shared::reentrancy_guard::ReentrancyLock;
 use types::{
@@ -46,11 +49,10 @@ pub enum Error {
 #[contractimpl]
 impl Token {
     pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
-        let _guard = ReentrancyLock::new(&env);
         if admin_exists(&env) {
             return Err(Error::AlreadyInitialized);
         }
-        
+
         admin.require_auth();
         env.storage().instance().set(&AdminKey, &admin);
         
@@ -61,12 +63,10 @@ impl Token {
     }
 
     pub fn initialize_incentives(env: Env, admin: Address) -> Result<(), Error> {
-        let _guard = ReentrancyLock::new(&env);
         IncentiveManager::initialize(&env, &admin)
     }
 
     pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), Error> {
-        let _guard = ReentrancyLock::new(&env);
         let admin = get_admin(&env)?;
         admin.require_auth();
         
@@ -148,7 +148,6 @@ impl Token {
         admin: Address,
         achievement: Achievement,
     ) -> Result<String, Error> {
-        let _guard = ReentrancyLock::new(&env);
         IncentiveManager::create_achievement(&env, &admin, achievement)
     }
 
@@ -162,7 +161,6 @@ impl Token {
         admin: Address,
         pool: StakingPool,
     ) -> Result<String, Error> {
-        let _guard = ReentrancyLock::new(&env);
         IncentiveManager::create_staking_pool(&env, &admin, pool)
     }
 
