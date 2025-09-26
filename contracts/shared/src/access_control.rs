@@ -24,7 +24,7 @@ impl AccessControl {
 
         // Grant SuperAdmin role to the initial admin
         let super_admin_role = RolePermissions::create_role_with_default_permissions(
-            env.clone(), 
+            &env, 
             RoleLevel::SuperAdmin,
             admin.clone(),
             env.ledger().timestamp(),
@@ -68,7 +68,7 @@ impl AccessControl {
 
         // Create role with default permissions
         let role = RolePermissions::create_role_with_default_permissions(
-            env.clone(),
+            &env,
             role_level,
             granter.clone(),
             env.ledger().timestamp(),
@@ -282,7 +282,7 @@ impl AccessControl {
             .ok_or(AccessControlError::RoleNotFound)?;
 
         // Add permission
-        RolePermissions::add_permission(env.clone(), &mut user_role, permission.clone());
+        RolePermissions::add_permission(&mut user_role, permission.clone());
 
         // Update role
         AccessControlStorage::set_role(env, user, &user_role);
@@ -313,7 +313,7 @@ impl AccessControl {
             .ok_or(AccessControlError::RoleNotFound)?;
 
         // Remove permission
-        RolePermissions::remove_permission(env.clone(), &mut user_role, permission);
+        RolePermissions::remove_permission(&mut user_role, permission);
 
         // Update role
         AccessControlStorage::set_role(env, user, &user_role);
