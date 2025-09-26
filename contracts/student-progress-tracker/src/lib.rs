@@ -84,3 +84,6 @@ impl ProgressTracker {
             .expect("admin not set")
     }
 }
+
+#[cfg(test)]
+mod test;

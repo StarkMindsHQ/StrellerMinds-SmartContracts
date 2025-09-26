@@ -4,30 +4,30 @@ StarkMinds-SmartContracts is the dedicated repository for all Stellar smart cont
 
 ## Features
 
-- Smart contract development using Soroban on Stellar  
-- Secure, efficient on-chain logic for education and credentialing  
-- Comprehensive testing suite for contract functionality  
+- Smart contract development using Soroban on Stellar
+- Secure, efficient on-chain logic for education and credentialing
+- Comprehensive testing suite for contract functionality
 - Modular and scalable design for future enhancements
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version)  
-- [Stellar CLI & Soroban CLI](https://soroban.stellar.org/docs/getting-started)  
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable version)
+- [Stellar CLI & Soroban CLI](https://soroban.stellar.org/docs/getting-started)
 - Docker (optional, for running a local Stellar testnet)
 
 ### Installation
 
-1. **Clone the Repository:**  
+1. **Clone the Repository:**
    ```bash
    git clone https://github.com/your-username/starkminds-smartcontracts.git
    ```
-2. **Navigate to the Repository:**  
+2. **Navigate to the Repository:**
    ```bash
    cd starkminds-smartcontracts
    ```
-3. **Build the Smart Contracts:**  
+3. **Build the Smart Contracts:**
    ```bash
    cargo build --release
    ```
@@ -39,20 +39,35 @@ Run tests to ensure everything is functioning as expected:
 cargo test
 ```
 
-### Deployment
+### Linting and Formatting
 
+To maintain code quality and consistency, run the following commands locally before committing:
+
+- **Format code:**
+  ```bash
+  cargo fmt
+  ```
+
+- **Check for linting issues:**
+  ```bash
+  cargo clippy
+  ```
+
+These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
+
+### Deployment
 Deployment instructions will be updated as integration with the Stellar network advances. For now, please refer to the [Soroban documentation](https://soroban.stellar.org/docs) for deployment details.
 
 ## Contribution Guidelines
 
 We welcome contributions to improve our smart contracts!
 
-1. Fork the repository.  
-2. Create a new branch:  
+1. Fork the repository.
+2. Create a new branch:
    ```bash
    git checkout -b feature/your-feature-name
    ```
-3. Make your changes with clear, descriptive commit messages.  
+3. Make your changes with clear, descriptive commit messages.
 4. Push your branch and open a pull request with a detailed description of your changes.
 
 Ensure that your contributions adhere to our coding standards and include appropriate tests.

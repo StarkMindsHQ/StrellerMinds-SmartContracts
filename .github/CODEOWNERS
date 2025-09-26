@@ -1,0 +1,30 @@
+# Global code owners - maintainer is automatically requested for review on all PRs
+* @LaGodxy
+
+# Core contracts
+/contracts/analytics/ @LaGodxy
+/contracts/certificate/ @LaGodxy
+/contracts/mint-batch-certificates/ @LaGodxy
+/contracts/mobile-optimizer/ @LaGodxy
+/contracts/progress/ @LaGodxy
+/contracts/proxy/ @LaGodxy
+/contracts/search/ @LaGodxy
+/contracts/shared/ @LaGodxy
+/contracts/student-progress-tracker/ @LaGodxy
+/contracts/token/ @LaGodxy
+
+# Documentation
+/docs/ @LaGodxy
+*.md @LaGodxy
+
+# CI/CD and Infrastructure
+/.github/ @LaGodxy
+/ci/ @LaGodxy
+Cargo.toml @LaGodxy
+Cargo.lock @LaGodxy
+
+# Security-sensitive files require maintainer review
+/contracts/shared/src/rbac.rs @LaGodxy
+/contracts/shared/src/reentrancy* @LaGodxy
+/contracts/*/src/*security* @LaGodxy
+/contracts/*/src/*auth* @LaGodxy

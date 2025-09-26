@@ -11,6 +11,7 @@ mod test;        // Test utilities
 use certificate::CertificateData;
 use error::{Error, MintResult};
 use crate::events::emit_error_event;
+// use shared::reentrancy_guard::ReentrancyLock;
 
 #[contract]
 pub struct CertificateContract;
@@ -72,6 +73,7 @@ impl CertificateContract {
         owner: Address,
         certificate: CertificateData
     ) -> Result<(), Error> {
+        // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         
         if !auth::is_issuer(env, &issuer) {
@@ -126,20 +128,20 @@ impl CertificateContract {
     ) -> Vec<(Vec<Address>, Vec<CertificateData>)> {
         let mut batches = Vec::new(env);
         let mut start = 0u32;
-        let total = certificates.len() as u32;
+         let total = certificates.len();
         while start < total {
             let remaining = total - start;
-            let batch_owners = owners.slice(start, total);
-            let batch_certs = certificates.slice(start, total);
+            let batch_owners = owners.slice(start..total);
+            let batch_certs = certificates.slice(start..total);
             let (_, optimal_size) = Self::estimate_gas_for_batch(
                 env,
-                Address::generate(env), // dummy issuer for estimation
+                Address::from_str(&env, "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"), // dummy issuer for estimation
                 batch_owners.clone(),
                 batch_certs.clone(),
                 target_gas_limit,
             );
             let end = (start + optimal_size).min(total);
-            batches.push_back((owners.slice(start, end), certificates.slice(start, end)));
+            batches.push_back((owners.slice(start..end), certificates.slice(start..end)));
             start = end;
         }
         batches
@@ -170,6 +172,7 @@ impl CertificateContract {
         issuer: Address,
         certificate_id: u64
     ) -> Result<(), Error> {
+        // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         
         if !auth::is_issuer(env, &issuer) {
@@ -202,9 +205,9 @@ impl CertificateContract {
 
     /// Estimate gas usage for a given batch size and return the optimal batch size for a target gas limit
     pub fn estimate_gas_for_batch(
-        env: &Env,
-        issuer: Address,
-        owners: Vec<Address>,
+        _env: &Env,
+        _issuer: Address,
+        _owners: Vec<Address>,
         certificates: Vec<CertificateData>,
         target_gas_limit: u64
     ) -> (u64, u32) {
@@ -220,8 +223,13 @@ impl CertificateContract {
         let mut optimal_batch_size = batch_size;
         if estimated_gas > target_gas_limit {
             optimal_batch_size = ((target_gas_limit - base_gas) / per_certificate_gas) as u32;
+            // Ensure optimal_batch_size is at least 1 and not more than the original batch_size
+            optimal_batch_size = optimal_batch_size.max(1).min(batch_size);
         }
-        (estimated_gas, optimal_batch_size)
+        
+        // Recalculate estimated gas for the optimal batch size
+        let final_estimated_gas = base_gas + per_certificate_gas * optimal_batch_size as u64;
+        (final_estimated_gas, optimal_batch_size)
     }
 }
 
@@ -249,6 +257,7 @@ impl CertificateContract {
         owners: Vec<Address>,
         certificates: Vec<CertificateData>
     ) -> Vec<MintResult> {
+        // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         if !auth::is_issuer(env, &issuer) {
             emit_error_event(env, "mint_batch_certificates", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
