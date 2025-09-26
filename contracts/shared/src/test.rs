@@ -7,6 +7,7 @@ use crate::{
     permissions::RolePermissions,
     storage::AccessControlStorage,
     events::AccessControlEvents,
+    reentrancy_guard::{ReentrancyGuard, ReentrancyLock},
 };
 use soroban_sdk::{
     testutils::{Address as _, MockAuth, MockAuthInvoke},
@@ -521,4 +522,84 @@ fn test_default_role_permissions() {
     assert!(permissions.contains(&Permission::InitializeContract));
     assert!(permissions.contains(&Permission::UpgradeContract));
     assert!(permissions.contains(&Permission::EmergencyPause));
+}
+
+// ReentrancyGuard tests
+#[test]
+fn test_reentrancy_guard_basic() {
+    let env = Env::default();
+    
+    // First call should succeed
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+    
+    // Second call should also succeed after exit
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+}
+
+#[test]
+#[should_panic(expected = "ReentrancyGuard: reentrant call")]
+fn test_reentrancy_guard_prevents_reentrancy() {
+    let env = Env::default();
+    
+    // First call should succeed
+    ReentrancyGuard::enter(&env);
+    
+    // Second call should panic
+    ReentrancyGuard::enter(&env);
+}
+
+#[test]
+fn test_reentrancy_lock_raii() {
+    let env = Env::default();
+    
+    // Test RAII-style guard
+    {
+        let _lock = ReentrancyLock::new(&env);
+        // Lock should be active here
+        assert!(env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
+    }
+    
+    // Lock should be automatically released when _lock goes out of scope
+    assert!(!env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
+}
+
+#[test]
+#[should_panic(expected = "ReentrancyGuard: reentrant call")]
+fn test_reentrancy_lock_prevents_reentrancy() {
+    let env = Env::default();
+    
+    // First lock should succeed
+    let _lock1 = ReentrancyLock::new(&env);
+    
+    // Second lock should panic
+    let _lock2 = ReentrancyLock::new(&env);
+}
+
+#[test]
+fn test_reentrancy_guard_multiple_enter_exit() {
+    let env = Env::default();
+    
+    // Multiple enter/exit cycles should work
+    for _ in 0..5 {
+        ReentrancyGuard::enter(&env);
+        ReentrancyGuard::exit(&env);
+    }
+    
+    // Should be able to enter again after all exits
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+}
+
+#[test]
+fn test_reentrancy_guard_exit_without_enter() {
+    let env = Env::default();
+    
+    // Exit without enter should not panic (just remove non-existent key)
+    ReentrancyGuard::exit(&env);
+    
+    // Should still be able to enter after
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
 } 
