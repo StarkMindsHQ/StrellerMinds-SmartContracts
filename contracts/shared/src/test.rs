@@ -10,8 +10,8 @@ use crate::{
     reentrancy_guard::{ReentrancyGuard, ReentrancyLock},
 };
 use soroban_sdk::{
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
-    vec, Address, Env,
+    testutils::{Address as _, MockAuth, MockAuthInvoke, Ledger},
+    vec, Address, Env, IntoVal, Vec,
 };
 
 // Test helper function to create a test environment with AccessControl
@@ -40,7 +40,7 @@ fn test_initialize() {
 
     // Verify admin is set correctly
     let admin_result = AccessControl::get_admin(&env);
-    assert_eq!(admin_result, Ok(admin));
+    assert_eq!(admin_result, Ok(admin.clone()));
 
     // Test re-initialization (should fail)
     let result = AccessControl::initialize(&env, &admin);
@@ -77,10 +77,9 @@ fn test_grant_role() {
 fn test_grant_custom_role() {
     let (env, admin, user1, _) = setup_test();
 
-    let custom_permissions = vec![
-        Permission::IssueCertificate,
-        Permission::ViewProgress,
-    ];
+      let mut custom_permissions = Vec::new(&env);
+      custom_permissions.push_back(Permission::IssueCertificate);
+      custom_permissions.push_back(Permission::ViewProgress);
 
     env.mock_auths(&[MockAuth {
         address: &admin,
@@ -213,7 +212,9 @@ fn test_permission_checks() {
     assert!(AccessControl::has_permission(&env, &admin, &Permission::GrantRole));
 
     // Test multiple permission checks
-    let permissions = vec![Permission::IssueCertificate, Permission::ViewProgress];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::ViewProgress);
     assert!(AccessControl::has_any_permission(&env, &user1, &permissions));
     assert!(AccessControl::has_all_permissions(&env, &user1, &permissions));
 }
@@ -434,16 +435,22 @@ fn test_require_permission_modifiers() {
     assert_eq!(result, Err(AccessControlError::PermissionDenied));
 
     // Test require_any_permission
-    let permissions = vec![Permission::IssueCertificate, Permission::RevokeCertificate];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::RevokeCertificate);
     let result = AccessControl::require_any_permission(&env, &user1, &permissions);
     assert!(result.is_ok());
 
     // Test require_all_permissions
-    let permissions = vec![Permission::IssueCertificate, Permission::ViewProgress];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::ViewProgress);
     let result = AccessControl::require_all_permissions(&env, &user1, &permissions);
     assert!(result.is_ok());
 
-    let permissions = vec![Permission::IssueCertificate, Permission::RevokeCertificate];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::RevokeCertificate);
     let result = AccessControl::require_all_permissions(&env, &user1, &permissions);
     assert_eq!(result, Err(AccessControlError::PermissionDenied));
 }
@@ -478,6 +485,7 @@ fn test_role_expiry() {
 
     // Create a role with expiry
     let mut role = RolePermissions::create_role_with_default_permissions(
+        &env,
         RoleLevel::Instructor,
         admin.clone(),
         env.ledger().timestamp(),
@@ -499,26 +507,27 @@ fn test_role_expiry() {
 
 #[test]
 fn test_default_role_permissions() {
+    let env = Env::default();
     // Test Student permissions
-    let permissions = RolePermissions::student_permissions();
+    let permissions = RolePermissions::student_permissions(&env);
     assert!(permissions.contains(&Permission::ViewProgress));
     assert!(permissions.contains(&Permission::MarkCompletion));
     assert!(!permissions.contains(&Permission::IssueCertificate));
 
     // Test Instructor permissions
-    let permissions = RolePermissions::instructor_permissions();
+    let permissions = RolePermissions::instructor_permissions(&env);
     assert!(permissions.contains(&Permission::IssueCertificate));
     assert!(permissions.contains(&Permission::CreateCourse));
     assert!(!permissions.contains(&Permission::RevokeCertificate));
 
     // Test Admin permissions
-    let permissions = RolePermissions::admin_permissions();
+    let permissions = RolePermissions::admin_permissions(&env);
     assert!(permissions.contains(&Permission::RevokeCertificate));
     assert!(permissions.contains(&Permission::GrantRole));
     assert!(!permissions.contains(&Permission::InitializeContract));
 
     // Test SuperAdmin permissions
-    let permissions = RolePermissions::super_admin_permissions();
+    let permissions = RolePermissions::super_admin_permissions(&env);
     assert!(permissions.contains(&Permission::InitializeContract));
     assert!(permissions.contains(&Permission::UpgradeContract));
     assert!(permissions.contains(&Permission::EmergencyPause));

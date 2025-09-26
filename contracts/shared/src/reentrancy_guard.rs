@@ -1,6 +1,6 @@
-use soroban_sdk::{Env, Symbol};
+use soroban_sdk::{Env, Symbol, symbol_short};
 
-const REENTRANCY_GUARD_KEY: Symbol = Symbol::short("REENTRANT");
+const REENTRANCY_GUARD_KEY: Symbol = symbol_short!("REENTRANT");
 
 pub struct ReentrancyGuard;
 

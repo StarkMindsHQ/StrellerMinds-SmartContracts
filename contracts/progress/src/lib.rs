@@ -3,7 +3,6 @@
 use soroban_sdk::{
     contract, contracterror, contractimpl, symbol_short, Address, Env, Map, Symbol, Vec,
 };
-use shared::reentrancy_guard::ReentrancyLock;
 
 // Import String for event logging
 use soroban_sdk::String;
@@ -87,7 +86,6 @@ impl Progress {
         module: u32,
         completed: bool,
     ) -> Result<(), Error> {
-        let _guard = ReentrancyLock::new(&env);
         // Require authorization from the user
         user.require_auth();
 
