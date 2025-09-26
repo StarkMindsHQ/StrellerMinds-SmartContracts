@@ -4,6 +4,37 @@
 
 1. Ensure you have an assigned issue before starting work.
 2. Discuss major changes in the issue before implementing.
+3. Use the appropriate issue templates for bug reports or feature requests.
+
+## Issue Templates
+
+When creating new issues, please use the provided templates to ensure consistent and complete information:
+
+### Bug Reports
+Use the **Bug Report** template (`.github/ISSUE_TEMPLATE/bug_report.md`) for:
+- Contract functionality issues
+- Build or deployment problems
+- Security vulnerabilities
+- Performance issues
+
+The template includes sections for:
+- Clear bug description with reproduction steps
+- Environment details (Rust version, Soroban CLI, OS)
+- Affected contracts/modules
+- Security impact assessment
+
+### Feature Requests
+Use the **Feature Request** template (`.github/ISSUE_TEMPLATE/feature_request.md`) for:
+- New contract functionality
+- Educational platform enhancements
+- Performance optimizations
+- Developer experience improvements
+
+The template includes sections for:
+- Problem description and proposed solution
+- Implementation details and affected contracts
+- Technical considerations and complexity assessment
+- Security and compliance implications
 
 ## Pull Request Process
 
@@ -11,7 +42,21 @@
 2. Update documentation as needed.
 3. Add tests for new functionality.
 4. Ensure all tests pass and CI checks are successful.
-5. Request review from at least one maintainer.
+5. The CODEOWNERS file will automatically request review from @LaGodxy (maintainer).
+
+## Code Ownership and Review Process
+
+The repository uses a CODEOWNERS file (`.github/CODEOWNERS`) to automatically assign reviewers:
+
+- **Maintainer**: @LaGodxy is the primary maintainer and will be automatically requested for review on all PRs
+- **Contract-specific ownership**: Different contracts may have specific ownership requirements
+- **Security-sensitive files**: Files related to authentication, authorization, and reentrancy protection require maintainer review
+
+### Review Requirements
+
+- All PRs require approval from the maintainer (@LaGodxy)
+- Security-related changes require additional scrutiny
+- Large architectural changes should be discussed in issues before implementation
 
 ## Code Standards
 
