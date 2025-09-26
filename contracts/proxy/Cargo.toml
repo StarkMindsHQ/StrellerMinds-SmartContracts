@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+soroban-sdk = "^23.0.0"
 soroban-sdk = { workspace = true }
 
 [dev-dependencies]
