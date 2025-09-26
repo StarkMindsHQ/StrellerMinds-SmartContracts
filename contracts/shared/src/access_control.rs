@@ -24,6 +24,7 @@ impl AccessControl {
 
         // Grant SuperAdmin role to the initial admin
         let super_admin_role = RolePermissions::create_role_with_default_permissions(
+            env,
             RoleLevel::SuperAdmin,
             admin.clone(),
             env.ledger().timestamp(),
@@ -67,6 +68,7 @@ impl AccessControl {
 
         // Create role with default permissions
         let role = RolePermissions::create_role_with_default_permissions(
+            env,
             role_level,
             granter.clone(),
             env.ledger().timestamp(),
@@ -328,12 +330,12 @@ impl AccessControl {
     }
 
     /// Check if a user has any of the specified permissions
-    pub fn has_any_permission(env: &Env, user: &Address, permissions: &[Permission]) -> bool {
+    pub fn has_any_permission(env: &Env, user: &Address, permissions: &Vec<Permission>) -> bool {
         AccessControlStorage::has_any_permission(env, user, permissions)
     }
 
     /// Check if a user has all of the specified permissions
-    pub fn has_all_permissions(env: &Env, user: &Address, permissions: &[Permission]) -> bool {
+    pub fn has_all_permissions(env: &Env, user: &Address, permissions: &Vec<Permission>) -> bool {
         AccessControlStorage::has_all_permissions(env, user, permissions)
     }
 
@@ -400,14 +402,14 @@ impl AccessControl {
     pub fn require_any_permission(
         env: &Env,
         user: &Address,
-        permissions: &[Permission],
+        permissions: &Vec<Permission>,
     ) -> Result<(), AccessControlError> {
         if Self::has_any_permission(env, user, permissions) {
             Ok(())
         } else {
             // Emit access denied for the first permission as representative
             if let Some(first_permission) = permissions.first() {
-                AccessControlEvents::emit_access_denied(env, user, first_permission);
+                AccessControlEvents::emit_access_denied(env, user, &first_permission);
             }
             Err(AccessControlError::PermissionDenied)
         }
@@ -417,14 +419,14 @@ impl AccessControl {
     pub fn require_all_permissions(
         env: &Env,
         user: &Address,
-        permissions: &[Permission],
+        permissions: &Vec<Permission>,
     ) -> Result<(), AccessControlError> {
         if Self::has_all_permissions(env, user, permissions) {
             Ok(())
         } else {
             // Emit access denied for the first permission as representative
             if let Some(first_permission) = permissions.first() {
-                AccessControlEvents::emit_access_denied(env, user, first_permission);
+                AccessControlEvents::emit_access_denied(env, user, &first_permission);
             }
             Err(AccessControlError::PermissionDenied)
         }

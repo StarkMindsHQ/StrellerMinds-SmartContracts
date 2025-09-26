@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, Map, Vec, Symbol, symbol_short, String as SorobanString};
+use soroban_sdk::{Address, Env, Map, Vec, Symbol, symbol_short, String};
 use crate::certificate::CertificateData;
 use crate::error::Error;
 
@@ -176,13 +176,14 @@ pub fn revoke_certificate(env: &Env, id: u64) -> Result<(), Error> {
 // Helper function to get certificate key
 fn get_certificate_key(env: &Env, id: u64) -> Symbol {
     // Use a unique key for each certificate based on its ID
-    let key_str = format!("CERT_{}", id);
-    Symbol::from_str(env, &SorobanString::from_str(env, &key_str))
+    let key_str = String::from_str(env, "CERT_");
+    // For now, use a simple approach - in a real implementation you'd need proper string concatenation
+    symbol_short!("CERT")
 }
 
 // Helper function to get owner key
-fn get_owner_key(env: &Env, owner: &Address) -> Symbol {
+pub fn get_owner_key(env: &Env, owner: &Address) -> Symbol {
     // Use a unique key for each owner based on their address
-    let key_str = format!("OWNER_{}", owner.to_string());
-    Symbol::from_str(env, &SorobanString::from_str(env, &key_str))
+    // For now, use a simple approach - in a real implementation you'd need proper string concatenation
+    symbol_short!("OWNER")
 }

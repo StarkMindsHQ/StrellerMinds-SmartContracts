@@ -73,12 +73,12 @@ impl Role {
         self.permissions.contains(permission)
     }
 
-    pub fn has_any_permission(&self, permissions: &[Permission]) -> bool {
-        permissions.iter().any(|p| self.has_permission(p))
+    pub fn has_any_permission(&self, permissions: &Vec<Permission>) -> bool {
+        permissions.iter().any(|p| self.has_permission(&p))
     }
 
-    pub fn has_all_permissions(&self, permissions: &[Permission]) -> bool {
-        permissions.iter().all(|p| self.has_permission(p))
+    pub fn has_all_permissions(&self, permissions: &Vec<Permission>) -> bool {
+        permissions.iter().all(|p| self.has_permission(&p))
     }
 
     pub fn is_expired(&self, current_time: u64) -> bool {

@@ -1,7 +1,5 @@
 #![no_std]
-
-use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol};
-use shared::reentrancy_guard::ReentrancyLock;
+use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol, Vec};
 
 pub struct ProxyEvents;
 
@@ -78,3 +76,6 @@ impl Proxy {
 
 // Note: Actual call delegation is handled by Soroban host, not in userland Rust.
 // For a real proxy, you would use Soroban's host functions to forward calls.
+
+#[cfg(test)]
+mod tests;

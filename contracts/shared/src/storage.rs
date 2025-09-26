@@ -163,7 +163,7 @@ impl AccessControlStorage {
     }
 
     /// Checks if a user has any of the specified permissions
-    pub fn has_any_permission(env: &Env, user: &Address, permissions: &[crate::roles::Permission]) -> bool {
+    pub fn has_any_permission(env: &Env, user: &Address, permissions: &Vec<crate::roles::Permission>) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
             role.has_any_permission(permissions)
         } else {
@@ -172,7 +172,7 @@ impl AccessControlStorage {
     }
 
     /// Checks if a user has all of the specified permissions
-    pub fn has_all_permissions(env: &Env, user: &Address, permissions: &[crate::roles::Permission]) -> bool {
+    pub fn has_all_permissions(env: &Env, user: &Address, permissions: &Vec<crate::roles::Permission>) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
             role.has_all_permissions(permissions)
         } else {

@@ -7,10 +7,11 @@ use crate::{
     permissions::RolePermissions,
     storage::AccessControlStorage,
     events::AccessControlEvents,
+    reentrancy_guard::{ReentrancyGuard, ReentrancyLock},
 };
 use soroban_sdk::{
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
-    vec, Address, Env,
+    testutils::{Address as _, MockAuth, MockAuthInvoke, Ledger},
+    vec, Address, Env, IntoVal, Vec,
 };
 
 // Test helper function to create a test environment with AccessControl
@@ -39,7 +40,7 @@ fn test_initialize() {
 
     // Verify admin is set correctly
     let admin_result = AccessControl::get_admin(&env);
-    assert_eq!(admin_result, Ok(admin));
+    assert_eq!(admin_result, Ok(admin.clone()));
 
     // Test re-initialization (should fail)
     let result = AccessControl::initialize(&env, &admin);
@@ -76,10 +77,9 @@ fn test_grant_role() {
 fn test_grant_custom_role() {
     let (env, admin, user1, _) = setup_test();
 
-    let custom_permissions = vec![
-        Permission::IssueCertificate,
-        Permission::ViewProgress,
-    ];
+      let mut custom_permissions = Vec::new(&env);
+      custom_permissions.push_back(Permission::IssueCertificate);
+      custom_permissions.push_back(Permission::ViewProgress);
 
     env.mock_auths(&[MockAuth {
         address: &admin,
@@ -212,7 +212,9 @@ fn test_permission_checks() {
     assert!(AccessControl::has_permission(&env, &admin, &Permission::GrantRole));
 
     // Test multiple permission checks
-    let permissions = vec![Permission::IssueCertificate, Permission::ViewProgress];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::ViewProgress);
     assert!(AccessControl::has_any_permission(&env, &user1, &permissions));
     assert!(AccessControl::has_all_permissions(&env, &user1, &permissions));
 }
@@ -433,16 +435,22 @@ fn test_require_permission_modifiers() {
     assert_eq!(result, Err(AccessControlError::PermissionDenied));
 
     // Test require_any_permission
-    let permissions = vec![Permission::IssueCertificate, Permission::RevokeCertificate];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::RevokeCertificate);
     let result = AccessControl::require_any_permission(&env, &user1, &permissions);
     assert!(result.is_ok());
 
     // Test require_all_permissions
-    let permissions = vec![Permission::IssueCertificate, Permission::ViewProgress];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::ViewProgress);
     let result = AccessControl::require_all_permissions(&env, &user1, &permissions);
     assert!(result.is_ok());
 
-    let permissions = vec![Permission::IssueCertificate, Permission::RevokeCertificate];
+    let mut permissions = Vec::new(&env);
+    permissions.push_back(Permission::IssueCertificate);
+    permissions.push_back(Permission::RevokeCertificate);
     let result = AccessControl::require_all_permissions(&env, &user1, &permissions);
     assert_eq!(result, Err(AccessControlError::PermissionDenied));
 }
@@ -477,6 +485,7 @@ fn test_role_expiry() {
 
     // Create a role with expiry
     let mut role = RolePermissions::create_role_with_default_permissions(
+        &env,
         RoleLevel::Instructor,
         admin.clone(),
         env.ledger().timestamp(),
@@ -498,27 +507,108 @@ fn test_role_expiry() {
 
 #[test]
 fn test_default_role_permissions() {
+    let env = Env::default();
     // Test Student permissions
-    let permissions = RolePermissions::student_permissions();
+    let permissions = RolePermissions::student_permissions(&env);
     assert!(permissions.contains(&Permission::ViewProgress));
     assert!(permissions.contains(&Permission::MarkCompletion));
     assert!(!permissions.contains(&Permission::IssueCertificate));
 
     // Test Instructor permissions
-    let permissions = RolePermissions::instructor_permissions();
+    let permissions = RolePermissions::instructor_permissions(&env);
     assert!(permissions.contains(&Permission::IssueCertificate));
     assert!(permissions.contains(&Permission::CreateCourse));
     assert!(!permissions.contains(&Permission::RevokeCertificate));
 
     // Test Admin permissions
-    let permissions = RolePermissions::admin_permissions();
+    let permissions = RolePermissions::admin_permissions(&env);
     assert!(permissions.contains(&Permission::RevokeCertificate));
     assert!(permissions.contains(&Permission::GrantRole));
     assert!(!permissions.contains(&Permission::InitializeContract));
 
     // Test SuperAdmin permissions
-    let permissions = RolePermissions::super_admin_permissions();
+    let permissions = RolePermissions::super_admin_permissions(&env);
     assert!(permissions.contains(&Permission::InitializeContract));
     assert!(permissions.contains(&Permission::UpgradeContract));
     assert!(permissions.contains(&Permission::EmergencyPause));
+}
+
+// ReentrancyGuard tests
+#[test]
+fn test_reentrancy_guard_basic() {
+    let env = Env::default();
+    
+    // First call should succeed
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+    
+    // Second call should also succeed after exit
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+}
+
+#[test]
+#[should_panic(expected = "ReentrancyGuard: reentrant call")]
+fn test_reentrancy_guard_prevents_reentrancy() {
+    let env = Env::default();
+    
+    // First call should succeed
+    ReentrancyGuard::enter(&env);
+    
+    // Second call should panic
+    ReentrancyGuard::enter(&env);
+}
+
+#[test]
+fn test_reentrancy_lock_raii() {
+    let env = Env::default();
+    
+    // Test RAII-style guard
+    {
+        let _lock = ReentrancyLock::new(&env);
+        // Lock should be active here
+        assert!(env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
+    }
+    
+    // Lock should be automatically released when _lock goes out of scope
+    assert!(!env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
+}
+
+#[test]
+#[should_panic(expected = "ReentrancyGuard: reentrant call")]
+fn test_reentrancy_lock_prevents_reentrancy() {
+    let env = Env::default();
+    
+    // First lock should succeed
+    let _lock1 = ReentrancyLock::new(&env);
+    
+    // Second lock should panic
+    let _lock2 = ReentrancyLock::new(&env);
+}
+
+#[test]
+fn test_reentrancy_guard_multiple_enter_exit() {
+    let env = Env::default();
+    
+    // Multiple enter/exit cycles should work
+    for _ in 0..5 {
+        ReentrancyGuard::enter(&env);
+        ReentrancyGuard::exit(&env);
+    }
+    
+    // Should be able to enter again after all exits
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
+}
+
+#[test]
+fn test_reentrancy_guard_exit_without_enter() {
+    let env = Env::default();
+    
+    // Exit without enter should not panic (just remove non-existent key)
+    ReentrancyGuard::exit(&env);
+    
+    // Should still be able to enter after
+    ReentrancyGuard::enter(&env);
+    ReentrancyGuard::exit(&env);
 } 
