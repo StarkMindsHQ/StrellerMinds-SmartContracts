@@ -87,7 +87,7 @@ impl AnalyticsTrait for Analytics {
             &session.student,
             &session.course_id,
             &session.module_id,
-            &session.session_type,
+            session.session_type.clone(),
             session.time_spent,
             session.completion_percentage,
         );
