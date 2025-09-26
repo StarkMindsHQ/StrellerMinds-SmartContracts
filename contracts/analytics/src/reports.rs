@@ -2,7 +2,7 @@ use soroban_sdk::{Address, Env, Symbol, Vec};
 use crate::{
     types::{
         ProgressReport, ReportPeriod, Achievement, AggregatedMetrics, LeaderboardEntry,
-        LeaderboardMetric, AnalyticsFilter, LearningSession, SessionType
+        LeaderboardMetric, AnalyticsFilter, LearningSession, SessionType, OptionalSessionType
     },
     storage::AnalyticsStorage,
     analytics_engine::AnalyticsEngine,
@@ -287,7 +287,7 @@ impl ReportGenerator {
             AnalyticsEvents::emit_leaderboard_updated(
                 env,
                 course_id,
-                metric,
+                metric.clone(),
                 &top_entry.student,
                 top_entry.score,
                 final_entries.len(),
@@ -417,11 +417,22 @@ impl ReportGenerator {
         }
 
         // Check session type
-        if let Some(session_type) = &filter.session_type {
-            if session.session_type != *session_type {
-                return false;
+        // if let Some(session_type) = &filter.session_type {
+        //     if session.session_type != *session_type {
+        //         return false;
+        //     }
+        // }
+
+        let sess = &filter.session_type;
+        let res = match sess {
+            OptionalSessionType::None => return false,
+            OptionalSessionType::Some(session_type) => {
+                if session.session_type != * session_type {
+                    return false;
+                }
+                
             }
-        }
+        };
 
         // Check minimum score
         if let Some(min_score) = filter.min_score {

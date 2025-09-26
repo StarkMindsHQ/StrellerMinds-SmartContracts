@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttrait, Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec};
 use crate::{
     types::{
         LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Analytics contract interface
-#[contracttrait]
+// #[contracttrait]
 pub trait AnalyticsTrait {
     /// Initialize the analytics contract
     fn initialize(env: Env, admin: Address, config: AnalyticsConfig) -> Result<(), AnalyticsError>;

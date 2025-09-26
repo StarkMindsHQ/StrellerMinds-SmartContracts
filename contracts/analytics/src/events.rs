@@ -12,7 +12,7 @@ impl AnalyticsEvents {
         student: &Address,
         course_id: &Symbol,
         module_id: &Symbol,
-        session_type: &SessionType,
+        session_type: SessionType,
         time_spent: u64,
         completion_percentage: u32,
     ) {
@@ -45,7 +45,7 @@ impl AnalyticsEvents {
         course_id: &Symbol,
         completion_percentage: u32,
         total_time_spent: u64,
-        performance_trend: &PerformanceTrend,
+        performance_trend: PerformanceTrend,
     ) {
         env.events().publish(
             ("analytics", "progress_updated"),
@@ -87,7 +87,7 @@ impl AnalyticsEvents {
         env: &Env,
         student: &Address,
         achievement_id: &Symbol,
-        achievement_type: &AchievementType,
+        achievement_type: AchievementType,
         course_id: &Symbol,
         earned_date: u64,
     ) {
@@ -101,7 +101,7 @@ impl AnalyticsEvents {
     pub fn emit_leaderboard_updated(
         env: &Env,
         course_id: &Symbol,
-        metric_type: &LeaderboardMetric,
+        metric_type: LeaderboardMetric,
         top_student: &Address,
         top_score: u32,
         total_entries: u32,
@@ -172,8 +172,8 @@ impl AnalyticsEvents {
         env: &Env,
         student: &Address,
         course_id: &Symbol,
-        old_trend: &PerformanceTrend,
-        new_trend: &PerformanceTrend,
+        old_trend: PerformanceTrend,
+        new_trend: PerformanceTrend,
     ) {
         env.events().publish(
             ("analytics", "trend_change"),

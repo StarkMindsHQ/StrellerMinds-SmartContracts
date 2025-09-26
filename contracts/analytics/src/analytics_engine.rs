@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, IntoVal, String, Symbol, Vec};
 use crate::{
     types::{
         LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
@@ -131,7 +131,7 @@ impl AnalyticsEngine {
             course_id,
             completion_percentage,
             total_time_spent,
-            &performance_trend,
+            performance_trend,
         );
 
         Ok(analytics)
@@ -523,8 +523,8 @@ impl AnalyticsEngine {
             if session.completion_percentage == 100 {
                 let achievement = Achievement {
                     achievement_id: Symbol::new(env, "module_complete"),
-                    title: "Module Completed".into_val(env),
-                    description: "Successfully completed a learning module".into_val(env),
+                    title: String::from_str(env, "Module Completed"),
+                    description: String::from_str(env, "Successfully completed a learning module"),
                     earned_date: current_time,
                     achievement_type: AchievementType::Completion,
                 };
@@ -535,8 +535,8 @@ impl AnalyticsEngine {
             if analytics.streak_days >= 7 && analytics.streak_days % 7 == 0 {
                 let achievement = Achievement {
                     achievement_id: Symbol::new(env, "week_streak"),
-                    title: "Weekly Streak".into_val(env),
-                    description: "Maintained learning activity for a full week".into_val(env),
+                    title: String::from_str(env, "Weekly Streak"),
+                    description: String::from_str(env, "Maintained learning activity for a full week"),
                     earned_date: current_time,
                     achievement_type: AchievementType::Streak,
                 };
@@ -568,7 +568,7 @@ impl AnalyticsEngine {
                 env,
                 student,
                 &achievement.achievement_id,
-                &achievement.achievement_type,
+                achievement.achievement_type,
                 course_id,
                 achievement.earned_date,
             );
