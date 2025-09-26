@@ -21,6 +21,7 @@ use shared::{
     access_control::AccessControl,
     roles::{Permission, RoleLevel},
     errors::AccessControlError,
+    reentrancy_guard::ReentrancyLock,
 };
 
 use types::{
@@ -64,6 +65,7 @@ impl AnalyticsTrait for Analytics {
     }
 
     fn record_session(env: Env, session: LearningSession) -> Result<(), AnalyticsError> {
+        let _guard = ReentrancyLock::new(&env);
         session.student.require_auth();
 
         // Validate session data
@@ -107,6 +109,7 @@ impl AnalyticsTrait for Analytics {
         final_score: Option<u32>,
         completion_percentage: u32,
     ) -> Result<(), AnalyticsError> {
+        let _guard = ReentrancyLock::new(&env);
         let mut session = AnalyticsStorage::get_session(&env, &session_id)
             .ok_or(AnalyticsError::SessionNotFound)?;
 
@@ -172,6 +175,7 @@ impl AnalyticsTrait for Analytics {
     }
 
     fn batch_update_sessions(env: Env, batch: BatchSessionUpdate) -> Result<u32, AnalyticsError> {
+        let _guard = ReentrancyLock::new(&env);
         if batch.sessions.is_empty() {
             return Err(AnalyticsError::InvalidBatchSize);
         }

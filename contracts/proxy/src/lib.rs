@@ -1,6 +1,5 @@
 #![no_std]
-
-use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol, Vec};
 
 pub struct ProxyEvents;
 

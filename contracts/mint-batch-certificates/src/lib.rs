@@ -11,6 +11,7 @@ mod test;        // Test utilities
 use certificate::CertificateData;
 use error::{Error, MintResult};
 use crate::events::emit_error_event;
+use shared::reentrancy_guard::ReentrancyLock;
 
 #[contract]
 pub struct CertificateContract;
@@ -72,6 +73,7 @@ impl CertificateContract {
         owner: Address,
         certificate: CertificateData
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         
         if !auth::is_issuer(env, &issuer) {
@@ -170,6 +172,7 @@ impl CertificateContract {
         issuer: Address,
         certificate_id: u64
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         
         if !auth::is_issuer(env, &issuer) {
@@ -249,6 +252,7 @@ impl CertificateContract {
         owners: Vec<Address>,
         certificates: Vec<CertificateData>
     ) -> Vec<MintResult> {
+        let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
         if !auth::is_issuer(env, &issuer) {
             emit_error_event(env, "mint_batch_certificates", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
