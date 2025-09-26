@@ -14,6 +14,7 @@ mod tests;
 pub use types::*;
 use search_manager::{SearchManager, SearchError};
 use indexing::{SearchIndexer, IndexError};
+use shared::reentrancy_guard::ReentrancyLock;
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -89,6 +90,7 @@ impl SearchContract {
         query: SearchQuery,
         notification_enabled: bool,
     ) -> Result<String, Error> {
+        let _guard = ReentrancyLock::new(&env);
         Self::require_initialized(&env)?;
         user.require_auth();
 
@@ -137,6 +139,7 @@ impl SearchContract {
         user: Address,
         search_id: String,
     ) -> Result<SearchResults, Error> {
+        let _guard = ReentrancyLock::new(&env);
         Self::require_initialized(&env)?;
         user.require_auth();
 
@@ -174,6 +177,7 @@ impl SearchContract {
         user: Address,
         preferences: SearchPreferences,
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         Self::require_initialized(&env)?;
         user.require_auth();
 
@@ -280,6 +284,7 @@ impl SearchContract {
         admin: Address,
         weights: SearchWeights,
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         Self::require_initialized(&env)?;
         Self::require_admin(&env, &admin)?;
 
@@ -294,6 +299,7 @@ impl SearchContract {
         category: String,
         suggestions: Vec<SearchSuggestion>,
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         Self::require_initialized(&env)?;
         Self::require_admin(&env, &admin)?;
 

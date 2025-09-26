@@ -1,6 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol};
+use shared::reentrancy_guard::ReentrancyLock;
 
 pub struct ProxyEvents;
 

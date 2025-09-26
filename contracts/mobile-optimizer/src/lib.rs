@@ -19,6 +19,7 @@ use session_manager::SessionManager;
 use offline_manager::OfflineManager;
 use interaction_flows::InteractionFlows;
 use network_manager::NetworkManager;
+use shared::reentrancy_guard::ReentrancyLock;
 
 #[contract]
 pub struct MobileOptimizerContract;
@@ -50,6 +51,7 @@ impl MobileOptimizerContract {
         device_id: String,
         preferences: MobilePreferences,
     ) -> Result<String, MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         SessionManager::create_session(&env, user, device_id, preferences)
@@ -63,6 +65,7 @@ impl MobileOptimizerContract {
         session_id: String,
         preferences: MobilePreferences,
     ) -> Result<(), MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         SessionManager::update_session(&env, user, session_id, preferences)
@@ -89,6 +92,7 @@ impl MobileOptimizerContract {
         execution_strategy: ExecutionStrategy,
         session_id: String,
     ) -> Result<BatchExecutionResult, MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         // Detect current network quality
@@ -147,6 +151,7 @@ impl MobileOptimizerContract {
         course_id: String,
         session_id: String,
     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         let network_quality = NetworkManager::detect_network_quality(&env);
@@ -164,6 +169,7 @@ impl MobileOptimizerContract {
         progress_percentage: u32,
         session_id: String,
     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         let network_quality = NetworkManager::detect_network_quality(&env);
@@ -187,6 +193,7 @@ impl MobileOptimizerContract {
         course_id: String,
         session_id: String,
     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        let _guard = ReentrancyLock::new(&env);
         user.require_auth();
         
         let network_quality = NetworkManager::detect_network_quality(&env);

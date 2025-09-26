@@ -3,6 +3,7 @@
 use soroban_sdk::{
     contract, contracterror, contractimpl, symbol_short, Address, Env, Map, Symbol, Vec,
 };
+use shared::reentrancy_guard::ReentrancyLock;
 
 // Storage keys
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
@@ -83,6 +84,7 @@ impl Progress {
         module: u32,
         completed: bool,
     ) -> Result<(), Error> {
+        let _guard = ReentrancyLock::new(&env);
         // Require authorization from the user
         user.require_auth();
 

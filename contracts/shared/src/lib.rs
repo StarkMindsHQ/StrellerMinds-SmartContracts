@@ -6,4 +6,9 @@ pub mod permissions;
 pub mod events;
 pub mod storage;
 pub mod errors;
-pub mod reentrancy_guard; 
+pub mod reentrancy_guard;
+
+#[cfg(test)]
+mod test;
+
+ 
