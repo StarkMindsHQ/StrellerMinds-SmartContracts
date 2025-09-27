@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release WASM Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: wasm32-unknown-unknown
+
+      - name: Cache cargo registry, git, and target
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Soroban CLI
+        run: |
+          cargo install --locked soroban-cli
+
+      - name: Build contracts
+        run: |
+          chmod +x scripts/build.sh
+          ./scripts/build.sh
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          TAG="${GITHUB_REF_NAME}"
+
+          shopt -s nullglob
+          for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
+            base="$(basename "$wasm")"
+            name="${base%.wasm}"
+
+            # Copy unoptimized artifact
+            cp "$wasm" "dist/${name}-${TAG}.wasm"
+
+            # Copy optimized artifact if available
+            if [ -f "target/wasm32-unknown-unknown/release/${name}.optimized.wasm" ]; then
+              cp "target/wasm32-unknown-unknown/release/${name}.optimized.wasm" "dist/${name}-${TAG}.optimized.wasm"
+            fi
+          done
+
+          # Generate checksums
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum dist/* > dist/SHA256SUMS.txt
+          else
+            shasum -a 256 dist/* > dist/SHA256SUMS.txt
+          fi
+
+      - name: Generate changelog
+        id: git_cliff
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: .git-cliff.toml
+          args: --tag "${{ github.ref_name }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.git_cliff.outputs.changelog }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/*
