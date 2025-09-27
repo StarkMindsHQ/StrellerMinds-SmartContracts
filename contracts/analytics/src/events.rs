@@ -17,10 +17,29 @@ impl AnalyticsEvents {
         time_spent: u64,
         completion_percentage: u32,
     ) {
-        env.events().publish(
-            ("analytics", "session_recorded"),
-            (session_id, student, course_id, module_id, session_type, time_spent, completion_percentage),
-        );
+        let session_type_str = match session_type {
+            SessionType::Study => "study",
+            SessionType::Assessment => "assessment",
+            SessionType::Practice => "practice",
+            SessionType::Review => "review",
+        };
+        
+        let event_data = AnalyticsEventData::SessionRecorded {
+            session_id: session_id.clone(),
+            student: student.clone(),
+            course_id: course_id.clone(),
+            module_id: module_id.clone(),
+            session_type: session_type_str.to_string(),
+            time_spent,
+            completion_percentage,
+        };
+        
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        ).emit(env);
     }
 
     /// Emit event when a learning session is completed

@@ -86,7 +86,7 @@ impl AccessControlEvents {
         let event_data = AccessControlEventData::PermissionGranted {
             granter: granter.clone(),
             user: user.clone(),
-            permission: permission.to_string(),
+            permission: String::from_str(env, permission.to_string()),
         };
         StandardEvent::new(
             env,
@@ -101,7 +101,7 @@ impl AccessControlEvents {
         let event_data = AccessControlEventData::PermissionRevoked {
             revoker: revoker.clone(),
             user: user.clone(),
-            permission: permission.to_string(),
+            permission: String::from_str(env, permission.to_string()),
         };
         StandardEvent::new(
             env,
@@ -143,7 +143,7 @@ impl AccessControlEvents {
     pub fn emit_access_denied(env: &Env, user: &Address, permission: &Permission) {
         let event_data = AccessControlEventData::AccessDenied {
             user: user.clone(),
-            permission: permission.to_string(),
+            permission: String::from_str(env, permission.to_string()),
         };
         StandardEvent::new(
             env,
