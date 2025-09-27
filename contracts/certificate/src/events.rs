@@ -1,5 +1,6 @@
 use crate::types::{CertificateMetadata, Role, NotificationType};
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
+use shared::event_schema::{StandardEvent, EventData, CertificateEventData};
 
 /// Contract event emissions
 pub struct CertificateEvents;
@@ -66,14 +67,19 @@ impl CertificateEvents {
         issuer: &Address,
         token_id: &BytesN<32>,
     ) {
-        let topics = (Symbol::new(env, "nft_certificate_minted"), certificate_id);
-        let data = (
-            metadata.clone(),
-            student.clone(),
+        let event_data = CertificateEventData::CertificateMinted {
+            certificate_id: certificate_id.clone(),
+            student: student.clone(),
+            issuer: issuer.clone(),
+            token_id: token_id.clone(),
+            metadata_hash: metadata.uri.clone(),
+        };
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "certificate"),
             issuer.clone(),
-            token_id.clone(),
-        );
-        env.events().publish(topics, data);
+            EventData::Certificate(event_data),
+        ).emit(env);
     }
 
     /// Emits event when a certificate is revoked
