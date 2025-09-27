@@ -94,16 +94,41 @@ This repository contains several smart contracts that power the StarkMinds educa
 Each contract includes comprehensive documentation covering:
 - **Overview**: Purpose and main functionality
 - **Interface**: Public functions and parameters
-- **Events**: Emitted events and their schemas
 - **Configuration**: Settings and environment variables
 - **Testing**: How to run tests and test coverage
 - **Deployment**: Setup and deployment instructions
 - **Usage Examples**: Code examples and integration patterns
 
-### Documentation Standards
+  ### Documentation Standards
 
-All contracts follow a standardized documentation structure defined in [docs/README_TEMPLATE.md](docs/README_TEMPLATE.md). This ensures consistency and makes it easier for contributors and integrators to understand and use the contracts.
+  All contracts follow a standardized documentation structure defined in [docs/README_TEMPLATE.md](docs/README_TEMPLATE.md). This ensures consistency and makes it easier for contributors and integrators to understand and use the contracts.
+ 
+ 
+## Release Pipeline
+
+Releases are automated and triggered by pushing a semantic version tag, e.g., `v1.2.3`.
+
+Steps:
+
+1. Ensure commits follow Conventional Commits (e.g., `feat(certificate): add expiry validation`).
+2. Tag and push:
+
+```bash
+VERSION=vX.Y.Z
+git tag -a "$VERSION" -m "Release $VERSION"
+git push origin "$VERSION"
+```
+
+The workflow at `/.github/workflows/release.yml` will:
+
+- Build all contracts for `wasm32-unknown-unknown`.
+- Optimize WASM using `soroban contract optimize`.
+- Package artifacts into `dist/` with filenames including the version tag.
+- Generate release notes using `git-cliff` (Keep a Changelog style) from Conventional Commits.
+- Create a GitHub Release and upload all WASM artifacts and `SHA256SUMS.txt`.
+
+Pre-releases (e.g., `v1.2.3-rc.1`) are automatically marked as prereleases.
 
 ## Contact
 
-For any questions, issues, or suggestions, please open an issue or reach out to the maintainers.
+  For any questions, issues, or suggestions, please open an issue or reach out to the maintainers.

@@ -1,0 +1,82 @@
+# git-cliff configuration
+# Generates changelog and release notes from Conventional Commits in Keep a Changelog style.
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+# Match semantic version tags like v1.2.3 and pre-releases like v1.2.3-rc.1
+tag_pattern = "^v[0-9]+.[0-9]+.[0-9]+(?:[-+].*)?$"
+
+[changelog]
+# Keep a Changelog compatible header
+header = """
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on Keep a Changelog (https://keepachangelog.com/en/1.1.0/),
+and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.html).
+"""
+# Body template for each release section
+body = """
+{% if version %}
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}
+## [Unreleased]
+{% endif %}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}{% if commit.breaking %} (BREAKING){% endif %} ({{ commit.id | truncate(length=7, end="") }})
+{% endfor %}
+{% endfor %}
+"""
+# Footer left empty to avoid broken links
+footer = ""
+# Trim empty sections
+trim = true
+# Render empty unreleased if no commits
+render_always = false
+
+# Define how commits are grouped based on type
+[[changelog.commit_parsers]]
+message = "^feat(?:(|: )"
+group = "Features"
+[[changelog.commit_parsers]]
+message = "^fix(?:(|: )"
+group = "Bug Fixes"
+[[changelog.commit_parsers]]
+message = "^perf(?:(|: )"
+group = "Performance"
+[[changelog.commit_parsers]]
+message = "^refactor(?:(|: )"
+group = "Refactor"
+[[changelog.commit_parsers]]
+message = "^docs(?:(|: )"
+group = "Documentation"
+[[changelog.commit_parsers]]
+message = "^test(?:(|: )"
+group = "Tests"
+[[changelog.commit_parsers]]
+message = "^build(?:(|: )"
+group = "Build"
+[[changelog.commit_parsers]]
+message = "^ci(?:(|: )"
+group = "CI"
+[[changelog.commit_parsers]]
+message = "^chore(?:(|: )"
+group = "Chores"
+[[changelog.commit_parsers]]
+message = "^revert"
+group = "Reverts"
+[[changelog.commit_parsers]]
+message = ".*"
+group = "Other"
+
+[remote]
+# GitHub remote info to build compare links in footer
+# These values are not used by the action directly; footer uses ${{ github.repository }} at runtime.
+provider = "github"
+owner = ""
+repo = ""
