@@ -1,5 +1,6 @@
 use soroban_sdk::{Address, BytesN, Env, Symbol};
 use crate::types::{SessionType, AchievementType, LeaderboardMetric, PerformanceTrend};
+use shared::event_schema::{StandardEvent, EventData, AnalyticsEventData};
 
 /// Analytics contract events for tracking and auditing
 pub struct AnalyticsEvents;
