@@ -1,6 +1,10 @@
-# StarkMinds-SmartContracts
+# StrellerMinds-SmartContracts
 
-StarkMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StarkMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
+StrellerMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StrellerMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
+
+## Documentation
+
+For detailed documentation on our smart contracts, system architecture, and contribution guidelines, please visit our [documentation site](https://your-documentation-site.com).
 
 ## Features
 
@@ -8,6 +12,14 @@ StarkMinds-SmartContracts is the dedicated repository for all Stellar smart cont
 - Secure, efficient on-chain logic for education and credentialing
 - Comprehensive testing suite for contract functionality
 - Modular and scalable design for future enhancements
+
+## Supported Versions
+
+| Toolchain         | Version                               |
+| ----------------- | ------------------------------------- |
+| Rust              | stable                                |
+| Soroban CLI       | v0.8.2 (placeholder, please verify)   |
+| Soroban SDK       | 0.8.4 (placeholder, please verify)    |
 
 ## Getting Started
 
@@ -21,15 +33,28 @@ StarkMinds-SmartContracts is the dedicated repository for all Stellar smart cont
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/your-username/starkminds-smartcontracts.git
+   git clone https://github.com/your-github-username/StrellerMinds-SmartContracts.git
    ```
 2. **Navigate to the Repository:**
    ```bash
-   cd starkminds-smartcontracts
+   cd StrellerMinds-SmartContracts
    ```
-3. **Build the Smart Contracts:**
+3. **Build the Smart Contracts:
    ```bash
    cargo build --release
+   ```
+
+### Localnet Quickstart
+
+To get a local network up and running for testing or development, follow these steps:
+
+1. **Start the Local Network:**
+   ```bash
+   docker run --rm -it -p 8000:8000 --name stellar stellar/quickstart:latest --local
+   ```
+2. **Deploy to Testnet:**
+   ```bash
+   ./scripts/deploy_testnet.sh
    ```
 
 ### Testing
@@ -74,7 +99,7 @@ Ensure that your contributions adhere to our coding standards and include approp
 
 ## Smart Contracts
 
-This repository contains several smart contracts that power the StarkMinds educational platform:
+This repository contains several smart contracts that power the StrellerMinds educational platform:
 
 ### Core Contracts
 
