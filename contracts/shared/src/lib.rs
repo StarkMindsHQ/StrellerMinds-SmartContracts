@@ -1,5 +1,3 @@
-#![no_std]
-
 pub mod access_control;
 pub mod roles;
 pub mod permissions;

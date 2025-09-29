@@ -1,9 +1,24 @@
 # Development Guide
 
+## Supported Versions
+
+This project maintains compatibility with the following versions:
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Rust Toolchain | stable | See `rust-toolchain.toml` for exact configuration |
+| Soroban SDK | 22.0.0 | Defined in workspace `Cargo.toml` |
+| Soroban CLI | Latest compatible with SDK 22.0.0 | Install via `cargo install soroban-cli` |
+| Stellar Strkey | 0.0.7 | Workspace dependency |
+| Ed25519 Dalek | 2.0.0 | Workspace dependency |
+| Rand | 0.8.5 | Workspace dependency |
+
+**Important**: All contracts use workspace dependencies to ensure version consistency. Do not override these versions in individual contract `Cargo.toml` files.
+
 ## Prerequisites
 
 - Rust (see rust-toolchain.toml for version)
-- Soroban CLI: Latest version `soroban-sdk` v22.0.0.
+- Soroban CLI: Latest version compatible with `soroban-sdk` v22.0.0
 - Stellar account for testing
 
 ## Environment Setup
