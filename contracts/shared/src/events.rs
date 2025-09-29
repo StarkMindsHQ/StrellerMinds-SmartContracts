@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{Address, Env, Symbol, String};
 use crate::roles::{Role, RoleLevel, Permission};
 use crate::event_schema::{StandardEvent, EventData, AccessControlEventData};
 
