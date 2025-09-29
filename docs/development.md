@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Rust (see rust-toolchain.toml for version)
-- Soroban CLI
+- Soroban CLI: Latest version `soroban-sdk` v22.0.0.
 - Stellar account for testing
 
 ## Environment Setup
