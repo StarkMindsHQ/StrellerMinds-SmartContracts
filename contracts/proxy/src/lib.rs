@@ -1,5 +1,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
+use shared::access_control::AccessControl;
+use shared::roles::Permission;
 
 pub struct ProxyEvents;
 
@@ -39,6 +41,8 @@ impl Proxy {
         }
 
         admin.require_auth();
+        // Initialize centralized RBAC (grants SuperAdmin to admin)
+        let _ = AccessControl::initialize(&env, &admin);
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage()
             .instance()
@@ -53,6 +57,10 @@ impl Proxy {
     pub fn upgrade(env: Env, new_implementation: Address) {
         let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         admin.require_auth();
+        // RBAC: require upgrade permission
+        if AccessControl::require_permission(&env, &admin, &Permission::UpgradeContract).is_err() {
+            panic!("Unauthorized");
+        }
         let current: Address = env
             .storage()
             .instance()
@@ -77,6 +85,10 @@ impl Proxy {
     pub fn rollback(env: Env) {
         let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         admin.require_auth();
+        // RBAC: require upgrade/rollback permission
+        if AccessControl::require_permission(&env, &admin, &Permission::UpgradeContract).is_err() {
+            panic!("Unauthorized");
+        }
         let mut stack: Vec<Address> = env
             .storage()
             .instance()
