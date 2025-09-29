@@ -1,14 +1,6 @@
-# StrellerMinds-SmartContracts
+# StarkMinds-SmartContracts
 
-StrellerMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StrellerMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
-
-## Documentation
-
-For detailed documentation on our smart contracts, system architecture, and contribution guidelines, please visit our [documentation site](https://your-documentation-site.com).
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+StarkMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StarkMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
 
 ## Features
 
@@ -17,14 +9,6 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - Comprehensive testing suite for contract functionality
 - Modular and scalable design for future enhancements
 
-## Supported Versions
-
-| Toolchain         | Version                               |
-| ----------------- | ------------------------------------- |
-| Rust              | stable                                |
-| Soroban CLI       | v0.8.2 (placeholder, please verify)   |
-| Soroban SDK       | 0.8.4 (placeholder, please verify)    |
-
 ## Getting Started
 
 ### Prerequisites
@@ -32,33 +16,22 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable version)
 - [Stellar CLI & Soroban CLI](https://soroban.stellar.org/docs/getting-started)
 - Docker (optional, for running a local Stellar testnet)
+- Required environment variable:  
+  - `STELLAR_SECRET_KEY` (your Stellar secret key for deployment)
 
 ### Installation
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/your-github-username/StrellerMinds-SmartContracts.git
+   git clone https://github.com/your-username/starkminds-smartcontracts.git
    ```
 2. **Navigate to the Repository:**
    ```bash
-   cd StrellerMinds-SmartContracts
+   cd starkminds-smartcontracts
    ```
-3. **Build the Smart Contracts:
+3. **Build the Smart Contracts:**
    ```bash
    cargo build --release
-   ```
-
-### Localnet Quickstart
-
-To get a local network up and running for testing or development, follow these steps:
-
-1. **Start the Local Network:**
-   ```bash
-   docker run --rm -it -p 8000:8000 --name stellar stellar/quickstart:latest --local
-   ```
-2. **Deploy to Testnet:**
-   ```bash
-   ./scripts/deploy_testnet.sh
    ```
 
 ### Testing
@@ -84,8 +57,97 @@ To maintain code quality and consistency, run the following commands locally bef
 
 These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
 
-### Deployment
-Deployment instructions will be updated as integration with the Stellar network advances. For now, please refer to the [Soroban documentation](https://soroban.stellar.org/docs) for deployment details.
+---
+
+## Deployment
+
+The repository includes enhanced deployment scripts for deploying Soroban smart contracts to Stellar's testnet and mainnet.  
+
+Scripts:  
+- `scripts/deploy_testnet.sh`  
+- `scripts/deploy_mainnet.sh`  
+
+These scripts include safety features, argument parsing, environment validation, dependency checks, and dry-run support.
+
+### Before Deploying
+
+1. Ensure contracts are built and optimized:  
+   ```bash
+   cargo build --release --target wasm32-unknown-unknown
+   ```
+2. Set `STELLAR_SECRET_KEY` in your environment:  
+   ```bash
+   export STELLAR_SECRET_KEY='your_secret_key_here'
+   ```
+3. Optionally set `SOROBAN_RPC_URL` for a custom RPC endpoint.  
+
+The scripts automatically validate:  
+- Installed tools: `soroban`, `stellar`, `jq`  
+- Environment variables: `STELLAR_SECRET_KEY`  
+- Presence of optimized WASM files in:  
+  ```
+  target/wasm32-unknown-unknown/release/*.optimized.wasm
+  ```
+
+### Script Usage
+
+Run the scripts from the project root:
+
+- **Testnet Deployment**  
+  ```bash
+  ./scripts/deploy_testnet.sh [OPTIONS]
+  ```
+
+- **Mainnet Deployment**  
+  ```bash
+  ./scripts/deploy_mainnet.sh [OPTIONS]
+  ```
+
+### Available Flags
+
+| Flag                 | Description                                                                                  | Required | Default        |
+|----------------------|----------------------------------------------------------------------------------------------|----------|----------------|
+| `--contract <name>`  | Deploy a specific contract (e.g., certificate). If omitted, deploys all contracts.           | No       | All contracts  |
+| `--dry-run`          | Preview the deployment steps without executing any soroban commands. Useful for verification.| No       | Disabled       |
+| `--profile <name>`   | Specify a Soroban profile (e.g., for AWS or custom config).                                   | No       | None           |
+| `--verbose`          | Enable detailed output, including file paths and network details.                            | No       | Disabled       |
+| `--help`             | Display usage information and exit.                                                          | No       | N/A            |
+
+#### Notes:
+- Mainnet deployment requires explicit confirmation by typing **YES** (in all caps).  
+- In `--dry-run` mode, commands are echoed but not executed, and simulated contract IDs are generated.  
+- Contract names must match the basename of your `.optimized.wasm` files (e.g., `certificate.optimized.wasm`).  
+
+### Usage Examples
+
+- Dry-run all contracts to testnet (preview only):  
+  ```bash
+  ./scripts/deploy_testnet.sh --dry-run
+  ```
+
+- Deploy a specific contract to testnet:  
+  ```bash
+  ./scripts/deploy_testnet.sh --contract certificate
+  ```
+
+- Verbose dry-run for a specific contract to mainnet:  
+  ```bash
+  ./scripts/deploy_mainnet.sh --contract certificate --dry-run --verbose
+  ```
+
+- Deploy all contracts to mainnet with a custom profile:  
+  ```bash
+  ./scripts/deploy_mainnet.sh --profile myprofile
+  ```
+
+After successful deployment, contract IDs are saved to:  
+```
+target/<contract_name>.<network>.id
+```
+
+For advanced configurations or troubleshooting, refer to the [Soroban documentation](https://soroban.stellar.org/docs).
+
+---
 
 ## Contribution Guidelines
 
@@ -101,9 +163,11 @@ We welcome contributions to improve our smart contracts!
 
 Ensure that your contributions adhere to our coding standards and include appropriate tests.
 
+---
+
 ## Smart Contracts
 
-This repository contains several smart contracts that power the StrellerMinds educational platform:
+This repository contains several smart contracts that power the StarkMinds educational platform:
 
 ### Core Contracts
 
@@ -123,41 +187,18 @@ This repository contains several smart contracts that power the StrellerMinds ed
 Each contract includes comprehensive documentation covering:
 - **Overview**: Purpose and main functionality
 - **Interface**: Public functions and parameters
+- **Events**: Emitted events and their schemas
 - **Configuration**: Settings and environment variables
 - **Testing**: How to run tests and test coverage
 - **Deployment**: Setup and deployment instructions
 - **Usage Examples**: Code examples and integration patterns
 
-  ### Documentation Standards
+### Documentation Standards
 
-  All contracts follow a standardized documentation structure defined in [docs/README_TEMPLATE.md](docs/README_TEMPLATE.md). This ensures consistency and makes it easier for contributors and integrators to understand and use the contracts.
- 
- 
-## Release Pipeline
+All contracts follow a standardized documentation structure defined in [docs/README_TEMPLATE.md](docs/README_TEMPLATE.md). This ensures consistency and makes it easier for contributors and integrators to understand and use the contracts.
 
-Releases are automated and triggered by pushing a semantic version tag, e.g., `v1.2.3`.
-
-Steps:
-
-1. Ensure commits follow Conventional Commits (e.g., `feat(certificate): add expiry validation`).
-2. Tag and push:
-
-```bash
-VERSION=vX.Y.Z
-git tag -a "$VERSION" -m "Release $VERSION"
-git push origin "$VERSION"
-```
-
-The workflow at `/.github/workflows/release.yml` will:
-
-- Build all contracts for `wasm32-unknown-unknown`.
-- Optimize WASM using `soroban contract optimize`.
-- Package artifacts into `dist/` with filenames including the version tag.
-- Generate release notes using `git-cliff` (Keep a Changelog style) from Conventional Commits.
-- Create a GitHub Release and upload all WASM artifacts and `SHA256SUMS.txt`.
-
-Pre-releases (e.g., `v1.2.3-rc.1`) are automatically marked as prereleases.
+---
 
 ## Contact
 
-  For any questions, issues, or suggestions, please open an issue or reach out to the maintainers.
+For any questions, issues, or suggestions, please open an issue or reach out to the maintainers.
