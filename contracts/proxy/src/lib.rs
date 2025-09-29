@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Env, Address, BytesN, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
 
 pub struct ProxyEvents;
 
@@ -33,10 +33,19 @@ pub struct Proxy;
 impl Proxy {
     /// Initialize proxy with admin and implementation address
     pub fn initialize(env: Env, admin: Address, implementation: Address) {
+        // Prevent re-initialization
+        if env.storage().instance().has(&DataKey::Admin) {
+            panic!("Contract already initialized");
+        }
+
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
-        env.storage().instance().set(&DataKey::Implementation, &implementation);
-        env.storage().instance().set(&DataKey::RollbackStack, &Vec::<Address>::new(&env));
+        env.storage()
+            .instance()
+            .set(&DataKey::Implementation, &implementation);
+        env.storage()
+            .instance()
+            .set(&DataKey::RollbackStack, &Vec::<Address>::new(&env));
         ProxyEvents::emit_initialized(&env, &admin, &implementation);
     }
 
@@ -44,11 +53,23 @@ impl Proxy {
     pub fn upgrade(env: Env, new_implementation: Address) {
         let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         admin.require_auth();
-        let current: Address = env.storage().instance().get(&DataKey::Implementation).unwrap();
-        let mut stack: Vec<Address> = env.storage().instance().get(&DataKey::RollbackStack).unwrap();
+        let current: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Implementation)
+            .unwrap();
+        let mut stack: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::RollbackStack)
+            .unwrap();
         stack.push_back(current.clone());
-        env.storage().instance().set(&DataKey::RollbackStack, &stack);
-        env.storage().instance().set(&DataKey::Implementation, &new_implementation);
+        env.storage()
+            .instance()
+            .set(&DataKey::RollbackStack, &stack);
+        env.storage()
+            .instance()
+            .set(&DataKey::Implementation, &new_implementation);
         ProxyEvents::emit_upgraded(&env, &admin, &new_implementation);
     }
 
@@ -56,16 +77,27 @@ impl Proxy {
     pub fn rollback(env: Env) {
         let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         admin.require_auth();
-        let mut stack: Vec<Address> = env.storage().instance().get(&DataKey::RollbackStack).unwrap();
+        let mut stack: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::RollbackStack)
+            .unwrap();
         let prev = stack.pop_back().expect("No previous implementation");
-        env.storage().instance().set(&DataKey::RollbackStack, &stack);
-        env.storage().instance().set(&DataKey::Implementation, &prev);
+        env.storage()
+            .instance()
+            .set(&DataKey::RollbackStack, &stack);
+        env.storage()
+            .instance()
+            .set(&DataKey::Implementation, &prev);
         ProxyEvents::emit_rollback(&env, &admin, &prev);
     }
 
     /// Get current implementation address
     pub fn get_implementation(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Implementation).unwrap()
+        env.storage()
+            .instance()
+            .get(&DataKey::Implementation)
+            .unwrap()
     }
 
     /// Get admin address
