@@ -61,13 +61,39 @@ These checks are also enforced in CI and will fail the build if there are format
 
 ## Deployment
 
-The repository includes enhanced deployment scripts for deploying Soroban smart contracts to Stellar's testnet and mainnet.  
+The repository now includes a hardened deployment script for Soroban smart contracts:
 
-Scripts:  
-- `scripts/deploy_testnet.sh`  
-- `scripts/deploy_mainnet.sh`  
+- `scripts/deploy.sh` (supports local, testnet, and mainnet)
 
-These scripts include safety features, argument parsing, environment validation, dependency checks, and dry-run support.
+### Deployment Script Usage
+
+Run the script from the project root:
+
+```bash
+./scripts/deploy.sh --network <local|testnet|mainnet> --contract <name> --wasm <path> [--dry-run]
+```
+
+#### Flags
+| Flag                   | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `--network <network>`  | Specify which network to deploy to (`local`, `testnet`, or `mainnet`).        |
+| `--contract <name>`    | Name of the contract to deploy.                                              |
+| `--wasm <path>`        | Path to the WASM file to deploy.                                             |
+| `--dry-run`            | Simulate the deployment steps without executing them.                        |
+
+#### Environment Configuration
+Network-specific settings (URLs, keys, etc.) are managed via environment files named `.env.<network>`. The script will automatically load the correct file based on the `--network` flag.
+
+#### Dry-Run Mode
+When `--dry-run` is specified, the script prints the deployment steps but does not execute them.
+
+#### Example
+```bash
+./scripts/deploy.sh --network testnet --contract certificate --wasm contracts/certificate/target/wasm32-unknown-unknown/release/certificate.optimized.wasm --dry-run
+```
+
+#### Cross-Platform Compatibility
+The scripts are linted and compatible with macOS and Linux.
 
 ### Before Deploying
 

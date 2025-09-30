@@ -56,16 +56,29 @@ cargo test
 
 ## Deployment
 
-For testnet deployment:
 
-```
-./scripts/deploy_testnet.sh
+### Hardened Deployment Script
+
+Use the new deployment script for all environments:
+
+```bash
+./scripts/deploy.sh --network <local|testnet|mainnet> --contract <name> --wasm <path> [--dry-run]
 ```
 
-For mainnet deployment (requires authorization):
+#### Flags
+| Flag                   | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `--network <network>`  | Specify which network to deploy to (`local`, `testnet`, or `mainnet`).        |
+| `--contract <name>`    | Name of the contract to deploy.                                              |
+| `--wasm <path>`        | Path to the WASM file to deploy.                                             |
+| `--dry-run`            | Simulate the deployment steps without executing them.                        |
 
-```
-./scripts/deploy_mainnet.sh
+#### Environment Configuration
+Create environment files named `.env.local`, `.env.testnet`, or `.env.mainnet` to store network-specific variables (e.g., URLs, keys). The script loads the appropriate file based on the `--network` flag.
+
+#### Example
+```bash
+./scripts/deploy.sh --network testnet --contract certificate --wasm contracts/certificate/target/wasm32-unknown-unknown/release/certificate.optimized.wasm --dry-run
 ```
 
 ## Release Process
