@@ -7,6 +7,8 @@ mod interface;
 mod test;
 
 use soroban_sdk::{contract, contractimpl, contracterror, symbol_short, Address, Env, Symbol, String, Vec};
+use shared::access_control::AccessControl;
+use shared::roles::Permission;
 
 #[contract]
 pub struct Token;
@@ -31,6 +33,8 @@ impl Token {
         }
 
         admin.require_auth();
+        // Initialize centralized RBAC (grants SuperAdmin to admin)
+        let _ = AccessControl::initialize(&env, &admin);
         env.storage().instance().set(&AdminKey, &admin);
         
         Ok(())
@@ -39,6 +43,10 @@ impl Token {
     pub fn mint(env: Env, to: Address, amount: i128) -> Result<(), Error> {
         let admin = get_admin(&env)?;
         admin.require_auth();
+        // RBAC: require token mint permission
+        if AccessControl::require_permission(&env, &admin, &Permission::MintTokens).is_err() {
+            return Err(Error::Unauthorized);
+        }
         
         if amount <= 0 {
             return Err(Error::InvalidAmount);
