@@ -1,38 +1,13 @@
-use soroban_sdk::{String, Env, BytesN, Address};
+﻿use soroban_sdk::{String, Env, BytesN, Address};
 use crate::errors::CertificateError;
 use crate::types::MintCertificateParams;
+use shared::validation::{CoreValidator, ValidationConfig};
 
-/// Configuration constants for metadata validation
-pub struct ValidationConfig;
-
-impl ValidationConfig {
-    // Size limits (in bytes)
-    pub const MAX_TITLE_LENGTH: u32 = 200;
-    pub const MAX_DESCRIPTION_LENGTH: u32 = 1000;
-    pub const MAX_COURSE_ID_LENGTH: u32 = 100;
-    pub const MAX_URI_LENGTH: u32 = 500;
-    
-    // Minimum lengths
-    pub const MIN_TITLE_LENGTH: u32 = 3;
-    pub const MIN_DESCRIPTION_LENGTH: u32 = 10;
-    pub const MIN_COURSE_ID_LENGTH: u32 = 3;
-    pub const MIN_URI_LENGTH: u32 = 10;
-    
-    // URI validation patterns
-    pub const VALID_URI_SCHEMES: &'static [&'static str] = &["https://", "ipfs://", "ar://"];
-    
-    // Forbidden characters for XSS prevention
-    pub const FORBIDDEN_CHARS: &'static [char] = &['<', '>', '"', '\'', '&', '\0', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08', '\x0B', '\x0C', '\x0E', '\x0F', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F', '\x7F'];
-    
-    // Maximum allowed special characters ratio (to prevent spam/malformed content)
-    pub const MAX_SPECIAL_CHAR_RATIO: f32 = 0.3;
-}
-
-/// Metadata validation utilities
+/// Certificate-specific metadata validation utilities
 pub struct MetadataValidator;
 
 impl MetadataValidator {
-    /// Validates complete certificate metadata parameters
+    /// Validates complete certificate metadata parameters with detailed error reporting
     pub fn validate_mint_params(env: &Env, params: &MintCertificateParams) -> Result<(), CertificateError> {
         // Validate certificate ID
         Self::validate_certificate_id(&params.certificate_id)?;
@@ -54,107 +29,46 @@ impl MetadataValidator {
     
     /// Validates certificate ID format and uniqueness requirements
     fn validate_certificate_id(certificate_id: &BytesN<32>) -> Result<(), CertificateError> {
-        // BytesN<32> is already validated by Soroban SDK for length
-        // Additional validation can be added here if needed (e.g., format requirements)
-        
-        // Check if all bytes are zero (invalid certificate ID)
-        let bytes = certificate_id.to_array();
-        if bytes.iter().all(|&b| b == 0) {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        Ok(())
+        CoreValidator::validate_certificate_id(certificate_id)
+            .map_err(|_| CertificateError::InvalidMetadata)
     }
     
     /// Validates course ID format and content
     fn validate_course_id(course_id: &String) -> Result<(), CertificateError> {
+        // Convert Soroban String to &str for validation
         let course_str = course_id.to_string();
-        
-        // Check length constraints
-        if course_str.len() < ValidationConfig::MIN_COURSE_ID_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        if course_str.len() > ValidationConfig::MAX_COURSE_ID_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Check for forbidden characters
-        Self::validate_no_forbidden_chars(&course_str)?;
-        
-        // Validate alphanumeric with allowed separators
-        Self::validate_course_id_format(&course_str)?;
-        
-        Ok(())
+        CoreValidator::validate_course_id(&course_str)
+            .map_err(|_| CertificateError::InvalidMetadata)
     }
     
     /// Validates certificate title
     fn validate_title(title: &String) -> Result<(), CertificateError> {
+        // Convert Soroban String to &str for validation
         let title_str = title.to_string();
-        
-        // Check length constraints
-        if title_str.len() < ValidationConfig::MIN_TITLE_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        if title_str.len() > ValidationConfig::MAX_TITLE_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Check for forbidden characters
-        Self::validate_no_forbidden_chars(&title_str)?;
-        
-        // Validate content quality
-        Self::validate_text_quality(&title_str)?;
-        
-        Ok(())
+        CoreValidator::validate_text_field(
+            &title_str,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        ).map_err(|_| CertificateError::InvalidMetadata)
     }
     
     /// Validates certificate description
     fn validate_description(description: &String) -> Result<(), CertificateError> {
         let desc_str = description.to_string();
-        
-        // Check length constraints
-        if desc_str.len() < ValidationConfig::MIN_DESCRIPTION_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        if desc_str.len() > ValidationConfig::MAX_DESCRIPTION_LENGTH as usize {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Check for forbidden characters
-        Self::validate_no_forbidden_chars(&desc_str)?;
-        
-        // Validate content quality
-        Self::validate_text_quality(&desc_str)?;
-        
-        Ok(())
+        CoreValidator::validate_text_field(
+            &desc_str,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        ).map_err(|_| CertificateError::InvalidMetadata)
     }
     
     /// Validates metadata URI format and scheme
     fn validate_metadata_uri(uri: &String) -> Result<(), CertificateError> {
         let uri_str = uri.to_string();
-        
-        // Check length constraints
-        if uri_str.len() < ValidationConfig::MIN_URI_LENGTH as usize {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        if uri_str.len() > ValidationConfig::MAX_URI_LENGTH as usize {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Check for forbidden characters
-        Self::validate_no_forbidden_chars(&uri_str)?;
-        
-        // Validate URI scheme
-        Self::validate_uri_scheme(&uri_str)?;
-        
-        // Validate URI format
-        Self::validate_uri_format(&uri_str)?;
-        
-        Ok(())
+        CoreValidator::validate_uri(&uri_str)
+            .map_err(|_| CertificateError::InvalidUri)
     }
     
     /// Validates address format (basic validation, Soroban handles most)
@@ -166,195 +80,8 @@ impl MetadataValidator {
     
     /// Validates expiry date
     fn validate_expiry_date(env: &Env, expiry_date: u64) -> Result<(), CertificateError> {
-        let current_time = env.ledger().timestamp();
-        
-        // Allow non-expiring certificates when expiry_date == 0
-        if expiry_date == 0 {
-            return Ok(());
-        }
-
-        // Otherwise, expiry date must be in the future
-        if expiry_date <= current_time {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Expiry date should not be too far in the future (e.g., 100 years)
-        let max_future_time = current_time + (100 * 365 * 24 * 60 * 60); // 100 years in seconds
-        if expiry_date > max_future_time {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates that string contains no forbidden characters
-    fn validate_no_forbidden_chars(text: &str) -> Result<(), CertificateError> {
-        for &forbidden_char in ValidationConfig::FORBIDDEN_CHARS {
-            if text.contains(forbidden_char) {
-                return Err(CertificateError::InvalidMetadata);
-            }
-        }
-        Ok(())
-    }
-    
-    /// Validates course ID format (alphanumeric with hyphens and underscores)
-    fn validate_course_id_format(course_id: &str) -> Result<(), CertificateError> {
-        // Course ID should contain only alphanumeric characters, hyphens, and underscores
-        for ch in course_id.chars() {
-            if !ch.is_alphanumeric() && ch != '-' && ch != '_' {
-                return Err(CertificateError::InvalidMetadata);
-            }
-        }
-        
-        // Should not start or end with separator
-        if course_id.starts_with('-') || course_id.starts_with('_') || 
-           course_id.ends_with('-') || course_id.ends_with('_') {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates text quality (prevents spam and malformed content)
-    fn validate_text_quality(text: &str) -> Result<(), CertificateError> {
-        // Check for excessive special characters
-        let special_char_count = text.chars()
-            .filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace())
-            .count();
-        
-        let special_char_ratio = special_char_count as f32 / text.len() as f32;
-        if special_char_ratio > ValidationConfig::MAX_SPECIAL_CHAR_RATIO {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Check for excessive whitespace
-        if text.trim().is_empty() {
-            return Err(CertificateError::InvalidMetadata);
-        }
-        
-        // Check for repeated characters (potential spam)
-        Self::validate_no_excessive_repetition(text)?;
-        
-        Ok(())
-    }
-    
-    /// Validates URI scheme is allowed
-    fn validate_uri_scheme(uri: &str) -> Result<(), CertificateError> {
-        let uri_lower = uri.to_lowercase();
-        
-        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES
-            .iter()
-            .any(|&scheme| uri_lower.starts_with(scheme));
-        
-        if !has_valid_scheme {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates URI format structure
-    fn validate_uri_format(uri: &str) -> Result<(), CertificateError> {
-        // Basic URI format validation
-        
-        // Should not contain spaces
-        if uri.contains(' ') {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Should not have consecutive slashes after scheme
-        if uri.contains("///") {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // For HTTPS URIs, validate domain structure
-        if uri.starts_with("https://") {
-            Self::validate_https_uri(&uri[8..])?;
-        }
-        
-        // For IPFS URIs, validate hash format
-        if uri.starts_with("ipfs://") {
-            Self::validate_ipfs_uri(&uri[7..])?;
-        }
-        
-        // For Arweave URIs, validate transaction ID format
-        if uri.starts_with("ar://") {
-            Self::validate_arweave_uri(&uri[5..])?;
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates HTTPS URI domain structure
-    fn validate_https_uri(domain_path: &str) -> Result<(), CertificateError> {
-        if domain_path.is_empty() {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Should contain at least a domain
-        let parts: Vec<&str> = domain_path.split('/').collect();
-        if parts.is_empty() || parts[0].is_empty() {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Basic domain validation
-        let domain = parts[0];
-        if !domain.contains('.') || domain.starts_with('.') || domain.ends_with('.') {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates IPFS URI hash format
-    fn validate_ipfs_uri(hash: &str) -> Result<(), CertificateError> {
-        // IPFS hash should be alphanumeric and of appropriate length
-        if hash.len() < 40 || hash.len() > 100 {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Should contain only alphanumeric characters
-        if !hash.chars().all(|c| c.is_alphanumeric()) {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates Arweave URI transaction ID format
-    fn validate_arweave_uri(tx_id: &str) -> Result<(), CertificateError> {
-        // Arweave transaction ID should be 43 characters, base64url encoded
-        if tx_id.len() != 43 {
-            return Err(CertificateError::InvalidUri);
-        }
-        
-        // Should contain only valid base64url characters
-        for ch in tx_id.chars() {
-            if !ch.is_alphanumeric() && ch != '-' && ch != '_' {
-                return Err(CertificateError::InvalidUri);
-            }
-        }
-        
-        Ok(())
-    }
-    
-    /// Validates no excessive character repetition
-    fn validate_no_excessive_repetition(text: &str) -> Result<(), CertificateError> {
-        let chars: Vec<char> = text.chars().collect();
-        let mut consecutive_count = 1;
-        
-        for i in 1..chars.len() {
-            if chars[i] == chars[i-1] {
-                consecutive_count += 1;
-                if consecutive_count > 5 { // Max 5 consecutive identical characters
-                    return Err(CertificateError::InvalidMetadata);
-                }
-            } else {
-                consecutive_count = 1;
-            }
-        }
-        
-        Ok(())
+        CoreValidator::validate_expiry_date(env, expiry_date)
+            .map_err(|_| CertificateError::InvalidMetadata)
     }
     
     /// Validates URI update parameters
@@ -364,21 +91,17 @@ impl MetadataValidator {
     
     /// Sanitizes text content for safe storage and display
     pub fn sanitize_text(text: &str) -> String {
-        text.chars()
-            .filter(|&ch| !ValidationConfig::FORBIDDEN_CHARS.contains(&ch))
-            .collect::<String>()
-            .trim()
-            .to_string()
+        CoreValidator::sanitize_text(text)
     }
     
-    /// Validates batch certificate parameters
+    /// Validates batch certificate parameters with enhanced checking
     pub fn validate_batch_params(env: &Env, params_list: &[MintCertificateParams]) -> Result<(), CertificateError> {
         // Validate batch size
         if params_list.is_empty() {
             return Err(CertificateError::InvalidInput);
         }
         
-        if params_list.len() > 100 { // Max 100 certificates per batch
+        if params_list.len() > ValidationConfig::MAX_BATCH_SIZE as usize {
             return Err(CertificateError::InvalidInput);
         }
         
@@ -394,6 +117,27 @@ impl MetadataValidator {
                     return Err(CertificateError::CertificateAlreadyExists);
                 }
             }
+        }
+        
+        Ok(())
+    }
+    
+    /// Enhanced validation for metadata updates with detailed error reporting
+    pub fn validate_metadata_update(
+        title: Option<&String>,
+        description: Option<&String>,
+        metadata_uri: Option<&String>,
+    ) -> Result<(), CertificateError> {
+        if let Some(title) = title {
+            Self::validate_title(title)?;
+        }
+        
+        if let Some(description) = description {
+            Self::validate_description(description)?;
+        }
+        
+        if let Some(uri) = metadata_uri {
+            Self::validate_metadata_uri(uri)?;
         }
         
         Ok(())
@@ -430,6 +174,30 @@ mod tests {
     }
     
     #[test]
+    fn test_validate_title_xss_attempt() {
+        let xss_title = SorobanString::from_str(&Env::default(), "<script>alert('xss')</script>");
+        assert_eq!(MetadataValidator::validate_title(&xss_title), Err(CertificateError::InvalidMetadata));
+    }
+    
+    #[test]
+    fn test_validate_description_success() {
+        let valid_desc = SorobanString::from_str(&Env::default(), "This is a valid certificate description.");
+        assert!(MetadataValidator::validate_description(&valid_desc).is_ok());
+    }
+    
+    #[test]
+    fn test_validate_description_too_short() {
+        let short_desc = SorobanString::from_str(&Env::default(), "Short");
+        assert_eq!(MetadataValidator::validate_description(&short_desc), Err(CertificateError::InvalidMetadata));
+    }
+    
+    #[test]
+    fn test_validate_description_too_long() {
+        let long_desc = SorobanString::from_str(&Env::default(), &"A".repeat(1001));
+        assert_eq!(MetadataValidator::validate_description(&long_desc), Err(CertificateError::InvalidMetadata));
+    }
+    
+    #[test]
     fn test_validate_uri_https_success() {
         let valid_uri = SorobanString::from_str(&Env::default(), "https://example.com/metadata.json");
         assert!(MetadataValidator::validate_metadata_uri(&valid_uri).is_ok());
@@ -438,6 +206,12 @@ mod tests {
     #[test]
     fn test_validate_uri_ipfs_success() {
         let valid_uri = SorobanString::from_str(&Env::default(), "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG");
+        assert!(MetadataValidator::validate_metadata_uri(&valid_uri).is_ok());
+    }
+    
+    #[test]
+    fn test_validate_uri_arweave_success() {
+        let valid_uri = SorobanString::from_str(&Env::default(), "ar://ABC123abc456XYZ789xyz012DEF345def678GHI");
         assert!(MetadataValidator::validate_metadata_uri(&valid_uri).is_ok());
     }
     
@@ -462,14 +236,76 @@ mod tests {
     #[test]
     fn test_validate_expiry_date_future() {
         let env = Env::default();
-        let future_date = env.ledger().timestamp() + 86400; // 1 day in future
+        let future_date = env.ledger().timestamp() + 86400;
         assert!(MetadataValidator::validate_expiry_date(&env, future_date).is_ok());
     }
     
     #[test]
     fn test_validate_expiry_date_past() {
         let env = Env::default();
-        let past_date = env.ledger().timestamp() - 86400; // 1 day in past
+        let past_date = env.ledger().timestamp() - 86400;
         assert_eq!(MetadataValidator::validate_expiry_date(&env, past_date), Err(CertificateError::InvalidMetadata));
+    }
+    
+    #[test]
+    fn test_validate_batch_params_success() {
+        let env = Env::default();
+        let certificate_id = BytesN::from_array(&env, &[1u8; 32]);
+        let params = MintCertificateParams {
+            certificate_id,
+            course_id: SorobanString::from_str(&env, "CS-101"),
+            student: Address::generate(&env),
+            title: SorobanString::from_str(&env, "Valid Certificate"),
+            description: SorobanString::from_str(&env, "A valid test certificate"),
+            metadata_uri: SorobanString::from_str(&env, "https://example.com/metadata.json"),
+            expiry_date: env.ledger().timestamp() + 86400,
+        };
+        
+        let batch = vec![&env, params];
+        assert!(MetadataValidator::validate_batch_params(&env, &batch.to_array()).is_ok());
+    }
+    
+    #[test]
+    fn test_validate_batch_params_empty() {
+        let env = Env::default();
+        let empty_batch: [MintCertificateParams; 0] = [];
+        assert_eq!(
+            MetadataValidator::validate_batch_params(&env, &empty_batch),
+            Err(CertificateError::InvalidInput)
+        );
+    }
+    
+    #[test]
+    fn test_validate_metadata_update_success() {
+        let env = Env::default();
+        let title = SorobanString::from_str(&env, "Updated Title");
+        let description = SorobanString::from_str(&env, "Updated description");
+        let uri = SorobanString::from_str(&env, "https://example.com/updated.json");
+        
+        assert!(MetadataValidator::validate_metadata_update(
+            Some(&title),
+            Some(&description),
+            Some(&uri)
+        ).is_ok());
+    }
+    
+    #[test]
+    fn test_validate_metadata_update_invalid_title() {
+        let env = Env::default();
+        let invalid_title = SorobanString::from_str(&env, "<script>alert('xss')</script>");
+        
+        assert_eq!(
+            MetadataValidator::validate_metadata_update(Some(&invalid_title), None, None),
+            Err(CertificateError::InvalidMetadata)
+        );
+    }
+    
+    #[test]
+    fn test_sanitize_text() {
+        let dirty_text = "Clean text with <script> and 'quotes'";
+        let clean_text = MetadataValidator::sanitize_text(dirty_text);
+        assert!(!clean_text.contains('<'));
+        assert!(!clean_text.contains('>'));
+        assert!(!clean_text.contains('\''));
     }
 }
