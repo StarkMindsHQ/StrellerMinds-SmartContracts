@@ -35,6 +35,8 @@ use storage::AnalyticsStorage;
 use analytics_engine::AnalyticsEngine;
 use reports::ReportGenerator;
 use interface::AnalyticsTrait;
+use shared::access_control::AccessControl;
+use shared::roles::Permission;
 
 #[contract]
 pub struct Analytics;
@@ -48,6 +50,9 @@ impl AnalyticsTrait for Analytics {
         }
 
         admin.require_auth();
+
+        // Initialize shared RBAC (grants SuperAdmin to admin)
+        let _ = AccessControl::initialize(&env, &admin);
 
         // Validate configuration
         if config.min_session_time == 0 || config.max_session_time <= config.min_session_time {
@@ -89,7 +94,7 @@ impl AnalyticsTrait for Analytics {
             &session.student,
             &session.course_id,
             &session.module_id,
-            &session.session_type,
+            session.session_type.clone(),
             session.time_spent,
             session.completion_percentage,
         );
@@ -329,6 +334,11 @@ impl AnalyticsTrait for Analytics {
     ) -> Result<(), AnalyticsError> {
         admin.require_auth();
 
+        // RBAC: require permission to update configuration (use UpdateCourse as admin-like perm)
+        if AccessControl::require_permission(&env, &admin, &Permission::UpdateCourse).is_err() {
+            return Err(AnalyticsError::Unauthorized);
+        }
+
         // Verify admin
         let stored_admin = AnalyticsStorage::get_admin(&env)
             .ok_or(AnalyticsError::NotInitialized)?;
@@ -362,6 +372,11 @@ impl AnalyticsTrait for Analytics {
     ) -> Result<(), AnalyticsError> {
         admin.require_auth();
 
+        // RBAC: require permission to update analytics (use UpdateCourse)
+        if AccessControl::require_permission(&env, &admin, &Permission::UpdateCourse).is_err() {
+            return Err(AnalyticsError::Unauthorized);
+        }
+
         // Verify admin
         let stored_admin = AnalyticsStorage::get_admin(&env)
             .ok_or(AnalyticsError::NotInitialized)?;
@@ -389,6 +404,11 @@ impl AnalyticsTrait for Analytics {
         before_date: u64,
     ) -> Result<u32, AnalyticsError> {
         admin.require_auth();
+
+        // RBAC: require permission to perform cleanup (use UpdateCourse)
+        if AccessControl::require_permission(&env, &admin, &Permission::UpdateCourse).is_err() {
+            return Err(AnalyticsError::Unauthorized);
+        }
 
         // Verify admin
         let stored_admin = AnalyticsStorage::get_admin(&env)
@@ -519,6 +539,11 @@ impl AnalyticsTrait for Analytics {
         new_admin: Address,
     ) -> Result<(), AnalyticsError> {
         current_admin.require_auth();
+
+        // RBAC: require permission to grant role/admin-like (use GrantRole)
+        if AccessControl::require_permission(&env, &current_admin, &Permission::GrantRole).is_err() {
+            return Err(AnalyticsError::Unauthorized);
+        }
 
         // Verify current admin
         let stored_admin = AnalyticsStorage::get_admin(&env)

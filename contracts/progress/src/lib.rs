@@ -6,6 +6,8 @@ use soroban_sdk::{
 
 // Import String for event logging
 use soroban_sdk::String;
+use shared::access_control::AccessControl;
+use shared::roles::Permission;
 
 // Storage keys
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
@@ -41,6 +43,9 @@ impl Progress {
         // Require authorization from the admin
         admin.require_auth();
 
+        // Initialize shared RBAC, grant SuperAdmin to admin for centralized control
+        let _ = AccessControl::initialize(&env, &admin);
+
         // Store admin address
         env.storage().instance().set(&ADMIN_KEY, &admin);
 
@@ -52,6 +57,11 @@ impl Progress {
         // Get admin and check authorization
         let admin = Self::get_admin(&env)?;
         admin.require_auth();
+
+        // RBAC: require permission to create courses
+        if AccessControl::require_permission(&env, &admin, &Permission::CreateCourse).is_err() {
+            return Err(Error::Unauthorized);
+        }
 
         // Create a storage key for this course
         let key = (COURSE_KEY, course_id);
@@ -88,6 +98,14 @@ impl Progress {
     ) -> Result<(), Error> {
         // Require authorization from the user
         user.require_auth();
+
+        // RBAC: user must have UpdateProgress or MarkCompletion
+        let mut any_perms: Vec<Permission> = Vec::new(&env);
+        any_perms.push_back(Permission::UpdateProgress);
+        any_perms.push_back(Permission::MarkCompletion);
+        if AccessControl::require_any_permission(&env, &user, &any_perms).is_err() {
+            return Err(Error::Unauthorized);
+        }
 
         // Check if course exists and get total modules
         let total_modules = Self::get_course_modules(env.clone(), course_id.clone())?;

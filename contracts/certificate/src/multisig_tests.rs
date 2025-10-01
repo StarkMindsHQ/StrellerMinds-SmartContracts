@@ -22,6 +22,36 @@ mod multisig_tests {
         (env, admin, instructor, student, approver1, approver2)
     }
 
+    #[test]
+    fn test_create_multisig_request_invalid_metadata_rejected() {
+        let (env, admin, instructor, student, approver1, approver2) = create_test_env();
+        let contract = setup_contract(&env, &admin);
+
+        // Grant instructor role
+        contract.grant_role(env.clone(), instructor.clone(), 3).unwrap();
+
+        // Configure multi-sig
+        let config = create_test_config(
+            &env,
+            "COURSE_001",
+            2,
+            vec![approver1.clone(), approver2.clone()],
+        );
+        contract.configure_multisig(env.clone(), admin.clone(), config).unwrap();
+
+        // Create invalid params (title too short)
+        let mut params = create_test_mint_params(&env, &student, "COURSE_001");
+        params.title = String::from_str(&env, "AB");
+
+        let result = contract.create_multisig_request(
+            env.clone(),
+            instructor.clone(),
+            params,
+            String::from_str(&env, "Invalid title"),
+        );
+        assert!(result.is_err());
+    }
+
     fn setup_contract(env: &Env, admin: &Address) -> Certificate {
         let contract = Certificate::new(env, admin.clone());
         contract.initialize(env.clone(), admin.clone()).unwrap();

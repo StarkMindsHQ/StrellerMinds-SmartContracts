@@ -12,7 +12,9 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
+
 Steps to reproduce the behavior:
+
 1. Go to '...'
 2. Run command '....'
 3. See error
@@ -26,6 +28,7 @@ A clear and concise description of what actually happened.
 ## Environment
 
 **Contract/Module Affected:**
+
 - [ ] Analytics Contract
 - [ ] Certificate Contract
 - [ ] Mint Batch Certificates Contract
@@ -39,6 +42,7 @@ A clear and concise description of what actually happened.
 - [ ] Other (please specify):
 
 **Environment Details:**
+
 - Rust version: [e.g. 1.70.0]
 - Soroban CLI version: [e.g. 20.0.0]
 - Stellar CLI version: [e.g. 20.0.0]
@@ -47,11 +51,13 @@ A clear and concise description of what actually happened.
 ## Additional Context
 
 **Error Messages**
-```
+
+```text
 [Paste error messages here]
 ```
 
 **Contract Build/Test Output**
+
 ```bash
 # If applicable, paste relevant cargo build or cargo test output
 ```
@@ -62,6 +68,7 @@ Add any other context about the problem here.
 ## Security Impact
 
 **Does this bug have security implications?**
+
 - [ ] Yes - This could affect contract security
 - [ ] No - This is a general functionality issue
 - [ ] Unsure
@@ -72,4 +79,5 @@ Add any other context about the problem here.
 ## Possible Solution
 
 **Do you have a suggestion for fixing this bug?**
+
 [Optional: Suggest a fix or reason for the bug]

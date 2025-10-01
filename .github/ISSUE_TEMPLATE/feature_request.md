@@ -20,6 +20,7 @@ A clear and concise description of any alternative solutions or features you've 
 ## Implementation Details
 
 **Which contract(s) would this feature affect?**
+
 - [ ] Analytics Contract
 - [ ] Certificate Contract
 - [ ] Mint Batch Certificates Contract
@@ -35,6 +36,7 @@ A clear and concise description of any alternative solutions or features you've 
 - [ ] Infrastructure/CI/CD
 
 **Feature Category:**
+
 - [ ] New smart contract functionality
 - [ ] Educational platform enhancement
 - [ ] Performance optimization
@@ -47,11 +49,13 @@ A clear and concise description of any alternative solutions or features you've 
 ## Technical Considerations
 
 **Complexity Level:**
+
 - [ ] Low - Simple addition/modification
 - [ ] Medium - Requires moderate changes
 - [ ] High - Significant architectural changes
 
 **Breaking Changes:**
+
 - [ ] Yes - This would require breaking changes
 - [ ] No - This is backward compatible
 - [ ] Unsure
@@ -62,12 +66,14 @@ List any new dependencies this feature would require (external libraries, Stella
 ## Security & Compliance
 
 **Security Impact:**
+
 - [ ] No security implications
 - [ ] May affect contract security (requires security review)
 - [ ] Involves handling sensitive data
 - [ ] Changes access control patterns
 
 **Educational Platform Impact:**
+
 - [ ] Affects student credentials
 - [ ] Changes course progress tracking
 - [ ] Modifies token/incentive systems

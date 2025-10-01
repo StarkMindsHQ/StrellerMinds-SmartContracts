@@ -1,5 +1,3 @@
-#![no_std]
-
 mod errors;
 mod events;
 mod interface;

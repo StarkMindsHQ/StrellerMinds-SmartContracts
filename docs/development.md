@@ -1,11 +1,28 @@
 # Development Guide
 
+## Supported Versions
+
+This project maintains compatibility with the following versions:
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Rust Toolchain | stable | See `rust-toolchain.toml` for exact configuration |
+| Soroban SDK | 22.0.0 | Defined in workspace `Cargo.toml` |
+| Soroban CLI | Latest compatible with SDK 22.0.0 | Install via `cargo install soroban-cli` |
+| Stellar Strkey | 0.0.7 | Workspace dependency |
+| Ed25519 Dalek | 2.0.0 | Workspace dependency |
+| Rand | 0.8.5 | Workspace dependency |
+
+**Important**: All contracts use workspace dependencies to ensure version consistency. Do not override these versions in individual contract `Cargo.toml` files.
+
 ## Prerequisites
 
 - Rust (see rust-toolchain.toml for version)
+
 - Soroban CLI
 - Docker (for E2E testing with localnet)
 - Stellar account for testnet/mainnet deployment
+
 
 ## Environment Setup
 
@@ -166,6 +183,7 @@ All accounts are funded and ready for testing.
 
 #### Troubleshooting E2E Tests
 
+
 **Docker issues:**
 ```bash
 # Check if Docker is running
@@ -222,9 +240,11 @@ cargo test gas_regression
 
 # View gas optimization analysis
 cat docs/gas_optimization_analysis.md
+
 ```
 
 ## Deployment
+
 
 ### Testnet Deployment
 
@@ -327,3 +347,4 @@ StrellerMinds-SmartContracts/
 3. Update documentation for new features
 4. Follow existing code patterns and RBAC integration
 5. Add appropriate tests for new functionality
+

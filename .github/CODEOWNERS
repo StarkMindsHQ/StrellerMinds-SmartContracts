@@ -1,6 +1,9 @@
 # Global code owners - maintainer is automatically requested for review on all PRs
 * @LaGodxy
 
+# Core maintainers for governance and triage
+# Add additional maintainers as the project grows
+
 # Core contracts
 /contracts/analytics/ @LaGodxy
 /contracts/certificate/ @LaGodxy
@@ -23,8 +26,17 @@
 Cargo.toml @LaGodxy
 Cargo.lock @LaGodxy
 
+# Governance and project management
+/.github/GOVERNANCE.md @LaGodxy
+
 # Security-sensitive files require maintainer review
 /contracts/shared/src/rbac.rs @LaGodxy
 /contracts/shared/src/reentrancy* @LaGodxy
 /contracts/*/src/*security* @LaGodxy
 /contracts/*/src/*auth* @LaGodxy
+
+# Scripts and deployment
+/scripts/ @LaGodxy
+
+# Root configuration files
+rust-toolchain.toml @LaGodxy
