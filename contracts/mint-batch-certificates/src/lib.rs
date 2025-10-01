@@ -1,5 +1,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, Address, Env, Vec, TryFromVal, Val, IntoVal, ConstructorArgs, Map as SorobanMap};
+use shared::access_control::AccessControl;
+use shared::roles::Permission;
 
 mod certificate; // Certificate data structure
 mod auth;        // Authentication utilities
@@ -32,6 +34,8 @@ impl CertificateContract {
             return Err(Error::AlreadyInitialized);
         }
         
+        // Initialize centralized RBAC (grants SuperAdmin to admin)
+        let _ = AccessControl::initialize(env, &admin);
         storage::initialize(env, &admin, max_batch_size);
         events::emit_contract_initialized(env, &admin, max_batch_size);
         
@@ -42,6 +46,11 @@ impl CertificateContract {
     pub fn add_issuer(env: &Env, admin: Address, issuer: Address) -> Result<(), Error> {
         admin.require_auth();
         
+        // RBAC: require role management capability
+        if AccessControl::require_permission(env, &admin, &Permission::GrantRole).is_err() {
+            return Err(Error::Unauthorized);
+        }
+
         if !auth::is_admin(env, &admin) {
             return Err(Error::Unauthorized);
         }
@@ -56,6 +65,11 @@ impl CertificateContract {
     pub fn remove_issuer(env: &Env, admin: Address, issuer: Address) -> Result<(), Error> {
         admin.require_auth();
         
+        // RBAC: require role revocation capability
+        if AccessControl::require_permission(env, &admin, &Permission::RevokeRole).is_err() {
+            return Err(Error::Unauthorized);
+        }
+
         if !auth::is_admin(env, &admin) {
             return Err(Error::Unauthorized);
         }
@@ -75,7 +89,11 @@ impl CertificateContract {
     ) -> Result<(), Error> {
         // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
-        
+        // RBAC: require batch mint permission (single mint belongs to batch issuer in this contract)
+        if AccessControl::require_permission(env, &issuer, &Permission::BatchMintCertificates).is_err() {
+            return Err(Error::Unauthorized);
+        }
+
         if !auth::is_issuer(env, &issuer) {
             emit_error_event(env, "mint_single_certificate", Error::Unauthorized as u32, Error::Unauthorized.message(), Some(certificate.id));
             return Err(Error::Unauthorized);
@@ -156,6 +174,11 @@ impl CertificateContract {
         target_gas_limit: u64
     ) -> Vec<MintResult> {
         let mut all_results = Vec::new(env);
+        // RBAC: require batch mint permission
+        if AccessControl::require_permission(env, &issuer, &Permission::BatchMintCertificates).is_err() {
+            emit_error_event(env, "mint_batch_certificates_dynamic", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
+            env.panic_with_error(Error::Unauthorized);
+        }
         let batches = Self::split_into_optimal_batches(env, owners, certificates, target_gas_limit);
         for (batch_owners, batch_certs) in batches.iter() {
             let results = Self::mint_batch_certificates(env, issuer.clone(), batch_owners, batch_certs);
@@ -174,7 +197,11 @@ impl CertificateContract {
     ) -> Result<(), Error> {
         // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
-        
+        // RBAC: require batch revoke permission
+        if AccessControl::require_permission(env, &issuer, &Permission::BatchRevokeCertificates).is_err() {
+            return Err(Error::Unauthorized);
+        }
+
         if !auth::is_issuer(env, &issuer) {
             return Err(Error::Unauthorized);
         }
@@ -259,6 +286,11 @@ impl CertificateContract {
     ) -> Vec<MintResult> {
         // let _guard = ReentrancyLock::new(env);
         issuer.require_auth();
+        // RBAC: require batch mint permission
+        if AccessControl::require_permission(env, &issuer, &Permission::BatchMintCertificates).is_err() {
+            emit_error_event(env, "mint_batch_certificates", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
+            env.panic_with_error(Error::Unauthorized);
+        }
         if !auth::is_issuer(env, &issuer) {
             emit_error_event(env, "mint_batch_certificates", Error::Unauthorized as u32, Error::Unauthorized.message(), None);
             env.panic_with_error(Error::Unauthorized);

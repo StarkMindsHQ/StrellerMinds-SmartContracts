@@ -1,5 +1,6 @@
 use soroban_sdk::{Address, BytesN, Env, Symbol};
 use crate::types::{SessionType, AchievementType, LeaderboardMetric, PerformanceTrend};
+use shared::event_schema::{StandardEvent, EventData, AnalyticsEventData};
 
 /// Analytics contract events for tracking and auditing
 pub struct AnalyticsEvents;
@@ -12,14 +13,33 @@ impl AnalyticsEvents {
         student: &Address,
         course_id: &Symbol,
         module_id: &Symbol,
-        session_type: &SessionType,
+        session_type: SessionType,
         time_spent: u64,
         completion_percentage: u32,
     ) {
-        env.events().publish(
-            ("analytics", "session_recorded"),
-            (session_id, student, course_id, module_id, session_type, time_spent, completion_percentage),
-        );
+        let session_type_str = match session_type {
+            SessionType::Study => "study",
+            SessionType::Assessment => "assessment",
+            SessionType::Practice => "practice",
+            SessionType::Review => "review",
+        };
+        
+        let event_data = AnalyticsEventData::SessionRecorded {
+            session_id: session_id.clone(),
+            student: student.clone(),
+            course_id: course_id.clone(),
+            module_id: module_id.clone(),
+            session_type: session_type_str.to_string(),
+            time_spent,
+            completion_percentage,
+        };
+        
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        ).emit(env);
     }
 
     /// Emit event when a learning session is completed
@@ -45,7 +65,7 @@ impl AnalyticsEvents {
         course_id: &Symbol,
         completion_percentage: u32,
         total_time_spent: u64,
-        performance_trend: &PerformanceTrend,
+        performance_trend: PerformanceTrend,
     ) {
         env.events().publish(
             ("analytics", "progress_updated"),
@@ -87,7 +107,7 @@ impl AnalyticsEvents {
         env: &Env,
         student: &Address,
         achievement_id: &Symbol,
-        achievement_type: &AchievementType,
+        achievement_type: AchievementType,
         course_id: &Symbol,
         earned_date: u64,
     ) {
@@ -101,7 +121,7 @@ impl AnalyticsEvents {
     pub fn emit_leaderboard_updated(
         env: &Env,
         course_id: &Symbol,
-        metric_type: &LeaderboardMetric,
+        metric_type: LeaderboardMetric,
         top_student: &Address,
         top_score: u32,
         total_entries: u32,
@@ -172,8 +192,8 @@ impl AnalyticsEvents {
         env: &Env,
         student: &Address,
         course_id: &Symbol,
-        old_trend: &PerformanceTrend,
-        new_trend: &PerformanceTrend,
+        old_trend: PerformanceTrend,
+        new_trend: PerformanceTrend,
     ) {
         env.events().publish(
             ("analytics", "trend_change"),

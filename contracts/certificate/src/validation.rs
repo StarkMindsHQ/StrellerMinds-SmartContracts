@@ -168,7 +168,12 @@ impl MetadataValidator {
     fn validate_expiry_date(env: &Env, expiry_date: u64) -> Result<(), CertificateError> {
         let current_time = env.ledger().timestamp();
         
-        // Expiry date must be in the future
+        // Allow non-expiring certificates when expiry_date == 0
+        if expiry_date == 0 {
+            return Ok(());
+        }
+
+        // Otherwise, expiry date must be in the future
         if expiry_date <= current_time {
             return Err(CertificateError::InvalidMetadata);
         }

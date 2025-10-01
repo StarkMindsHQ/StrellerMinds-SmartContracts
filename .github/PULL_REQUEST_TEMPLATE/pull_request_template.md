@@ -1,3 +1,5 @@
+# Pull Request
+
 ## Description
 
 <!-- Describe the changes in this PR -->
@@ -34,3 +36,7 @@ Fixes #
 - [ ] I have added appropriate error handling
 - [ ] I have considered security implications
 - [ ] I have run the security checks and tests locally
+- [ ] All tests pass locally
+- [ ] Code follows the project's coding standards
+- [ ] Changes are backward compatible (if applicable)
+- [ ] CI/CD pipeline passes

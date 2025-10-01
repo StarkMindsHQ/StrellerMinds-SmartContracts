@@ -20,6 +20,7 @@ pub struct LearningSession {
 /// Types of learning sessions
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
+#[repr(u32)]
 pub enum SessionType {
     Study,
     Assessment,
@@ -252,6 +253,13 @@ pub struct AnalyticsFilter {
     pub student: Option<Address>,
     pub start_date: Option<u64>,
     pub end_date: Option<u64>,
-    pub session_type: Option<SessionType>,
+    pub session_type: OptionalSessionType,
     pub min_score: Option<u32>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum OptionalSessionType {
+    None,
+    Some(SessionType),
 }

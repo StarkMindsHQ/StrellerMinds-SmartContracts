@@ -9,6 +9,7 @@ use crate::storage::CertificateStorage;
 use crate::events::CertificateEvents;
 use shared::access_control::AccessControl;
 use shared::roles::Permission;
+use crate::validation::MetadataValidator;
 
 /// Multi-signature certificate management
 pub struct MultiSigManager;
@@ -60,6 +61,9 @@ impl MultiSigManager {
 
         // Get multi-sig configuration for the course
         let config = Self::get_config(env, &params.course_id)?;
+
+        // Enforce full metadata validation at request creation to avoid invalid pending state
+        MetadataValidator::validate_mint_params(env, &params)?;
 
         // Generate unique request ID
         let request_id = Self::generate_request_id(env, &params);
@@ -237,6 +241,9 @@ impl MultiSigManager {
         if CertificateStorage::has_certificate(env, &request.certificate_params.certificate_id) {
             return Err(CertificateError::CertificateAlreadyExists);
         }
+
+        // Validate again at execution time to guard against any mutated or stale requests
+        MetadataValidator::validate_mint_params(env, &request.certificate_params)?;
 
         // Create packed certificate data directly
         let metadata = CertificateMetadata {
