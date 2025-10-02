@@ -14,6 +14,9 @@ mod test;
 mod metadata_validation_tests;
 
 #[cfg(test)]
+mod comprehensive_validation_tests;
+
+#[cfg(test)]
 mod integration_tests;
 
 #[cfg(test)]
