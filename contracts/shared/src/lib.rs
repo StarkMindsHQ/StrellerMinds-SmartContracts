@@ -6,6 +6,11 @@ pub mod event_schema;
 pub mod storage;
 pub mod errors;
 pub mod reentrancy_guard;
+pub mod gas_testing;
 
 #[cfg(test)]
-mod test;
+
+mod simple_tests;
+
+ 
+

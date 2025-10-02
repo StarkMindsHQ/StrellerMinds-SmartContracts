@@ -211,11 +211,204 @@ fn performance_stress_test() {
 - Track storage usage
 - Monitor contract size
 
+## Gas Regression Testing Methodology
+
+### Overview
+
+To maintain efficient contract performance and prevent gas usage regressions over time, comprehensive gas regression tests have been implemented across all major contracts. These tests measure CPU instructions, memory usage, and execution time to ensure operations remain within acceptable limits.
+
+### Test Infrastructure
+
+The gas regression testing system consists of:
+
+- **Shared gas testing utilities** (`contracts/shared/src/gas_testing.rs`)
+- **Contract-specific test suites** for certificate, analytics, search, and token contracts
+- **Configurable thresholds** with tolerance percentages for natural variations
+- **Stable test data generation** to ensure consistent measurements
+
+### Running Gas Regression Tests
+
+#### All Gas Tests
+```bash
+# Run all gas regression tests across contracts
+cargo test gas_regression
+
+# Run with detailed output
+cargo test gas_regression -- --nocapture
+```
+
+#### Contract-Specific Tests
+```bash
+# Certificate contract gas tests
+cargo test -p certificate gas_regression
+
+# Analytics contract gas tests  
+cargo test -p analytics gas_regression
+
+# Search contract gas tests
+cargo test -p search gas_regression
+
+# Token contract gas tests
+cargo test -p token gas_regression
+```
+
+#### Single Operation Tests
+```bash
+# Test specific gas-critical operations
+cargo test test_gas_batch_certificate_mint
+cargo test test_gas_analytics_aggregation
+cargo test test_gas_complex_search_query
+cargo test test_gas_multiple_token_operations
+```
+
+### Gas Threshold Configuration
+
+#### Standard Thresholds
+The following baseline thresholds are used across contracts:
+
+| Operation Type | Max CPU Instructions | Max Memory Bytes | Tolerance |
+|---|---|---|---|
+| Simple Storage | 50,000 | 1,000 | 10% |
+| Batch Operations (per item) | 25,000 | 500 | 15% |
+| Complex Computations | 200,000 | 5,000 | 20% |
+| Search Operations | 100,000 | 2,000 | 25% |
+| Analytics Aggregation | 150,000 | 3,000 | 20% |
+
+#### Contract-Specific Thresholds
+
+**Certificate Contract:**
+- Single certificate mint: 150,000 CPU instructions, 2,000 bytes memory
+- Batch certificate mint (10 certs): 800,000 CPU instructions, 15,000 bytes memory
+- Certificate transfer: 50,000 CPU instructions, 1,000 bytes memory
+- Metadata update: 80,000 CPU instructions, 1,500 bytes memory
+
+**Analytics Contract:**
+- Session recording: 100,000 CPU instructions, 1,500 bytes memory
+- Batch session update (20 sessions): 1,200,000 CPU instructions, 25,000 bytes memory
+- Progress analytics calculation: 150,000 CPU instructions, 3,000 bytes memory
+- Report generation: 180,000 CPU instructions, 3,500 bytes memory
+
+**Search Contract:**
+- Simple search query: 100,000 CPU instructions, 2,000 bytes memory
+- Complex search query: 180,000 CPU instructions, 3,500 bytes memory
+- Saved search operations: 80,000 CPU instructions, 1,500 bytes memory
+- Search index rebuild: 300,000 CPU instructions, 5,000 bytes memory
+
+**Token Contract:**
+- Basic operations (mint/transfer/burn): 50,000 CPU instructions, 1,000 bytes memory
+- Staking operations: 90,000 CPU instructions, 1,200 bytes memory
+- Batch token operations (multiple users): 300,000 CPU instructions, 4,000 bytes memory
+
+### Updating Thresholds
+
+When legitimate optimizations or feature additions change gas usage:
+
+1. **Analyze the change**: Determine if increased gas usage is justified
+2. **Update thresholds**: Modify the appropriate threshold values in test files
+3. **Document rationale**: Add comments explaining why thresholds were updated
+4. **Test thoroughly**: Ensure new thresholds are realistic but not too permissive
+
+#### Example Threshold Update
+```rust
+// Updated threshold after optimization reduced CPU usage by 20%
+let threshold = GasThreshold {
+    operation_name: String::from_str(&env, "optimized_batch_mint"),
+    max_cpu_instructions: 640_000, // Reduced from 800_000
+    max_memory_bytes: 12_000,       // Reduced from 15_000  
+    max_execution_time_ledgers: 2,
+    tolerance_percentage: 20,
+};
+```
+
+### Gas Profiling Strategies
+
+#### Identifying Bottlenecks
+1. **Run individual operation tests** to isolate expensive operations
+2. **Compare measurements across similar operations** to identify outliers
+3. **Use stable test data** to ensure measurements are consistent
+4. **Monitor trends over time** by tracking measurement history
+
+#### Optimization Verification
+1. **Baseline measurements** before optimization
+2. **Post-optimization measurements** to quantify improvements
+3. **Regression testing** to ensure optimizations don't break functionality
+4. **Threshold updates** to lock in optimization gains
+
+#### Example Gas Profiling
+```bash
+# Profile certificate minting operations
+cargo test test_gas_single_certificate_mint -- --nocapture
+cargo test test_gas_batch_certificate_mint -- --nocapture
+
+# Compare results to identify batch efficiency gains
+# Single mint: ~150,000 CPU instructions
+# Batch mint (10): ~800,000 CPU instructions (80k per certificate)
+# Efficiency gain: ~47% per certificate in batch operations
+```
+
+### Integration with CI/CD
+
+Gas regression tests should be run in continuous integration:
+
+```yaml
+# Example CI configuration
+- name: Run gas regression tests
+  run: |
+    cargo test gas_regression
+    
+# Fail build if gas usage increases beyond thresholds
+- name: Check gas regression results
+  run: |
+    if grep -q "Gas regression detected" test_output.log; then
+      echo "Gas regression detected - failing build"
+      exit 1
+    fi
+```
+
+### Gas Usage Benchmarking
+
+#### Creating Baselines
+```rust
+// Example: Create gas measurement snapshot
+let measurements = vec![mint_measurement, transfer_measurement, burn_measurement];
+let snapshot = GasTester::create_snapshot(&env, &measurements, "v1.2.0");
+
+// Store snapshot for future comparison
+store_gas_snapshot(&snapshot);
+```
+
+#### Comparing Versions
+```bash
+# Compare gas usage between versions
+cargo test test_gas_version_comparison -- --nocapture
+
+# Example output:
+# Version v1.1.0: Total CPU: 450,000, Memory: 8,000 bytes
+# Version v1.2.0: Total CPU: 380,000, Memory: 7,200 bytes  
+# Improvement: 15.6% CPU reduction, 10% memory reduction
+```
+
+### Troubleshooting Gas Regressions
+
+#### Common Causes
+1. **Inefficient storage patterns** - Using instance storage instead of persistent
+2. **Redundant computations** - Calculating same values multiple times
+3. **Unnecessary data copying** - Creating extra Vec/String copies
+4. **Suboptimal batch processing** - Not leveraging batch efficiencies
+
+#### Investigation Steps
+1. **Identify the regression** - Which test failed and by how much
+2. **Isolate the change** - What code changes preceded the regression
+3. **Profile the operation** - Measure sub-operations to find bottleneck
+4. **Optimize or adjust** - Either fix the regression or update thresholds
+
 ## Conclusion
 
 The proposed gas optimizations can reduce overall gas costs by 30-50% while maintaining security and functionality. The bit flag permission system provides the most significant savings, followed by batch operations and caching strategies.
 
-Implementation should be done in phases to ensure stability and allow for proper testing at each stage. 
+Implementation should be done in phases to ensure stability and allow for proper testing at each stage.
+
+The comprehensive gas regression testing framework ensures that performance improvements are maintained over time and prevents accidental regressions during development. Regular monitoring and threshold updates keep the system aligned with optimization goals while allowing for legitimate feature additions.
 
 # Gas Optimization Analysis for Batch Certificate Minting
 
