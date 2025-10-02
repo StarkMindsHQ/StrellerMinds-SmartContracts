@@ -1,0 +1,139 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-e2e-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-e2e-
+            ${{ runner.os }}-cargo-
+
+      - name: Install Soroban CLI
+        run: |
+          cargo install --locked soroban-cli --features opt || true
+          soroban --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Build smart contracts
+        run: |
+          echo "Building contracts for E2E tests..."
+          ./scripts/build.sh
+
+      - name: Verify WASM artifacts
+        run: |
+          echo "Verifying built WASM files..."
+          ls -lh target/wasm32-unknown-unknown/release/*.wasm || echo "No WASM files found"
+          ls -lh target/wasm32-unknown-unknown/release/*.optimized.wasm || echo "No optimized WASM files found"
+
+      - name: Start Soroban Localnet
+        run: |
+          echo "Starting Soroban localnet with Docker Compose..."
+          docker-compose up -d
+
+          echo "Waiting for localnet to be ready..."
+          timeout 120 bash -c 'until docker-compose ps | grep -q healthy; do sleep 2; done' || {
+            echo "Localnet failed to start. Showing logs:"
+            docker-compose logs
+            exit 1
+          }
+
+          echo "Localnet is ready!"
+
+      - name: Install E2E test dependencies
+        working-directory: e2e
+        run: |
+          npm ci
+
+      - name: Deploy contracts to localnet
+        working-directory: e2e
+        run: |
+          echo "Deploying contracts to localnet..."
+          npm run deploy:local || {
+            echo "Deployment failed. Showing localnet logs:"
+            docker-compose logs
+            exit 1
+          }
+
+      - name: Run E2E tests
+        working-directory: e2e
+        run: |
+          npm run test:ci
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            e2e/test-results/junit.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: e2e/test-results/
+          retention-days: 30
+
+      - name: Upload localnet logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: localnet-logs
+          path: |
+            docker-compose logs output
+          retention-days: 7
+
+      - name: Cleanup localnet
+        if: always()
+        run: |
+          echo "Stopping localnet..."
+          docker-compose down -v
+
+  e2e-success:
+    name: E2E Tests Success
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    if: always()
+    steps:
+      - name: Check E2E test result
+        run: |
+          if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+            echo "E2E tests failed"
+            exit 1
+          fi
+          echo "E2E tests passed successfully"

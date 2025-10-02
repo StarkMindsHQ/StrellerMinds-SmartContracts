@@ -36,10 +36,28 @@ StellarMinds-SmartContracts is the dedicated repository for all Stellar smart co
 
 ### Testing
 
-Run tests to ensure everything is functioning as expected:
+#### Unit Tests
+
+Run unit tests to ensure everything is functioning as expected:
 ```bash
 cargo test
 ```
+
+#### End-to-End (E2E) Tests
+
+Run the complete E2E test suite against a local Soroban network:
+```bash
+./scripts/run-e2e-tests.sh
+```
+
+This will:
+- Build all contracts
+- Start a local Soroban network
+- Deploy contracts
+- Run integration tests
+- Clean up resources
+
+For more details, see the [E2E Test Documentation](e2e/README.md).
 
 ### Linting and Formatting
 
