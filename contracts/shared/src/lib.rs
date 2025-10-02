@@ -7,6 +7,7 @@ pub mod storage;
 pub mod errors;
 pub mod reentrancy_guard;
 pub mod validation;
+pub mod gas_testing;
 
 #[cfg(test)]
-mod test;
+mod simple_tests;
