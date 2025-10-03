@@ -3,11 +3,9 @@ ignore = [
     "RUSTSEC-2024-0388",
     "RUSTSEC-2024-0436",
 ]
-
-# These control what is denied
-unmaintained = "all"
-unsound = "all"
-yanked = "all"
+unmaintained = "deny"
+unsound = "deny"
+yanked = "deny"
 
 [licenses]
 allow = ["MIT", "Apache-2.0", "BSD-3-Clause"]
