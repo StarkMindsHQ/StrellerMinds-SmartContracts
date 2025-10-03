@@ -15,28 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: wasm32-unknown-unknown
-
-      - name: Cache cargo registry, git, and target
-        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-      - name: Install Soroban CLI
-        run: |
-          cargo install --locked soroban-cli
 
       - name: Install wasm_opt (Binaryen)
         run: |
@@ -58,56 +45,6 @@ jobs:
           for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
             base="$(basename "$wasm")"
             name="${base%.wasm}"
-
-            # Derive crate path to read version from its Cargo.toml
-            # Expect crates under contracts/<name>/Cargo.toml
-            CARGO_TOML="contracts/${name}/Cargo.toml"
-            if [[ -f "$CARGO_TOML" ]]; then
-              VERSION_LINE=$(grep -E '^version\s*=\s*"' "$CARGO_TOML" || true)
-              VERSION=$(echo "$VERSION_LINE" | sed -E 's/.*"([^"]+)".*/\1/')
-            else
-              # Fallback to repo version tag without 'v' if no per-crate Cargo.toml
-              VERSION=${TAG#v}
-            fi
-
-            # Optional extra optimization with wasm_opt -Oz
-            if command -v wasm-opt >/dev/null 2>&1; then
-              wasm-opt -Oz "$wasm" -o "target/wasm32-unknown-unknown/release/${name}.optz.wasm"
-            fi
-
-            # Prepare directory structure: artifacts/<crate>/<version>/
-            OUT_DIR="artifacts/${name}/${VERSION}"
-            mkdir -p "$OUT_DIR"
-
-            # Copy baseline wasm
-            cp "$wasm" "$OUT_DIR/${name}-${VERSION}.wasm"
-
-            # Copy soroban-optimized wasm if available
-            if [ -f "target/wasm32-unknown-unknown/release/${name}.optimized.wasm" ]; then
-              cp "target/wasm32-unknown-unknown/release/${name}.optimized.wasm" "$OUT_DIR/${name}-${VERSION}.optimized.wasm"
-            fi
-
-            # Copy wasm_opt output if produced
-            if [ -f "target/wasm32-unknown-unknown/release/${name}.optz.wasm" ]; then
-              cp "target/wasm32-unknown-unknown/release/${name}.optz.wasm" "$OUT_DIR/${name}-${VERSION}.optz.wasm"
-            fi
-
-            # For convenience, also place tag-named files in dist/
-            cp "$OUT_DIR/${name}-${VERSION}.wasm" "dist/${name}-${TAG}.wasm"
-            [ -f "$OUT_DIR/${name}-${VERSION}.optimized.wasm" ] && cp "$OUT_DIR/${name}-${VERSION}.optimized.wasm" "dist/${name}-${TAG}.optimized.wasm"
-            [ -f "$OUT_DIR/${name}-${VERSION}.optz.wasm" ] && cp "$OUT_DIR/${name}-${VERSION}.optz.wasm" "dist/${name}-${TAG}.optz.wasm"
-
-            # Generate per-crate checksums
-            (cd "$OUT_DIR" && {
-              if command -v sha256sum >/dev/null 2>&1; then
-                sha256sum * > SHA256SUMS.txt
-              else
-                shasum -a 256 * > SHA256SUMS.txt
-              fi
-            })
-          done
-
-          # Generate aggregate checksums for dist
           if compgen -G "dist/*" > /dev/null; then
             if command -v sha256sum >/dev/null 2>&1; then
               sha256sum dist/* > dist/SHA256SUMS.txt
@@ -132,30 +69,15 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           if [ -f .git-cliff.toml ]; then
-            echo "Using git-cliff configuration"
-            npx -y zx@7 <<'SCRIPT'
-            // This block is a no-op placeholder to ensure node is present if needed; git-cliff action is not used here.
-            SCRIPT
-            # Install git-cliff if not available
             if ! command -v git-cliff >/dev/null 2>&1; then
               cargo install git-cliff --locked
             fi
             BODY=$(git-cliff --tag "$TAG" --config .git-cliff.toml)
           else
-            echo "No .git-cliff.toml found, generating fallback changelog"
-            DATE=$(date -u +'%Y-%m-%d')
-            BODY=$(cat <<EOF
-            ## ${TAG}
-            
-            Release date: ${DATE}
-            
-            This is an automated release containing compiled WASM artifacts for all contracts.
-            
             Refer to the attached assets under artifacts/<crate>/<version>/ and dist/.
             EOF
             )
           fi
-          # Emit output
           echo "body<<EOF" >> "$GITHUB_OUTPUT"
           echo "$BODY" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -183,9 +105,6 @@ jobs:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
           set -euo pipefail
-          # Write key to file
-          echo "$COSIGN_PRIVATE_KEY" > cosign.key
-          # Sign every file in dist and artifacts dirs (excluding checksum files)
           for f in $(find dist artifacts -type f ! -name "*.txt"); do
             cosign sign-blob --key cosign.key "$f" --output-signature "$f.sig"
           done
