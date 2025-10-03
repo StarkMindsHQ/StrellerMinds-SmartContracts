@@ -2,6 +2,14 @@
 name = "shared"
 version = "0.1.0"
 edition = "2021"
+description = "A shared utilities contract providing common functionality including role-based access control (RBAC), permissions management, events, storage utilities, error handling, and reentrancy protection for the StarkMinds ecosystem"
+license = "Apache-2.0"
+repository = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+readme = "README.md"
+homepage = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+documentation = "https://docs.rs/shared"
+keywords = ["stellar", "blockchain", "education", "utilities", "soroban"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
 
 [lib]
 crate-type = ["lib", "cdylib"]

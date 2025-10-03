@@ -2,6 +2,14 @@
 name = "analytics"
 version = "0.1.0"
 edition = "2021"
+description = "A comprehensive analytics system for tracking detailed learning progress, completion rates, and performance metrics in educational platforms built on Stellar blockchain"
+license = "Apache-2.0"
+repository = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+readme = "README.md"
+homepage = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+documentation = "https://docs.rs/analytics"
+keywords = ["stellar", "blockchain", "education", "analytics", "soroban"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
 
 [lib]
 crate-type = ["lib", "cdylib"]
