@@ -17,7 +17,18 @@ for contract in contracts/*/; do
   # Optimize the WASM file
   if [ -f "target/wasm32-unknown-unknown/release/$contract_name.wasm" ]; then
     echo "Optimizing $contract_name.wasm..."
-    soroban contract optimize --wasm "target/wasm32-unknown-unknown/release/$contract_name.wasm" --wasm-out "target/wasm32-unknown-unknown/release/$contract_name.optimized.wasm"
+      if ! soroban contract optimize --wasm "target/wasm32-unknown-unknown/release/$contract_name.wasm" --wasm-out "target/wasm32-unknown-unknown/release/$contract_name.optimized.wasm"; then
+        echo "Warning: 'soroban contract optimize' failed for $contract_name. Attempting fallback with 'wasm-opt -Oz'..."
+        if command -v wasm-opt &> /dev/null; then
+          if ! wasm-opt -Oz "target/wasm32-unknown-unknown/release/$contract_name.wasm" -o "target/wasm32-unknown-unknown/release/$contract_name.optimized.wasm"; then
+            echo "Error: Both 'soroban contract optimize' and 'wasm-opt -Oz' failed for $contract_name. Please check your WASM file and tool installations."
+            exit 2
+          fi
+        else
+          echo "Error: 'wasm-opt' not found. Please install Binaryen (https://github.com/WebAssembly/binaryen) for fallback optimization."
+          exit 3
+        fi
+      fi
   fi
 done
 
