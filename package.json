@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.6.2",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3"
+  }
+}

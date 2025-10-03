@@ -18,11 +18,24 @@ services:
     volumes:
       - stellar-data:/opt/stellar
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/soroban/rpc"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     networks:
       - soroban-network
 
