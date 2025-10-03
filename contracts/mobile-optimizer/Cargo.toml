@@ -2,6 +2,14 @@
 name = "mobile-optimizer"
 version = "0.1.0"
 edition = "2021"
+description = "A comprehensive mobile optimization system designed to enhance user experience on mobile devices by providing intelligent batching, offline capabilities, network adaptation, and gas optimization for blockchain interactions"
+license = "Apache-2.0"
+repository = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+readme = "README.md"
+homepage = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+documentation = "https://docs.rs/mobile-optimizer"
+keywords = ["stellar", "blockchain", "education", "mobile", "soroban"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
 
 [lib]
 crate-type = ["lib", "cdylib"]
