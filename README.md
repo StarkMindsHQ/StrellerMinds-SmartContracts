@@ -1,37 +1,76 @@
-# StellarMinds-SmartContracts
+# StrellerMinds-SmartContracts
+
+[![CI](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml)
+[![E2E Tests](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/StarkMindsHQ/StrellerMinds-SmartContracts?sort=semver)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/releases)
+[![License](https://img.shields.io/github/license/StarkMindsHQ/StrellerMinds-SmartContracts)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/blob/main/LICENSE)
+[![Codecov](https://codecov.io/gh/StarkMindsHQ/StrellerMinds-SmartContracts/branch/main/graph/badge.svg)](https://codecov.io/gh/StarkMindsHQ/StrellerMinds-SmartContracts)
+[![Soroban](https://img.shields.io/badge/Soroban-Stellar-purple.svg)](https://soroban.stellar.org)
 
 StellarMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StarkMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
 
-## Features
+## 🚀 Quickstart
+
+Get up and running in under 5 minutes:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git
+cd StrellerMinds-SmartContracts
+
+# 2. Build all contracts
+./scripts/build.sh
+
+# 3. Run tests
+cargo test
+```
+
+That's it! Your contracts are built and tested. See [Getting Started](#getting-started) for detailed installation instructions.
+
+## ✨ Features
 
 - Smart contract development using Soroban on Stellar
 - Secure, efficient on-chain logic for education and credentialing
 - Comprehensive testing suite for contract functionality
 - Modular and scalable design for future enhancements
+- Role-Based Access Control (RBAC) across all contracts
+- Advanced analytics and progress tracking
+- Multi-signature certificate issuance
+- Token incentive system with staking capabilities
 
-## Getting Started
+## 📋 Prerequisites
 
-### Prerequisites
+Before you begin, ensure you have the following installed:
 
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version)
+- [Rust](https://www.rust-lang.org/tools/install) (v1.75 or later)
 - [Stellar CLI & Soroban CLI](https://soroban.stellar.org/docs/getting-started)
 - Docker (optional, for running a local Stellar testnet)
-- Required environment variable:  
-  - `STELLAR_SECRET_KEY` (your Stellar secret key for deployment)
+- Node.js v18+ (for E2E tests)
+
+### Required Environment Variables
+
+- `STELLAR_SECRET_KEY` - Your Stellar secret key for deployment
+
+## 🛠️ Getting Started
 
 ### Installation
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/your-username/starkminds-smartcontracts.git
+   git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git
+   cd StrellerMinds-SmartContracts
    ```
-2. **Navigate to the Repository:**
+
+2. **Setup Environment:**
    ```bash
-   cd starkminds-smartcontracts
+   ./scripts/setup.sh
    ```
+
 3. **Build the Smart Contracts:**
    ```bash
-   cargo build --release
+   ./scripts/build.sh
+   # Or manually:
+   cargo build --release --target wasm32-unknown-unknown
    ```
 
 ### Testing
@@ -39,6 +78,7 @@ StellarMinds-SmartContracts is the dedicated repository for all Stellar smart co
 #### Unit Tests
 
 Run unit tests to ensure everything is functioning as expected:
+
 ```bash
 cargo test
 ```
@@ -46,6 +86,7 @@ cargo test
 #### End-to-End (E2E) Tests
 
 Run the complete E2E test suite against a local Soroban network:
+
 ```bash
 ./scripts/run-e2e-tests.sh
 ```
@@ -70,146 +111,72 @@ To maintain code quality and consistency, run the following commands locally bef
 
 - **Check for linting issues:**
   ```bash
-  cargo clippy
+  cargo clippy -- -D warnings
   ```
 
 These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
 
----
+## 🚢 Deployment
 
-## Deployment
-
-The repository now includes a hardened deployment script for Soroban smart contracts:
-
-- `scripts/deploy.sh` (supports local, testnet, and mainnet)
+The repository includes a comprehensive deployment script for Soroban smart contracts supporting multiple networks:
 
 ### Deployment Script Usage
-
-Run the script from the project root:
 
 ```bash
 ./scripts/deploy.sh --network <local|testnet|mainnet> --contract <name> --wasm <path> [--dry-run]
 ```
 
-#### Flags
-| Flag                   | Description                                                                 |
-|------------------------|-----------------------------------------------------------------------------|
-| `--network <network>`  | Specify which network to deploy to (`local`, `testnet`, or `mainnet`).        |
-| `--contract <name>`    | Name of the contract to deploy.                                              |
-| `--wasm <path>`        | Path to the WASM file to deploy.                                             |
-| `--dry-run`            | Simulate the deployment steps without executing them.                        |
+#### Available Flags
 
-#### Environment Configuration
-Network-specific settings (URLs, keys, etc.) are managed via environment files named `.env.<network>`. The script will automatically load the correct file based on the `--network` flag.
+| Flag                  | Description                                                            |
+| --------------------- | ---------------------------------------------------------------------- |
+| `--network <network>` | Specify which network to deploy to (`local`, `testnet`, or `mainnet`) |
+| `--contract <name>`   | Name of the contract to deploy                                         |
+| `--wasm <path>`       | Path to the WASM file to deploy                                        |
+| `--dry-run`           | Simulate the deployment steps without executing them                   |
 
-#### Dry-Run Mode
-When `--dry-run` is specified, the script prints the deployment steps but does not execute them.
+#### Quick Deployment Examples
 
-#### Example
 ```bash
-./scripts/deploy.sh --network testnet --contract certificate --wasm contracts/certificate/target/wasm32-unknown-unknown/release/certificate.optimized.wasm --dry-run
+# Dry-run deployment to testnet (preview only)
+./scripts/deploy_testnet.sh --dry-run
+
+# Deploy specific contract to testnet
+./scripts/deploy_testnet.sh --contract certificate
+
+# Verbose deployment with custom profile
+./scripts/deploy_mainnet.sh --contract certificate --profile myprofile --verbose
 ```
 
-#### Cross-Platform Compatibility
-The scripts are linted and compatible with macOS and Linux.
+#### Environment Configuration
 
-### Before Deploying
+Network-specific settings are managed via `.env.<network>` files. The script automatically loads the correct configuration based on the `--network` flag.
 
-1. Ensure contracts are built and optimized:  
+#### Before Deploying
+
+1. **Build and optimize contracts:**
    ```bash
    cargo build --release --target wasm32-unknown-unknown
    ```
-2. Set `STELLAR_SECRET_KEY` in your environment:  
+
+2. **Set required environment variables:**
    ```bash
    export STELLAR_SECRET_KEY='your_secret_key_here'
    ```
-3. Optionally set `SOROBAN_RPC_URL` for a custom RPC endpoint.  
 
-The scripts automatically validate:  
-- Installed tools: `soroban`, `stellar`, `jq`  
-- Environment variables: `STELLAR_SECRET_KEY`  
-- Presence of optimized WASM files in:  
-  ```
-  target/wasm32-unknown-unknown/release/*.optimized.wasm
-  ```
+3. **Optional: Set custom RPC endpoint:**
+   ```bash
+   export SOROBAN_RPC_URL='https://your-rpc-endpoint.com'
+   ```
 
-### Script Usage
-
-Run the scripts from the project root:
-
-- **Testnet Deployment**  
-  ```bash
-  ./scripts/deploy_testnet.sh [OPTIONS]
-  ```
-
-- **Mainnet Deployment**  
-  ```bash
-  ./scripts/deploy_mainnet.sh [OPTIONS]
-  ```
-
-### Available Flags
-
-| Flag                 | Description                                                                                  | Required | Default        |
-|----------------------|----------------------------------------------------------------------------------------------|----------|----------------|
-| `--contract <name>`  | Deploy a specific contract (e.g., certificate). If omitted, deploys all contracts.           | No       | All contracts  |
-| `--dry-run`          | Preview the deployment steps without executing any soroban commands. Useful for verification.| No       | Disabled       |
-| `--profile <name>`   | Specify a Soroban profile (e.g., for AWS or custom config).                                   | No       | None           |
-| `--verbose`          | Enable detailed output, including file paths and network details.                            | No       | Disabled       |
-| `--help`             | Display usage information and exit.                                                          | No       | N/A            |
-
-#### Notes:
-- Mainnet deployment requires explicit confirmation by typing **YES** (in all caps).  
-- In `--dry-run` mode, commands are echoed but not executed, and simulated contract IDs are generated.  
-- Contract names must match the basename of your `.optimized.wasm` files (e.g., `certificate.optimized.wasm`).  
-
-### Usage Examples
-
-- Dry-run all contracts to testnet (preview only):  
-  ```bash
-  ./scripts/deploy_testnet.sh --dry-run
-  ```
-
-- Deploy a specific contract to testnet:  
-  ```bash
-  ./scripts/deploy_testnet.sh --contract certificate
-  ```
-
-- Verbose dry-run for a specific contract to mainnet:  
-  ```bash
-  ./scripts/deploy_mainnet.sh --contract certificate --dry-run --verbose
-  ```
-
-- Deploy all contracts to mainnet with a custom profile:  
-  ```bash
-  ./scripts/deploy_mainnet.sh --profile myprofile
-  ```
-
-After successful deployment, contract IDs are saved to:  
+After successful deployment, contract IDs are saved to:
 ```
 target/<contract_name>.<network>.id
 ```
 
-For advanced configurations or troubleshooting, refer to the [Soroban documentation](https://soroban.stellar.org/docs).
+For advanced configurations, see the [Soroban documentation](https://soroban.stellar.org/docs).
 
----
-
-## Contribution Guidelines
-
-We welcome contributions to improve our smart contracts!
-
-1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Make your changes with clear, descriptive commit messages.
-4. Push your branch and open a pull request with a detailed description of your changes.
-
-Ensure that your contributions adhere to our coding standards and include appropriate tests.
-
----
-
-## Smart Contracts
+## 📦 Smart Contracts
 
 This repository contains several smart contracts that power the StarkMinds educational platform:
 
@@ -233,3 +200,53 @@ Each contract includes comprehensive documentation covering:
 - **Interface**: Public functions and parameters
 - **Events**: Emitted events and their schemas
 - **Configuration**: Settings and environment variables
+- **Testing**: Unit and integration test examples
+
+## 🤝 Contributing
+
+We welcome contributions to improve our smart contracts!
+
+1. Fork the repository
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Make your changes with clear, descriptive commit messages
+4. Ensure tests pass:
+   ```bash
+   cargo test
+   cargo fmt
+   cargo clippy
+   ```
+5. Push your branch and open a pull request with a detailed description
+
+Please read our [Contributing Guidelines](docs/contributing.md) for more details.
+
+## 📚 Documentation
+
+- [Development Guide](docs/development.md)
+- [Security Guidelines](docs/security.md)
+- [RBAC Implementation](docs/RBAC_IMPLEMENTATION.md)
+- [Mobile Optimizer System](docs/MOBILE_OPTIMIZER_SYSTEM.md)
+- [Token Incentive System](docs/TOKEN_INCENTIVE_SYSTEM.md)
+- [Security Audit Report](docs/SECURITY_AUDIT_REPORT.md)
+
+## 📝 License
+
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
+
+## 🔗 Links
+
+- [StarkMinds Website](https://starkminds.io)
+- [Stellar Documentation](https://stellar.org/developers)
+- [Soroban Documentation](https://soroban.stellar.org/docs)
+- [Issue Tracker](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/issues)
+
+## 📧 Support
+
+For questions or support, please:
+- Open an [issue](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/issues)
+- Check our [documentation](docs/)
+- Join our community discussions
+
+---
