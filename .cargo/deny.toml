@@ -4,17 +4,13 @@ ignore = [
     "RUSTSEC-2024-0436",
 ]
 
-[advisories.unmaintained]
-severity = "deny"
-scope = "all"
+# For these categories, just set the lint level directly
+unmaintained = "deny"
+unsound = "deny"
+yanked = "deny"
 
-[advisories.unsound]
-severity = "deny"
-scope = "all"
-
-[advisories.yanked]
-severity = "deny"
-scope = "all"
+# Optional: set a global severity threshold
+severity-threshold = "low"
 
 [licenses]
 allow = ["MIT", "Apache-2.0", "BSD-3-Clause"]
