@@ -2,55 +2,194 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  format:
+    name: Format Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-          target: wasm32-unknown-unknown
+          components: rustfmt
       
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        id: cache-dependencies
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Check formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       
-      - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
       
-      - name: Build
-        uses: actions-rs/cargo@v1
+      - name: Cache cargo registry
+        uses: actions/cache@v4
         with:
-          command: build
-          args: --release
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+            ${{ runner.os }}-cargo-
       
-      - name: Test
-        uses: actions-rs/cargo@v1
+      - name: Run tests
+        run: cargo test --all --verbose
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
         with:
-          command: test
-          args: --all
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build all crates
+        run: cargo build --all --verbose
+
+  wasm-check:
+    name: WASM Compatibility Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-wasm-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build for WASM target
+        run: cargo build --all --target wasm32-unknown-unknown --verbose
+
+  dependency-check:
+    name: Dependency Version Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check workspace dependency usage
+        run: |
+          echo "Checking that all contracts use workspace dependencies..."
+          
+          # Check for hardcoded soroban-sdk versions
+          if grep -r 'soroban-sdk = "[0-9]' contracts/*/Cargo.toml; then
+            echo "❌ Found hardcoded soroban-sdk versions in contract Cargo.toml files"
+            echo "All contracts should use: soroban-sdk = { workspace = true }"
+            exit 1
+          fi
+          
+          # Check for hardcoded stellar-strkey versions
+          if grep -r 'stellar-strkey = "[0-9]' contracts/*/Cargo.toml; then
+            echo "❌ Found hardcoded stellar-strkey versions in contract Cargo.toml files"
+            echo "All contracts should use: stellar-strkey = { workspace = true }"
+            exit 1
+          fi
+          
+          # Check for hardcoded ed25519-dalek versions
+          if grep -r 'ed25519-dalek = "[0-9]' contracts/*/Cargo.toml; then
+            echo "❌ Found hardcoded ed25519-dalek versions in contract Cargo.toml files"
+            echo "All contracts should use: ed25519-dalek = { workspace = true }"
+            exit 1
+          fi
+          
+          # Check for hardcoded rand versions
+          if grep -r 'rand = "[0-9]' contracts/*/Cargo.toml; then
+            echo "❌ Found hardcoded rand versions in contract Cargo.toml files"
+            echo "All contracts should use: rand = { workspace = true }"
+            exit 1
+          fi
+          
+          # Verify all contracts use workspace = true for soroban-sdk
+          echo "Verifying all contracts use workspace dependencies..."
+          for cargo_file in contracts/*/Cargo.toml; do
+            if grep -q "soroban-sdk" "$cargo_file"; then
+              if ! grep -q "soroban-sdk = { workspace = true }" "$cargo_file"; then
+                echo "❌ $cargo_file does not use workspace dependency for soroban-sdk"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "✅ All dependency versions are properly aligned with workspace configuration"
+
+  # Combined status check job
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [format, clippy, test, build, wasm-check, dependency-check]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.format.result }}" != "success" || \
+                "${{ needs.clippy.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" || \
+                "${{ needs.build.result }}" != "success" || \
+                "${{ needs.wasm-check.result }}" != "success" || \
+                "${{ needs.dependency-check.result }}" != "success" ]]; then
+            echo "One or more CI jobs failed"
+            exit 1
+          fi
+          echo "All CI jobs passed successfully"

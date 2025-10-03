@@ -1,34 +1,41 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{Address, Env, Symbol, String, BytesN};
 use crate::certificate::CertificateData;
+use shared::event_schema::{StandardEvent, EventData, CertificateEventData, SystemEventData, ErrorEventData};
 
-// Event topics
+// Event topics (kept for backward compatibility)
 const CERTIFICATE_MINTED: &str = "CERTIFICATE_MINTED";
 const CERTIFICATE_REVOKED: &str = "CERTIFICATE_REVOKED";
 const BATCH_MINT_COMPLETED: &str = "BATCH_MINT_COMPLETED";
 const ISSUER_ADDED: &str = "ISSUER_ADDED";
 const ISSUER_REMOVED: &str = "ISSUER_REMOVED";
 const CONTRACT_INITIALIZED: &str = "CONTRACT_INITIALIZED";
+const ERROR_OCCURRED: &str = "ERROR_OCCURRED";
 
 // Emit event when a certificate is minted
 pub fn emit_certificate_minted(env: &Env, issuer: &Address, owner: &Address, certificate: &CertificateData) {
-    let topics = (
-        Symbol::new(env, CERTIFICATE_MINTED),
+    // Create a pseudo certificate_id from the certificate id
+    let mut cert_id_bytes = [0u8; 32];
+    let id_bytes = certificate.id.to_be_bytes();
+    cert_id_bytes[24..32].copy_from_slice(&id_bytes);
+    let certificate_id = BytesN::from_array(env, &cert_id_bytes);
+    
+    // Create a pseudo token_id (same as certificate_id for now)
+    let token_id = certificate_id.clone();
+    
+    let event_data = CertificateEventData::CertificateMinted {
+        certificate_id,
+        student: owner.clone(),
+        issuer: issuer.clone(),
+        token_id,
+        metadata_hash: certificate.metadata_hash.clone(),
+    };
+    
+    StandardEvent::new(
+        env,
+        Symbol::new(env, "batch_certificate"),
         issuer.clone(),
-        owner.clone(),
-        certificate.id,
-    );
-    
-    // Convert CertificateData to a tuple for event emission
-    let data = (
-        certificate.id,
-        certificate.metadata_hash.clone(),
-        certificate.valid_from,
-        certificate.valid_until,
-        certificate.revocable,
-        certificate.cert_type.to_u32(),
-    );
-    
-    env.events().publish(topics, data);
+        EventData::Certificate(event_data),
+    ).emit(env);
 }
 
 // Emit event when a certificate is revoked
@@ -87,4 +94,15 @@ pub fn emit_contract_initialized(env: &Env, admin: &Address, max_batch_size: u32
     );
     
     env.events().publish(topics, max_batch_size);
+}
+
+// Emit event when an error occurs
+pub fn emit_error_event(env: &Env, function: &str, error_code: u32, error_message: &str, context: Option<u64>) {
+    let topics = (
+        Symbol::new(env, ERROR_OCCURRED),
+        Symbol::new(env, function),
+    );
+    // Context can be certificate ID or None
+    let data = (error_code, error_message, context);
+    env.events().publish(topics, data);
 }

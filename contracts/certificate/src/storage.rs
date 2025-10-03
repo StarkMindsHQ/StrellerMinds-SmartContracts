@@ -1,4 +1,4 @@
-use crate::types::{CertificateMetadata, DataKey, Role};
+use crate::types::{CertificateMetadata, DataKey, MetadataUpdateEntry, Role};
 use soroban_sdk::{Address, BytesN, Env, Vec};
 
 /// Storage operations for the Certificate contract
@@ -82,26 +82,17 @@ impl CertificateStorage {
         env.storage().instance().remove(&key);
     }
 
-    /// Stores certificate metadata
-    ///
-    /// # Arguments
-    /// * `env` - Reference to the contract environment
-    /// * `certificate_id` - Certificate identifier
-    /// * `metadata` - Certificate metadata
-    pub fn set_certificate(env: &Env, certificate_id: &BytesN<32>, metadata: &CertificateMetadata) {
+
+    /// Stores packed certificate data (metadata, owner, history)
+    pub fn set_certificate(env: &Env, certificate_id: &BytesN<32>, packed: &PackedCertificateData) {
         let key = DataKey::Certificates(certificate_id.clone());
-        env.storage().instance().set(&key, metadata);
+        env.storage().instance().set(&key, packed);
+        // Emit storage monitoring event
+        env.events().publish(("storage", "set_certificate"), certificate_id);
     }
 
-    /// Retrieves certificate metadata
-    ///
-    /// # Arguments
-    /// * `env` - Reference to the contract environment
-    /// * `certificate_id` - Certificate identifier
-    ///
-    /// # Returns
-    /// * `Option<CertificateMetadata>` - Certificate metadata if found
-    pub fn get_certificate(env: &Env, certificate_id: &BytesN<32>) -> Option<CertificateMetadata> {
+    /// Retrieves packed certificate data
+    pub fn get_certificate(env: &Env, certificate_id: &BytesN<32>) -> Option<PackedCertificateData> {
         let key = DataKey::Certificates(certificate_id.clone());
         if env.storage().instance().has(&key) {
             env.storage().instance().get(&key)
@@ -176,6 +167,7 @@ impl CertificateStorage {
     /// * `env` - Reference to the contract environment
     /// * `user` - User address
     /// * `certificate_id` - Certificate ID to remove
+    #[allow(dead_code)]
     pub fn remove_user_certificate(env: &Env, user: &Address, certificate_id: &BytesN<32>) {
         let mut certificates = Self::get_user_certificates(env, user);
         let mut index_to_remove = None;
@@ -190,5 +182,42 @@ impl CertificateStorage {
             certificates.remove(index as u32);
             Self::set_user_certificates(env, user, &certificates);
         }
+    }
+
+    /// Gets metadata update history for a certificate
+    ///
+    /// # Arguments
+    /// * `env` - Reference to the contract environment
+    /// * `certificate_id` - Certificate identifier
+    ///
+    /// # Returns
+    /// * `Vec<MetadataUpdateEntry>` - Vector of metadata update entries
+    pub fn get_metadata_history(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+    ) -> Vec<MetadataUpdateEntry> {
+        let key = DataKey::MetadataHistory(certificate_id.clone());
+        env.storage()
+            .instance()
+            .get(&key)
+            .unwrap_or_else(|| Vec::new(env))
+    }
+
+    /// Adds a metadata update entry to history
+    ///
+    /// # Arguments
+    /// * `env` - Reference to the contract environment
+    /// * `certificate_id` - Certificate identifier
+    /// * `entry` - Metadata update entry to add
+    pub fn add_metadata_history(
+        env: &Env,
+        certificate_id: &BytesN<32>,
+        entry: &MetadataUpdateEntry,
+    ) {
+        let mut history = Self::get_metadata_history(env, certificate_id);
+        history.push_back(entry.clone());
+
+        let key = DataKey::MetadataHistory(certificate_id.clone());
+        env.storage().instance().set(&key, &history);
     }
 }

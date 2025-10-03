@@ -15,6 +15,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "analytics"
+version = "0.1.0"
+dependencies = [
+ "shared",
+ "soroban-sdk",
+]
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -86,7 +94,6 @@ dependencies = [
  "rustc_version",
  "zeroize",
 ]
-
 
 [[package]]
 name = "ark-ff-asm"
@@ -233,6 +240,7 @@ dependencies = [
 name = "certificate"
 version = "0.1.0"
 dependencies = [
+ "shared",
  "soroban-sdk",
 ]
 
@@ -755,6 +763,14 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 name = "mint-batch-certificates"
 version = "0.0.0"
 dependencies = [
+ "shared",
+ "soroban-sdk",
+]
+
+[[package]]
+name = "mobile-optimizer"
+version = "0.1.0"
+dependencies = [
  "soroban-sdk",
 ]
 
@@ -886,6 +902,15 @@ dependencies = [
 name = "progress"
 version = "0.1.0"
 dependencies = [
+ "shared",
+ "soroban-sdk",
+]
+
+[[package]]
+name = "proxy"
+version = "0.1.0"
+dependencies = [
+ "shared",
  "soroban-sdk",
 ]
 
@@ -958,6 +983,13 @@ name = "ryu"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
+
+[[package]]
+name = "search"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
 
 [[package]]
 name = "sec1"
@@ -1058,6 +1090,13 @@ checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
 dependencies = [
  "digest",
  "keccak",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
 ]
 
 [[package]]
@@ -1327,6 +1366,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
+name = "student-progress-tracker"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1409,6 +1455,7 @@ dependencies = [
 name = "token"
 version = "0.1.0"
 dependencies = [
+ "shared",
  "soroban-sdk",
 ]
 
