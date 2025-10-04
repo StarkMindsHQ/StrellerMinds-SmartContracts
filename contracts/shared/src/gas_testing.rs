@@ -81,11 +81,20 @@ impl GasTester {
 
     /// Generate stable test addresses for consistent measurements
     /// Note: Simplified version for demonstration
+    #[cfg(any(test, feature = "testutils"))]
     pub fn generate_test_address(env: &Env, index: u32) -> Address {
         // In a real implementation, you would generate deterministic addresses
         // For now, we'll use the testutils Address generation
         use soroban_sdk::testutils::Address as _;
         Address::generate(env)
+    }
+    
+    /// Generate stable test addresses for consistent measurements (no-testutils version)
+    #[cfg(not(any(test, feature = "testutils")))]
+    pub fn generate_test_address(_env: &Env, _index: u32) -> Address {
+        // This is a dummy implementation for WASM builds
+        // In real usage, this would not be called in production code
+        panic!("generate_test_address should only be used in tests")
     }
 }
 

@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, Symbol, String};
 
 /// Standard event schema version
 pub const EVENT_SCHEMA_VERSION: u32 = 1;
