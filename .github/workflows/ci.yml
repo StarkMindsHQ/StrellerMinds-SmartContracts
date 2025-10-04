@@ -94,8 +94,23 @@ jobs:
             ${{ runner.os }}-cargo-build-
             ${{ runner.os }}-cargo-
       
-      - name: Build all crates
-        run: cargo build --all --verbose
+      - name: Run cargo audit
+        uses: taiki-e/cargo-audit-action@v1
+        with:
+          deny-warnings: true
+
+      - name: Shell Lint
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - name: Install ShellCheck
+            run: sudo apt-get update && sudo apt-get install -y shellcheck
+          - name: Install shfmt
+            run: sudo apt-get update && sudo apt-get install -y shfmt
+          - name: Run ShellCheck
+            run: shellcheck scripts/*.sh
+          - name: Run shfmt check
+            run: shfmt -d scripts/*.sh
 
   wasm-check:
     name: WASM Compatibility Check
