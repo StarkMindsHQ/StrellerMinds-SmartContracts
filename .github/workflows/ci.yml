@@ -123,6 +123,75 @@ jobs:
       - name: Build for WASM target
         run: cargo build --all --target wasm32-unknown-unknown --verbose
 
+  # Per-contract WASM build matrix - isolates build/test failures per contract
+  contract-matrix:
+    name: Contract ${{ matrix.contract }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Don't cancel all jobs if one fails - we want to see all failures
+      fail-fast: false
+      matrix:
+        contract:
+          - analytics
+          - certificate
+          - mint-batch-certificates
+          - mobile-optimizer
+          - progress
+          - proxy
+          - search
+          - student-progress-tracker
+          - token
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-contract-${{ matrix.contract }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-contract-${{ matrix.contract }}-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run ${{ matrix.contract }} tests
+        run: |
+          echo "Testing contract: ${{ matrix.contract }}"
+          cargo test --package ${{ matrix.contract }} --verbose
+      
+      - name: Build ${{ matrix.contract }} for native target
+        run: |
+          echo "Building contract: ${{ matrix.contract }} for native target"
+          cargo build --package ${{ matrix.contract }} --release
+      
+      - name: Build ${{ matrix.contract }} for WASM target
+        run: |
+          echo "Building contract: ${{ matrix.contract }} for WASM target"
+          cargo build --package ${{ matrix.contract }} --target wasm32-unknown-unknown --release --lib || {
+            echo "::warning::WASM build failed for ${{ matrix.contract }}. This may indicate missing no_std compatibility."
+            exit 1
+          }
+      
+      - name: Check ${{ matrix.contract }} contract size
+        if: success()
+        run: |
+          WASM_FILE="target/wasm32-unknown-unknown/release/${{ matrix.contract }}.wasm"
+          if [ -f "$WASM_FILE" ]; then
+            SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE" 2>/dev/null || echo "0")
+            echo "📦 Contract size: $(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo ${SIZE}B)"
+            echo "contract_size=$SIZE" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  WASM file not found at $WASM_FILE"
+          fi
+        id: size_check
+
   dependency-check:
     name: Dependency Version Check
     runs-on: ubuntu-latest
@@ -178,7 +247,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [format, clippy, test, build, wasm-check, dependency-check]
+    needs: [format, clippy, test, build, wasm-check, contract-matrix, dependency-check]
     if: always()
     steps:
       - name: Check all jobs
@@ -188,6 +257,7 @@ jobs:
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.wasm-check.result }}" != "success" || \
+                "${{ needs.contract-matrix.result }}" != "success" || \
                 "${{ needs.dependency-check.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"
             exit 1
