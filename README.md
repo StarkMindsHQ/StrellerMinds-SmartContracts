@@ -9,6 +9,8 @@
 
 StellarMinds-SmartContracts is the dedicated repository for all Stellar smart contracts powering StarkMinds—a pioneering blockchain education platform built on Stellar. Developed using Soroban, these smart contracts handle on-chain interactions such as course credentialing, token management, and secure data validation.
 
+> Documentation site: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
+
 ## 🚀 Quickstart
 
 Get up and running in under 5 minutes:
@@ -224,12 +226,28 @@ Please read our [Contributing Guidelines](docs/contributing.md) for more details
 
 ## 📚 Documentation
 
+- **Published Site**: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
 - [Development Guide](docs/development.md)
 - [Security Guidelines](docs/security.md)
 - [RBAC Implementation](docs/RBAC_IMPLEMENTATION.md)
 - [Mobile Optimizer System](docs/MOBILE_OPTIMIZER_SYSTEM.md)
 - [Token Incentive System](docs/TOKEN_INCENTIVE_SYSTEM.md)
 - [Security Audit Report](docs/SECURITY_AUDIT_REPORT.md)
+
+### 📖 Quickstart: Contributing to Documentation
+
+1. **Install dependencies** (Python 3.x):
+   ```bash
+   pip install mkdocs mkdocs-material
+   ```
+2. **Run local preview** from the repo root:
+   ```bash
+   mkdocs serve
+   ```
+   Open http://127.0.0.1:8000 to view the docs.
+3. **Edit content** in `docs/`. The homepage is `docs/index.md`.
+4. **Update navigation** in `mkdocs.yml` under the `nav:` section.
+5. **Submit a PR**. The site auto-deploys to GitHub Pages on merges to `main`.
 
 ## 📝 License
 
