@@ -11,7 +11,7 @@ StellarMinds-SmartContracts is the dedicated repository for all Stellar smart co
 
 > Documentation site: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
 
-## 🚀 Quickstart
+## 🚀 Quickstart---
 
 Get up and running in under 5 minutes:
 
