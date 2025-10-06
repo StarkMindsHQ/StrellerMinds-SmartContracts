@@ -49,6 +49,18 @@ Before you begin, ensure you have the following installed:
 - Docker (optional, for running a local Stellar testnet)
 - Node.js v18+ (for E2E tests)
 
+**Quick Setup:** Use our automated setup script to install all prerequisites:
+```bash
+./scripts/setup.sh
+```
+
+This script will automatically:
+- Install Rust target `wasm32-unknown-unknown`
+- Install Soroban CLI (pinned version 21.5.0)
+- Install Stellar CLI (pinned version 21.5.0)
+- Verify all installations
+- Optionally install Binaryen (wasm-opt) for WASM optimization
+
 ### Required Environment Variables
 
 - `STELLAR_SECRET_KEY` - Your Stellar secret key for deployment
@@ -63,10 +75,18 @@ Before you begin, ensure you have the following installed:
    cd StrellerMinds-SmartContracts
    ```
 
-2. **Setup Environment:**
+2. **Run the Setup Script (Recommended):**
    ```bash
    ./scripts/setup.sh
    ```
+   
+   This automated script will set up your entire development environment, including:
+   - Rust toolchain with WASM target
+   - Soroban CLI (v21.5.0)
+   - Stellar CLI (v21.5.0)
+   - Optional: Binaryen for WASM optimization
+   
+   The script will guide you through the installation process and verify all components.
 
 3. **Build the Smart Contracts:**
    ```bash
