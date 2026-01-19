@@ -5,12 +5,9 @@
 
 use anyhow::Result;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use soroban_sdk::{Address, Env, String as SorobanString};
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-use tokio::time::sleep;
 
 /// Configuration for the E2E test environment
 #[derive(Debug, Clone)]
@@ -210,7 +207,7 @@ impl E2ETestHarness {
         let admin_address = self.client.get_account_address(&self.client.config.admin_account)?;
         
         // Initialize shared contract (if needed)
-        if let Some(shared_id) = self.deployed_contracts.get("shared") {
+        if let Some(_shared_id) = self.deployed_contracts.get("shared") {
             // Most shared contract initialization happens automatically
             println!("✅ Shared contract initialized");
         }

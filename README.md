@@ -9,9 +9,9 @@
 
 StrellerMinds-SmartContracts is a comprehensive suite of Stellar smart contracts built with Soroban, powering the StarkMinds blockchain education platform. This repository provides secure, efficient on-chain logic for educational credentialing, learning analytics, token incentives, and progress tracking. Designed for educational institutions, online learning platforms, and EdTech developers who need reliable blockchain infrastructure for verifiable learning achievements and decentralized education ecosystems.
 
-> Documentation site: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
+> Documentation site: https://starkmindshq.github.io/StrellerMinds-SmartContracts
 
-## 🚀 Quickstart---
+## 🚀 Quick Start
 
 Get up and running in under 5 minutes:
 
