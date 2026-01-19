@@ -27,7 +27,7 @@ async function deployAllContracts(): Promise<DeploymentResult[]> {
   console.log(`Using admin account: ${admin.publicKey()}\n`);
 
   // List of contracts to deploy
-  const contracts = ['certificate', 'token', 'progress', 'analytics'];
+  const contracts = ['token', 'progress', 'analytics'];
 
   for (const contractName of contracts) {
     try {

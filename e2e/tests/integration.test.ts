@@ -24,7 +24,7 @@ describe('Contract Integration E2E Tests', () => {
     test('should verify multiple contracts are deployed', () => {
       expect(deployments).toBeDefined();
 
-      const expectedContracts = ['certificate', 'token', 'progress', 'analytics'];
+      const expectedContracts = ['token', 'progress', 'analytics'];
       const deployedContracts = Object.keys(deployments);
 
       expectedContracts.forEach((contractName) => {
@@ -62,23 +62,23 @@ describe('Contract Integration E2E Tests', () => {
 
     test('should perform cross-contract state verification', async () => {
       // This test verifies that contracts can interact with each other
-      // For example: Certificate contract might need to verify progress in Progress contract
+      // For example: Token contract might need to verify progress in Analytics contract
 
-      const certificateId = deployments.certificate;
-      const progressId = deployments.progress;
+      const tokenId = deployments.token;
+      const analyticsId = deployments.analytics;
 
-      if (!certificateId || !progressId) {
+      if (!tokenId || !analyticsId) {
         console.log('⚠ Skipping cross-contract test - required contracts not deployed');
         return;
       }
 
       // Verify both contracts exist and are accessible
       try {
-        const certData = await client.getContractData(certificateId);
-        const progressData = await client.getContractData(progressId);
+        const tokenData = await client.getContractData(tokenId);
+        const analyticsData = await client.getContractData(analyticsId);
 
-        expect(certData).toBeDefined();
-        expect(progressData).toBeDefined();
+        expect(tokenData).toBeDefined();
+        expect(analyticsData).toBeDefined();
 
         console.log('✓ Cross-contract state verified');
       } catch (error) {
