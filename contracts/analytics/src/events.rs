@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol};
+use soroban_sdk::{Address, BytesN, Env, Symbol, String};
 use crate::types::{SessionType, AchievementType, LeaderboardMetric, PerformanceTrend};
 use shared::event_schema::{StandardEvent, EventData, AnalyticsEventData};
 
@@ -29,7 +29,7 @@ impl AnalyticsEvents {
             student: student.clone(),
             course_id: course_id.clone(),
             module_id: module_id.clone(),
-            session_type: session_type_str.to_string(),
+            session_type: String::from_str(env, session_type_str),
             time_spent,
             completion_percentage,
         };

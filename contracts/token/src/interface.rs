@@ -1,6 +1,6 @@
 use soroban_sdk::{Address, Env, String, Vec};
 use crate::types::{
-    TokenReward, Achievement, UserAchievement, StakingPool, UserStake, BurnTransaction,
+    Achievement, UserAchievement, StakingPool, UserStake, BurnTransaction,
     TokenomicsConfig, UserStats, LeaderboardEntry, LeaderboardCategory, IncentiveEvent,
     GlobalStats, PremiumAccess, PremiumFeature, ReferralData
 };
