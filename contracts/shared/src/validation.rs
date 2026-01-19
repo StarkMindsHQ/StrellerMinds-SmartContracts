@@ -385,6 +385,7 @@ impl CoreValidator {
 }
 
 #[cfg(test)]
+use soroban_sdk::testutils::Ledger;
 mod tests {
     use super::*;
     use soroban_sdk::{Env, BytesN};
@@ -466,7 +467,9 @@ mod tests {
     #[test]
     fn test_validate_expiry_date_past() {
         let env = Env::default();
-        let past_date = env.ledger().timestamp() - 86400; // 1 day in past
+        // Set a specific ledger timestamp to ensure consistency
+        env.ledger().set_timestamp(1000000);
+        let past_date = 500000; // Explicitly in the past
         let result = CoreValidator::validate_expiry_date(&env, past_date);
         assert!(matches!(result, Err(ValidationError::InvalidDate { .. })));
     }

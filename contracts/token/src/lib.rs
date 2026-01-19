@@ -35,7 +35,7 @@ impl Token {
         admin.require_auth();
         // Initialize centralized RBAC (grants SuperAdmin to admin)
         let _ = AccessControl::initialize(&env, &admin);
-        env.storage().instance().set(&AdminKey, &admin);
+        env.storage().instance().set(&ADMIN_KEY, &admin);
         
         Ok(())
     }
@@ -141,7 +141,7 @@ impl Token {
     pub fn reward_course_completion(
         env: Env,
         user: Address,
-        course_id: String,
+        _course_id: String,
         completion_percentage: u32,
     ) -> Result<i128, Error> {
         if completion_percentage == 0 {
@@ -160,8 +160,8 @@ impl Token {
     pub fn reward_module_completion(
         env: Env,
         user: Address,
-        course_id: String,
-        module_id: String,
+        _course_id: String,
+        _module_id: String,
         completion_percentage: u32,
     ) -> Result<i128, Error> {
         if completion_percentage == 0 {
@@ -179,8 +179,8 @@ impl Token {
 
     pub fn create_achievement(
         env: Env,
-        title: String,
-        description: String,
+        _title: String,
+        _description: String,
         reward_amount: i128,
     ) -> Result<String, Error> {
         if reward_amount <= 0 {
@@ -192,7 +192,7 @@ impl Token {
         Ok(achievement_id)
     }
 
-    pub fn check_achievements(env: Env, user: Address) -> Result<Vec<String>, Error> {
+    pub fn check_achievements(env: Env, _user: Address) -> Result<Vec<String>, Error> {
         // Return empty list for now
         let achievements = Vec::new(&env);
         Ok(achievements)
@@ -200,7 +200,7 @@ impl Token {
 
     pub fn create_staking_pool(
         env: Env,
-        name: String,
+        _name: String,
         apy: u32,
     ) -> Result<String, Error> {
         if apy == 0 {
@@ -215,7 +215,7 @@ impl Token {
     pub fn stake_tokens(
         env: Env,
         user: Address,
-        pool_id: String,
+        _pool_id: String,
         amount: i128,
     ) -> Result<String, Error> {
         if amount <= 0 {
@@ -237,10 +237,10 @@ impl Token {
     pub fn burn_for_upgrade(
         env: Env,
         user: Address,
-        course_id: String,
-        module_id: String,
+        _course_id: String,
+        _module_id: String,
         amount: i128,
-        upgrade_type: String,
+        _upgrade_type: String,
     ) -> Result<String, Error> {
         if amount <= 0 {
             return Err(Error::InvalidAmount);
@@ -262,7 +262,7 @@ impl Token {
 // Storage keys
 const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
 const ALLOWANCE_KEY: Symbol = symbol_short!("ALLOW");
-const AdminKey: Symbol = symbol_short!("ADMIN");
+const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
 
 // Helper functions
 fn get_balance(env: &Env, id: &Address) -> i128 {
@@ -277,13 +277,13 @@ fn set_balance(env: &Env, id: &Address, amount: i128) {
 }
 
 fn admin_exists(env: &Env) -> bool {
-    env.storage().instance().has(&AdminKey)
+    env.storage().instance().has(&ADMIN_KEY)
 }
 
 fn get_admin(env: &Env) -> Result<Address, Error> {
     env.storage()
         .instance()
-        .get(&AdminKey)
+        .get(&ADMIN_KEY)
         .ok_or(Error::NotInitialized)
 }
 

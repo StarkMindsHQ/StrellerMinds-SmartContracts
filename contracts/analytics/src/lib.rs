@@ -35,8 +35,6 @@ use storage::AnalyticsStorage;
 use analytics_engine::AnalyticsEngine;
 use reports::ReportGenerator;
 use interface::AnalyticsTrait;
-use shared::access_control::AccessControl;
-use shared::roles::Permission;
 
 #[contract]
 pub struct Analytics;
@@ -401,7 +399,7 @@ impl AnalyticsTrait for Analytics {
     fn cleanup_old_data(
         env: Env,
         admin: Address,
-        before_date: u64,
+        _before_date: u64,
     ) -> Result<u32, AnalyticsError> {
         admin.require_auth();
 
@@ -505,7 +503,7 @@ impl AnalyticsTrait for Analytics {
     fn get_engagement_metrics(
         env: Env,
         course_id: Symbol,
-        date_range: u64,
+        _date_range: u64,
     ) -> Result<CourseAnalytics, AnalyticsError> {
         // This could be enhanced to calculate engagement over a specific date range
         // For now, return the general course analytics

@@ -18,7 +18,6 @@ tokio-test = "0.4"
 
 # Contract dependencies for testing
 shared = { path = "../contracts/shared" }
-certificate = { path = "../contracts/certificate" }
 analytics = { path = "../contracts/analytics" } 
 token = { path = "../contracts/token" }
 
