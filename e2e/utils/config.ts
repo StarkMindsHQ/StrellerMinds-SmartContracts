@@ -16,7 +16,6 @@ export interface TestConfig {
   adminSecret?: string;
   adminPublic?: string;
   wasmPaths: {
-    certificate?: string;
     token?: string;
     progress?: string;
     analytics?: string;
@@ -31,7 +30,6 @@ export const config: TestConfig = {
   adminSecret: process.env.ADMIN_SECRET,
   adminPublic: process.env.ADMIN_PUBLIC,
   wasmPaths: {
-    certificate: process.env.CERTIFICATE_WASM,
     token: process.env.TOKEN_WASM,
     progress: process.env.PROGRESS_WASM,
     analytics: process.env.ANALYTICS_WASM,

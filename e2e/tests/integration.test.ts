@@ -24,7 +24,7 @@ describe('Contract Integration E2E Tests', () => {
     test('should verify multiple contracts are deployed', () => {
       expect(deployments).toBeDefined();
 
-      const expectedContracts = ['certificate', 'token', 'progress', 'analytics'];
+      const expectedContracts = ['token', 'progress', 'analytics'];
       const deployedContracts = Object.keys(deployments);
 
       expectedContracts.forEach((contractName) => {
