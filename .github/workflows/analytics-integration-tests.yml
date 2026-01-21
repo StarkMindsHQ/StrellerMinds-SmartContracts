@@ -1,0 +1,157 @@
+name: Analytics Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/analytics/**'
+      - 'e2e-tests/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'contracts/analytics/**'
+      - 'e2e-tests/**'
+
+env:
+  RUST_BACKTRACE: 1
+  RUST_LOG: debug
+
+jobs:
+  analytics-integration-tests:
+    name: Analytics Contract Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Install Soroban CLI
+      run: |
+        curl -L https://github.com/stellar/soroban/releases/latest/download/soroban-linux-x86_64.tar.gz | tar xz
+        sudo mv soroban /usr/local/bin/
+        soroban --version
+        
+    - name: Start Soroban Local Network
+      run: |
+        soroban network standalone &
+        sleep 5
+        soroban config network standalone --global --rpc-url http://localhost:8000
+        
+    - name: Build Contracts
+      run: |
+        make build
+        
+    - name: Run Contract Unit Tests
+      run: |
+        cd contracts/analytics
+        cargo test --lib
+        cargo test --integration
+        
+    - name: Run E2E Integration Tests
+      run: |
+        cd e2e-tests
+        cargo test --test analytics_integration -- --nocapture
+        
+    - name: Run Linting
+      run: |
+        cd contracts/analytics
+        cargo fmt -- --check
+        cargo clippy -- -D warnings
+        
+    - name: Generate Test Coverage Report
+      run: |
+        cd contracts/analytics
+        cargo install cargo-tarpaulin
+        cargo tarpaulin --out Xml --output-dir ../coverage
+        
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/cobertura.xml
+        flags: analytics
+        name: analytics-coverage
+        
+    - name: Performance Benchmark Tests
+      run: |
+        cd e2e-tests
+        cargo test --test analytics_integration test_performance_metrics_aggregation -- --nocapture
+        
+    - name: Data Consistency Validation
+      run: |
+        cd e2e-tests
+        cargo test --test analytics_integration test_data_consistency_validation -- --nocapture
+        
+    - name: Edge Cases and Error Handling
+      run: |
+        cd e2e-tests
+        cargo test --test analytics_integration test_edge_cases_and_error_conditions -- --nocapture
+        
+    - name: Cleanup
+      run: |
+        pkill -f soroban || true
+        
+  analytics-security-tests:
+    name: Analytics Security Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Install Security Tools
+      run: |
+        cargo install cargo-audit
+        cargo install cargo-deny
+        
+    - name: Run Security Audit
+      run: |
+        cd contracts/analytics
+        cargo audit
+        
+    - name: Run Deny Checks
+      run: |
+        cd contracts/analytics
+        cargo deny check
+        
+  analytics-documentation-tests:
+    name: Analytics Documentation Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Test Documentation Examples
+      run: |
+        cd contracts/analytics
+        cargo test --doc
+        
+    - name: Generate Documentation
+      run: |
+        cd contracts/analytics
+        cargo doc --no-deps
+        
+    - name: Check Documentation Coverage
+      run: |
+        cd contracts/analytics
+        cargo install cargo-doc-coverage
+        cargo doc-coverage
