@@ -1,0 +1,37 @@
+[package]
+name = "e2e-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+anyhow = "1.0"
+hex = "0.4"
+stellar-strkey = { workspace = true }
+
+# Test framework
+tokio-test = "0.4"
+
+# Contract dependencies for testing
+shared = { path = "../contracts/shared" }
+analytics = { path = "../contracts/analytics" } 
+token = { path = "../contracts/token" }
+
+# Random number generation for test data
+rand = "0.8"
+
+# Optional: For more advanced testing scenarios
+futures = "0.3"
+uuid = { version = "1.0", features = ["v4"] }
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+[[test]]
+name = "analytics_integration"
+path = "tests/analytics_integration.rs"
