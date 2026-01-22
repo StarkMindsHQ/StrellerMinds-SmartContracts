@@ -113,6 +113,21 @@ impl RolePermissions {
         }
     }
 
+    /// Resolve all permissions for a role, including inherited ones
+    pub fn resolve_all_permissions(env: &Env, role: &Role) -> Vec<Permission> {
+        let mut all_permissions = role.permissions.clone();
+
+        for inherited_level in role.inherited_roles.iter() {
+            let inherited_permissions = Self::get_permissions_for_level(env, &inherited_level);
+            for p in inherited_permissions.iter() {
+                if !all_permissions.contains(&p) {
+                    all_permissions.push_back(p);
+                }
+            }
+        }
+        all_permissions
+    }
+
     /// Create a role with default permissions for a given level
     pub fn create_role_with_default_permissions(
         env: &Env,
@@ -153,9 +168,13 @@ impl RolePermissions {
 
     /// Remove a permission from a role
     pub fn remove_permission(role: &mut Role, permission: &Permission) {
-        // Since Soroban SDK Vec doesn't have retain, we'll need to rebuild the vector
-        // For now, we'll leave this as a placeholder since it's not used in tests
-        // TODO: Implement proper permission removal when needed
+        let mut new_permissions = Vec::new(&role.granted_by.env());
+        for p in role.permissions.iter() {
+            if p != *permission {
+                new_permissions.push_back(p);
+            }
+        }
+        role.permissions = new_permissions;
     }
 
     /// Check if a role can grant another role (hierarchy check)
