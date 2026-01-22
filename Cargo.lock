@@ -564,6 +564,7 @@ dependencies = [
  "anyhow",
  "futures",
  "hex",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

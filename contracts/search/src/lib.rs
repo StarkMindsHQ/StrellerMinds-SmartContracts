@@ -46,7 +46,7 @@
 //         }
 
 //         admin.require_auth();
-        
+
 //         env.storage().instance().set(&DataKey::Admin, &admin);
 //         env.storage().instance().set(&DataKey::Initialized, &true);
 
@@ -95,7 +95,7 @@
 //         user.require_auth();
 
 //         let search_id = Self::generate_search_id(&env, &user, &name);
-        
+
 //         let saved_search = SavedSearch {
 //             search_id: search_id.clone(),
 //             user_id: user.clone(),
@@ -114,7 +114,7 @@
 //         let mut user_searches = env.storage().persistent()
 //             .get(&DataKey::SavedSearches(user.clone()))
 //             .unwrap_or_else(|| Vec::new(&env));
-        
+
 //         user_searches.push_back(saved_search);
 //         env.storage().persistent().set(&DataKey::SavedSearches(user), &user_searches);
 
@@ -162,7 +162,7 @@
 //         }
 
 //         let saved_search = found_search.ok_or(Error::SavedSearchNotFound)?;
-        
+
 //         // Update storage
 //         env.storage().persistent().set(&DataKey::SavedSearches(user.clone()), &user_searches);
 
@@ -417,11 +417,11 @@
 //         let admin: Address = env.storage().instance()
 //             .get(&DataKey::Admin)
 //             .ok_or(Error::NotInitialized)?;
-        
+
 //         if admin != *user {
 //             return Err(Error::Unauthorized);
 //         }
-        
+
 //         user.require_auth();
 //         Ok(())
 //     }

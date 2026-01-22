@@ -1,7 +1,7 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
 use shared::access_control::AccessControl;
 use shared::roles::Permission;
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
 
 pub struct ProxyEvents;
 

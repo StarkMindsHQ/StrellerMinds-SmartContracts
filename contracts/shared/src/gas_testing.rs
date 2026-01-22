@@ -3,8 +3,8 @@
 //! This module provides utilities for measuring and validating gas usage in Soroban contracts.
 //! It helps detect gas usage regressions by comparing current execution costs against baseline thresholds.
 
-use soroban_sdk::{Env, Address, String};
 use crate::errors::AccessControlError;
+use soroban_sdk::{Address, Env, String};
 
 /// Gas measurement result containing execution metrics
 /// Note: This is a simplified version for demonstration purposes
@@ -50,7 +50,7 @@ impl GasTester {
         let measurement = GasMeasurement {
             operation_name: String::from_str(env, operation_name),
             estimated_instructions: 50_000, // Placeholder value
-            estimated_memory: 1_000, // Placeholder value
+            estimated_memory: 1_000,        // Placeholder value
             success,
         };
 
@@ -67,12 +67,14 @@ impl GasTester {
         threshold: &GasThreshold,
     ) -> GasValidationResult {
         // For demonstration, we'll just check basic bounds
-        let instructions_ok = measurement.estimated_instructions <= 
-            threshold.max_instructions + (threshold.max_instructions * threshold.tolerance_percentage as u64 / 100);
-        
-        let memory_ok = measurement.estimated_memory <= 
-            threshold.max_memory + (threshold.max_memory * threshold.tolerance_percentage as u64 / 100);
-        
+        let instructions_ok = measurement.estimated_instructions
+            <= threshold.max_instructions
+                + (threshold.max_instructions * threshold.tolerance_percentage as u64 / 100);
+
+        let memory_ok = measurement.estimated_memory
+            <= threshold.max_memory
+                + (threshold.max_memory * threshold.tolerance_percentage as u64 / 100);
+
         GasValidationResult {
             operation_name: measurement.operation_name.clone(),
             passed: instructions_ok && memory_ok && measurement.success,
@@ -88,7 +90,7 @@ impl GasTester {
         use soroban_sdk::testutils::Address as _;
         Address::generate(env)
     }
-    
+
     /// Generate stable test addresses for consistent measurements (no-testutils version)
     #[cfg(not(any(test, feature = "testutils")))]
     pub fn generate_test_address(_env: &Env, _index: u32) -> Address {
@@ -119,7 +121,7 @@ impl StandardThresholds {
         }
     }
 
-    /// Threshold for batch operations 
+    /// Threshold for batch operations
     pub fn batch_operation(env: &Env) -> GasThreshold {
         GasThreshold {
             operation_name: String::from_str(env, "batch_operation"),
@@ -153,27 +155,31 @@ impl StandardThresholds {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{Env, testutils::Address as _};
+    use soroban_sdk::{testutils::Address as _, Env};
 
     #[test]
     fn test_gas_measurement_basic() {
         let env = Env::default();
-        
+
         let (result, measurement) = GasTester::measure_gas(&env, "test_operation", || {
             // Simple operation
             let _addr = Address::generate(&env);
             Ok::<(), AccessControlError>(())
-        }).unwrap();
+        })
+        .unwrap();
 
         assert!(measurement.success);
-        assert_eq!(measurement.operation_name, String::from_str(&env, "test_operation"));
+        assert_eq!(
+            measurement.operation_name,
+            String::from_str(&env, "test_operation")
+        );
         assert!(measurement.estimated_instructions > 0);
     }
 
     #[test]
     fn test_threshold_validation() {
         let env = Env::default();
-        
+
         let measurement = GasMeasurement {
             operation_name: String::from_str(&env, "test"),
             estimated_instructions: 45_000,
@@ -183,15 +189,15 @@ mod tests {
 
         let threshold = StandardThresholds::simple_storage_operation(&env);
         let result = GasTester::validate_against_threshold(&measurement, &threshold);
-        
-        // Should pass 
+
+        // Should pass
         assert!(result.passed);
     }
 
     #[test]
     fn test_address_generation() {
         let env = Env::default();
-        
+
         let addr = GasTester::generate_test_address(&env, 1);
         // Just verify we can generate an address
         assert!(addr.to_string().len() > 0);

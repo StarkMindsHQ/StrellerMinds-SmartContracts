@@ -1,8 +1,8 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 use crate::types::{
-    DataKey, LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
-    ProgressReport, AggregatedMetrics, Achievement, LeaderboardEntry, AnalyticsConfig
+    Achievement, AggregatedMetrics, AnalyticsConfig, CourseAnalytics, DataKey, LeaderboardEntry,
+    LearningSession, ModuleAnalytics, ProgressAnalytics, ProgressReport,
 };
+use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
 /// Storage utilities for analytics contract
 pub struct AnalyticsStorage;
@@ -12,9 +12,14 @@ impl AnalyticsStorage {
     pub fn set_session(env: &Env, session: &LearningSession) {
         let key = DataKey::Session(session.session_id.clone());
         env.storage().persistent().set(&key, session);
-        
+
         // Also add to student's session list
-        Self::add_student_session(env, &session.student, &session.course_id, &session.session_id);
+        Self::add_student_session(
+            env,
+            &session.student,
+            &session.course_id,
+            &session.session_id,
+        );
     }
 
     /// Get a learning session by ID
@@ -31,11 +36,12 @@ impl AnalyticsStorage {
         session_id: &BytesN<32>,
     ) {
         let key = DataKey::StudentSessions(student.clone(), course_id.clone());
-        let mut sessions: Vec<BytesN<32>> = env.storage()
+        let mut sessions: Vec<BytesN<32>> = env
+            .storage()
             .persistent()
             .get(&key)
             .unwrap_or(Vec::new(env));
-        
+
         sessions.push_back(session_id.clone());
         env.storage().persistent().set(&key, &sessions);
     }
@@ -89,18 +95,19 @@ impl AnalyticsStorage {
     /// Add student to course
     pub fn add_course_student(env: &Env, course_id: &Symbol, student: &Address) {
         let key = DataKey::CourseStudents(course_id.clone());
-        let mut students: Vec<Address> = env.storage()
+        let mut students: Vec<Address> = env
+            .storage()
             .persistent()
             .get(&key)
             .unwrap_or(Vec::new(env));
-        
+
         // Check if student already exists
         for i in 0..students.len() {
             if students.get(i).unwrap() == *student {
                 return; // Student already exists
             }
         }
-        
+
         students.push_back(student.clone());
         env.storage().persistent().set(&key, &students);
     }
@@ -270,9 +277,9 @@ impl AnalyticsStorage {
     /// Get default analytics configuration
     pub fn get_default_config(env: &Env) -> AnalyticsConfig {
         AnalyticsConfig {
-            min_session_time: 60, // 1 minute
-            max_session_time: 14400, // 4 hours
-            streak_threshold: 86400, // 24 hours
+            min_session_time: 60,      // 1 minute
+            max_session_time: 14400,   // 4 hours
+            streak_threshold: 86400,   // 24 hours
             active_threshold: 2592000, // 30 days
             difficulty_thresholds: crate::types::DifficultyThresholds {
                 easy_completion_rate: 80,

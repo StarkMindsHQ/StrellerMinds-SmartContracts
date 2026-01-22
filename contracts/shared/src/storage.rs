@@ -1,6 +1,6 @@
-use soroban_sdk::{Address, Env, Vec, contracttype};
-use crate::roles::Role;
 use crate::errors::AccessControlError;
+use crate::roles::Role;
+use soroban_sdk::{contracttype, Address, Env, Vec};
 
 /// Storage keys for the RBAC system
 #[contracttype]
@@ -154,7 +154,11 @@ impl AccessControlStorage {
     }
 
     /// Checks if a user has a specific permission
-    pub fn has_permission(env: &Env, user: &Address, permission: &crate::roles::Permission) -> bool {
+    pub fn has_permission(
+        env: &Env,
+        user: &Address,
+        permission: &crate::roles::Permission,
+    ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
             role.has_permission(permission)
         } else {
@@ -163,7 +167,11 @@ impl AccessControlStorage {
     }
 
     /// Checks if a user has any of the specified permissions
-    pub fn has_any_permission(env: &Env, user: &Address, permissions: &Vec<crate::roles::Permission>) -> bool {
+    pub fn has_any_permission(
+        env: &Env,
+        user: &Address,
+        permissions: &Vec<crate::roles::Permission>,
+    ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
             role.has_any_permission(permissions)
         } else {
@@ -172,7 +180,11 @@ impl AccessControlStorage {
     }
 
     /// Checks if a user has all of the specified permissions
-    pub fn has_all_permissions(env: &Env, user: &Address, permissions: &Vec<crate::roles::Permission>) -> bool {
+    pub fn has_all_permissions(
+        env: &Env,
+        user: &Address,
+        permissions: &Vec<crate::roles::Permission>,
+    ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
             role.has_all_permissions(permissions)
         } else {
@@ -188,9 +200,12 @@ impl AccessControlStorage {
     }
 
     /// Gets all users with a specific permission
-    pub fn get_users_with_permission(env: &Env, permission: &crate::roles::Permission) -> Vec<Address> {
+    pub fn get_users_with_permission(
+        env: &Env,
+        permission: &crate::roles::Permission,
+    ) -> Vec<Address> {
         // This would require iterating through all users, which is not efficient
         // In a real implementation, you might want to maintain a separate index
         Vec::new(env) // Placeholder implementation
     }
-} 
+}

@@ -1,4 +1,4 @@
-use soroban_sdk::{Env, Symbol, symbol_short};
+use soroban_sdk::{symbol_short, Env, Symbol};
 
 const REENTRANCY_GUARD_KEY: Symbol = symbol_short!("REENTRANT");
 
@@ -35,4 +35,4 @@ impl<'a> Drop for ReentrancyLock<'a> {
     fn drop(&mut self) {
         ReentrancyGuard::exit(self.env);
     }
-} 
+}

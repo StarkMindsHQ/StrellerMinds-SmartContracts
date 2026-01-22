@@ -1,15 +1,15 @@
 #![cfg(test)]
 
 use crate::{
-    roles::{Permission, RoleLevel},
     permissions::RolePermissions,
+    roles::{Permission, RoleLevel},
 };
 use soroban_sdk::{Env, Vec};
 
 #[test]
 fn test_default_role_permissions() {
     let env = Env::default();
-    
+
     // Test Student permissions
     let permissions = RolePermissions::student_permissions(&env);
     assert!(permissions.contains(&Permission::ViewProgress));

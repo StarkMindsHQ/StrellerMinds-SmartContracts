@@ -1,6 +1,6 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String};
-use crate::types::{SessionType, AchievementType, LeaderboardMetric, PerformanceTrend};
-use shared::event_schema::{StandardEvent, EventData, AnalyticsEventData};
+use crate::types::{AchievementType, LeaderboardMetric, PerformanceTrend, SessionType};
+use shared::event_schema::{AnalyticsEventData, EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
 /// Analytics contract events for tracking and auditing
 pub struct AnalyticsEvents;
@@ -23,7 +23,7 @@ impl AnalyticsEvents {
             SessionType::Practice => "practice",
             SessionType::Review => "review",
         };
-        
+
         let event_data = AnalyticsEventData::SessionRecorded {
             session_id: session_id.clone(),
             student: student.clone(),
@@ -33,13 +33,14 @@ impl AnalyticsEvents {
             time_spent,
             completion_percentage,
         };
-        
+
         StandardEvent::new(
             env,
             Symbol::new(env, "analytics"),
             student.clone(),
             EventData::Analytics(event_data),
-        ).emit(env);
+        )
+        .emit(env);
     }
 
     /// Emit event when a learning session is completed
@@ -54,7 +55,14 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "session_completed"),
-            (session_id, student, course_id, module_id, final_score, total_time),
+            (
+                session_id,
+                student,
+                course_id,
+                module_id,
+                final_score,
+                total_time,
+            ),
         );
     }
 
@@ -69,7 +77,13 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "progress_updated"),
-            (student, course_id, completion_percentage, total_time_spent, performance_trend),
+            (
+                student,
+                course_id,
+                completion_percentage,
+                total_time_spent,
+                performance_trend,
+            ),
         );
     }
 
@@ -98,7 +112,13 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "module_analytics_updated"),
-            (course_id, module_id, completion_rate, average_time, difficulty_rating),
+            (
+                course_id,
+                module_id,
+                completion_rate,
+                average_time,
+                difficulty_rating,
+            ),
         );
     }
 
@@ -113,7 +133,13 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "achievement_earned"),
-            (student, achievement_id, achievement_type, course_id, earned_date),
+            (
+                student,
+                achievement_id,
+                achievement_type,
+                course_id,
+                earned_date,
+            ),
         );
     }
 
@@ -128,7 +154,13 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "leaderboard_updated"),
-            (course_id, metric_type, top_student, top_score, total_entries),
+            (
+                course_id,
+                metric_type,
+                top_student,
+                top_score,
+                total_entries,
+            ),
         );
     }
 
@@ -144,7 +176,14 @@ impl AnalyticsEvents {
     ) {
         env.events().publish(
             ("analytics", "report_generated"),
-            (student, course_id, report_period, start_date, end_date, sessions_count),
+            (
+                student,
+                course_id,
+                report_period,
+                start_date,
+                end_date,
+                sessions_count,
+            ),
         );
     }
 
@@ -162,15 +201,9 @@ impl AnalyticsEvents {
     }
 
     /// Emit event when analytics configuration is updated
-    pub fn emit_config_updated(
-        env: &Env,
-        admin: &Address,
-        config_type: &str,
-    ) {
-        env.events().publish(
-            ("analytics", "config_updated"),
-            (admin, config_type),
-        );
+    pub fn emit_config_updated(env: &Env, admin: &Address, config_type: &str) {
+        env.events()
+            .publish(("analytics", "config_updated"), (admin, config_type));
     }
 
     /// Emit event when data aggregation is performed

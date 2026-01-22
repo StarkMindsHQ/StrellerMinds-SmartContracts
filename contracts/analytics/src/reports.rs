@@ -1,14 +1,14 @@
-use soroban_sdk::{Address, Env, Symbol, Vec};
 use crate::{
-    types::{
-        ProgressReport, ReportPeriod, Achievement, AggregatedMetrics, LeaderboardEntry,
-        LeaderboardMetric, AnalyticsFilter, LearningSession, SessionType, OptionalSessionType
-    },
-    storage::AnalyticsStorage,
     analytics_engine::AnalyticsEngine,
     errors::AnalyticsError,
     events::AnalyticsEvents,
+    storage::AnalyticsStorage,
+    types::{
+        Achievement, AggregatedMetrics, AnalyticsFilter, LeaderboardEntry, LeaderboardMetric,
+        LearningSession, OptionalSessionType, ProgressReport, ReportPeriod, SessionType,
+    },
 };
+use soroban_sdk::{Address, Env, Symbol, Vec};
 
 /// Report generation and time-based analytics
 pub struct ReportGenerator;
@@ -29,7 +29,7 @@ impl ReportGenerator {
 
         let sessions = AnalyticsStorage::get_student_sessions(env, student, course_id);
         let mut filtered_sessions: Vec<LearningSession> = Vec::new(env);
-        
+
         // Filter sessions by date range
         for i in 0..sessions.len() {
             let session_id = sessions.get(i).unwrap();
@@ -53,7 +53,7 @@ impl ReportGenerator {
         for i in 0..filtered_sessions.len() {
             let session = filtered_sessions.get(i).unwrap();
             total_time += session.time_spent;
-            
+
             if session.completion_percentage == 100 {
                 let mut already_counted = false;
                 for j in 0..completed_modules.len() {
@@ -78,7 +78,8 @@ impl ReportGenerator {
         };
 
         // Calculate consistency score
-        let consistency_score = Self::calculate_consistency_score(env, &filtered_sessions, start_date, end_date);
+        let consistency_score =
+            Self::calculate_consistency_score(env, &filtered_sessions, start_date, end_date);
 
         // Get achievements earned during this period
         let achievements = Self::get_achievements_in_period(env, student, start_date, end_date);
@@ -152,14 +153,14 @@ impl ReportGenerator {
                             active_students += 1;
                             student_active = true;
                         }
-                        
+
                         total_sessions += 1;
                         total_time += session.time_spent;
-                        
+
                         if session.completion_percentage == 100 {
                             completions += 1;
                         }
-                        
+
                         if let Some(score) = session.score {
                             scores.push_back(score);
                         }
@@ -212,7 +213,7 @@ impl ReportGenerator {
         limit: u32,
     ) -> Result<Vec<LeaderboardEntry>, AnalyticsError> {
         let students = AnalyticsStorage::get_course_students(env, course_id);
-        
+
         if students.is_empty() {
             return Err(AnalyticsError::InsufficientData);
         }
@@ -222,13 +223,16 @@ impl ReportGenerator {
         // Calculate scores for each student based on metric type
         for i in 0..students.len() {
             let student = students.get(i).unwrap();
-            
-            if let Some(analytics) = AnalyticsStorage::get_progress_analytics(env, &student, course_id) {
+
+            if let Some(analytics) =
+                AnalyticsStorage::get_progress_analytics(env, &student, course_id)
+            {
                 let score = match metric {
                     LeaderboardMetric::CompletionSpeed => {
                         if analytics.completion_percentage == 100 {
                             // Lower time is better, so invert the score
-                            let completion_time = analytics.last_activity - analytics.first_activity;
+                            let completion_time =
+                                analytics.last_activity - analytics.first_activity;
                             if completion_time > 0 {
                                 1000000 / completion_time as u32 // Arbitrary scaling
                             } else {
@@ -237,17 +241,15 @@ impl ReportGenerator {
                         } else {
                             0
                         }
-                    },
-                    LeaderboardMetric::TotalScore => {
-                        analytics.average_score.unwrap_or(0)
-                    },
+                    }
+                    LeaderboardMetric::TotalScore => analytics.average_score.unwrap_or(0),
                     LeaderboardMetric::ConsistencyScore => {
                         // Calculate consistency based on streak and regular activity
                         analytics.streak_days * 10 + (analytics.total_sessions / 10)
-                    },
+                    }
                     LeaderboardMetric::TimeSpent => {
                         (analytics.total_time_spent / 3600) as u32 // Convert to hours
-                    },
+                    }
                 };
 
                 let entry = LeaderboardEntry {
@@ -309,7 +311,7 @@ impl ReportGenerator {
             if let Some(student) = &filter.student {
                 // Get sessions for specific student and course
                 let sessions = AnalyticsStorage::get_student_sessions(env, student, course_id);
-                
+
                 for i in 0..sessions.len() {
                     let session_id = sessions.get(i).unwrap();
                     if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
@@ -321,11 +323,11 @@ impl ReportGenerator {
             } else {
                 // Get sessions for all students in the course
                 let students = AnalyticsStorage::get_course_students(env, course_id);
-                
+
                 for i in 0..students.len() {
                     let student = students.get(i).unwrap();
                     let sessions = AnalyticsStorage::get_student_sessions(env, &student, course_id);
-                    
+
                     for j in 0..sessions.len() {
                         let session_id = sessions.get(j).unwrap();
                         if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
@@ -359,7 +361,7 @@ impl ReportGenerator {
         for i in 0..sessions.len() {
             let session = sessions.get(i).unwrap();
             let day = session.start_time / 86400;
-            
+
             let mut day_exists = false;
             for j in 0..active_days.len() {
                 if active_days.get(j).unwrap() == day {
@@ -367,7 +369,7 @@ impl ReportGenerator {
                     break;
                 }
             }
-            
+
             if !day_exists {
                 active_days.push_back(day);
             }
@@ -409,7 +411,7 @@ impl ReportGenerator {
                 return false;
             }
         }
-        
+
         if let Some(end_date) = filter.end_date {
             if session.end_time > end_date {
                 return false;
@@ -427,10 +429,9 @@ impl ReportGenerator {
         let res = match sess {
             OptionalSessionType::None => return false,
             OptionalSessionType::Some(session_type) => {
-                if session.session_type != * session_type {
+                if session.session_type != *session_type {
                     return false;
                 }
-                
             }
         };
 
@@ -455,7 +456,7 @@ impl ReportGenerator {
             for j in 0..entries.len() - 1 {
                 let entry_j = entries.get(j).unwrap();
                 let entry_j_plus_1 = entries.get(j + 1).unwrap();
-                
+
                 if entry_j.score < entry_j_plus_1.score {
                     // Swap entries
                     entries.set(j, entry_j_plus_1);
@@ -472,7 +473,7 @@ impl ReportGenerator {
         week_start: u64,
     ) -> Result<Vec<AggregatedMetrics>, AnalyticsError> {
         let mut weekly_metrics: Vec<AggregatedMetrics> = Vec::new(env);
-        
+
         // Generate metrics for each day of the week
         for day in 0..7 {
             let date = week_start + (day * 86400);
@@ -492,7 +493,7 @@ impl ReportGenerator {
         days_in_month: u32,
     ) -> Result<Vec<AggregatedMetrics>, AnalyticsError> {
         let mut monthly_metrics: Vec<AggregatedMetrics> = Vec::new(env);
-        
+
         // Generate metrics for each day of the month
         for day in 0..days_in_month {
             let date = month_start + (day as u64 * 86400);

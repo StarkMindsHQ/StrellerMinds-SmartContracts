@@ -1,5 +1,5 @@
 //! End-to-End Test Utilities for Soroban Contracts
-//! 
+//!
 //! This crate provides utilities and test cases for testing the StrellerMinds
 //! smart contracts in a realistic Soroban localnet environment.
 
@@ -24,7 +24,11 @@ impl Default for E2ETestConfig {
             rpc_url: "http://localhost:8000".to_string(),
             network_passphrase: "Standalone Network ; February 2017".to_string(),
             admin_account: "admin".to_string(),
-            test_accounts: vec!["alice".to_string(), "bob".to_string(), "charlie".to_string()],
+            test_accounts: vec![
+                "alice".to_string(),
+                "bob".to_string(),
+                "charlie".to_string(),
+            ],
         }
     }
 }
@@ -56,16 +60,26 @@ impl SorobanClient {
     }
 
     /// Deploy a contract using the Soroban CLI
-    pub async fn deploy_contract(&self, contract_name: &str, deployer_account: &str) -> Result<String> {
-        let wasm_path = format!("target/wasm32-unknown-unknown/release/{}.wasm", contract_name);
-        
+    pub async fn deploy_contract(
+        &self,
+        contract_name: &str,
+        deployer_account: &str,
+    ) -> Result<String> {
+        let wasm_path = format!(
+            "target/wasm32-unknown-unknown/release/{}.wasm",
+            contract_name
+        );
+
         let output = Command::new("soroban")
             .args([
                 "contract",
                 "deploy",
-                "--source", deployer_account,
-                "--network", "local",
-                "--wasm", &wasm_path,
+                "--source",
+                deployer_account,
+                "--network",
+                "local",
+                "--wasm",
+                &wasm_path,
             ])
             .output()?;
 
@@ -92,20 +106,21 @@ impl SorobanClient {
         let mut cmd_args = vec![
             "contract",
             "invoke",
-            "--id", contract_id,
-            "--source", source_account,
-            "--network", "local",
+            "--id",
+            contract_id,
+            "--source",
+            source_account,
+            "--network",
+            "local",
             "--",
             method,
         ];
-        
+
         for arg in args {
             cmd_args.push(arg);
         }
 
-        let output = Command::new("soroban")
-            .args(cmd_args)
-            .output()?;
+        let output = Command::new("soroban").args(cmd_args).output()?;
 
         if !output.status.success() {
             anyhow::bail!(
@@ -163,17 +178,18 @@ impl E2ETestHarness {
     pub async fn setup(&mut self) -> Result<()> {
         // Build all contracts first
         self.build_contracts().await?;
-        
+
         // Deploy core contracts
         let contracts_to_deploy = vec!["shared", "certificate", "analytics", "token"];
-        
+
         for contract_name in contracts_to_deploy {
             let contract_id = self
                 .client
                 .deploy_contract(contract_name, &self.client.config.admin_account)
                 .await?;
-                
-            self.deployed_contracts.insert(contract_name.to_string(), contract_id.clone());
+
+            self.deployed_contracts
+                .insert(contract_name.to_string(), contract_id.clone());
             println!("✅ Deployed {}: {}", contract_name, contract_id);
         }
 
@@ -186,16 +202,16 @@ impl E2ETestHarness {
     /// Build all contracts
     async fn build_contracts(&self) -> Result<()> {
         println!("🔨 Building contracts...");
-        
+
         let output = Command::new("./scripts/build.sh").output()?;
-        
+
         if !output.status.success() {
             anyhow::bail!(
                 "Failed to build contracts: {}",
                 String::from_utf8_lossy(&output.stderr)
             );
         }
-        
+
         println!("✅ Contracts built successfully");
         Ok(())
     }
@@ -203,15 +219,17 @@ impl E2ETestHarness {
     /// Initialize deployed contracts
     async fn initialize_contracts(&self) -> Result<()> {
         println!("🚀 Initializing contracts...");
-        
-        let admin_address = self.client.get_account_address(&self.client.config.admin_account)?;
-        
+
+        let admin_address = self
+            .client
+            .get_account_address(&self.client.config.admin_account)?;
+
         // Initialize shared contract (if needed)
         if let Some(_shared_id) = self.deployed_contracts.get("shared") {
             // Most shared contract initialization happens automatically
             println!("✅ Shared contract initialized");
         }
-        
+
         // Initialize certificate contract
         if let Some(cert_id) = self.deployed_contracts.get("certificate") {
             self.client
@@ -227,7 +245,7 @@ impl E2ETestHarness {
 
         // Initialize other contracts as needed
         // Analytics, Token contracts may need similar initialization
-        
+
         Ok(())
     }
 
@@ -251,7 +269,10 @@ macro_rules! assert_contract_success {
     ($result:expr) => {
         match $result {
             Ok(output) => {
-                assert!(!output.trim().is_empty(), "Contract call returned empty result");
+                assert!(
+                    !output.trim().is_empty(),
+                    "Contract call returned empty result"
+                );
                 output
             }
             Err(e) => panic!("Contract call failed: {}", e),
