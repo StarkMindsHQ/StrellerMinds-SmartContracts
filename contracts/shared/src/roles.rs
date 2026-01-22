@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Vec};
+use soroban_sdk::{contracttype, Address, Env, Vec};
 
 /// Role hierarchy levels (higher number = more permissions)
 #[contracttype]
@@ -40,6 +40,16 @@ impl RoleLevel {
     pub fn can_revoke(&self, target_role: &RoleLevel) -> bool {
         self.to_u32() >= target_role.to_u32()
     }
+
+    pub fn has_default_permission(&self, permission: &Permission) -> bool {
+        match (self, permission) {
+            (RoleLevel::SuperAdmin, _) => true,
+            (RoleLevel::Admin, _) => true,
+            (RoleLevel::Instructor, Permission::ViewAudit) => true,
+            (RoleLevel::Moderator, Permission::ViewAudit) => true,
+            _ => false,
+        }
+    }
 }
 
 /// Role definition with permissions
@@ -48,6 +58,7 @@ impl RoleLevel {
 pub struct Role {
     pub level: RoleLevel,
     pub permissions: Vec<Permission>,
+    pub inherited_roles: Vec<RoleLevel>,
     pub granted_by: Address,
     pub granted_at: u64,
     pub expires_at: Option<u64>, // None means never expires
@@ -63,10 +74,16 @@ impl Role {
         Self {
             level,
             permissions,
+            inherited_roles: Vec::new(&granted_by.env()),
             granted_by,
             granted_at,
             expires_at: None,
         }
+    }
+
+    pub fn with_inheritance(mut self, _env: &Env, inherited: Vec<RoleLevel>) -> Self {
+        self.inherited_roles = inherited;
+        self
     }
 
     pub fn with_expiry(mut self, expires_at: u64) -> Self {
@@ -146,6 +163,10 @@ pub enum Permission {
     ViewAllCourses,
     ViewAllUsers,
     ViewSystemStats,
+    ViewAudit,
+
+    // Dynamic permission
+    Custom(soroban_sdk::Symbol),
 }
 
 impl Permission {
@@ -179,6 +200,8 @@ impl Permission {
             Permission::ViewAllCourses => "ViewAllCourses",
             Permission::ViewAllUsers => "ViewAllUsers",
             Permission::ViewSystemStats => "ViewSystemStats",
+            Permission::ViewAudit => "ViewAudit",
+            Permission::Custom(_) => "Custom",
         }
     }
 }
