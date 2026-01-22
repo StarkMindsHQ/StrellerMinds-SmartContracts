@@ -98,6 +98,20 @@ pub enum AccessControlEventData {
         user: Address,
         permission: String,
     },
+    DynamicPermissionGranted {
+        granter: Address,
+        user: Address,
+        permission: Symbol,
+    },
+    RoleInheritanceUpdated {
+        updater: Address,
+        user: Address,
+        inherited_roles: soroban_sdk::Vec<u32>,
+    },
+    TemplateCreated {
+        admin: Address,
+        template_id: Symbol,
+    },
     AdminChanged {
         old_admin: Address,
         new_admin: Address,
@@ -605,6 +619,11 @@ impl StandardEvent {
                 AccessControlEventData::RoleExpired { .. } => "role_expired",
                 AccessControlEventData::AccessDenied { .. } => "access_denied",
                 AccessControlEventData::HierarchyViolation { .. } => "hierarchy_violation",
+                AccessControlEventData::DynamicPermissionGranted { .. } => {
+                    "dynamic_permission_granted"
+                }
+                AccessControlEventData::RoleInheritanceUpdated { .. } => "role_inheritance_updated",
+                AccessControlEventData::TemplateCreated { .. } => "template_created",
             },
             EventData::Certificate(data) => match data {
                 CertificateEventData::CertificateMinted { .. } => "certificate_minted",

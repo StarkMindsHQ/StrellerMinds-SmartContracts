@@ -193,4 +193,61 @@ impl AccessControlEvents {
         )
         .emit(env);
     }
+
+    /// Emits event when a dynamic permission is granted
+    pub fn emit_dynamic_permission_granted(
+        env: &Env,
+        granter: &Address,
+        user: &Address,
+        permission: &Symbol,
+    ) {
+        let event_data = AccessControlEventData::DynamicPermissionGranted {
+            granter: granter.clone(),
+            user: user.clone(),
+            permission: permission.clone(),
+        };
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "access_control"),
+            granter.clone(),
+            EventData::AccessControl(event_data),
+        )
+        .emit(env);
+    }
+
+    /// Emits event when role inheritance is updated
+    pub fn emit_role_inheritance_updated(
+        env: &Env,
+        updater: &Address,
+        user: &Address,
+        inherited_roles: &soroban_sdk::Vec<u32>,
+    ) {
+        let event_data = AccessControlEventData::RoleInheritanceUpdated {
+            updater: updater.clone(),
+            user: user.clone(),
+            inherited_roles: inherited_roles.clone(),
+        };
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "access_control"),
+            updater.clone(),
+            EventData::AccessControl(event_data),
+        )
+        .emit(env);
+    }
+
+    /// Emits event when a template is created
+    pub fn emit_template_created(env: &Env, admin: &Address, template_id: &Symbol) {
+        let event_data = AccessControlEventData::TemplateCreated {
+            admin: admin.clone(),
+            template_id: template_id.clone(),
+        };
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "access_control"),
+            admin.clone(),
+            EventData::AccessControl(event_data),
+        )
+        .emit(env);
+    }
 }
