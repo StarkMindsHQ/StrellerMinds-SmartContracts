@@ -329,6 +329,92 @@ impl AccessControl {
         Ok(())
     }
 
+    /// Grant a dynamic permission to a user
+    pub fn grant_dynamic_permission(
+        env: &Env,
+        granter: &Address,
+        user: &Address,
+        permission_name: soroban_sdk::Symbol,
+    ) -> Result<(), AccessControlError> {
+        let permission = Permission::Custom(permission_name.clone());
+        Self::grant_permission(env, granter, user, permission)?;
+
+        AccessControlEvents::emit_dynamic_permission_granted(env, granter, user, &permission_name);
+        Ok(())
+    }
+
+    /// Create a permission template
+    pub fn create_permission_template(
+        env: &Env,
+        admin: &Address,
+        template_id: soroban_sdk::Symbol,
+        permissions: Vec<Permission>,
+    ) -> Result<(), AccessControlError> {
+        let admin_role = AccessControlStorage::validate_user_role(env, admin)?;
+        if admin_role.level != RoleLevel::SuperAdmin {
+            return Err(AccessControlError::PermissionDenied);
+        }
+
+        AccessControlStorage::set_permission_template(env, &template_id, &permissions);
+        AccessControlEvents::emit_template_created(env, admin, &template_id);
+        Ok(())
+    }
+
+    /// Apply a permission template to a user's role
+    pub fn apply_permission_template(
+        env: &Env,
+        granter: &Address,
+        user: &Address,
+        template_id: soroban_sdk::Symbol,
+    ) -> Result<(), AccessControlError> {
+        let permissions = AccessControlStorage::get_permission_template(env, &template_id)
+            .ok_or(AccessControlError::TemplateNotFound)?;
+
+        let mut user_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
+
+        // Validate granter can grant these permissions? Simplest is SuperAdmin or GrantRole
+        let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
+        if !granter_role.has_permission(&Permission::GrantRole) {
+            return Err(AccessControlError::PermissionDenied);
+        }
+
+        for p in permissions.iter() {
+            RolePermissions::add_permission(&mut user_role, p);
+        }
+
+        AccessControlStorage::set_role(env, user, &user_role);
+        Ok(())
+    }
+
+    /// Set role inheritance for a specific user
+    pub fn set_user_role_inheritance(
+        env: &Env,
+        updater: &Address,
+        user: &Address,
+        inherited_roles: Vec<RoleLevel>,
+    ) -> Result<(), AccessControlError> {
+        let updater_role = AccessControlStorage::validate_user_role(env, updater)?;
+        if !updater_role.has_permission(&Permission::GrantRole) {
+            return Err(AccessControlError::PermissionDenied);
+        }
+
+        let mut user_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
+
+        user_role.inherited_roles = inherited_roles.clone();
+        AccessControlStorage::set_role(env, user, &user_role);
+
+        // Convert RoleLevel to u32 for event
+        let mut level_u32s = soroban_sdk::Vec::new(env);
+        for r in inherited_roles.iter() {
+            level_u32s.push_back(r.to_u32());
+        }
+        AccessControlEvents::emit_role_inheritance_updated(env, updater, user, &level_u32s);
+
+        Ok(())
+    }
+
     /// Check if a user has a specific permission
     pub fn has_permission(env: &Env, user: &Address, permission: &Permission) -> bool {
         AccessControlStorage::has_permission(env, user, permission)

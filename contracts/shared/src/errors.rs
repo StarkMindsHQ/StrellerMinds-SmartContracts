@@ -29,4 +29,5 @@ pub enum AccessControlError {
     // Input validation errors
     InvalidAddress = 13,
     InvalidRole = 14,
+    TemplateNotFound = 15,
 }
