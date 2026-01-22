@@ -69,6 +69,21 @@ impl Progress {
         // Store course info
         env.storage().instance().set(&key, &total_modules);
 
+        Logger::log(
+        &env,
+        LogLevel::Info,
+        Symbol::new(&env, "Course"), 
+        String::from_str(&env, "Course Added"),
+        (student.clone(), score).into_val(&env) 
+    );
+
+    
+    Logger::metric(
+        &env, 
+        Symbol::new(&env, "calc_time"), 
+        score.into_val(&env)
+    );
+
         Ok(())
     }
 
