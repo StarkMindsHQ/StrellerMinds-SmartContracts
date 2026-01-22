@@ -1,78 +1,18 @@
-site_name: StrellerMinds Smart Contracts
-site_description: Documentation for StarkMinds' Soroban-based smart contracts
-site_url: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
-repo_name: StarkMindsHQ/StrellerMinds-SmartContracts
-repo_url: https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts
-copyright: "© ${year} StarkMindsHQ"
-
-nav:
-  - Home: index.md
-  - Guides:
-      - Development: development.md
-      - Contributing: contributing.md
-      - Security: security.md
-      - Security Audit Checklist: security_audit_checklist.md
-  - Systems:
-      - RBAC Implementation: RBAC_IMPLEMENTATION.md
-      - Mobile Optimizer System: MOBILE_OPTIMIZER_SYSTEM.md
-      - Token Incentive System: TOKEN_INCENTIVE_SYSTEM.md
-      - Advanced Search System: ADVANCED_SEARCH_SYSTEM.md
-      - Multisig Certificate System: MULTISIG_CERTIFICATE_SYSTEM.md
-      - Metadata Validation: METADATA_VALIDATION.md
-      - Metadata Update Guide: METADATA_UPDATE_GUIDE.md
-      - Reentrancy Protection: REENTRANCY_PROTECTION.md
-      - Prerequisite System: PREREQUISITE_SYSTEM.md
-      - Gas Optimization Analysis: gas_optimization_analysis.md
-      - Security Audit Report: SECURITY_AUDIT_REPORT.md
-  - Build & CI:
-      - Per-Contract Build Matrix: PER_CONTRACT_BUILD_MATRIX.md
-
+site_name: StarkMinds Smart Contracts
 theme:
   name: material
   features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.indexes
-    - navigation.top
-    - toc.follow
-    - content.action.edit
     - content.code.copy
-    - search.highlight
-    - search.share
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-  icon:
-    repo: fontawesome/brands/github
+    - content.tabs.link
 
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
 
 plugins:
   - search
-
-markdown_extensions:
-  - admonition
-  - toc:
-      permalink: true
-  - tables
-  - footnotes
-  - def_list
-  - attr_list
-  - md_in_html
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight:
-      anchor_linenums: true
-      linenums: true
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.emoji:
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-      emoji_index: !!python/name:materialx.emoji.twemoji
