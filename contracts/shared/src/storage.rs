@@ -1,4 +1,5 @@
 use crate::errors::AccessControlError;
+use crate::permissions::RolePermissions;
 use crate::roles::Role;
 use soroban_sdk::{contracttype, Address, Env, Vec};
 
@@ -20,6 +21,10 @@ pub enum DataKey {
     RoleRevocations(Address),
     /// Key for storing system configuration
     Config,
+    /// Key for permission templates
+    PermissionTemplate(soroban_sdk::Symbol),
+    /// Key for role inheritance
+    RoleInheritance(crate::roles::RoleLevel),
 }
 
 /// RBAC storage operations
@@ -160,7 +165,8 @@ impl AccessControlStorage {
         permission: &crate::roles::Permission,
     ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
-            role.has_permission(permission)
+            let resolved = RolePermissions::resolve_all_permissions(env, &role);
+            resolved.contains(permission)
         } else {
             false
         }
@@ -173,7 +179,8 @@ impl AccessControlStorage {
         permissions: &Vec<crate::roles::Permission>,
     ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
-            role.has_any_permission(permissions)
+            let resolved = RolePermissions::resolve_all_permissions(env, &role);
+            permissions.iter().any(|p| resolved.contains(&p))
         } else {
             false
         }
@@ -186,7 +193,8 @@ impl AccessControlStorage {
         permissions: &Vec<crate::roles::Permission>,
     ) -> bool {
         if let Ok(role) = Self::validate_user_role(env, user) {
-            role.has_all_permissions(permissions)
+            let resolved = RolePermissions::resolve_all_permissions(env, &role);
+            permissions.iter().all(|p| resolved.contains(&p))
         } else {
             false
         }
@@ -202,10 +210,56 @@ impl AccessControlStorage {
     /// Gets all users with a specific permission
     pub fn get_users_with_permission(
         env: &Env,
-        permission: &crate::roles::Permission,
+        _permission: &crate::roles::Permission,
     ) -> Vec<Address> {
         // This would require iterating through all users, which is not efficient
         // In a real implementation, you might want to maintain a separate index
         Vec::new(env) // Placeholder implementation
+    }
+
+    /// Sets a permission template
+    pub fn set_permission_template(
+        env: &Env,
+        template_id: &soroban_sdk::Symbol,
+        permissions: &Vec<crate::roles::Permission>,
+    ) {
+        let key = DataKey::PermissionTemplate(template_id.clone());
+        env.storage().instance().set(&key, permissions);
+    }
+
+    /// Gets a permission template
+    pub fn get_permission_template(
+        env: &Env,
+        template_id: &soroban_sdk::Symbol,
+    ) -> Option<Vec<crate::roles::Permission>> {
+        let key = DataKey::PermissionTemplate(template_id.clone());
+        if env.storage().instance().has(&key) {
+            env.storage().instance().get(&key)
+        } else {
+            None
+        }
+    }
+
+    /// Sets role inheritance
+    pub fn set_role_inheritance(
+        env: &Env,
+        level: crate::roles::RoleLevel,
+        inherited: &Vec<crate::roles::RoleLevel>,
+    ) {
+        let key = DataKey::RoleInheritance(level);
+        env.storage().instance().set(&key, inherited);
+    }
+
+    /// Gets role inheritance
+    pub fn get_role_inheritance(
+        env: &Env,
+        level: &crate::roles::RoleLevel,
+    ) -> Vec<crate::roles::RoleLevel> {
+        let key = DataKey::RoleInheritance(level.clone());
+        if env.storage().instance().has(&key) {
+            env.storage().instance().get(&key).unwrap()
+        } else {
+            Vec::new(env)
+        }
     }
 }
