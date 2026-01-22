@@ -1,3 +1,4 @@
+use crate::shared::logger::{Logger, LogLevel}; 
 use crate::{
     errors::AnalyticsError,
     events::AnalyticsEvents,
@@ -137,6 +138,22 @@ impl AnalyticsEngine {
             total_time_spent,
             performance_trend,
         );
+
+        Logger::log(
+        &env,
+        LogLevel::Info,
+        Symbol::new(&env, "analytics"), 
+        String::from_str(&env, "Progress Updated"),
+        (student.clone(), score).into_val(&env) 
+    );
+
+    
+    
+    Logger::metric(
+        &env, 
+        Symbol::new(&env, "calc_time"), 
+        score.into_val(&env)
+    );
 
         Ok(analytics)
     }

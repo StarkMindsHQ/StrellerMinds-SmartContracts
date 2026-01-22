@@ -14,6 +14,7 @@ pub mod reentrancy_guard;
 pub mod roles;
 pub mod storage;
 pub mod validation;
+pub mod logger;
 
 #[cfg(test)]
 mod simple_tests;
