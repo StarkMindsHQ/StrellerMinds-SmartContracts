@@ -16,6 +16,8 @@ pub struct StandardEvent {
     pub timestamp: u64,
     /// Transaction hash (derived from ledger sequence for now)
     pub tx_hash: BytesN<32>,
+    /// Event sequence number for ordering guarantees
+    pub sequence: Option<u32>,
     /// Event-specific data
     pub event_data: EventData,
 }
@@ -209,6 +211,7 @@ impl StandardEvent {
             actor,
             timestamp,
             tx_hash: BytesN::from_array(env, &hash_data),
+            sequence: None, // Will be set by publisher
             event_data,
         }
     }
@@ -232,6 +235,7 @@ impl StandardEvent {
             self.version,
             self.timestamp,
             self.tx_hash.clone(),
+            self.sequence.unwrap_or(0),
             self.serialize_event_data(env),
         );
 
@@ -239,7 +243,7 @@ impl StandardEvent {
     }
 
     /// Get the event category as a string
-    fn get_category(&self) -> &'static str {
+    pub fn get_category(&self) -> &'static str {
         match &self.event_data {
             EventData::AccessControl(_) => "access_control",
             EventData::Certificate(_) => "certificate",
@@ -252,7 +256,7 @@ impl StandardEvent {
     }
 
     /// Get the specific event type as a string
-    fn get_event_type(&self) -> &'static str {
+    pub fn get_event_type(&self) -> &'static str {
         match &self.event_data {
             EventData::AccessControl(data) => match data {
                 AccessControlEventData::ContractInitialized { .. } => "contract_initialized",
