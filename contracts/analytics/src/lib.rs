@@ -1,12 +1,12 @@
 #![no_std]
 
-mod types;
+mod analytics_engine;
 mod errors;
 mod events;
-mod storage;
-mod analytics_engine;
-mod reports;
 mod interface;
+mod reports;
+mod storage;
+mod types;
 
 #[cfg(test)]
 mod tests;
@@ -19,22 +19,22 @@ use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
 // Import shared RBAC system
 use shared::{
     access_control::AccessControl,
-    roles::{Permission, RoleLevel},
     errors::AccessControlError,
     reentrancy_guard::ReentrancyLock,
+    roles::{Permission, RoleLevel},
 };
 
-use types::{
-    LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
-    ProgressReport, ReportPeriod, Achievement, LeaderboardEntry, LeaderboardMetric,
-    AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate, SessionType
-};
+use analytics_engine::AnalyticsEngine;
 use errors::AnalyticsError;
 use events::AnalyticsEvents;
-use storage::AnalyticsStorage;
-use analytics_engine::AnalyticsEngine;
-use reports::ReportGenerator;
 use interface::AnalyticsTrait;
+use reports::ReportGenerator;
+use storage::AnalyticsStorage;
+use types::{
+    Achievement, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate,
+    CourseAnalytics, LeaderboardEntry, LeaderboardMetric, LearningSession, ModuleAnalytics,
+    ProgressAnalytics, ProgressReport, ReportPeriod, SessionType,
+};
 
 #[contract]
 pub struct Analytics;
@@ -99,7 +99,12 @@ impl AnalyticsTrait for Analytics {
 
         // Check for achievements if session is completed
         if session.completion_percentage == 100 {
-            let _ = AnalyticsEngine::check_achievements(&env, &session.student, &session.course_id, &session);
+            let _ = AnalyticsEngine::check_achievements(
+                &env,
+                &session.student,
+                &session.course_id,
+                &session,
+            );
         }
 
         Ok(())
@@ -166,12 +171,25 @@ impl AnalyticsTrait for Analytics {
         );
 
         // Update analytics
-        let _ = AnalyticsEngine::calculate_progress_analytics(&env, &session.student, &session.course_id);
-        let _ = AnalyticsEngine::calculate_module_analytics(&env, &session.course_id, &session.module_id);
+        let _ = AnalyticsEngine::calculate_progress_analytics(
+            &env,
+            &session.student,
+            &session.course_id,
+        );
+        let _ = AnalyticsEngine::calculate_module_analytics(
+            &env,
+            &session.course_id,
+            &session.module_id,
+        );
 
         // Check for achievements
         if completion_percentage == 100 {
-            let _ = AnalyticsEngine::check_achievements(&env, &session.student, &session.course_id, &session);
+            let _ = AnalyticsEngine::check_achievements(
+                &env,
+                &session.student,
+                &session.course_id,
+                &session,
+            );
         }
 
         Ok(())
@@ -194,7 +212,7 @@ impl AnalyticsTrait for Analytics {
         // Process each session in the batch
         for i in 0..batch.sessions.len() {
             let session = batch.sessions.get(i).unwrap();
-            
+
             // Validate and store session
             if Self::validate_session(&env, &session).is_ok() {
                 AnalyticsStorage::set_session(&env, &session);
@@ -209,7 +227,13 @@ impl AnalyticsTrait for Analytics {
             let mut updates = 0u32;
             for i in 0..batch.sessions.len() {
                 let session = batch.sessions.get(i).unwrap();
-                if AnalyticsEngine::calculate_progress_analytics(&env, &session.student, &session.course_id).is_ok() {
+                if AnalyticsEngine::calculate_progress_analytics(
+                    &env,
+                    &session.student,
+                    &session.course_id,
+                )
+                .is_ok()
+                {
                     updates += 1;
                 }
             }
@@ -218,7 +242,12 @@ impl AnalyticsTrait for Analytics {
         let processing_time = env.ledger().timestamp() - start_time;
 
         // Emit batch processing event
-        AnalyticsEvents::emit_batch_processed(&env, batch.sessions.len(), processing_time, processed);
+        AnalyticsEvents::emit_batch_processed(
+            &env,
+            batch.sessions.len(),
+            processing_time,
+            processed,
+        );
 
         Ok(processed)
     }
@@ -237,7 +266,9 @@ impl AnalyticsTrait for Analytics {
         course_id: Symbol,
     ) -> Result<ProgressAnalytics, AnalyticsError> {
         // Try to get cached analytics first
-        if let Some(analytics) = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id) {
+        if let Some(analytics) =
+            AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+        {
             return Ok(analytics);
         }
 
@@ -245,7 +276,10 @@ impl AnalyticsTrait for Analytics {
         AnalyticsEngine::calculate_progress_analytics(&env, &student, &course_id)
     }
 
-    fn get_course_analytics(env: Env, course_id: Symbol) -> Result<CourseAnalytics, AnalyticsError> {
+    fn get_course_analytics(
+        env: Env,
+        course_id: Symbol,
+    ) -> Result<CourseAnalytics, AnalyticsError> {
         // Try to get cached analytics first
         if let Some(analytics) = AnalyticsStorage::get_course_analytics(&env, &course_id) {
             return Ok(analytics);
@@ -261,7 +295,9 @@ impl AnalyticsTrait for Analytics {
         module_id: Symbol,
     ) -> Result<ModuleAnalytics, AnalyticsError> {
         // Try to get cached analytics first
-        if let Some(analytics) = AnalyticsStorage::get_module_analytics(&env, &course_id, &module_id) {
+        if let Some(analytics) =
+            AnalyticsStorage::get_module_analytics(&env, &course_id, &module_id)
+        {
             return Ok(analytics);
         }
 
@@ -277,7 +313,9 @@ impl AnalyticsTrait for Analytics {
         start_date: u64,
         end_date: u64,
     ) -> Result<ProgressReport, AnalyticsError> {
-        ReportGenerator::generate_progress_report(&env, &student, &course_id, &period, start_date, end_date)
+        ReportGenerator::generate_progress_report(
+            &env, &student, &course_id, &period, start_date, end_date,
+        )
     }
 
     fn get_progress_report(
@@ -310,7 +348,11 @@ impl AnalyticsTrait for Analytics {
         ReportGenerator::generate_leaderboard(&env, &course_id, &metric, limit)
     }
 
-    fn get_leaderboard(env: Env, course_id: Symbol, metric: LeaderboardMetric) -> Vec<LeaderboardEntry> {
+    fn get_leaderboard(
+        env: Env,
+        course_id: Symbol,
+        metric: LeaderboardMetric,
+    ) -> Vec<LeaderboardEntry> {
         AnalyticsStorage::get_leaderboard(&env, &course_id, &metric)
     }
 
@@ -338,8 +380,8 @@ impl AnalyticsTrait for Analytics {
         }
 
         // Verify admin
-        let stored_admin = AnalyticsStorage::get_admin(&env)
-            .ok_or(AnalyticsError::NotInitialized)?;
+        let stored_admin =
+            AnalyticsStorage::get_admin(&env).ok_or(AnalyticsError::NotInitialized)?;
 
         if admin != stored_admin {
             return Err(AnalyticsError::Unauthorized);
@@ -376,8 +418,8 @@ impl AnalyticsTrait for Analytics {
         }
 
         // Verify admin
-        let stored_admin = AnalyticsStorage::get_admin(&env)
-            .ok_or(AnalyticsError::NotInitialized)?;
+        let stored_admin =
+            AnalyticsStorage::get_admin(&env).ok_or(AnalyticsError::NotInitialized)?;
 
         if admin != stored_admin {
             return Err(AnalyticsError::Unauthorized);
@@ -409,8 +451,8 @@ impl AnalyticsTrait for Analytics {
         }
 
         // Verify admin
-        let stored_admin = AnalyticsStorage::get_admin(&env)
-            .ok_or(AnalyticsError::NotInitialized)?;
+        let stored_admin =
+            AnalyticsStorage::get_admin(&env).ok_or(AnalyticsError::NotInitialized)?;
 
         if admin != stored_admin {
             return Err(AnalyticsError::Unauthorized);
@@ -429,12 +471,14 @@ impl AnalyticsTrait for Analytics {
         end_date: u64,
     ) -> Vec<AggregatedMetrics> {
         let mut trends: Vec<AggregatedMetrics> = Vec::new(&env);
-        
+
         let mut current_date = (start_date / 86400) * 86400; // Start of day
         let end_day = (end_date / 86400) * 86400;
 
         while current_date <= end_day {
-            if let Some(metrics) = AnalyticsStorage::get_daily_metrics(&env, &course_id, current_date) {
+            if let Some(metrics) =
+                AnalyticsStorage::get_daily_metrics(&env, &course_id, current_date)
+            {
                 trends.push_back(metrics);
             }
             current_date += 86400; // Next day
@@ -451,7 +495,7 @@ impl AnalyticsTrait for Analytics {
     ) -> Result<(ProgressAnalytics, ProgressAnalytics), AnalyticsError> {
         let analytics1 = Self::get_progress_analytics(env.clone(), student1, course_id.clone())?;
         let analytics2 = Self::get_progress_analytics(env, student2, course_id)?;
-        
+
         Ok((analytics1, analytics2))
     }
 
@@ -462,7 +506,7 @@ impl AnalyticsTrait for Analytics {
         limit: u32,
     ) -> Vec<LeaderboardEntry> {
         let leaderboard = AnalyticsStorage::get_leaderboard(&env, &course_id, &metric);
-        
+
         if limit == 0 || limit >= leaderboard.len() {
             return leaderboard;
         }
@@ -477,21 +521,20 @@ impl AnalyticsTrait for Analytics {
         top_performers
     }
 
-    fn get_struggling_students(
-        env: Env,
-        course_id: Symbol,
-        threshold: u32,
-    ) -> Vec<Address> {
+    fn get_struggling_students(env: Env, course_id: Symbol, threshold: u32) -> Vec<Address> {
         let students = AnalyticsStorage::get_course_students(&env, &course_id);
         let mut struggling: Vec<Address> = Vec::new(&env);
 
         for i in 0..students.len() {
             let student = students.get(i).unwrap();
-            if let Some(analytics) = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id) {
+            if let Some(analytics) =
+                AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+            {
                 // Consider students struggling if completion percentage is below threshold
                 // or if they have declining performance trend
-                if analytics.completion_percentage < threshold || 
-                   analytics.performance_trend == types::PerformanceTrend::Declining {
+                if analytics.completion_percentage < threshold
+                    || analytics.performance_trend == types::PerformanceTrend::Declining
+                {
                     struggling.push_back(student);
                 }
             }
@@ -539,13 +582,14 @@ impl AnalyticsTrait for Analytics {
         current_admin.require_auth();
 
         // RBAC: require permission to grant role/admin-like (use GrantRole)
-        if AccessControl::require_permission(&env, &current_admin, &Permission::GrantRole).is_err() {
+        if AccessControl::require_permission(&env, &current_admin, &Permission::GrantRole).is_err()
+        {
             return Err(AnalyticsError::Unauthorized);
         }
 
         // Verify current admin
-        let stored_admin = AnalyticsStorage::get_admin(&env)
-            .ok_or(AnalyticsError::NotInitialized)?;
+        let stored_admin =
+            AnalyticsStorage::get_admin(&env).ok_or(AnalyticsError::NotInitialized)?;
 
         if current_admin != stored_admin {
             return Err(AnalyticsError::Unauthorized);
@@ -564,8 +608,8 @@ impl AnalyticsTrait for Analytics {
 impl Analytics {
     /// Validate session data
     fn validate_session(env: &Env, session: &LearningSession) -> Result<(), AnalyticsError> {
-        let config = AnalyticsStorage::get_config(env)
-            .unwrap_or(AnalyticsStorage::get_default_config(env));
+        let config =
+            AnalyticsStorage::get_config(env).unwrap_or(AnalyticsStorage::get_default_config(env));
 
         // Validate time range
         if session.end_time > 0 && session.end_time <= session.start_time {

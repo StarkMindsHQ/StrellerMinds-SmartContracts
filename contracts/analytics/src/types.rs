@@ -11,8 +11,8 @@ pub struct LearningSession {
     pub start_time: u64,
     pub end_time: u64,
     pub completion_percentage: u32,
-    pub time_spent: u64, // in seconds
-    pub interactions: u32, // number of interactions/activities
+    pub time_spent: u64,    // in seconds
+    pub interactions: u32,  // number of interactions/activities
     pub score: Option<u32>, // assessment score if applicable
     pub session_type: SessionType,
 }
@@ -91,9 +91,9 @@ pub struct ModuleAnalytics {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum DifficultyRating {
-    Easy,    // >80% completion rate, <avg time
-    Medium,  // 60-80% completion rate
-    Hard,    // 40-60% completion rate
+    Easy,     // >80% completion rate, <avg time
+    Medium,   // 60-80% completion rate
+    Hard,     // 40-60% completion rate
     VeryHard, // <40% completion rate
 }
 
@@ -185,31 +185,31 @@ pub enum LeaderboardMetric {
 #[contracttype]
 pub enum DataKey {
     // Learning sessions
-    Session(BytesN<32>), // session_id
+    Session(BytesN<32>),              // session_id
     StudentSessions(Address, Symbol), // (student, course_id) -> Vec<BytesN<32>>
-    
+
     // Progress analytics
     ProgressAnalytics(Address, Symbol), // (student, course_id)
-    
+
     // Course analytics
     CourseAnalytics(Symbol), // course_id
-    CourseStudents(Symbol), // course_id -> Vec<Address>
-    
+    CourseStudents(Symbol),  // course_id -> Vec<Address>
+
     // Module analytics
     ModuleAnalytics(Symbol, Symbol), // (course_id, module_id)
-    
+
     // Time-based reports
     ProgressReport(Address, Symbol, u64), // (student, course_id, timestamp)
-    
+
     // Aggregated metrics
     DailyMetrics(Symbol, u64), // (course_id, date)
-    
+
     // Achievements
     StudentAchievements(Address), // student -> Vec<Achievement>
-    
+
     // Leaderboards
     Leaderboard(Symbol, LeaderboardMetric), // (course_id, metric) -> Vec<LeaderboardEntry>
-    
+
     // Configuration
     Admin,
     AnalyticsConfig,
@@ -230,10 +230,10 @@ pub struct AnalyticsConfig {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct DifficultyThresholds {
-    pub easy_completion_rate: u32,    // >80%
-    pub medium_completion_rate: u32,  // 60-80%
-    pub hard_completion_rate: u32,    // 40-60%
-    // <40% is VeryHard
+    pub easy_completion_rate: u32,   // >80%
+    pub medium_completion_rate: u32, // 60-80%
+    pub hard_completion_rate: u32,   // 40-60%
+                                     // <40% is VeryHard
 }
 
 /// Batch operation for efficient data processing

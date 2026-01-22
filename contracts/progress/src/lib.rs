@@ -5,9 +5,9 @@ use soroban_sdk::{
 };
 
 // Import String for event logging
-use soroban_sdk::String;
 use shared::access_control::AccessControl;
 use shared::roles::Permission;
+use soroban_sdk::String;
 
 // Storage keys
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
@@ -135,8 +135,10 @@ impl Progress {
         // Validate module number
         if module == 0 || module > total_modules {
             // Log the invalid progress attempt
-            env.events().publish((symbol_short!("error"), "invalid_module"), 
-                String::from_str(&env, "invalid_module"));
+            env.events().publish(
+                (symbol_short!("error"), "invalid_module"),
+                String::from_str(&env, "invalid_module"),
+            );
             return Err(Error::InvalidProgress);
         }
 
@@ -144,19 +146,23 @@ impl Progress {
         let current_status = course_progress.get(module as u32).unwrap_or(false);
         if current_status && completed {
             // Log the attempt to modify a completed module
-            env.events().publish((symbol_short!("error"), "already_completed"), 
-                String::from_str(&env, "already_completed"));
+            env.events().publish(
+                (symbol_short!("error"), "already_completed"),
+                String::from_str(&env, "already_completed"),
+            );
             return Err(Error::ModuleAlreadyCompleted);
         }
 
         // VALIDATION 2: Ensure progress only increases (can't mark a completed module as incomplete)
         if current_status && !completed {
             // Log the non-increasing progress attempt
-            env.events().publish((symbol_short!("error"), "non_increasing"), 
-                String::from_str(&env, "non_increasing"));
+            env.events().publish(
+                (symbol_short!("error"), "non_increasing"),
+                String::from_str(&env, "non_increasing"),
+            );
             return Err(Error::NonIncreasingProgress);
         }
-        
+
         // Update the module progress (modules are 1-indexed in the API but 0-indexed in storage)
         course_progress.set(module as u32, completed);
 
@@ -167,8 +173,10 @@ impl Progress {
         env.storage().instance().set(&key, &user_progress);
 
         // Log successful progress update
-        env.events().publish((symbol_short!("info"), "progress_update"), 
-            String::from_str(&env, "progress_update"));
+        env.events().publish(
+            (symbol_short!("info"), "progress_update"),
+            String::from_str(&env, "progress_update"),
+        );
 
         Ok(())
     }
@@ -244,7 +252,7 @@ mod test {
     use super::*;
     use soroban_sdk::testutils::Address as _;
     use soroban_sdk::Symbol;
-    
+
     // Helper function to set up a test environment with a course and initial progress
     fn setup_test_env() -> (Env, ProgressClient<'static>, Address, Address, Symbol) {
         let env = Env::default();
@@ -252,15 +260,15 @@ mod test {
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
-        
+
         // Initialize the contract
         env.mock_all_auths();
         client.initialize(&admin);
-        
+
         // Add a course
         let course_id = symbol_short!("BLOCK101");
         client.add_course(&course_id, &5);
-        
+
         (env, client, admin, user, course_id)
     }
 
@@ -357,68 +365,74 @@ mod test {
 
         let result = client.try_update_progress(&user, &course_id, &11, &true);
         assert_eq!(result, Err(Ok(Error::InvalidProgress)));
-        
+
         // TEST 1: Try to update an already completed module
         let result = client.try_update_progress(&user, &course_id, &1, &true);
         assert_eq!(result, Err(Ok(Error::ModuleAlreadyCompleted)));
-        
+
         // TEST 2: Try to decrease progress (mark a completed module as incomplete)
         let result = client.try_update_progress(&user, &course_id, &1, &false);
         assert_eq!(result, Err(Ok(Error::NonIncreasingProgress)));
-        
+
         // TEST 3: Successfully complete another module
         let update_progress_res = client
             .try_update_progress(&user, &course_id, &3, &true)
             .unwrap();
         assert!(update_progress_res.is_ok());
-        
+
         // Verify progress was updated correctly
         let progress = client.try_get_progress(&user, &course_id).unwrap().unwrap();
         assert_eq!(progress.get(1), Some(true));
         assert_eq!(progress.get(2), Some(true));
         assert_eq!(progress.get(3), Some(true));
-        
+
         // Verify completion percentage is now 30%
         let percentage = client
             .try_get_completion_percentage(&user, &course_id)
             .unwrap();
         assert_eq!(percentage, Ok(30)); // 3 out of 10 modules = 30%
     }
-    
+
     #[test]
     fn test_progress_validation_rules() {
         // Set up test environment
         let (env, client, _admin, user, course_id) = setup_test_env();
         env.mock_all_auths();
-        
+
         // Test 1: Valid progress update (module 1 to completed)
-        let res = client.try_update_progress(&user, &course_id, &1, &true).unwrap();
+        let res = client
+            .try_update_progress(&user, &course_id, &1, &true)
+            .unwrap();
         assert!(res.is_ok());
-        
+
         // Test 2: Cannot complete an already completed module
         let res = client.try_update_progress(&user, &course_id, &1, &true);
         assert_eq!(res, Err(Ok(Error::ModuleAlreadyCompleted)));
-        
+
         // Test 3: Cannot mark a completed module as incomplete (non-increasing progress)
         let res = client.try_update_progress(&user, &course_id, &1, &false);
         assert_eq!(res, Err(Ok(Error::NonIncreasingProgress)));
-        
+
         // Test 4: Invalid module number (too low)
         let res = client.try_update_progress(&user, &course_id, &0, &true);
         assert_eq!(res, Err(Ok(Error::InvalidProgress)));
-        
+
         // Test 5: Invalid module number (too high)
         let res = client.try_update_progress(&user, &course_id, &6, &true);
         assert_eq!(res, Err(Ok(Error::InvalidProgress)));
-        
+
         // Test 6: Complete remaining modules one by one
         for module in 2..=5 {
-            let res = client.try_update_progress(&user, &course_id, &module, &true).unwrap();
+            let res = client
+                .try_update_progress(&user, &course_id, &module, &true)
+                .unwrap();
             assert!(res.is_ok());
         }
-        
+
         // Test 7: Verify final completion percentage is 100%
-        let percentage = client.try_get_completion_percentage(&user, &course_id).unwrap();
+        let percentage = client
+            .try_get_completion_percentage(&user, &course_id)
+            .unwrap();
         assert_eq!(percentage, Ok(100)); // All 5 modules completed
     }
 
@@ -451,7 +465,10 @@ mod test {
         client.update_progress(&user2, &course_id, &3, &true);
 
         // Verify user 1 progress
-        let progress1 = client.try_get_progress(&user1, &course_id).unwrap().unwrap();
+        let progress1 = client
+            .try_get_progress(&user1, &course_id)
+            .unwrap()
+            .unwrap();
         assert_eq!(progress1.get(1), Some(true));
         assert_eq!(progress1.get(2), Some(true));
         assert_eq!(progress1.get(3), Some(false));
@@ -459,7 +476,10 @@ mod test {
         assert_eq!(progress1.get(5), Some(false));
 
         // Verify user 2 progress
-        let progress2 = client.try_get_progress(&user2, &course_id).unwrap().unwrap();
+        let progress2 = client
+            .try_get_progress(&user2, &course_id)
+            .unwrap()
+            .unwrap();
         assert_eq!(progress2.get(1), Some(true));
         assert_eq!(progress2.get(2), Some(true));
         assert_eq!(progress2.get(3), Some(true));
@@ -489,21 +509,21 @@ mod test {
         let course1 = symbol_short!("RUST101");
         let course2 = symbol_short!("BLOCK101");
         let course3 = symbol_short!("WEB101");
-        
+
         client.add_course(&course1, &3);
         client.add_course(&course2, &5);
         client.add_course(&course3, &2);
 
         // User progresses in different courses
         env.mock_all_auths();
-        
+
         // Course 1: Complete 2 out of 3 modules
         client.update_progress(&user, &course1, &1, &true);
         client.update_progress(&user, &course1, &2, &true);
-        
+
         // Course 2: Complete 1 out of 5 modules
         client.update_progress(&user, &course2, &1, &true);
-        
+
         // Course 3: Complete all 2 modules
         client.update_progress(&user, &course3, &1, &true);
         client.update_progress(&user, &course3, &2, &true);
@@ -548,14 +568,20 @@ mod test {
         // Test single module course
         let single_module_course = symbol_short!("SINGLE");
         client.add_course(&single_module_course, &1);
-        
+
         env.mock_all_auths();
         client.update_progress(&user, &single_module_course, &1, &true);
-        
-        let progress = client.try_get_progress(&user, &single_module_course).unwrap().unwrap();
+
+        let progress = client
+            .try_get_progress(&user, &single_module_course)
+            .unwrap()
+            .unwrap();
         assert_eq!(progress.len(), 2); // 0-indexed, so 1 module + 1 = 2
         assert_eq!(progress.get(1), Some(true));
-        assert_eq!(client.get_completion_percentage(&user, &single_module_course), 100);
+        assert_eq!(
+            client.get_completion_percentage(&user, &single_module_course),
+            100
+        );
 
         // Test zero completion percentage
         let new_user = Address::generate(&env);

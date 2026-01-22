@@ -1,5 +1,5 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec, Map};
-use crate::event_schema::{StandardEvent, EventData, EventCategory};
+use crate::event_schema::{EventCategory, EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
 
 /// Aggregated event statistics
 #[derive(Clone, Debug)]
@@ -26,58 +26,46 @@ impl EventAggregator {
     const AGGREGATION_WINDOW: u64 = 86400; // 24 hours in seconds
 
     /// Aggregate events by category
-    pub fn aggregate_by_category(
-        env: &Env,
-        events: Vec<StandardEvent>,
-    ) -> Map<Symbol, u32> {
+    pub fn aggregate_by_category(env: &Env, events: Vec<StandardEvent>) -> Map<Symbol, u32> {
         let mut result = Map::new(env);
-        
+
         for event in events.iter() {
             let category = Symbol::new(env, event.get_category());
             let count = result.get(category.clone()).unwrap_or(0);
             result.set(category, count + 1);
         }
-        
+
         result
     }
 
     /// Aggregate events by contract
-    pub fn aggregate_by_contract(
-        env: &Env,
-        events: Vec<StandardEvent>,
-    ) -> Map<Symbol, u32> {
+    pub fn aggregate_by_contract(env: &Env, events: Vec<StandardEvent>) -> Map<Symbol, u32> {
         let mut result = Map::new(env);
-        
+
         for event in events.iter() {
             let contract = event.contract.clone();
             let count = result.get(contract.clone()).unwrap_or(0);
             result.set(contract, count + 1);
         }
-        
+
         result
     }
 
     /// Aggregate events by actor
-    pub fn aggregate_by_actor(
-        env: &Env,
-        events: Vec<StandardEvent>,
-    ) -> Map<Address, u32> {
+    pub fn aggregate_by_actor(env: &Env, events: Vec<StandardEvent>) -> Map<Address, u32> {
         let mut result = Map::new(env);
-        
+
         for event in events.iter() {
             let actor = event.actor.clone();
             let count = result.get(actor.clone()).unwrap_or(0);
             result.set(actor, count + 1);
         }
-        
+
         result
     }
 
     /// Calculate event statistics
-    pub fn calculate_stats(
-        env: &Env,
-        events: Vec<StandardEvent>,
-    ) -> EventStats {
+    pub fn calculate_stats(env: &Env, events: Vec<StandardEvent>) -> EventStats {
         let mut category_counts = Map::new(env);
         let mut contract_counts = Map::new(env);
         let mut event_type_counts = Map::new(env);
@@ -117,7 +105,11 @@ impl EventAggregator {
             category_counts,
             contract_counts,
             event_type_counts,
-            first_timestamp: if first_timestamp == u64::MAX { 0 } else { first_timestamp },
+            first_timestamp: if first_timestamp == u64::MAX {
+                0
+            } else {
+                first_timestamp
+            },
             last_timestamp,
         }
     }
@@ -154,11 +146,7 @@ impl EventAggregator {
     }
 
     /// Get top N contracts by event count
-    pub fn top_contracts(
-        env: &Env,
-        events: Vec<StandardEvent>,
-        top_n: u32,
-    ) -> Vec<(Symbol, u32)> {
+    pub fn top_contracts(env: &Env, events: Vec<StandardEvent>, top_n: u32) -> Vec<(Symbol, u32)> {
         let contract_counts = Self::aggregate_by_contract(env, events);
         let mut pairs = Vec::new(env);
 
@@ -177,11 +165,7 @@ impl EventAggregator {
     }
 
     /// Get top N actors by event count
-    pub fn top_actors(
-        env: &Env,
-        events: Vec<StandardEvent>,
-        top_n: u32,
-    ) -> Vec<(Address, u32)> {
+    pub fn top_actors(env: &Env, events: Vec<StandardEvent>, top_n: u32) -> Vec<(Address, u32)> {
         let actor_counts = Self::aggregate_by_actor(env, events);
         let mut pairs = Vec::new(env);
 

@@ -54,7 +54,12 @@ pub struct Role {
 }
 
 impl Role {
-    pub fn new(level: RoleLevel, permissions: Vec<Permission>, granted_by: Address, granted_at: u64) -> Self {
+    pub fn new(
+        level: RoleLevel,
+        permissions: Vec<Permission>,
+        granted_by: Address,
+        granted_at: u64,
+    ) -> Self {
         Self {
             level,
             permissions,
@@ -103,39 +108,39 @@ pub enum Permission {
     RevokeCertificate,
     TransferCertificate,
     UpdateCertificateMetadata,
-    
+
     // Course permissions
     CreateCourse,
     UpdateCourse,
     DeleteCourse,
     EnrollStudent,
     UnenrollStudent,
-    
+
     // Progress permissions
     UpdateProgress,
     ViewProgress,
     MarkCompletion,
-    
+
     // Role management permissions
     GrantRole,
     RevokeRole,
     TransferRole,
-    
+
     // System permissions
     InitializeContract,
     UpgradeContract,
     EmergencyPause,
     EmergencyResume,
-    
+
     // Token permissions
     MintTokens,
     BurnTokens,
     TransferTokens,
-    
+
     // Batch operations
     BatchMintCertificates,
     BatchRevokeCertificates,
-    
+
     // View permissions
     ViewAllCertificates,
     ViewAllCourses,
@@ -176,4 +181,4 @@ impl Permission {
             Permission::ViewSystemStats => "ViewSystemStats",
         }
     }
-} 
+}

@@ -29,7 +29,7 @@
 //     /// Initialize the mobile optimizer contract
 //     pub fn initialize(env: Env, admin: Address) {
 //         admin.require_auth();
-        
+
 //         let config = MobileOptimizerConfig {
 //             admin: admin.clone(),
 //             max_batch_size: 10,
@@ -39,7 +39,7 @@
 //             network_timeout_ms: 30000,
 //             retry_attempts: 5,
 //         };
-        
+
 //         env.storage().persistent().set(&DataKey::Config, &config);
 //         env.storage().persistent().set(&DataKey::Admin, &admin);
 //     }
@@ -53,7 +53,7 @@
 //     ) -> Result<String, MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         SessionManager::create_session(&env, user, device_id, preferences)
 //             .map_err(|_| MobileOptimizerError::SessionCreationFailed)
 //     }
@@ -67,7 +67,7 @@
 //     ) -> Result<(), MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         SessionManager::update_session(&env, user, session_id, preferences)
 //             .map_err(|_| MobileOptimizerError::SessionUpdateFailed)
 //     }
@@ -79,7 +79,7 @@
 //         session_id: String,
 //     ) -> Result<MobileSession, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         SessionManager::get_session(&env, &user, &session_id)
 //             .map_err(|_| MobileOptimizerError::SessionNotFound)
 //     }
@@ -94,10 +94,10 @@
 //     ) -> Result<BatchExecutionResult, MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         // Detect current network quality
 //         let network_quality = NetworkManager::detect_network_quality(&env);
-        
+
 //         // Create batch
 //         let batch = TransactionBatch {
 //             batch_id: format!("batch_{}", env.ledger().timestamp()),
@@ -110,7 +110,7 @@
 //             retry_config: Self::create_default_retry_config(&network_quality),
 //             network_quality,
 //         };
-        
+
 //         BatchManager::execute_batch(&env, batch, session_id)
 //             .map_err(|_| MobileOptimizerError::BatchExecutionFailed)
 //     }
@@ -123,14 +123,14 @@
 //         estimation_mode: GasEstimationMode,
 //     ) -> Result<Vec<GasEstimate>, MobileOptimizerError> {
 //         let mut estimates = Vec::new(&env);
-        
+
 //         for operation in operations {
 //             match GasOptimizer::estimate_operation_gas(&env, &operation, &network_quality, estimation_mode.clone()) {
 //                 Ok(estimate) => estimates.push_back(estimate),
 //                 Err(_) => return Err(MobileOptimizerError::GasEstimationFailed),
 //             }
 //         }
-        
+
 //         Ok(estimates)
 //     }
 
@@ -153,9 +153,9 @@
 //     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         let network_quality = NetworkManager::detect_network_quality(&env);
-        
+
 //         InteractionFlows::quick_enroll_course(&env, user, course_id, session_id, network_quality)
 //             .map_err(|_| MobileOptimizerError::InteractionFailed)
 //     }
@@ -171,9 +171,9 @@
 //     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         let network_quality = NetworkManager::detect_network_quality(&env);
-        
+
 //         InteractionFlows::quick_update_progress(
 //             &env,
 //             user,
@@ -195,9 +195,9 @@
 //     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
 //         let _guard = ReentrancyLock::new(&env);
 //         user.require_auth();
-        
+
 //         let network_quality = NetworkManager::detect_network_quality(&env);
-        
+
 //         InteractionFlows::quick_claim_certificate(&env, user, course_id, session_id, network_quality)
 //             .map_err(|_| MobileOptimizerError::InteractionFailed)
 //     }
@@ -210,7 +210,7 @@
 //         operation: QueuedOperation,
 //     ) -> Result<(), MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         OfflineManager::queue_operation(&env, user, device_id, operation)
 //             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
 //     }
@@ -222,9 +222,9 @@
 //         device_id: String,
 //     ) -> Result<OfflineSyncResult, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         let network_quality = NetworkManager::detect_network_quality(&env);
-        
+
 //         OfflineManager::sync_offline_operations(&env, user, device_id, network_quality)
 //             .map_err(|_| MobileOptimizerError::OfflineSyncFailed)
 //     }
@@ -236,7 +236,7 @@
 //         device_id: String,
 //     ) -> Result<OfflineQueueStatus, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         OfflineManager::get_queue_status(&env, &user, &device_id)
 //             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
 //     }
@@ -250,7 +250,7 @@
 //         operation_resolutions: Vec<OperationResolution>,
 //     ) -> Result<ConflictResolutionResult, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         OfflineManager::resolve_conflicts(&env, user, device_id, resolution_strategy, operation_resolutions)
 //             .map_err(|_| MobileOptimizerError::ConflictResolutionFailed)
 //     }
@@ -262,7 +262,7 @@
 //         session_id: String,
 //     ) -> Result<NetworkStatistics, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         Ok(NetworkManager::get_network_statistics(&env, session_id))
 //     }
 
@@ -285,7 +285,7 @@
 //         preferences: MobilePreferences,
 //     ) -> Result<(), MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         SessionManager::update_preferences(&env, user, session_id, preferences)
 //             .map_err(|_| MobileOptimizerError::PreferenceUpdateFailed)
 //     }
@@ -297,7 +297,7 @@
 //         session_id: String,
 //     ) -> Result<MobileAnalytics, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         SessionManager::get_session_analytics(&env, &user, &session_id)
 //             .map_err(|_| MobileOptimizerError::AnalyticsNotAvailable)
 //     }
@@ -309,7 +309,7 @@
 //         device_id: String,
 //     ) -> Result<u32, MobileOptimizerError> {
 //         user.require_auth();
-        
+
 //         OfflineManager::cleanup_completed_operations(&env, user, device_id)
 //             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
 //     }
@@ -323,7 +323,7 @@
 //         config: MobileOptimizerConfig,
 //     ) -> Result<(), MobileOptimizerError> {
 //         Self::require_admin(&env, &admin)?;
-        
+
 //         env.storage().persistent().set(&DataKey::Config, &config);
 //         Ok(())
 //     }
@@ -341,7 +341,7 @@
 //         admin: Address,
 //     ) -> Result<ContractStatistics, MobileOptimizerError> {
 //         Self::require_admin(&env, &admin)?;
-        
+
 //         Ok(ContractStatistics {
 //             total_sessions: Self::count_total_sessions(&env),
 //             active_sessions: Self::count_active_sessions(&env),
@@ -355,15 +355,15 @@
 
 //     fn require_admin(env: &Env, admin: &Address) -> Result<(), MobileOptimizerError> {
 //         admin.require_auth();
-        
+
 //         let stored_admin: Address = env.storage().persistent()
 //             .get(&DataKey::Admin)
 //             .ok_or(MobileOptimizerError::AdminNotSet)?;
-        
+
 //         if *admin != stored_admin {
 //             return Err(MobileOptimizerError::UnauthorizedAdmin);
 //         }
-        
+
 //         Ok(())
 //     }
 

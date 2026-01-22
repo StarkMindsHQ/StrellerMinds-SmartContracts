@@ -1,5 +1,5 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String};
-use crate::event_schema::{StandardEvent, EventData};
+use crate::event_schema::{EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
 /// Gas-optimized event utilities
 pub struct EventUtils;
@@ -7,18 +7,8 @@ pub struct EventUtils;
 impl EventUtils {
     /// Emit a minimal event with reduced gas cost
     /// Uses only essential topics and data
-    pub fn emit_minimal(
-        env: &Env,
-        contract: Symbol,
-        event_type: Symbol,
-        actor: Address,
-    ) {
-        let topics = (
-            Symbol::new(env, "min_event"),
-            contract,
-            event_type,
-            actor,
-        );
+    pub fn emit_minimal(env: &Env, contract: Symbol, event_type: Symbol, actor: Address) {
+        let topics = (Symbol::new(env, "min_event"), contract, event_type, actor);
         env.events().publish(topics, ());
     }
 
@@ -29,11 +19,7 @@ impl EventUtils {
         event_type: Symbol,
         events: Vec<StandardEvent>,
     ) {
-        let topics = (
-            Symbol::new(env, "batch_event"),
-            contract,
-            event_type,
-        );
+        let topics = (Symbol::new(env, "batch_event"), contract, event_type);
         let count = events.len();
         env.events().publish(topics, count);
     }
@@ -118,11 +104,11 @@ impl EventUtils {
     pub fn create_event_hash(env: &Env, event: &StandardEvent) -> BytesN<32> {
         // Create a deterministic hash from event data
         let mut hash_data = [0u8; 32];
-        
+
         // Include key fields in hash
         let seq_bytes = event.timestamp.to_be_bytes();
         let contract_bytes = event.contract.to_string().as_bytes();
-        
+
         // Simple hash (in production, use proper hashing)
         for i in 0..32 {
             if i < 8 {
@@ -134,7 +120,7 @@ impl EventUtils {
                 hash_data[i] = hash_data[i - 16] ^ hash_data[i - 8];
             }
         }
-        
+
         BytesN::from_array(env, &hash_data)
     }
 
@@ -157,25 +143,29 @@ impl EventUtils {
     ) -> Result<(), String> {
         let key = Symbol::new(env, &format!("rate_limit_{}", actor.to_string()));
         let current_time = env.ledger().timestamp();
-        
-        if let Some((count, reset_time)) = env.storage()
-            .temporary()
-            .get::<_, (u32, u64)>(&key) {
+
+        if let Some((count, reset_time)) = env.storage().temporary().get::<_, (u32, u64)>(&key) {
             if current_time < reset_time {
                 if count >= max_events_per_period {
                     return Err(String::from_str(env, "Rate limit exceeded"));
                 }
                 // Increment count
-                env.storage().temporary().set(&key, &(count + 1, reset_time));
+                env.storage()
+                    .temporary()
+                    .set(&key, &(count + 1, reset_time));
             } else {
                 // Reset period
-                env.storage().temporary().set(&key, &(1, current_time + period_seconds));
+                env.storage()
+                    .temporary()
+                    .set(&key, &(1, current_time + period_seconds));
             }
         } else {
             // First event in period
-            env.storage().temporary().set(&key, &(1, current_time + period_seconds));
+            env.storage()
+                .temporary()
+                .set(&key, &(1, current_time + period_seconds));
         }
-        
+
         Ok(())
     }
 

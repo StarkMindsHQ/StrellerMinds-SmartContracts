@@ -1,5 +1,20 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec};
-use crate::event_schema::{StandardEvent, EventData};
+use crate::event_schema::{EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+
+/// Event replay state
+#[derive(Clone, Debug)]
+pub struct ReplayState {
+    /// Current replay sequence
+    pub current_sequence: u32,
+    /// Last replayed sequence
+    pub last_replayed: u32,
+    /// Replay start timestamp
+    pub start_timestamp: u64,
+    /// Replay end sequence (optional)
+    pub end_sequence: Option<u32>,
+    /// Total events replayed
+    pub total_replayed: u32,
+}
 
 /// Event replay manager for replaying events from a specific sequence
 pub struct EventReplay;
@@ -7,21 +22,6 @@ pub struct EventReplay;
 impl EventReplay {
     const REPLAY_STATE_KEY: &'static str = "replay_state";
     const MAX_REPLAY_EVENTS: u32 = 1000;
-
-    /// Event replay state
-    #[derive(Clone, Debug)]
-    pub struct ReplayState {
-        /// Current replay sequence
-        pub current_sequence: u32,
-        /// Last replayed sequence
-        pub last_replayed: u32,
-        /// Replay start timestamp
-        pub start_timestamp: u64,
-        /// Replay end sequence (optional)
-        pub end_sequence: Option<u32>,
-        /// Total events replayed
-        pub total_replayed: u32,
-    }
 
     /// Start event replay from a specific sequence
     pub fn start_replay(
@@ -67,8 +67,8 @@ impl EventReplay {
         env: &Env,
         batch_size: u32,
     ) -> Result<(Vec<StandardEvent>, ReplayState), String> {
-        let mut state = Self::get_replay_state(env)
-            .ok_or_else(|| String::from_str(env, "No active replay"))?;
+        let mut state =
+            Self::get_replay_state(env).ok_or_else(|| String::from_str(env, "No active replay"))?;
 
         let mut events = Vec::new(env);
         let mut count = 0u32;
@@ -93,7 +93,11 @@ impl EventReplay {
             if let Some(event_ref) = Self::get_event_reference(env, state.current_sequence) {
                 // Reconstruct event from reference (simplified)
                 // In production, you'd store full event data
-                events.push_back(Self::reconstruct_event(env, state.current_sequence, &event_ref));
+                events.push_back(Self::reconstruct_event(
+                    env,
+                    state.current_sequence,
+                    &event_ref,
+                ));
                 state.last_replayed = state.current_sequence;
                 state.total_replayed += 1;
             }
@@ -111,8 +115,8 @@ impl EventReplay {
 
     /// Stop event replay
     pub fn stop_replay(env: &Env) -> Result<ReplayState, String> {
-        let state = Self::get_replay_state(env)
-            .ok_or_else(|| String::from_str(env, "No active replay"))?;
+        let state =
+            Self::get_replay_state(env).ok_or_else(|| String::from_str(env, "No active replay"))?;
 
         // Clear replay state
         let key = Symbol::new(env, Self::REPLAY_STATE_KEY);
@@ -141,7 +145,7 @@ impl EventReplay {
 
         // Start replay
         let state = Self::start_replay(env, start_seq.unwrap(), Some(end_seq.unwrap()))?;
-        
+
         // Replay all events
         let mut all_events = Vec::new(env);
         loop {
@@ -167,10 +171,7 @@ impl EventReplay {
     /// Get current event sequence
     pub fn get_current_sequence(env: &Env) -> u32 {
         let key = Symbol::new(env, "event_seq");
-        env.storage()
-            .persistent()
-            .get::<_, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<_, u32>(&key).unwrap_or(0)
     }
 
     // Private helper functions
@@ -193,10 +194,12 @@ impl EventReplay {
             actor: Address::generate(env), // Placeholder
             timestamp: reference.1,
             tx_hash: BytesN::from_array(env, &[0u8; 32]), // Placeholder
-            event_data: EventData::System(crate::event_schema::SystemEventData::ContractInitialized {
-                admin: Address::generate(env),
-                config: String::from_str(env, "replay"),
-            }),
+            event_data: EventData::System(
+                crate::event_schema::SystemEventData::ContractInitialized {
+                    admin: Address::generate(env),
+                    config: String::from_str(env, "replay"),
+                },
+            ),
         }
     }
 

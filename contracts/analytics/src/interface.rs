@@ -1,12 +1,12 @@
-use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec};
 use crate::{
-    types::{
-        LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
-        ProgressReport, ReportPeriod, Achievement, LeaderboardEntry, LeaderboardMetric,
-        AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate
-    },
     errors::AnalyticsError,
+    types::{
+        Achievement, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate,
+        CourseAnalytics, LeaderboardEntry, LeaderboardMetric, LearningSession, ModuleAnalytics,
+        ProgressAnalytics, ProgressReport, ReportPeriod,
+    },
 };
+use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec};
 
 /// Analytics contract interface
 // #[contracttrait]
@@ -15,10 +15,7 @@ pub trait AnalyticsTrait {
     fn initialize(env: Env, admin: Address, config: AnalyticsConfig) -> Result<(), AnalyticsError>;
 
     /// Record a new learning session
-    fn record_session(
-        env: Env,
-        session: LearningSession,
-    ) -> Result<(), AnalyticsError>;
+    fn record_session(env: Env, session: LearningSession) -> Result<(), AnalyticsError>;
 
     /// Complete a learning session with final metrics
     fn complete_session(
@@ -30,20 +27,13 @@ pub trait AnalyticsTrait {
     ) -> Result<(), AnalyticsError>;
 
     /// Batch update multiple sessions for efficiency
-    fn batch_update_sessions(
-        env: Env,
-        batch: BatchSessionUpdate,
-    ) -> Result<u32, AnalyticsError>;
+    fn batch_update_sessions(env: Env, batch: BatchSessionUpdate) -> Result<u32, AnalyticsError>;
 
     /// Get learning session by ID
     fn get_session(env: Env, session_id: BytesN<32>) -> Option<LearningSession>;
 
     /// Get all sessions for a student in a course
-    fn get_student_sessions(
-        env: Env,
-        student: Address,
-        course_id: Symbol,
-    ) -> Vec<BytesN<32>>;
+    fn get_student_sessions(env: Env, student: Address, course_id: Symbol) -> Vec<BytesN<32>>;
 
     /// Calculate and get progress analytics for a student
     fn get_progress_analytics(
@@ -53,10 +43,8 @@ pub trait AnalyticsTrait {
     ) -> Result<ProgressAnalytics, AnalyticsError>;
 
     /// Calculate and get course-wide analytics
-    fn get_course_analytics(
-        env: Env,
-        course_id: Symbol,
-    ) -> Result<CourseAnalytics, AnalyticsError>;
+    fn get_course_analytics(env: Env, course_id: Symbol)
+        -> Result<CourseAnalytics, AnalyticsError>;
 
     /// Calculate and get module-specific analytics
     fn get_module_analytics(
@@ -91,11 +79,7 @@ pub trait AnalyticsTrait {
     ) -> Result<AggregatedMetrics, AnalyticsError>;
 
     /// Get daily aggregated metrics
-    fn get_daily_metrics(
-        env: Env,
-        course_id: Symbol,
-        date: u64,
-    ) -> Option<AggregatedMetrics>;
+    fn get_daily_metrics(env: Env, course_id: Symbol, date: u64) -> Option<AggregatedMetrics>;
 
     /// Generate leaderboard for a course
     fn generate_leaderboard(
@@ -139,11 +123,7 @@ pub trait AnalyticsTrait {
     ) -> Result<(), AnalyticsError>;
 
     /// Cleanup old data (admin only)
-    fn cleanup_old_data(
-        env: Env,
-        admin: Address,
-        before_date: u64,
-    ) -> Result<u32, AnalyticsError>;
+    fn cleanup_old_data(env: Env, admin: Address, before_date: u64) -> Result<u32, AnalyticsError>;
 
     /// Get course completion rates over time
     fn get_completion_trends(
@@ -170,11 +150,7 @@ pub trait AnalyticsTrait {
     ) -> Vec<LeaderboardEntry>;
 
     /// Get struggling students (for intervention)
-    fn get_struggling_students(
-        env: Env,
-        course_id: Symbol,
-        threshold: u32,
-    ) -> Vec<Address>;
+    fn get_struggling_students(env: Env, course_id: Symbol, threshold: u32) -> Vec<Address>;
 
     /// Get course engagement metrics
     fn get_engagement_metrics(

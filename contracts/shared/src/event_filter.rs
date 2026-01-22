@@ -1,5 +1,5 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec};
-use crate::event_schema::{StandardEvent, EventData, EventCategory};
+use crate::event_schema::{EventCategory, EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
 
 /// Event filter criteria
 #[derive(Clone, Debug)]

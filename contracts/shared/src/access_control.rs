@@ -1,9 +1,9 @@
-use soroban_sdk::{Address, Env, Vec};
 use crate::errors::AccessControlError;
 use crate::events::AccessControlEvents;
-use crate::storage::AccessControlStorage;
-use crate::roles::{Role, RoleLevel, Permission};
 use crate::permissions::RolePermissions;
+use crate::roles::{Permission, Role, RoleLevel};
+use crate::storage::AccessControlStorage;
+use soroban_sdk::{Address, Env, Vec};
 
 /// OpenZeppelin-style AccessControl implementation
 pub struct AccessControl;
@@ -24,7 +24,7 @@ impl AccessControl {
 
         // Grant SuperAdmin role to the initial admin
         let super_admin_role = RolePermissions::create_role_with_default_permissions(
-            &env, 
+            &env,
             RoleLevel::SuperAdmin,
             admin.clone(),
             env.ledger().timestamp(),
@@ -54,7 +54,7 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate granter has permission
         let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
-        
+
         if !granter_role.has_permission(&Permission::GrantRole) {
             AccessControlEvents::emit_access_denied(env, granter, &Permission::GrantRole);
             return Err(AccessControlError::PermissionDenied);
@@ -94,7 +94,7 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate granter has permission
         let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
-        
+
         if !granter_role.has_permission(&Permission::GrantRole) {
             AccessControlEvents::emit_access_denied(env, granter, &Permission::GrantRole);
             return Err(AccessControlError::PermissionDenied);
@@ -132,15 +132,15 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate revoker has permission
         let revoker_role = AccessControlStorage::validate_user_role(env, revoker)?;
-        
+
         if !revoker_role.has_permission(&Permission::RevokeRole) {
             AccessControlEvents::emit_access_denied(env, revoker, &Permission::RevokeRole);
             return Err(AccessControlError::PermissionDenied);
         }
 
         // Get user's current role
-        let user_role = AccessControlStorage::get_role(env, user)
-            .ok_or(AccessControlError::RoleNotFound)?;
+        let user_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
 
         // Check role hierarchy
         if !revoker_role.level.can_revoke(&user_role.level) {
@@ -175,19 +175,24 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate transferrer has permission
         let transferrer_role = AccessControlStorage::validate_user_role(env, transferrer)?;
-        
+
         if !transferrer_role.has_permission(&Permission::TransferRole) {
             AccessControlEvents::emit_access_denied(env, transferrer, &Permission::TransferRole);
             return Err(AccessControlError::PermissionDenied);
         }
 
         // Get source user's role
-        let source_role = AccessControlStorage::get_role(env, from)
-            .ok_or(AccessControlError::RoleNotFound)?;
+        let source_role =
+            AccessControlStorage::get_role(env, from).ok_or(AccessControlError::RoleNotFound)?;
 
         // Check role hierarchy
         if !transferrer_role.level.can_revoke(&source_role.level) {
-            AccessControlEvents::emit_hierarchy_violation(env, transferrer, from, &source_role.level);
+            AccessControlEvents::emit_hierarchy_violation(
+                env,
+                transferrer,
+                from,
+                &source_role.level,
+            );
             return Err(AccessControlError::CannotGrantHigherRole);
         }
 
@@ -226,15 +231,15 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate updater has permission
         let updater_role = AccessControlStorage::validate_user_role(env, updater)?;
-        
+
         if !updater_role.has_permission(&Permission::GrantRole) {
             AccessControlEvents::emit_access_denied(env, updater, &Permission::GrantRole);
             return Err(AccessControlError::PermissionDenied);
         }
 
         // Get current role
-        let current_role = AccessControlStorage::get_role(env, user)
-            .ok_or(AccessControlError::RoleNotFound)?;
+        let current_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
 
         // Check role hierarchy
         if !updater_role.level.can_revoke(&current_role.level) {
@@ -271,15 +276,15 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate granter has permission
         let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
-        
+
         if !granter_role.has_permission(&Permission::GrantRole) {
             AccessControlEvents::emit_access_denied(env, granter, &Permission::GrantRole);
             return Err(AccessControlError::PermissionDenied);
         }
 
         // Get user's current role
-        let mut user_role = AccessControlStorage::get_role(env, user)
-            .ok_or(AccessControlError::RoleNotFound)?;
+        let mut user_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
 
         // Add permission
         RolePermissions::add_permission(&mut user_role, permission.clone());
@@ -302,15 +307,15 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate revoker has permission
         let revoker_role = AccessControlStorage::validate_user_role(env, revoker)?;
-        
+
         if !revoker_role.has_permission(&Permission::RevokeRole) {
             AccessControlEvents::emit_access_denied(env, revoker, &Permission::RevokeRole);
             return Err(AccessControlError::PermissionDenied);
         }
 
         // Get user's current role
-        let mut user_role = AccessControlStorage::get_role(env, user)
-            .ok_or(AccessControlError::RoleNotFound)?;
+        let mut user_role =
+            AccessControlStorage::get_role(env, user).ok_or(AccessControlError::RoleNotFound)?;
 
         // Remove permission
         RolePermissions::remove_permission(&mut user_role, permission);
@@ -367,14 +372,18 @@ impl AccessControl {
     ) -> Result<(), AccessControlError> {
         // Validate current admin
         let admin_role = AccessControlStorage::validate_user_role(env, current_admin)?;
-        
+
         if admin_role.level != RoleLevel::SuperAdmin {
-            AccessControlEvents::emit_access_denied(env, current_admin, &Permission::InitializeContract);
+            AccessControlEvents::emit_access_denied(
+                env,
+                current_admin,
+                &Permission::InitializeContract,
+            );
             return Err(AccessControlError::PermissionDenied);
         }
 
         let old_admin = AccessControlStorage::get_admin(env);
-        
+
         // Set new admin
         AccessControlStorage::set_admin(env, new_admin);
 
@@ -431,4 +440,4 @@ impl AccessControl {
             Err(AccessControlError::PermissionDenied)
         }
     }
-} 
+}

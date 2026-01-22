@@ -1,7 +1,7 @@
 //! Test utilities and helper functions for analytics integration tests
 
-use soroban_sdk::{Address, BytesN, Symbol, Env};
 use serde::{Deserialize, Serialize};
+use soroban_sdk::{Address, BytesN, Env, Symbol};
 use std::collections::HashMap;
 
 // Re-export types from the analytics contract for testing
@@ -14,8 +14,8 @@ pub struct LearningSession {
     pub start_time: u64,
     pub end_time: u64,
     pub completion_percentage: u32,
-    pub time_spent: u64, // in seconds
-    pub interactions: u32, // number of interactions/activities
+    pub time_spent: u64,    // in seconds
+    pub interactions: u32,  // number of interactions/activities
     pub score: Option<u32>, // assessment score if applicable
     pub session_type: SessionType,
 }
@@ -81,9 +81,9 @@ pub struct ModuleAnalytics {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DifficultyRating {
-    Easy,    // >80% completion rate, <avg time
-    Medium,  // 60-80% completion rate
-    Hard,    // 40-60% completion rate
+    Easy,     // >80% completion rate, <avg time
+    Medium,   // 60-80% completion rate
+    Hard,     // 40-60% completion rate
     VeryHard, // <40% completion rate
 }
 
@@ -190,10 +190,10 @@ pub struct AnalyticsConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifficultyThresholds {
-    pub easy_completion_rate: u32,    // >80%
-    pub medium_completion_rate: u32,  // 60-80%
-    pub hard_completion_rate: u32,    // 40-60%
-    // <40% is VeryHard
+    pub easy_completion_rate: u32,   // >80%
+    pub medium_completion_rate: u32, // 60-80%
+    pub hard_completion_rate: u32,   // 40-60%
+                                     // <40% is VeryHard
 }
 
 /// Test assertion helpers
@@ -201,7 +201,10 @@ pub struct TestAssertions;
 
 impl TestAssertions {
     /// Assert that two learning sessions are approximately equal
-    pub fn assert_session_eq(session1: &LearningSession, session2: &LearningSession) -> Result<(), String> {
+    pub fn assert_session_eq(
+        session1: &LearningSession,
+        session2: &LearningSession,
+    ) -> Result<(), String> {
         if session1.session_id != session2.session_id {
             return Err("Session IDs don't match".to_string());
         }
@@ -261,12 +264,16 @@ impl TestAssertions {
         for i in 1..leaderboard.len() {
             let current = &leaderboard[i];
             let previous = &leaderboard[i - 1];
-            
+
             if current.rank != (i + 1) as u32 {
-                return Err(format!("Rank mismatch at position {}: expected {}, got {}", 
-                                 i, i + 1, current.rank));
+                return Err(format!(
+                    "Rank mismatch at position {}: expected {}, got {}",
+                    i,
+                    i + 1,
+                    current.rank
+                ));
             }
-            
+
             if current.score > previous.score {
                 return Err("Leaderboard not in descending order".to_string());
             }
@@ -290,7 +297,8 @@ impl PerformanceTracker {
     }
 
     pub fn checkpoint(&mut self, name: &str) {
-        self.checkpoints.insert(name.to_string(), std::time::Instant::now());
+        self.checkpoints
+            .insert(name.to_string(), std::time::Instant::now());
     }
 
     pub fn elapsed_total(&self) -> std::time::Duration {
@@ -304,13 +312,18 @@ impl PerformanceTracker {
     pub fn print_summary(&self) {
         println!("Performance Summary:");
         println!("Total time: {:?}", self.elapsed_total());
-        
+
         let mut sorted_checkpoints: Vec<_> = self.checkpoints.iter().collect();
         sorted_checkpoints.sort_by_key(|(_, &time)| time);
-        
+
         let mut prev_time = self.start_time;
         for (name, &time) in &sorted_checkpoints {
-            println!("  {}: {:?} (since start: {:?})", name, time - prev_time, time - self.start_time);
+            println!(
+                "  {}: {:?} (since start: {:?})",
+                name,
+                time - prev_time,
+                time - self.start_time
+            );
             prev_time = time;
         }
     }
@@ -325,25 +338,25 @@ impl DataValidator {
         if session.end_time > 0 && session.end_time <= session.start_time {
             return Err("End time must be after start time".to_string());
         }
-        
+
         if session.completion_percentage > 100 {
             return Err("Completion percentage cannot exceed 100".to_string());
         }
-        
+
         if let Some(score) = session.score {
             if score > 100 {
                 return Err("Score cannot exceed 100".to_string());
             }
         }
-        
+
         if session.time_spent > 0 && session.end_time == 0 {
             return Err("Time spent > 0 but end time is 0".to_string());
         }
-        
+
         if session.end_time > 0 && session.time_spent != session.end_time - session.start_time {
             return Err("Time spent doesn't match start/end times".to_string());
         }
-        
+
         Ok(())
     }
 
@@ -354,21 +367,27 @@ impl DataValidator {
     ) -> Result<(), String> {
         let actual_sessions = sessions.len() as u32;
         if analytics.total_sessions != actual_sessions {
-            return Err(format!("Session count mismatch: expected {}, got {}", 
-                              actual_sessions, analytics.total_sessions));
+            return Err(format!(
+                "Session count mismatch: expected {}, got {}",
+                actual_sessions, analytics.total_sessions
+            ));
         }
 
         let actual_time: u64 = sessions.iter().map(|s| s.time_spent).sum();
         if analytics.total_time_spent != actual_time {
-            return Err(format!("Total time mismatch: expected {}, got {}", 
-                              actual_time, analytics.total_time_spent));
+            return Err(format!(
+                "Total time mismatch: expected {}, got {}",
+                actual_time, analytics.total_time_spent
+            ));
         }
 
         if actual_sessions > 0 {
             let expected_avg = actual_time / actual_sessions as u64;
             if analytics.average_session_time != expected_avg {
-                return Err(format!("Average session time mismatch: expected {}, got {}", 
-                                  expected_avg, analytics.average_session_time));
+                return Err(format!(
+                    "Average session time mismatch: expected {}, got {}",
+                    expected_avg, analytics.average_session_time
+                ));
             }
         }
 
@@ -391,14 +410,15 @@ impl MockDataGenerator {
         let base_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_secs() - (7 * 24 * 60 * 60);
+            .as_secs()
+            - (7 * 24 * 60 * 60);
 
         let mut sessions = Vec::new();
-        
+
         for i in 0..session_count {
             let session_start = base_time + (i as u64 * 24 * 60 * 60);
             let session_duration = 3600; // 1 hour
-            
+
             let session = LearningSession {
                 session_id: BytesN::from_array(&[(i as u8).to_be_bytes(); 32]),
                 student: Address::from_string(student_address),
@@ -412,10 +432,10 @@ impl MockDataGenerator {
                 score: Some(target_score),
                 session_type: SessionType::Study,
             };
-            
+
             sessions.push(session);
         }
-        
+
         sessions
     }
 
@@ -427,7 +447,7 @@ impl MockDataGenerator {
             .as_secs();
 
         let mut sessions = Vec::new();
-        
+
         // Session with minimum valid duration
         sessions.push(LearningSession {
             session_id: BytesN::from_array(&[1u8; 32]),
@@ -469,7 +489,7 @@ impl TestEnvironment {
     /// Create a test environment with multiple students and courses
     pub fn setup_multi_student_environment() -> HashMap<String, Vec<LearningSession>> {
         let mut environment = HashMap::new();
-        
+
         let students = vec!["alice", "bob", "charlie", "dave", "eve"];
         let courses = vec![
             ("intro_to_rust", 8),
@@ -480,7 +500,7 @@ impl TestEnvironment {
 
         for student in &students {
             let mut student_sessions = Vec::new();
-            
+
             for (course_name, module_count) in &courses {
                 let course_id = Symbol::from_str(&Env::default(), course_name);
                 let course_sessions = MockDataGenerator::generate_performance_scenario(
@@ -492,10 +512,10 @@ impl TestEnvironment {
                 );
                 student_sessions.extend(course_sessions);
             }
-            
+
             environment.insert(student.to_string(), student_sessions);
         }
-        
+
         environment
     }
 
@@ -509,22 +529,24 @@ impl TestEnvironment {
             0
         };
 
-        let scores: Vec<u32> = sessions.iter()
-            .filter_map(|s| s.score)
-            .collect();
+        let scores: Vec<u32> = sessions.iter().filter_map(|s| s.score).collect();
         let average_score = if !scores.is_empty() {
             Some(scores.iter().sum::<u32>() / scores.len() as u32)
         } else {
             None
         };
 
-        let completed_modules = sessions.iter()
+        let completed_modules = sessions
+            .iter()
             .filter(|s| s.completion_percentage == 100)
             .map(|s| s.module_id)
             .collect::<std::collections::HashSet<_>>()
             .len() as u32;
 
-        let completion_percentage = if sessions.iter().any(|s| s.course_id == sessions[0].course_id) {
+        let completion_percentage = if sessions
+            .iter()
+            .any(|s| s.course_id == sessions[0].course_id)
+        {
             (completed_modules * 100) / 8 // Assume 8 modules total
         } else {
             0

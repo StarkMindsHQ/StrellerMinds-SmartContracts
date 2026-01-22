@@ -1,14 +1,14 @@
-use soroban_sdk::{Address, BytesN, Env, IntoVal, String, Symbol, Vec};
 use crate::{
-    types::{
-        LearningSession, ProgressAnalytics, CourseAnalytics, ModuleAnalytics,
-        PerformanceTrend, DifficultyRating, SessionType, Achievement, AchievementType,
-        LeaderboardEntry, LeaderboardMetric, AggregatedMetrics, AnalyticsConfig
-    },
-    storage::AnalyticsStorage,
     errors::AnalyticsError,
     events::AnalyticsEvents,
+    storage::AnalyticsStorage,
+    types::{
+        Achievement, AchievementType, AggregatedMetrics, AnalyticsConfig, CourseAnalytics,
+        DifficultyRating, LeaderboardEntry, LeaderboardMetric, LearningSession, ModuleAnalytics,
+        PerformanceTrend, ProgressAnalytics, SessionType,
+    },
 };
+use soroban_sdk::{Address, BytesN, Env, IntoVal, String, Symbol, Vec};
 
 /// Core analytics calculation engine
 pub struct AnalyticsEngine;
@@ -21,7 +21,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<ProgressAnalytics, AnalyticsError> {
         let sessions = AnalyticsStorage::get_student_sessions(env, student, course_id);
-        
+
         if sessions.is_empty() {
             return Err(AnalyticsError::InsufficientData);
         }
@@ -41,7 +41,7 @@ impl AnalyticsEngine {
             if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
                 total_time_spent += session.time_spent;
                 total_sessions += 1;
-                
+
                 if session.start_time < first_activity {
                     first_activity = session.start_time;
                 }
@@ -115,7 +115,11 @@ impl AnalyticsEngine {
             average_session_time,
             total_sessions,
             last_activity,
-            first_activity: if first_activity == u64::MAX { 0 } else { first_activity },
+            first_activity: if first_activity == u64::MAX {
+                0
+            } else {
+                first_activity
+            },
             average_score,
             streak_days,
             performance_trend: performance_trend.clone(),
@@ -143,7 +147,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<CourseAnalytics, AnalyticsError> {
         let students = AnalyticsStorage::get_course_students(env, course_id);
-        
+
         if students.is_empty() {
             return Err(AnalyticsError::InsufficientData);
         }
@@ -163,10 +167,12 @@ impl AnalyticsEngine {
         // Process each student
         for i in 0..students.len() {
             let student = students.get(i).unwrap();
-            
-            if let Some(analytics) = AnalyticsStorage::get_progress_analytics(env, &student, course_id) {
+
+            if let Some(analytics) =
+                AnalyticsStorage::get_progress_analytics(env, &student, course_id)
+            {
                 total_time_invested += analytics.total_time_spent;
-                
+
                 // Check if student is active
                 if current_time - analytics.last_activity <= active_threshold {
                     active_students += 1;
@@ -216,7 +222,8 @@ impl AnalyticsEngine {
         };
 
         // Determine most difficult and easiest modules (placeholder logic)
-        let (most_difficult_module, easiest_module) = Self::analyze_module_difficulty(env, course_id);
+        let (most_difficult_module, easiest_module) =
+            Self::analyze_module_difficulty(env, course_id);
 
         let analytics = CourseAnalytics {
             course_id: course_id.clone(),
@@ -253,7 +260,7 @@ impl AnalyticsEngine {
         module_id: &Symbol,
     ) -> Result<ModuleAnalytics, AnalyticsError> {
         let students = AnalyticsStorage::get_course_students(env, course_id);
-        
+
         if students.is_empty() {
             return Err(AnalyticsError::InsufficientData);
         }
@@ -268,14 +275,14 @@ impl AnalyticsEngine {
         for i in 0..students.len() {
             let student = students.get(i).unwrap();
             let sessions = AnalyticsStorage::get_student_sessions(env, &student, course_id);
-            
+
             for j in 0..sessions.len() {
                 let session_id = sessions.get(j).unwrap();
                 if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
                     if session.module_id == *module_id {
                         total_attempts += 1;
                         total_time += session.time_spent;
-                        
+
                         if session.completion_percentage == 100 {
                             completions += 1;
                             completion_times.push_back(session.time_spent);
@@ -319,7 +326,8 @@ impl AnalyticsEngine {
         };
 
         // Determine difficulty rating
-        let difficulty_rating = Self::calculate_difficulty_rating(env, completion_rate, average_time_to_complete);
+        let difficulty_rating =
+            Self::calculate_difficulty_rating(env, completion_rate, average_time_to_complete);
 
         let analytics = ModuleAnalytics {
             course_id: course_id.clone(),
@@ -358,22 +366,22 @@ impl AnalyticsEngine {
     /// Calculate student's learning streak
     fn calculate_streak_days(env: &Env, student: &Address, course_id: &Symbol) -> u32 {
         let sessions = AnalyticsStorage::get_student_sessions(env, student, course_id);
-        
+
         if sessions.is_empty() {
             return 0;
         }
 
-        let config = AnalyticsStorage::get_config(env)
-            .unwrap_or(AnalyticsStorage::get_default_config(env));
+        let config =
+            AnalyticsStorage::get_config(env).unwrap_or(AnalyticsStorage::get_default_config(env));
 
         let mut activity_days: Vec<u64> = Vec::new(env);
-        
+
         // Collect unique activity days
         for i in 0..sessions.len() {
             let session_id = sessions.get(i).unwrap();
             if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
                 let day = session.start_time / 86400; // Convert to day number
-                
+
                 // Check if this day is already recorded
                 let mut day_exists = false;
                 for j in 0..activity_days.len() {
@@ -382,7 +390,7 @@ impl AnalyticsEngine {
                         break;
                     }
                 }
-                
+
                 if !day_exists {
                     activity_days.push_back(day);
                 }
@@ -403,11 +411,11 @@ impl AnalyticsEngine {
         // Calculate current streak from the end
         let current_day = env.ledger().timestamp() / 86400;
         let mut streak = 0u32;
-        
+
         for i in (0..activity_days.len()).rev() {
             let day = activity_days.get(i).unwrap();
             let expected_day = current_day - streak as u64;
-            
+
             if day == expected_day || (streak == 0 && current_day - day <= 1) {
                 streak += 1;
             } else {
@@ -431,7 +439,7 @@ impl AnalyticsEngine {
 
         let len = scores.len();
         let recent_count = if len >= 5 { 3 } else { len / 2 };
-        
+
         // Calculate average of recent scores vs earlier scores
         let mut recent_sum = 0u32;
         let mut earlier_sum = 0u32;
@@ -448,11 +456,11 @@ impl AnalyticsEngine {
             earlier_sum += scores.get(i).unwrap();
             earlier_count += 1;
         }
-        
+
         if earlier_count == 0 {
             return PerformanceTrend::Insufficient;
         }
-        
+
         let earlier_avg = earlier_sum / earlier_count;
 
         // Determine trend
@@ -466,16 +474,20 @@ impl AnalyticsEngine {
     }
 
     /// Estimate total modules in a course
-    fn estimate_total_modules(env: &Env, course_id: &Symbol, completed_modules: &Vec<Symbol>) -> u32 {
+    fn estimate_total_modules(
+        env: &Env,
+        course_id: &Symbol,
+        completed_modules: &Vec<Symbol>,
+    ) -> u32 {
         // This is a simplified estimation - in a real system, this would come from course metadata
         let mut max_module_num = 0u32;
-        
+
         for i in 0..completed_modules.len() {
             // Try to extract module number from symbol (assuming format like "module_1", "module_2", etc.)
             // This is a placeholder - real implementation would have proper course structure
             max_module_num += 1;
         }
-        
+
         // Assume at least 5 modules per course, or use the maximum seen + buffer
         if max_module_num < 5 {
             5
@@ -485,16 +497,23 @@ impl AnalyticsEngine {
     }
 
     /// Analyze module difficulty across the course
-    fn analyze_module_difficulty(env: &Env, course_id: &Symbol) -> (Option<Symbol>, Option<Symbol>) {
+    fn analyze_module_difficulty(
+        env: &Env,
+        course_id: &Symbol,
+    ) -> (Option<Symbol>, Option<Symbol>) {
         // Placeholder implementation - would analyze all modules in the course
         // and return the most difficult and easiest based on completion rates and time
         (None, None)
     }
 
     /// Calculate difficulty rating for a module
-    fn calculate_difficulty_rating(env: &Env, completion_rate: u32, avg_time: u64) -> DifficultyRating {
-        let config = AnalyticsStorage::get_config(env)
-            .unwrap_or(AnalyticsStorage::get_default_config(env));
+    fn calculate_difficulty_rating(
+        env: &Env,
+        completion_rate: u32,
+        avg_time: u64,
+    ) -> DifficultyRating {
+        let config =
+            AnalyticsStorage::get_config(env).unwrap_or(AnalyticsStorage::get_default_config(env));
 
         if completion_rate >= config.difficulty_thresholds.easy_completion_rate {
             DifficultyRating::Easy
@@ -536,7 +555,10 @@ impl AnalyticsEngine {
                 let achievement = Achievement {
                     achievement_id: Symbol::new(env, "week_streak"),
                     title: String::from_str(env, "Weekly Streak"),
-                    description: String::from_str(env, "Maintained learning activity for a full week"),
+                    description: String::from_str(
+                        env,
+                        "Maintained learning activity for a full week",
+                    ),
                     earned_date: current_time,
                     achievement_type: AchievementType::Streak,
                 };
@@ -562,7 +584,7 @@ impl AnalyticsEngine {
         for i in 0..new_achievements.len() {
             let achievement = new_achievements.get(i).unwrap();
             AnalyticsStorage::add_student_achievement(env, student, &achievement);
-            
+
             // Emit achievement event
             AnalyticsEvents::emit_achievement_earned(
                 env,

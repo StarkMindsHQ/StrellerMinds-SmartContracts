@@ -1,5 +1,5 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec, Map};
-use crate::event_schema::{StandardEvent, EventData, EventCategory};
+use crate::event_schema::{EventCategory, EventData, StandardEvent};
+use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
 
 /// Event subscription information
 #[derive(Clone, Debug)]
@@ -71,9 +71,14 @@ impl EventPublisher {
     }
 
     /// Unsubscribe from events
-    pub fn unsubscribe(env: &Env, subscriber: &Address, subscription_id: u32) -> Result<(), String> {
+    pub fn unsubscribe(
+        env: &Env,
+        subscriber: &Address,
+        subscription_id: u32,
+    ) -> Result<(), String> {
         let key = Self::get_subscription_key(env, subscription_id);
-        let mut subscription: Subscription = env.storage()
+        let mut subscription: Subscription = env
+            .storage()
             .persistent()
             .get(&key)
             .ok_or_else(|| String::from_str(env, "Subscription not found"))?;
@@ -97,7 +102,7 @@ impl EventPublisher {
     pub fn publish(env: &Env, mut event: StandardEvent) -> Result<u32, String> {
         // Get next event sequence for ordering
         let sequence = Self::get_next_event_sequence(env);
-        
+
         // Set sequence on event for ordering guarantees
         event.sequence = Some(sequence);
 
@@ -116,7 +121,10 @@ impl EventPublisher {
 
     /// Get subscriptions for a subscriber
     pub fn get_subscriptions(env: &Env, subscriber: &Address) -> Vec<u32> {
-        let key = Symbol::new(env, &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()));
+        let key = Symbol::new(
+            env,
+            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
+        );
         env.storage()
             .persistent()
             .get::<_, Vec<u32>>(&key)
@@ -186,10 +194,7 @@ impl EventPublisher {
 
     fn get_next_subscription_id(env: &Env) -> u32 {
         let key = Symbol::new(env, "next_sub_id");
-        let current: u32 = env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(0);
+        let current: u32 = env.storage().persistent().get(&key).unwrap_or(0);
         let next = current + 1;
         env.storage().persistent().set(&key, &next);
         next
@@ -197,15 +202,15 @@ impl EventPublisher {
 
     fn get_subscriber_count(env: &Env) -> u32 {
         let key = Symbol::new(env, Self::SUBSCRIBER_LIST_KEY);
-        env.storage()
-            .persistent()
-            .get::<_, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<_, u32>(&key).unwrap_or(0)
     }
 
     fn add_subscriber(env: &Env, subscriber: &Address, sub_id: u32) {
         // Add to subscriber's subscription list
-        let key = Symbol::new(env, &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()));
+        let key = Symbol::new(
+            env,
+            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
+        );
         let mut subs = Self::get_subscriptions(env, subscriber);
         subs.push_back(sub_id);
         env.storage().persistent().set(&key, &subs);
@@ -217,7 +222,10 @@ impl EventPublisher {
     }
 
     fn remove_subscriber(env: &Env, subscriber: &Address, sub_id: u32) {
-        let key = Symbol::new(env, &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()));
+        let key = Symbol::new(
+            env,
+            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
+        );
         let mut subs = Self::get_subscriptions(env, subscriber);
         let mut new_subs = Vec::new(env);
         for s in subs.iter() {
@@ -230,10 +238,7 @@ impl EventPublisher {
 
     fn get_next_event_sequence(env: &Env) -> u32 {
         let key = Symbol::new(env, Self::EVENT_SEQUENCE_KEY);
-        let current: u32 = env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(0);
+        let current: u32 = env.storage().persistent().get(&key).unwrap_or(0);
         let next = current + 1;
         env.storage().persistent().set(&key, &next);
         next
@@ -250,7 +255,13 @@ impl EventPublisher {
         let cat_str = category.to_string();
         matches!(
             cat_str.as_str(),
-            "access_control" | "certificate" | "analytics" | "token" | "progress" | "system" | "error"
+            "access_control"
+                | "certificate"
+                | "analytics"
+                | "token"
+                | "progress"
+                | "system"
+                | "error"
         )
     }
 }

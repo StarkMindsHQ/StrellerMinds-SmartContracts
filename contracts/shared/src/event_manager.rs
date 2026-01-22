@@ -1,20 +1,17 @@
-use soroban_sdk::{Address, BytesN, Env, Symbol, String, Vec};
-use crate::event_schema::{StandardEvent, EventData};
-use crate::event_publisher::EventPublisher;
-use crate::event_filter::{EventFilter, EventRouter, EventFilterBuilder};
 use crate::event_aggregator::EventAggregator;
-use crate::event_replay::EventReplay;
+use crate::event_filter::{EventFilter, EventFilterBuilder, EventRouter};
+use crate::event_publisher::EventPublisher;
+use crate::event_replay::{EventReplay, ReplayState};
+use crate::event_schema::{EventData, StandardEvent};
 use crate::event_utils::EventUtils;
+use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
 
 /// Unified event manager that provides a single interface for all event operations
 pub struct EventManager;
 
 impl EventManager {
     /// Publish an event with full validation and ordering guarantees
-    pub fn publish_event(
-        env: &Env,
-        event: StandardEvent,
-    ) -> Result<u32, String> {
+    pub fn publish_event(env: &Env, event: StandardEvent) -> Result<u32, String> {
         // Validate event
         EventUtils::validate_event(env, &event)?;
 
@@ -70,7 +67,7 @@ impl EventManager {
         env: &Env,
         from_sequence: u32,
         to_sequence: Option<u32>,
-    ) -> Result<(Vec<StandardEvent>, EventReplay::ReplayState), String> {
+    ) -> Result<(Vec<StandardEvent>, ReplayState), String> {
         let state = EventReplay::start_replay(env, from_sequence, to_sequence)?;
         EventReplay::replay_next_batch(env, 100)
     }
@@ -90,12 +87,7 @@ impl EventManager {
     }
 
     /// Emit a minimal event (gas optimized)
-    pub fn emit_minimal(
-        env: &Env,
-        contract: Symbol,
-        event_type: Symbol,
-        actor: Address,
-    ) {
+    pub fn emit_minimal(env: &Env, contract: Symbol, event_type: Symbol, actor: Address) {
         EventUtils::emit_minimal(env, contract, event_type, actor);
     }
 
@@ -123,11 +115,7 @@ impl EventManager {
     }
 
     /// Verify event integrity
-    pub fn verify_event(
-        env: &Env,
-        event: &StandardEvent,
-        expected_hash: &BytesN<32>,
-    ) -> bool {
+    pub fn verify_event(env: &Env, event: &StandardEvent, expected_hash: &BytesN<32>) -> bool {
         EventUtils::verify_event_integrity(env, event, expected_hash)
     }
 

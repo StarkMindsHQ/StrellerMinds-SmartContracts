@@ -53,7 +53,6 @@ impl ProgressTracker {
             .get(&key)
             .unwrap_or(Map::new(&env));
 
-
         progress_map.set(module_id.clone(), percent);
         env.storage().persistent().set(&key, &progress_map);
 
@@ -74,7 +73,7 @@ impl ProgressTracker {
         env.storage()
             .persistent()
             .get(&key)
-            .unwrap_or(Map::new(&env)) 
+            .unwrap_or(Map::new(&env))
     }
 
     pub fn get_admin(env: Env) -> Address {

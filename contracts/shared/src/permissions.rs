@@ -1,4 +1,4 @@
-use crate::roles::{Role, RoleLevel, Permission};
+use crate::roles::{Permission, Role, RoleLevel};
 use soroban_sdk::{Env, Vec};
 
 /// Predefined role permissions for different user types
@@ -167,4 +167,4 @@ impl RolePermissions {
     pub fn can_revoke_role(revoker_role: &Role, target_role_level: &RoleLevel) -> bool {
         revoker_role.level.can_revoke(target_role_level)
     }
-} 
+}

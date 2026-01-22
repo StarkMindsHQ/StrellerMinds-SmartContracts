@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, String, Vec, Map, contracttype};
+use soroban_sdk::{contracttype, Address, Env, Map, String, Vec};
 
 /// Token incentive system data types
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -78,7 +78,7 @@ pub struct StakingPool {
     pub name: String,
     pub description: String,
     pub minimum_stake: i128,
-    pub reward_rate: u32, // basis points (100 = 1%)
+    pub reward_rate: u32,   // basis points (100 = 1%)
     pub lock_duration: u64, // seconds
     pub total_staked: i128,
     pub total_rewards_distributed: i128,
@@ -160,12 +160,12 @@ pub enum MultiplierReason {
 pub struct TokenomicsConfig {
     pub base_course_reward: i128,
     pub base_module_reward: i128,
-    pub streak_bonus_rate: u32, // basis points per day
+    pub streak_bonus_rate: u32,     // basis points per day
     pub max_streak_multiplier: u32, // maximum multiplier (200 = 2.0x)
     pub referral_reward: i128,
     pub achievement_bonus_rate: u32,
     pub burn_discount_rate: u32, // discount for token burning
-    pub inflation_rate: u32, // annual inflation in basis points
+    pub inflation_rate: u32,     // annual inflation in basis points
     pub max_supply: i128,
     pub treasury_address: Address,
 }
@@ -224,40 +224,40 @@ pub struct IncentiveEvent {
 #[contracttype]
 pub enum IncentiveDataKey {
     // Token rewards
-    TokenReward(String), // reward_id
+    TokenReward(String),  // reward_id
     UserRewards(Address), // user -> Vec<TokenReward>
-    
+
     // Achievements
-    Achievement(String), // achievement_id
+    Achievement(String),              // achievement_id
     UserAchievement(Address, String), // user, achievement_id
-    UserAchievements(Address), // user -> Vec<UserAchievement>
-    
+    UserAchievements(Address),        // user -> Vec<UserAchievement>
+
     // Staking
-    StakingPool(String), // pool_id
+    StakingPool(String),        // pool_id
     UserStake(Address, String), // user, pool_id
-    UserStakes(Address), // user -> Vec<UserStake>
-    
+    UserStakes(Address),        // user -> Vec<UserStake>
+
     // Burning
     BurnTransaction(String), // transaction_id
-    UserBurns(Address), // user -> Vec<BurnTransaction>
-    
+    UserBurns(Address),      // user -> Vec<BurnTransaction>
+
     // Multipliers
     UserMultiplier(Address), // user -> RewardMultiplier
-    
+
     // Configuration
     TokenomicsConfig,
-    
+
     // Statistics
     UserStats(Address),
     GlobalStats,
-    
+
     // Leaderboards
     Leaderboard(LeaderboardCategory),
-    
+
     // Events
     IncentiveEvent(String), // event_id
     ActiveEvents,
-    
+
     // Counters
     RewardCounter,
     AchievementCounter,
