@@ -84,6 +84,47 @@ impl AccessControl {
         Ok(())
     }
 
+    /// Grant a role to a user with an expiration timestamp
+    pub fn grant_role_with_expiry(
+        env: &Env,
+        granter: &Address,
+        user: &Address,
+        role_level: RoleLevel,
+        expires_at: u64,
+    ) -> Result<(), AccessControlError> {
+        // Validate granter has permission
+        let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
+
+        if !granter_role.has_permission(&Permission::GrantRole) {
+            AccessControlEvents::emit_access_denied(env, granter, &Permission::GrantRole);
+            return Err(AccessControlError::PermissionDenied);
+        }
+
+        // Check role hierarchy
+        if !granter_role.level.can_grant(&role_level) {
+            AccessControlEvents::emit_hierarchy_violation(env, granter, user, &role_level);
+            return Err(AccessControlError::CannotGrantHigherRole);
+        }
+
+        // Create role with default permissions and expiry
+        let role = RolePermissions::create_role_with_default_permissions(
+            &env,
+            role_level,
+            granter.clone(),
+            env.ledger().timestamp(),
+        )
+        .with_expiry(expires_at);
+
+        // Store role
+        AccessControlStorage::set_role(env, user, &role);
+        AccessControlStorage::add_role_grant(env, user, &role);
+
+        // Emit event
+        AccessControlEvents::emit_role_granted(env, granter, user, &role);
+
+        Ok(())
+    }
+
     /// Grant a custom role with specific permissions
     pub fn grant_custom_role(
         env: &Env,
@@ -113,6 +154,48 @@ impl AccessControl {
             granter.clone(),
             env.ledger().timestamp(),
         );
+
+        // Store role
+        AccessControlStorage::set_role(env, user, &role);
+        AccessControlStorage::add_role_grant(env, user, &role);
+
+        // Emit event
+        AccessControlEvents::emit_role_granted(env, granter, user, &role);
+
+        Ok(())
+    }
+
+    /// Grant a custom role with specific permissions and an expiration timestamp
+    pub fn grant_custom_role_with_expiry(
+        env: &Env,
+        granter: &Address,
+        user: &Address,
+        role_level: RoleLevel,
+        permissions: Vec<Permission>,
+        expires_at: u64,
+    ) -> Result<(), AccessControlError> {
+        // Validate granter has permission
+        let granter_role = AccessControlStorage::validate_user_role(env, granter)?;
+
+        if !granter_role.has_permission(&Permission::GrantRole) {
+            AccessControlEvents::emit_access_denied(env, granter, &Permission::GrantRole);
+            return Err(AccessControlError::PermissionDenied);
+        }
+
+        // Check role hierarchy
+        if !granter_role.level.can_grant(&role_level) {
+            AccessControlEvents::emit_hierarchy_violation(env, granter, user, &role_level);
+            return Err(AccessControlError::CannotGrantHigherRole);
+        }
+
+        // Create custom role with expiry
+        let role = Role::new(
+            role_level,
+            permissions,
+            granter.clone(),
+            env.ledger().timestamp(),
+        )
+        .with_expiry(expires_at);
 
         // Store role
         AccessControlStorage::set_role(env, user, &role);
@@ -488,6 +571,13 @@ impl AccessControl {
         if Self::has_permission(env, user, permission) {
             Ok(())
         } else {
+            // Check if it failed because of expiry
+            if let Some(role) = AccessControlStorage::get_role(env, user) {
+                if role.is_expired(env.ledger().timestamp()) {
+                    AccessControlEvents::emit_role_expired(env, user, &role);
+                    return Err(AccessControlError::RoleNotFound);
+                }
+            }
             AccessControlEvents::emit_access_denied(env, user, permission);
             Err(AccessControlError::PermissionDenied)
         }
