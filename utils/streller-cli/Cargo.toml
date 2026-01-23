@@ -1,0 +1,23 @@
+[package]
+name = "streller-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# The core CLI framework for parsing arguments and commands
+clap = { version = "4.5", features = ["derive"] }
+
+# Acceptance Criteria: "Add interactive mode" (Select, Confirm, etc.)
+inquire = "0.7"
+
+# For executing the existing shell scripts in your /scripts folder
+run_script = "0.11"
+
+# For beautiful terminal colors and styling
+console = "0.15"
+
+# For progress bars (useful for long deployments)
+indicatif = "0.17"
+
+# For async execution
+tokio = { version = "1.37", features = ["full"] }
