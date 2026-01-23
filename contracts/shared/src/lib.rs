@@ -13,6 +13,7 @@ pub mod permissions;
 pub mod reentrancy_guard;
 pub mod roles;
 pub mod storage;
+pub mod upgrade;
 pub mod validation;
 pub mod logger;
 

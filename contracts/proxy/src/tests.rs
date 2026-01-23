@@ -2,7 +2,7 @@
 use super::*;
 use soroban_sdk::{
     testutils::{Address as _, MockAuth, MockAuthInvoke},
-    Address, Env, IntoVal,
+    Address, Env, IntoVal, Symbol,
 };
 
 // Helper function to create a test environment
@@ -16,6 +16,484 @@ fn setup_test_env() -> (Env, ProxyClient<'static>, Address, Address, Address) {
     let impl2 = Address::generate(&env);
 
     (env, client, admin, impl1, impl2)
+}
+
+// ============================================
+// ENHANCED UPGRADE SYSTEM TESTS
+// ============================================
+
+#[test]
+fn test_propose_upgrade() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Test proposing upgrade
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "propose_upgrade",
+            args: (
+                admin.clone(),
+                impl2.clone(),
+                1u32,
+                1u32,
+                0u32,
+                "Test upgrade".to_string(),
+                2u32,
+            )
+                .into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let proposal_id = client.propose_upgrade(
+        &admin,
+        &impl2,
+        &1,
+        &1,
+        &0,
+        &"Test upgrade".to_string(),
+        &2,
+    );
+
+    assert!(proposal_id.to_string().starts_with("upgrade_"));
+}
+
+#[test]
+#[should_panic(expected = "Unauthorized")]
+fn test_propose_upgrade_unauthorized() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+    let non_admin = Address::generate(&env);
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Test proposing upgrade without permission
+    env.mock_auths(&[MockAuth {
+        address: &non_admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "propose_upgrade",
+            args: (
+                non_admin.clone(),
+                impl2.clone(),
+                1u32,
+                1u32,
+                0u32,
+                "Test upgrade".to_string(),
+                2u32,
+            )
+                .into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    client.propose_upgrade(
+        &non_admin,
+        &impl2,
+        &1,
+        &1,
+        &0,
+        &"Test upgrade".to_string(),
+        &2,
+    );
+}
+
+#[test]
+fn test_vote_on_upgrade() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+    let voter1 = Address::generate(&env);
+    let voter2 = Address::generate(&env);
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Propose upgrade
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "propose_upgrade",
+            args: (
+                admin.clone(),
+                impl2.clone(),
+                1u32,
+                1u32,
+                0u32,
+                "Test upgrade".to_string(),
+                2u32,
+            )
+                .into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let proposal_id = client.propose_upgrade(
+        &admin,
+        &impl2,
+        &1,
+        &1,
+        &0,
+        &"Test upgrade".to_string(),
+        &2,
+    );
+
+    // First vote
+    env.mock_auths(&[MockAuth {
+        address: &voter1,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "vote_on_upgrade",
+            args: (voter1.clone(), proposal_id.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let vote_count = client.vote_on_upgrade(&voter1, &proposal_id);
+    assert_eq!(vote_count, 1);
+
+    // Second vote
+    env.mock_auths(&[MockAuth {
+        address: &voter2,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "vote_on_upgrade",
+            args: (voter2.clone(), proposal_id.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let vote_count = client.vote_on_upgrade(&voter2, &proposal_id);
+    assert_eq!(vote_count, 2);
+}
+
+#[test]
+fn test_execute_upgrade_with_timelock() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Set timelock of 100 seconds
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "set_upgrade_timelock",
+            args: (100u32,).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.set_upgrade_timelock(&100);
+
+    // Propose upgrade
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "propose_upgrade",
+            args: (
+                admin.clone(),
+                impl2.clone(),
+                1u32,
+                1u32,
+                0u32,
+                "Test upgrade".to_string(),
+                1u32,
+            )
+                .into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let proposal_id = client.propose_upgrade(
+        &admin,
+        &impl2,
+        &1,
+        &1,
+        &0,
+        &"Test upgrade".to_string(),
+        &1,
+    );
+
+    // Vote on upgrade
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "vote_on_upgrade",
+            args: (admin.clone(), proposal_id.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.vote_on_upgrade(&admin, &proposal_id);
+
+    // Try to execute before timelock expires (should fail)
+    let result = std::panic::catch_unwind(|| {
+        client.execute_upgrade();
+    });
+    assert!(result.is_err());
+
+    // Advance time past timelock
+    env.ledger().with_mut(|li| {
+        li.timestamp += 150;
+    });
+
+    // Execute upgrade
+    client.execute_upgrade();
+
+    // Verify implementation was updated
+    let current_impl = client.get_implementation();
+    assert_eq!(current_impl, impl2);
+}
+
+#[test]
+fn test_emergency_pause() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Set emergency pause
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "set_emergency_pause",
+            args: (true,).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.set_emergency_pause(&true);
+
+    // Verify pause is active
+    assert!(client.is_emergency_paused());
+
+    // Try standard upgrade while paused (should panic)
+    let result = std::panic::catch_unwind(|| {
+        env.mock_auths(&[MockAuth {
+            address: &admin,
+            invoke: &MockAuthInvoke {
+                contract: &client.address,
+                fn_name: "upgrade",
+                args: (impl2.clone(),).into_val(&env),
+                sub_invokes: &[],
+            },
+        }]);
+        client.upgrade(&impl2);
+    });
+    assert!(result.is_err());
+
+    // Remove emergency pause
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "set_emergency_pause",
+            args: (false,).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.set_emergency_pause(&false);
+
+    // Verify pause is inactive
+    assert!(!client.is_emergency_paused());
+
+    // Standard upgrade should now work
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "upgrade",
+            args: (impl2.clone(),).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.upgrade(&impl2);
+
+    let current_impl = client.get_implementation();
+    assert_eq!(current_impl, impl2);
+}
+
+#[test]
+fn test_get_current_version() {
+    let (env, client, admin, impl1, _impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Get current version
+    let version = client.get_current_version();
+    assert_eq!(version.major, 1);
+    assert_eq!(version.minor, 0);
+    assert_eq!(version.patch, 0);
+}
+
+#[test]
+fn test_get_upgrade_timelock() {
+    let (env, client, admin, impl1, _impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Set timelock
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "set_upgrade_timelock",
+            args: (300u32,).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.set_upgrade_timelock(&300);
+
+    // Get timelock
+    let timelock = client.get_upgrade_timelock();
+    assert!(timelock > 0);
+}
+
+#[test]
+fn test_get_pending_upgrade() {
+    let (env, client, admin, impl1, impl2) = setup_test_env();
+
+    // Initialize contract
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(), impl1.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin, &impl1);
+
+    // Initially no pending upgrade
+    let pending = client.get_pending_upgrade();
+    assert!(pending.is_none());
+
+    // Propose and vote for upgrade
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "propose_upgrade",
+            args: (
+                admin.clone(),
+                impl2.clone(),
+                1u32,
+                1u32,
+                0u32,
+                "Test upgrade".to_string(),
+                1u32,
+            )
+                .into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+
+    let proposal_id = client.propose_upgrade(
+        &admin,
+        &impl2,
+        &1,
+        &1,
+        &0,
+        &"Test upgrade".to_string(),
+        &1,
+    );
+
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "vote_on_upgrade",
+            args: (admin.clone(), proposal_id.clone()).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.vote_on_upgrade(&admin, &proposal_id);
+
+    // Still no pending upgrade until executed
+    let pending = client.get_pending_upgrade();
+    assert!(pending.is_none());
+
+    // Execute upgrade to set pending
+    env.ledger().with_mut(|li| {
+        li.timestamp += 1000;
+    });
+    
+    client.execute_upgrade();
+
+    // Now there should be a pending upgrade
+    let pending = client.get_pending_upgrade();
+    assert!(pending.is_some());
 }
 
 // ============================================
