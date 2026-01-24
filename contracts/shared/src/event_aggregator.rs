@@ -2,7 +2,8 @@ use crate::event_schema::{EventCategory, EventData, StandardEvent};
 use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
 
 /// Aggregated event statistics
-#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EventStats {
     /// Total event count
     pub total_count: u32,

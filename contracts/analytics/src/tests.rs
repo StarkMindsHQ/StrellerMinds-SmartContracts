@@ -6,9 +6,8 @@ mod analytics_tests {
     use crate::{
         errors::AnalyticsError,
         types::{
-            AnalyticsConfig, BatchSessionUpdate, CourseAnalytics, DifficultyRating,
-            DifficultyThresholds, LeaderboardMetric, LearningSession, ModuleAnalytics,
-            PerformanceTrend, ProgressAnalytics, ReportPeriod, SessionType,
+            DifficultyThresholds, InsightType, LeaderboardMetric, LearningSession, MLInsight,
+            ModuleAnalytics, PerformanceTrend, ProgressAnalytics, ReportPeriod, SessionType,
         },
         Analytics, AnalyticsClient,
     };
@@ -583,4 +582,131 @@ mod analytics_tests {
         let result = client.try_batch_update_sessions(&batch);
         assert_eq!(result, Err(Ok(AnalyticsError::InvalidBatchSize)));
     }
+
+    #[test]
+    fn test_request_ml_insight() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Request insight
+        let result =
+            client.try_request_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_callback_ml_insight_authorized() {
+        let (env, admin, _, student) = create_test_env();
+        let oracle = Address::generate(&env);
+
+        let contract_id = env.register_contract(None, Analytics);
+        let client = AnalyticsClient::new(&env, &contract_id);
+
+        let config = AnalyticsConfig {
+            min_session_time: 60,
+            max_session_time: 14400,
+            streak_threshold: 86400,
+            active_threshold: 2592000,
+            difficulty_thresholds: DifficultyThresholds {
+                easy_completion_rate: 80,
+                medium_completion_rate: 60,
+                hard_completion_rate: 40,
+            },
+            oracle_address: Some(oracle.clone()),
+        };
+        client.initialize(&admin, &config);
+
+        let course_id = Symbol::new(&env, "RUST101");
+        let insight = MLInsight {
+            insight_id: BytesN::from_array(&env, &[1u8; 32]),
+            student: student.clone(),
+            course_id: course_id.clone(),
+            insight_type: InsightType::PatternRecognition,
+            data: String::from_str(&env, "Study intensive pattern"),
+            confidence: 90,
+            timestamp: env.ledger().timestamp(),
+        };
+
+        // Callback from authorized oracle
+        let result = client.try_callback_ml_insight(&oracle, &insight);
+        assert!(result.is_ok());
+
+        // Verify stored insight
+        let stored = client.get_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+        assert!(stored.is_some());
+        assert_eq!(stored.unwrap().confidence, 90);
+    }
+
+    #[test]
+    fn test_predict_completion_rates() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Set up some progress data
+        let mut session = create_test_session(&env, &student, "RUST101", "module_1");
+        client.record_session(&session);
+        let end_time = session.start_time + 3600; // 1 hour
+        client.complete_session(&session.session_id, &end_time, &Some(90), &50); // 50% complete
+
+        // Request prediction
+        client.request_ml_insight(&student, &course_id, &InsightType::CompletionPrediction);
+
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::CompletionPrediction);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::CompletionPrediction);
+        assert!(insight.data.to_string().contains("Predicted"));
+    }
+
+    #[test]
+    fn test_generate_recommendations() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Request recommendation
+        client.request_ml_insight(&student, &course_id, &InsightType::Recommendation);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::Recommendation);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::Recommendation);
+        assert!(
+            insight.data.to_string().contains("Review")
+                || insight.data.to_string().contains("Consider")
+        );
+    }
+
+    #[test]
+    fn test_prepare_ml_data() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+        
+        // Arrange: create and complete a session so there is data to summarize
+        let mut session = create_test_session(&env, &student, "RUST101", "module_1");
+        client.record_session(&session);
+        
+        let end_time = session.start_time + 1800; // 30 minutes
+        client.complete_session(&session.session_id, &end_time, &Some(85), &100);
+        
+        // Act: prepare ML data
+        let ml_data = client.prepare_ml_data(&course_id);
+        
+        // Assert: should return a non-empty, masked summary string
+        let ml_data_str = ml_data.to_string();
+        
+        assert!(!ml_data_str.is_empty());
+        
+        // Course-level info is allowed
+        assert!(ml_data_str.contains("RUST101"));
+        
+        // PII must not be present
+        assert!(!ml_data_str.contains(&student.to_string()));
+    }
+    
 }

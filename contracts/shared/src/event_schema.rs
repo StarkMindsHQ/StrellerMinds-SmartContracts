@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, String, Symbol};
+use soroban_sdk::{contracttype, Address, BytesN, Env, String, Symbol};
 
 /// Standard event schema version
 pub const EVENT_SCHEMA_VERSION: u32 = 1;
@@ -60,7 +60,6 @@ pub enum EventData {
     Error(ErrorEventData),
 }
 
-/// Access control event data
 #[derive(Clone, Debug)]
 pub enum AccessControlEventData {
     ContractInitialized {
@@ -131,7 +130,6 @@ pub enum AccessControlEventData {
     },
 }
 
-/// Certificate event data
 #[derive(Clone, Debug)]
 pub enum CertificateEventData {
     CertificateMinted {
@@ -220,94 +218,22 @@ pub enum CertificateEventData {
 }
 
 /// Analytics event data
-#[derive(Clone, Debug)]
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AnalyticsEventData {
-    SessionRecorded {
-        session_id: BytesN<32>,
-        student: Address,
-        course_id: Symbol,
-        module_id: Symbol,
-        session_type: String,
-        time_spent: u64,
-        completion_percentage: u32,
-    },
-    SessionCompleted {
-        session_id: BytesN<32>,
-        student: Address,
-        course_id: Symbol,
-        module_id: Symbol,
-        final_score: Option<u32>,
-        total_time: u64,
-    },
-    ProgressUpdated {
-        student: Address,
-        course_id: Symbol,
-        completion_percentage: u32,
-        total_time_spent: u64,
-        performance_trend: String,
-    },
-    CourseAnalyticsUpdated {
-        course_id: Symbol,
-        total_students: u32,
-        completion_rate: u32,
-        average_score: Option<u32>,
-    },
-    ModuleAnalyticsUpdated {
-        course_id: Symbol,
-        module_id: Symbol,
-        completion_rate: u32,
-        average_time: u64,
-        difficulty_rating: String,
-    },
-    AchievementEarned {
-        student: Address,
-        achievement_id: Symbol,
-        achievement_type: String,
-        course_id: Symbol,
-        earned_date: u64,
-    },
-    LeaderboardUpdated {
-        course_id: Symbol,
-        metric_type: String,
-        top_student: Address,
-        top_score: u32,
-        total_entries: u32,
-    },
-    ReportGenerated {
-        student: Address,
-        course_id: Symbol,
-        report_period: String,
-        start_date: u64,
-        end_date: u64,
-        sessions_count: u32,
-    },
-    BatchProcessed {
-        batch_size: u32,
-        processing_time: u64,
-        updated_analytics: u32,
-    },
-    ConfigUpdated {
-        admin: Address,
-        config_type: String,
-    },
-    DataAggregated {
-        course_id: Symbol,
-        date: u64,
-        active_students: u32,
-        total_sessions: u32,
-    },
-    TrendChange {
-        student: Address,
-        course_id: Symbol,
-        old_trend: String,
-        new_trend: String,
-    },
-    StreakMilestone {
-        student: Address,
-        course_id: Symbol,
-        streak_days: u32,
-        milestone_type: String,
-    },
+    SessionRecorded(BytesN<32>, Address, Symbol, Symbol, String, u64, u32), // session_id, student, course_id, module_id, session_type, time_spent, completion_percentage
+    SessionCompleted(BytesN<32>, Address, Symbol, Symbol, Option<u32>, u64), // session_id, student, course_id, module_id, final_score, total_time
+    ProgressUpdated(Address, Symbol, u32, u64, String), // student, course_id, completion_percentage, total_time_spent, performance_trend
+    CourseAnalyticsUpdated(Symbol, u32, u32, Option<u32>), // course_id, total_students, completion_rate, average_score
+    ModuleAnalyticsUpdated(Symbol, Symbol, u32, u64, String), // course_id, module_id, completion_rate, average_time, difficulty_rating
+    AchievementEarned(Address, Symbol, String, Symbol, u64), // student, achievement_id, achievement_type, course_id, earned_date
+    LeaderboardUpdated(Symbol, String, Address, u32, u32), // course_id, metric_type, top_student, top_score, total_entries
+    ReportGenerated(Address, Symbol, String, u64, u64, u32), // student, course_id, report_period, start_date, end_date, sessions_count
+    BatchProcessed(u32, u64, u32), // batch_size, processing_time, updated_analytics
+    ConfigUpdated(Address, String), // admin, config_type
+    DataAggregated(Symbol, u64, u32, u32), // course_id, date, active_students, total_sessions
+    TrendChange(Address, Symbol, String, String), // student, course_id, old_trend, new_trend
+    StreakMilestone(Address, Symbol, u32, String), // student, course_id, streak_days, milestone_type
 }
 
 /// Token event data

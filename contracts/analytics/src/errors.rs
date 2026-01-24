@@ -38,4 +38,7 @@ pub enum AnalyticsError {
 
     // Configuration errors
     InvalidConfiguration = 20,
+    UnauthorizedOracle = 21,
+    InvalidInsightData = 22,
+    InsightNotFound = 23,
 }
