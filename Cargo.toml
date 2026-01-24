@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/*", "e2e-tests"]
+members = ["contracts/*", "e2e-tests", "utils/streller-cli"]
 resolver = "2"
 
 [workspace.dependencies]
