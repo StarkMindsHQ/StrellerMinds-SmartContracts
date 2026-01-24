@@ -107,7 +107,8 @@ impl EventUtils {
 
         // Include key fields in hash
         let seq_bytes = event.timestamp.to_be_bytes();
-        let contract_bytes = event.contract.to_string().as_bytes();
+        let binding = event.contract.to_string();
+        let contract_bytes = binding.as_bytes();
 
         // Simple hash (in production, use proper hashing)
         for i in 0..32 {

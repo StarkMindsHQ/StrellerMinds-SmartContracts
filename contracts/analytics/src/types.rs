@@ -213,6 +213,9 @@ pub enum DataKey {
     // Configuration
     Admin,
     AnalyticsConfig,
+
+    // ML Insights
+    MLInsight(Address, Symbol, InsightType), // (student, course_id, type)
 }
 
 /// Configuration for analytics calculations
@@ -224,6 +227,7 @@ pub struct AnalyticsConfig {
     pub streak_threshold: u64, // Hours between activities to maintain streak
     pub active_threshold: u64, // Days to consider student active
     pub difficulty_thresholds: DifficultyThresholds,
+    pub oracle_address: Option<Address>, // External ML oracle address
 }
 
 /// Thresholds for difficulty calculation
@@ -262,4 +266,55 @@ pub struct AnalyticsFilter {
 pub enum OptionalSessionType {
     None,
     Some(SessionType),
+}
+
+/// ML Insight Types
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum InsightType {
+    PatternRecognition,
+    CompletionPrediction,
+    Recommendation,
+    AnomalyDetection,
+}
+
+/// ML-generated learning insight
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct MLInsight {
+    pub insight_id: BytesN<32>,
+    pub student: Address,
+    pub course_id: Symbol,
+    pub insight_type: InsightType,
+    pub data: String, // Dynamic insight data
+    pub confidence: u32,
+    pub timestamp: u64,
+}
+
+/// Predictive metrics for course completion
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct PredictionMetrics {
+    pub predicted_completion_date: u64,
+    pub probability_of_completion: u32,
+    pub risk_score: u32,
+    pub estimated_remaining_hours: u32,
+}
+
+/// Personalized learning recommendation
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct LearningRecommendation {
+    pub target_module: Symbol,
+    pub reason: String,
+    pub priority: u32,
+}
+
+/// Anomaly detection data
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct AnomalyData {
+    pub detected_at: u64,
+    pub anomaly_score: u32,
+    pub description: String,
 }

@@ -2,8 +2,8 @@ use crate::{
     errors::AnalyticsError,
     types::{
         Achievement, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate,
-        CourseAnalytics, LeaderboardEntry, LeaderboardMetric, LearningSession, ModuleAnalytics,
-        ProgressAnalytics, ProgressReport, ReportPeriod,
+        CourseAnalytics, InsightType, LeaderboardEntry, LeaderboardMetric, LearningSession,
+        MLInsight, ModuleAnalytics, ProgressAnalytics, ProgressReport, ReportPeriod,
     },
 };
 use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec};
@@ -176,6 +176,29 @@ pub trait AnalyticsTrait {
 
     /// Get admin address
     fn get_admin(env: Env) -> Option<Address>;
+
+    /// Request a new ML-powered insight
+    fn request_ml_insight(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        insight_type: InsightType,
+    ) -> Result<BytesN<32>, AnalyticsError>;
+
+    /// Callback for oracle to provide ML insight
+    fn callback_ml_insight(
+        env: Env,
+        oracle: Address,
+        insight: MLInsight,
+    ) -> Result<(), AnalyticsError>;
+
+    /// Get stored ML insight
+    fn get_ml_insight(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        insight_type: InsightType,
+    ) -> Option<MLInsight>;
 
     /// Transfer admin role
     fn transfer_admin(

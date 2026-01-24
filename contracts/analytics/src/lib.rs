@@ -32,8 +32,8 @@ use reports::ReportGenerator;
 use storage::AnalyticsStorage;
 use types::{
     Achievement, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate,
-    CourseAnalytics, LeaderboardEntry, LeaderboardMetric, LearningSession, ModuleAnalytics,
-    ProgressAnalytics, ProgressReport, ReportPeriod, SessionType,
+    CourseAnalytics, InsightType, LeaderboardEntry, LeaderboardMetric, LearningSession, MLInsight,
+    ModuleAnalytics, ProgressAnalytics, ProgressReport, ReportPeriod, SessionType,
 };
 
 #[contract]
@@ -602,6 +602,94 @@ impl AnalyticsTrait for Analytics {
         AnalyticsEvents::emit_config_updated(&env, &new_admin, "admin_transferred");
 
         Ok(())
+    }
+
+    fn request_ml_insight(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        insight_type: InsightType,
+    ) -> Result<BytesN<32>, AnalyticsError> {
+        student.require_auth();
+
+        // Prepare request ID
+        let request_id: BytesN<32> = env
+            .crypto()
+            .sha256(&env.ledger().timestamp().to_xdr(&env))
+            .into();
+
+        // Perform local analysis for supported types to provide immediate value
+        let local_insight = match insight_type {
+            InsightType::PatternRecognition => Some(AnalyticsEngine::analyze_learning_patterns(
+                &env, &student, &course_id,
+            )?),
+            InsightType::AnomalyDetection => Some(AnalyticsEngine::detect_behavior_anomalies(
+                &env, &student, &course_id,
+            )?),
+            InsightType::CompletionPrediction => Some(AnalyticsEngine::predict_completion_rates(
+                &env, &student, &course_id,
+            )?),
+            InsightType::Recommendation => Some(AnalyticsEngine::generate_recommendations(
+                &env, &student, &course_id,
+            )?),
+        };
+
+        if let Some(insight) = local_insight {
+            AnalyticsStorage::set_ml_insight(&env, &insight);
+        }
+
+        // Emit request event for oracle to pick up (for more advanced external ML)
+        AnalyticsEvents::emit_insight_requested(
+            &env,
+            &student,
+            &course_id,
+            insight_type,
+            request_id.clone(),
+        );
+
+        Ok(request_id)
+    }
+
+    fn callback_ml_insight(
+        env: Env,
+        oracle: Address,
+        insight: MLInsight,
+    ) -> Result<(), AnalyticsError> {
+        oracle.require_auth();
+
+        // Verify oracle authorization
+        let config = AnalyticsStorage::get_config(&env)
+            .unwrap_or(AnalyticsStorage::get_default_config(&env));
+
+        if let Some(authorized_oracle) = config.oracle_address {
+            if oracle != authorized_oracle {
+                return Err(AnalyticsError::UnauthorizedOracle);
+            }
+        } else {
+            return Err(AnalyticsError::UnauthorizedOracle);
+        }
+
+        // Store insight
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+
+        // Emit received event
+        AnalyticsEvents::emit_insight_received(
+            &env,
+            &insight.student,
+            insight.insight_type,
+            insight.confidence,
+        );
+
+        Ok(())
+    }
+
+    fn get_ml_insight(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        insight_type: InsightType,
+    ) -> Option<MLInsight> {
+        AnalyticsStorage::get_ml_insight(&env, &student, &course_id, &insight_type)
     }
 }
 

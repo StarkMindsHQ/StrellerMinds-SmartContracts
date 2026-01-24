@@ -1,6 +1,7 @@
 use crate::types::{
-    Achievement, AggregatedMetrics, AnalyticsConfig, CourseAnalytics, DataKey, LeaderboardEntry,
-    LearningSession, ModuleAnalytics, ProgressAnalytics, ProgressReport,
+    Achievement, AggregatedMetrics, AnalyticsConfig, CourseAnalytics, DataKey, InsightType,
+    LeaderboardEntry, LearningSession, MLInsight, ModuleAnalytics, ProgressAnalytics,
+    ProgressReport,
 };
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
@@ -232,6 +233,27 @@ impl AnalyticsStorage {
             .unwrap_or(Vec::new(env))
     }
 
+    /// Store an ML insight
+    pub fn set_ml_insight(env: &Env, insight: &MLInsight) {
+        let key = DataKey::MLInsight(
+            insight.student.clone(),
+            insight.course_id.clone(),
+            insight.insight_type.clone(),
+        );
+        env.storage().persistent().set(&key, insight);
+    }
+
+    /// Get an ML insight
+    pub fn get_ml_insight(
+        env: &Env,
+        student: &Address,
+        course_id: &Symbol,
+        insight_type: &InsightType,
+    ) -> Option<MLInsight> {
+        let key = DataKey::MLInsight(student.clone(), course_id.clone(), insight_type.clone());
+        env.storage().persistent().get(&key)
+    }
+
     /// Store analytics configuration
     pub fn set_config(env: &Env, config: &AnalyticsConfig) {
         let key = DataKey::AnalyticsConfig;
@@ -286,6 +308,7 @@ impl AnalyticsStorage {
                 medium_completion_rate: 60,
                 hard_completion_rate: 40,
             },
+            oracle_address: None,
         }
     }
 }

@@ -1,7 +1,7 @@
 //! Upgrade framework for smart contracts
 //! Provides utilities for safe contract upgrades with data migration and rollback capabilities
 
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 use crate::errors::AccessControlError;
 
 /// Version information for contract storage
@@ -248,7 +248,8 @@ impl GovernanceUpgrade {
             executed: false,
         };
         
-        env.storage().temporary().set(&proposal_id, &proposal, 1000000); // Store for ~1 week
+        env.storage().temporary().set(&proposal_id, &proposal);
+        env.storage().temporary().extend_ttl(&proposal_id, 1000000, 1000000);
         Ok(proposal_id)
     }
 
@@ -270,9 +271,10 @@ impl GovernanceUpgrade {
             return Err("Already voted".to_string());
         }
         
-        proposal.vote_count += 1;
-        env.storage().temporary().set(proposal_id, &proposal, 1000000);
-        env.storage().temporary().set(&vote_key, &true, 1000000);
+        env.storage().temporary().set(proposal_id, &proposal);
+        env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
+        env.storage().temporary().set(&vote_key, &true);
+        env.storage().temporary().extend_ttl(&vote_key, 1000000, 1000000);
         
         Ok(proposal.vote_count)
     }
@@ -297,7 +299,8 @@ impl GovernanceUpgrade {
             // Mark as executed
             let mut updated_proposal = proposal.clone();
             updated_proposal.executed = true;
-            env.storage().temporary().set(proposal_id, &updated_proposal, 1000000);
+            env.storage().temporary().set(proposal_id, &updated_proposal);
+            env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
             
             Ok(Some(proposal.new_implementation))
         } else {
@@ -399,7 +402,8 @@ impl DataMigration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{symbol_short, vec};
+    use soroban_sdk::{symbol_short, vec, Symbol};
+    use soroban_sdk::testutils::Address as _;
 
     #[test]
     fn test_version_info() {
@@ -426,13 +430,13 @@ mod tests {
         
         let history = UpgradeUtils::get_version_history(&env);
         assert_eq!(history.len(), 1);
-        assert_eq!(history.get(0), initial_version);
+        assert_eq!(history.get(0).unwrap(), initial_version);
     }
 
     #[test]
     fn test_migration_status() {
         let env = Env::default();
-        let migration_id = symbol_short!("test_migration");
+        let migration_id = Symbol::new(&env, "test_mig");
         
         // Initially not started
         let status = UpgradeUtils::get_migration_status(&env, &migration_id);
