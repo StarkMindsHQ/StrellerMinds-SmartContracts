@@ -24,15 +24,15 @@ impl AnalyticsEvents {
             SessionType::Review => "review",
         };
 
-        let event_data = AnalyticsEventData::SessionRecorded {
-            session_id: session_id.clone(),
-            student: student.clone(),
-            course_id: course_id.clone(),
-            module_id: module_id.clone(),
-            session_type: String::from_str(env, session_type_str),
+        let event_data = AnalyticsEventData::SessionRecorded(
+            session_id.clone(),
+            student.clone(),
+            course_id.clone(),
+            module_id.clone(),
+            String::from_str(env, session_type_str),
             time_spent,
             completion_percentage,
-        };
+        );
 
         StandardEvent::new(
             env,

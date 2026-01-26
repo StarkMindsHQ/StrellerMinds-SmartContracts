@@ -612,11 +612,17 @@ impl AnalyticsTrait for Analytics {
     ) -> Result<BytesN<32>, AnalyticsError> {
         student.require_auth();
 
-        // Prepare request ID
-        let request_id: BytesN<32> = env
-            .crypto()
-            .sha256(&env.ledger().timestamp().to_xdr(&env))
-            .into();
+        // Prepare request ID using timestamp and sequence
+        let timestamp = env.ledger().timestamp();
+        let sequence = env.ledger().sequence();
+        let mut data = [0u8; 32];
+        let ts_bytes = timestamp.to_be_bytes();
+        let seq_bytes = sequence.to_be_bytes();
+        for i in 0..8 {
+            data[i] = ts_bytes[i];
+            data[i + 8] = seq_bytes[i];
+        }
+        let request_id: BytesN<32> = BytesN::from_array(&env, &data);
 
         // Perform local analysis for supported types to provide immediate value
         let local_insight = match insight_type {
@@ -639,13 +645,14 @@ impl AnalyticsTrait for Analytics {
         }
 
         // Emit request event for oracle to pick up (for more advanced external ML)
-        AnalyticsEvents::emit_insight_requested(
-            &env,
-            &student,
-            &course_id,
-            insight_type,
-            request_id.clone(),
-        );
+        // TODO: Add emit_insight_requested to AnalyticsEvents
+        // AnalyticsEvents::emit_insight_requested(
+        //     &env,
+        //     &student,
+        //     &course_id,
+        //     insight_type,
+        //     request_id.clone(),
+        // );
 
         Ok(request_id)
     }
@@ -673,12 +680,13 @@ impl AnalyticsTrait for Analytics {
         AnalyticsStorage::set_ml_insight(&env, &insight);
 
         // Emit received event
-        AnalyticsEvents::emit_insight_received(
-            &env,
-            &insight.student,
-            insight.insight_type,
-            insight.confidence,
-        );
+        // TODO: Add emit_insight_received to AnalyticsEvents
+        // AnalyticsEvents::emit_insight_received(
+        //     &env,
+        //     &insight.student,
+        //     insight.insight_type,
+        //     insight.confidence,
+        // );
 
         Ok(())
     }
