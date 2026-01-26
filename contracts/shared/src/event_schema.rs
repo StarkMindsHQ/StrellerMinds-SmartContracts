@@ -4,7 +4,8 @@ use soroban_sdk::{contracttype, Address, BytesN, Env, String, Symbol};
 pub const EVENT_SCHEMA_VERSION: u32 = 1;
 
 /// Standard event wrapper that all contracts should use
-#[derive(Clone, Debug)]
+/// Note: Not using #[contracttype] to avoid complex serialization issues
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StandardEvent {
     /// Schema version for future compatibility
     pub version: u32,
@@ -23,7 +24,7 @@ pub struct StandardEvent {
 }
 
 /// Event categories for better organization and filtering
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EventCategory {
     /// Access control and permission events
     AccessControl,
@@ -42,7 +43,7 @@ pub enum EventCategory {
 }
 
 /// Standardized event data types
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EventData {
     /// Access control events
     AccessControl(AccessControlEventData),
@@ -60,7 +61,7 @@ pub enum EventData {
     Error(ErrorEventData),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AccessControlEventData {
     ContractInitialized {
         admin: Address,
@@ -130,7 +131,7 @@ pub enum AccessControlEventData {
     },
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CertificateEventData {
     CertificateMinted {
         certificate_id: BytesN<32>,
@@ -237,7 +238,7 @@ pub enum AnalyticsEventData {
 }
 
 /// Token event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TokenEventData {
     TokensTransferred {
         from: Address,
@@ -277,7 +278,7 @@ pub enum TokenEventData {
 }
 
 /// Progress event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ProgressEventData {
     ProgressUpdated {
         student: Address,
@@ -306,7 +307,7 @@ pub enum ProgressEventData {
 }
 
 /// System event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SystemEventData {
     ContractInitialized {
         admin: Address,
@@ -343,7 +344,7 @@ pub enum SystemEventData {
 }
 
 /// Error event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ErrorEventData {
     ValidationError {
         function: String,
@@ -374,7 +375,7 @@ pub enum ErrorEventData {
 }
 
 /// Multisig event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MultisigEventData {
     RequestCreated {
         request_id: BytesN<32>,
@@ -416,7 +417,7 @@ pub enum MultisigEventData {
 }
 
 /// Prerequisite event data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PrerequisiteEventData {
     PrerequisiteDefined {
         course_id: String,

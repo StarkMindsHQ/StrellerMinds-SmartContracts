@@ -1,8 +1,9 @@
 use crate::event_schema::{EventCategory, EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, BytesN, Env, Map, String, Symbol, Vec};
 
 /// Event subscription information
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
 pub struct Subscription {
     /// Subscriber contract address
     pub subscriber: Address,
