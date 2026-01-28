@@ -152,7 +152,7 @@ impl CoreValidator {
     /// Validates no excessive character repetition
     fn validate_no_excessive_repetition(
         text: &str,
-        field_name: &'static str,
+        _field_name: &'static str,
     ) -> Result<(), ValidationError> {
         let chars: Vec<char> = text.chars().collect();
         let mut consecutive_count = 1;
@@ -411,8 +411,6 @@ impl CoreValidator {
 #[cfg(test)]
 use soroban_sdk::testutils::Ledger;
 mod tests {
-    use super::*;
-    use soroban_sdk::{BytesN, Env};
 
     #[test]
     fn test_validate_string_length_success() {

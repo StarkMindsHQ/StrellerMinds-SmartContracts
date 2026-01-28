@@ -1,5 +1,5 @@
 use crate::event_schema::{EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, String, Symbol};
+use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
 
 /// Gas-optimized event utilities
 pub struct EventUtils;
@@ -96,7 +96,7 @@ impl EventUtils {
             EventData::Token(_) => 64,
             EventData::Progress(_) => 64,
             EventData::System(_) => 64,
-            EventData::Error(_) => 64,
+            EventData::Err(_) => 64,
         }
     }
 
@@ -142,7 +142,7 @@ impl EventUtils {
         max_events_per_period: u32,
         period_seconds: u64,
     ) -> Result<(), String> {
-        let key = Symbol::new(env, &format!("rate_limit_{}", actor.to_string()));
+        let key = (Symbol::new(env, "rate_limit"), actor.clone());
         let current_time = env.ledger().timestamp();
 
         if let Some((count, reset_time)) = env.storage().temporary().get::<_, (u32, u64)>(&key) {

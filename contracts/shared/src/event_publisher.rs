@@ -1,7 +1,8 @@
-use crate::event_schema::{EventCategory, EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
+use crate::event_schema::StandardEvent;
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
 /// Event subscription information
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct Subscription {
     /// Subscriber contract address
@@ -23,7 +24,6 @@ pub struct EventPublisher;
 
 impl EventPublisher {
     /// Storage keys for subscriptions
-    const SUBSCRIPTION_KEY: &'static str = "sub_";
     const SUBSCRIBER_LIST_KEY: &'static str = "subscribers";
     const EVENT_SEQUENCE_KEY: &'static str = "event_seq";
     const MAX_SUBSCRIPTIONS: u32 = 100;
@@ -44,7 +44,7 @@ impl EventPublisher {
 
         // Validate categories
         for cat in categories.iter() {
-            if !Self::is_valid_category(env, cat) {
+            if !Self::is_valid_category(env, &cat) {
                 return Err(String::from_str(env, "Invalid category"));
             }
         }
@@ -121,10 +121,7 @@ impl EventPublisher {
 
     /// Get subscriptions for a subscriber
     pub fn get_subscriptions(env: &Env, subscriber: &Address) -> Vec<u32> {
-        let key = Symbol::new(
-            env,
-            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
-        );
+        let key = (Symbol::new(env, "subs"), subscriber.clone());
         env.storage()
             .persistent()
             .get::<_, Vec<u32>>(&key)
@@ -133,7 +130,7 @@ impl EventPublisher {
 
     /// Check if an event matches a subscription
     pub fn matches_subscription(
-        env: &Env,
+        _env: &Env,
         subscription: &Subscription,
         event: &StandardEvent,
     ) -> bool {
@@ -173,7 +170,7 @@ impl EventPublisher {
         if !subscription.contracts.is_empty() {
             let mut contract_match = false;
             for contract in subscription.contracts.iter() {
-                if contract == &event.contract {
+                if contract == event.contract {
                     contract_match = true;
                     break;
                 }
@@ -188,8 +185,8 @@ impl EventPublisher {
 
     // Private helper functions
 
-    fn get_subscription_key(env: &Env, sub_id: u32) -> Symbol {
-        Symbol::new(env, &format!("{}sub_{}", Self::SUBSCRIPTION_KEY, sub_id))
+    fn get_subscription_key(env: &Env, sub_id: u32) -> (Symbol, u32) {
+        (Symbol::new(env, "sub"), sub_id)
     }
 
     fn get_next_subscription_id(env: &Env) -> u32 {
@@ -207,10 +204,7 @@ impl EventPublisher {
 
     fn add_subscriber(env: &Env, subscriber: &Address, sub_id: u32) {
         // Add to subscriber's subscription list
-        let key = Symbol::new(
-            env,
-            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
-        );
+        let key = (Symbol::new(env, "subs"), subscriber.clone());
         let mut subs = Self::get_subscriptions(env, subscriber);
         subs.push_back(sub_id);
         env.storage().persistent().set(&key, &subs);
@@ -222,11 +216,8 @@ impl EventPublisher {
     }
 
     fn remove_subscriber(env: &Env, subscriber: &Address, sub_id: u32) {
-        let key = Symbol::new(
-            env,
-            &format!("{}subs_{}", Self::SUBSCRIPTION_KEY, subscriber.to_string()),
-        );
-        let mut subs = Self::get_subscriptions(env, subscriber);
+        let key = (Symbol::new(env, "subs"), subscriber.clone());
+        let subs = Self::get_subscriptions(env, subscriber);
         let mut new_subs = Vec::new(env);
         for s in subs.iter() {
             if s != sub_id {
@@ -246,12 +237,13 @@ impl EventPublisher {
 
     fn store_event_reference(env: &Env, sequence: u32, event: &StandardEvent) {
         // Store minimal event reference for replay (just sequence and timestamp)
-        let key = Symbol::new(env, &format!("evt_seq_{}", sequence));
+        // Use tuple key (sequence)
+        let key = (Symbol::new(env, "evt_seq"), sequence);
         let reference = (sequence, event.timestamp, event.contract.clone());
         env.storage().temporary().set(&key, &reference);
     }
 
-    fn is_valid_category(env: &Env, category: &Symbol) -> bool {
+    fn is_valid_category(_env: &Env, category: &Symbol) -> bool {
         let cat_str = category.to_string();
         matches!(
             cat_str.as_str(),

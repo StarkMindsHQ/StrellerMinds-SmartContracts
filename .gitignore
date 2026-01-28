@@ -19,3 +19,25 @@ Cargo.lock
 
 # OS specific
 .DS_Store
+
+# SDKs
+# TypeScript
+**/node_modules/
+**/dist/
+npm-debug.log
+yarn-error.log
+
+# Python
+**/__pycache__/
+**/*.egg-info/
+**/*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# Go
+**/*.exe
+**/*.test
+
+# Logs
+*.log

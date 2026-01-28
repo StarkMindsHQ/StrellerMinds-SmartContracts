@@ -1,5 +1,5 @@
-use crate::event_schema::{EventCategory, EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+use crate::event_schema::StandardEvent;
+use soroban_sdk::{Address, Env, Symbol, Vec};
 
 /// Event filter criteria
 #[derive(Clone, Debug)]
@@ -28,7 +28,7 @@ impl EventRouter {
     }
 
     /// Check if an event matches the filter criteria
-    pub fn matches_filter(env: &Env, event: &StandardEvent, filter: &EventFilter) -> bool {
+    pub fn matches_filter(_env: &Env, event: &StandardEvent, filter: &EventFilter) -> bool {
         // Check category filter
         if let Some(ref categories) = filter.categories {
             let event_category = event.get_category();
@@ -63,7 +63,7 @@ impl EventRouter {
         if let Some(ref contracts) = filter.contracts {
             let mut matches = false;
             for contract in contracts.iter() {
-                if contract == &event.contract {
+                if contract == event.contract {
                     matches = true;
                     break;
                 }
@@ -77,7 +77,7 @@ impl EventRouter {
         if let Some(ref actors) = filter.actors {
             let mut matches = false;
             for actor in actors.iter() {
-                if actor == &event.actor {
+                if actor == event.actor {
                     matches = true;
                     break;
                 }
@@ -153,7 +153,7 @@ impl EventRouter {
 
     /// Create a combined filter
     pub fn combined_filter(
-        env: &Env,
+        _env: &Env,
         categories: Option<Vec<Symbol>>,
         contracts: Option<Vec<Symbol>>,
         actors: Option<Vec<Address>>,
@@ -189,22 +189,22 @@ impl EventFilterBuilder {
         }
     }
 
-    pub fn with_categories(mut self, env: &Env, categories: Vec<Symbol>) -> Self {
+    pub fn with_categories(mut self, _env: &Env, categories: Vec<Symbol>) -> Self {
         self.filter.categories = Some(categories);
         self
     }
 
-    pub fn with_event_types(mut self, env: &Env, event_types: Vec<Symbol>) -> Self {
+    pub fn with_event_types(mut self, _env: &Env, event_types: Vec<Symbol>) -> Self {
         self.filter.event_types = Some(event_types);
         self
     }
 
-    pub fn with_contracts(mut self, env: &Env, contracts: Vec<Symbol>) -> Self {
+    pub fn with_contracts(mut self, _env: &Env, contracts: Vec<Symbol>) -> Self {
         self.filter.contracts = Some(contracts);
         self
     }
 
-    pub fn with_actors(mut self, env: &Env, actors: Vec<Address>) -> Self {
+    pub fn with_actors(mut self, _env: &Env, actors: Vec<Address>) -> Self {
         self.filter.actors = Some(actors);
         self
     }

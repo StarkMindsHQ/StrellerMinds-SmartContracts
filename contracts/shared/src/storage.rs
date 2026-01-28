@@ -201,7 +201,7 @@ impl AccessControlStorage {
     }
 
     /// Gets all users with a specific role level
-    pub fn get_users_with_role_level(env: &Env, level: &crate::roles::RoleLevel) -> Vec<Address> {
+    pub fn get_users_with_role_level(env: &Env, _level: &crate::roles::RoleLevel) -> Vec<Address> {
         // This would require iterating through all users, which is not efficient
         // In a real implementation, you might want to maintain a separate index
         Vec::new(env) // Placeholder implementation
