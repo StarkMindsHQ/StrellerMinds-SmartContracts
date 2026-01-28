@@ -1,0 +1,24 @@
+    Checking shared v0.1.0 (C:\Users\nwaug\Desktop\Blockchain\DripsWave\StrellerMinds-SmartContracts\contracts\shared)
+error[E0599]: no function or associated item named `from_symbol` found for struct `soroban_sdk::String` in the current scope
+   --> contracts\shared\src\event_utils.rs:116:36
+    |
+116 |         let contract_str = String::from_symbol(env, &event.contract);
+    |                                    ^^^^^^^^^^^ function or associated item not found in `soroban_sdk::String`
+    |
+note: if you're trying to build a new `soroban_sdk::String` consider using one of the following associated functions:
+      soroban_sdk::String::from_slice
+      soroban_sdk::String::from_bytes
+      soroban_sdk::String::from_str
+   --> C:\Users\nwaug\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\soroban-sdk-22.0.7\src\string.rs:223:5
+    |
+223 |     pub fn from_slice(env: &Env, slice: &str) -> String {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+228 |     pub fn from_bytes(env: &Env, b: &[u8]) -> String {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+236 |     pub fn from_str(env: &Env, s: &str) -> String {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `shared` (lib) due to 1 previous error

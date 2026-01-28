@@ -38,7 +38,10 @@ impl EventUtils {
         }
 
         // Validate contract symbol
-        if event.contract.to_string().is_empty() {
+        // Symbol::new(env, "") creates a symbol with empty string, but let's just check length if possible?
+        // Actually, we can check if it's empty string symbol
+        let empty_sym = Symbol::new(env, "");
+        if event.contract == empty_sym {
             return Err(String::from_str(env, "Empty contract identifier"));
         }
 
@@ -107,16 +110,16 @@ impl EventUtils {
 
         // Include key fields in hash
         let seq_bytes = event.timestamp.to_be_bytes();
-        let binding = event.contract.to_string();
-        let contract_bytes = binding.as_bytes();
-
-        // Simple hash (in production, use proper hashing)
+        let version_bytes = event.version.to_be_bytes();
+        
+        // Simple hash based on timestamp and version (production should use proper hashing)
         for i in 0..32 {
             if i < 8 {
                 hash_data[i] = seq_bytes[i % 8];
-            } else if i < 16 {
-                let idx = (i - 8) % contract_bytes.len();
-                hash_data[i] = contract_bytes[idx];
+            } else if i < 12 {
+                hash_data[i] = version_bytes[(i - 8) % 4];
+            } else if i < 20 {
+                hash_data[i] = seq_bytes[i % 8] ^ version_bytes[i % 4];
             } else {
                 hash_data[i] = hash_data[i - 16] ^ hash_data[i - 8];
             }

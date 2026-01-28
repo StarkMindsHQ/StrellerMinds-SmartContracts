@@ -128,9 +128,9 @@ impl EventPublisher {
             .unwrap_or_else(|| Vec::new(env))
     }
 
-    /// Check if an event matches a subscription
+    /// Check if an event matches the subscription
     pub fn matches_subscription(
-        _env: &Env,
+        env: &Env,
         subscription: &Subscription,
         event: &StandardEvent,
     ) -> bool {
@@ -142,7 +142,7 @@ impl EventPublisher {
         let event_category = event.get_category();
         let mut category_match = subscription.categories.is_empty();
         for cat in subscription.categories.iter() {
-            if cat.to_string() == event_category {
+            if cat == Symbol::new(env, event_category) {
                 category_match = true;
                 break;
             }
@@ -156,7 +156,7 @@ impl EventPublisher {
             let event_type = event.get_event_type();
             let mut type_match = false;
             for et in subscription.event_types.iter() {
-                if et.to_string() == event_type {
+                if et == Symbol::new(env, event_type) {
                     type_match = true;
                     break;
                 }
@@ -243,17 +243,22 @@ impl EventPublisher {
         env.storage().temporary().set(&key, &reference);
     }
 
-    fn is_valid_category(_env: &Env, category: &Symbol) -> bool {
-        let cat_str = category.to_string();
-        matches!(
-            cat_str.as_str(),
-            "access_control"
-                | "certificate"
-                | "analytics"
-                | "token"
-                | "progress"
-                | "system"
-                | "error"
-        )
+    fn is_valid_category(env: &Env, category: &Symbol) -> bool {
+        let valid_categories = [
+            "access_control",
+            "certificate",
+            "analytics",
+            "token",
+            "progress",
+            "system",
+            "error",
+        ];
+
+        for valid in valid_categories.iter() {
+            if *category == Symbol::new(env, valid) {
+                return true;
+            }
+        }
+        false
     }
 }

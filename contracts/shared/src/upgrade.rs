@@ -2,6 +2,7 @@
 //! Provides utilities for safe contract upgrades with data migration and rollback capabilities
 
 use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
+use alloc::format;
 
 /// Version information for contract storage
 #[contracttype]
@@ -21,13 +22,6 @@ impl VersionInfo {
             patch,
             timestamp,
         }
-    }
-
-    pub fn to_string(&self, env: &Env) -> String {
-        String::from_str(
-            env,
-            &format!("{}.{}.{}", self.major, self.minor, self.patch),
-        )
     }
 
     /// Check if this version is compatible with target version
@@ -162,31 +156,24 @@ impl UpgradeUtils {
     }
 
     /// Validate version compatibility
+
+    /// Validate version compatibility
     pub fn validate_version_compatibility(
         env: &Env,
         current: &VersionInfo,
         target: &VersionInfo,
     ) -> Result<(), String> {
-        let current_str = format!("{}.{}.{}", current.major, current.minor, current.patch);
-        let target_str = format!("{}.{}.{}", target.major, target.minor, target.patch);
-
         if current.major != target.major {
             return Err(String::from_str(
                 env,
-                &format!(
-                    "Major version mismatch: {} -> {}. Breaking changes detected.",
-                    current_str, target_str
-                ),
+                "Major version mismatch. Breaking changes detected.",
             ));
         }
 
         if target.minor < current.minor {
             return Err(String::from_str(
                 env,
-                &format!(
-                    "Cannot downgrade minor version: {} -> {}",
-                    current_str, target_str
-                ),
+                "Cannot downgrade minor version",
             ));
         }
 

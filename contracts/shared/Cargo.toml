@@ -19,6 +19,7 @@ testutils = []
 
 [dependencies]
 soroban-sdk = { workspace = true }
+dlmalloc = { version = "0.2", features = ["global"] }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

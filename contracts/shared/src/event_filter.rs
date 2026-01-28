@@ -28,13 +28,13 @@ impl EventRouter {
     }
 
     /// Check if an event matches the filter criteria
-    pub fn matches_filter(_env: &Env, event: &StandardEvent, filter: &EventFilter) -> bool {
+    pub fn matches_filter(env: &Env, event: &StandardEvent, filter: &EventFilter) -> bool {
         // Check category filter
         if let Some(ref categories) = filter.categories {
             let event_category = event.get_category();
             let mut matches = false;
             for cat in categories.iter() {
-                if cat.to_string() == event_category {
+                if cat == Symbol::new(env, event_category) {
                     matches = true;
                     break;
                 }
@@ -49,7 +49,7 @@ impl EventRouter {
             let event_type = event.get_event_type();
             let mut matches = false;
             for et in event_types.iter() {
-                if et.to_string() == event_type {
+                if et == Symbol::new(env, event_type) {
                     matches = true;
                     break;
                 }

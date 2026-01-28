@@ -175,10 +175,9 @@ impl EventReplay {
         env.storage().persistent().get::<_, u32>(&key).unwrap_or(0)
     }
 
-    // Private helper functions
-
     fn get_event_reference(env: &Env, sequence: u32) -> Option<(u32, u64, Symbol)> {
-        let key = Symbol::new(env, &format!("evt_seq_{}", sequence));
+        // Use tuple key to match event_publisher behavior
+        let key = (Symbol::new(env, "evt_seq"), sequence);
         env.storage().temporary().get(&key)
     }
 

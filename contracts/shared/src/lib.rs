@@ -1,3 +1,10 @@
+#![no_std]
+extern crate alloc;
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+
 pub mod access_control;
 pub mod errors;
 pub mod event_aggregator;
