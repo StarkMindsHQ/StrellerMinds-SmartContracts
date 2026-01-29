@@ -96,7 +96,7 @@ export class SorobanClient {
     const accountRefreshed = await this.server.getAccount(deployer.publicKey());
     const createOperation = Operation.createCustomContract({
       wasmHash: wasmHash as Buffer,
-      address: deployer,
+      address: (deployer as unknown) as any,
     });
 
     const createTx = new TransactionBuilder(accountRefreshed, {
