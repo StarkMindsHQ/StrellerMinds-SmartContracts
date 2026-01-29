@@ -16,6 +16,7 @@ pub mod event_schema;
 pub mod event_utils;
 pub mod events;
 pub mod gas_testing;
+pub mod gas_utils;
 pub mod logger;
 pub mod permissions;
 pub mod reentrancy_guard;
