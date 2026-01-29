@@ -58,15 +58,8 @@ fn test_propose_upgrade() {
         },
     }]);
 
-    let proposal_id = client.propose_upgrade(
-        &admin,
-        &impl2,
-        &1,
-        &1,
-        &0,
-        &"Test upgrade".to_string(),
-        &2,
-    );
+    let proposal_id =
+        client.propose_upgrade(&admin, &impl2, &1, &1, &0, &"Test upgrade".to_string(), &2);
 
     assert!(proposal_id.to_string().starts_with("upgrade_"));
 }
@@ -158,15 +151,8 @@ fn test_vote_on_upgrade() {
         },
     }]);
 
-    let proposal_id = client.propose_upgrade(
-        &admin,
-        &impl2,
-        &1,
-        &1,
-        &0,
-        &"Test upgrade".to_string(),
-        &2,
-    );
+    let proposal_id =
+        client.propose_upgrade(&admin, &impl2, &1, &1, &0, &"Test upgrade".to_string(), &2);
 
     // First vote
     env.mock_auths(&[MockAuth {
@@ -245,15 +231,8 @@ fn test_execute_upgrade_with_timelock() {
         },
     }]);
 
-    let proposal_id = client.propose_upgrade(
-        &admin,
-        &impl2,
-        &1,
-        &1,
-        &0,
-        &"Test upgrade".to_string(),
-        &1,
-    );
+    let proposal_id =
+        client.propose_upgrade(&admin, &impl2, &1, &1, &0, &"Test upgrade".to_string(), &1);
 
     // Vote on upgrade
     env.mock_auths(&[MockAuth {
@@ -459,15 +438,8 @@ fn test_get_pending_upgrade() {
         },
     }]);
 
-    let proposal_id = client.propose_upgrade(
-        &admin,
-        &impl2,
-        &1,
-        &1,
-        &0,
-        &"Test upgrade".to_string(),
-        &1,
-    );
+    let proposal_id =
+        client.propose_upgrade(&admin, &impl2, &1, &1, &0, &"Test upgrade".to_string(), &1);
 
     env.mock_auths(&[MockAuth {
         address: &admin,
@@ -488,7 +460,7 @@ fn test_get_pending_upgrade() {
     env.ledger().with_mut(|li| {
         li.timestamp += 1000;
     });
-    
+
     client.execute_upgrade();
 
     // Now there should be a pending upgrade

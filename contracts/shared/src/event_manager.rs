@@ -2,7 +2,7 @@ use crate::event_aggregator::EventAggregator;
 use crate::event_filter::{EventFilter, EventFilterBuilder, EventRouter};
 use crate::event_publisher::EventPublisher;
 use crate::event_replay::{EventReplay, ReplayState};
-use crate::event_schema::{EventData, StandardEvent};
+use crate::event_schema::StandardEvent;
 use crate::event_utils::EventUtils;
 use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
 
@@ -47,7 +47,7 @@ impl EventManager {
     ) -> Vec<StandardEvent> {
         let mut filtered = Vec::new(env);
         for event in events.iter() {
-            if EventRouter::matches_filter(env, event, filter) {
+            if EventRouter::matches_filter(env, &event, filter) {
                 filtered.push_back(event.clone());
             }
         }
@@ -68,7 +68,7 @@ impl EventManager {
         from_sequence: u32,
         to_sequence: Option<u32>,
     ) -> Result<(Vec<StandardEvent>, ReplayState), String> {
-        let state = EventReplay::start_replay(env, from_sequence, to_sequence)?;
+        let _state = EventReplay::start_replay(env, from_sequence, to_sequence)?;
         EventReplay::replay_next_batch(env, 100)
     }
 

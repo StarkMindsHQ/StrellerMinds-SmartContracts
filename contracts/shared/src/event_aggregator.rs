@@ -1,5 +1,5 @@
-use crate::event_schema::{EventCategory, EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, Map, String, Symbol, Vec};
+use crate::event_schema::StandardEvent;
+use soroban_sdk::{Address, Env, Map, Symbol, Vec};
 
 /// Aggregated event statistics
 #[soroban_sdk::contracttype]
@@ -184,13 +184,13 @@ impl EventAggregator {
 
     /// Store aggregated statistics
     pub fn store_stats(env: &Env, stats: &EventStats, window_id: u64) {
-        let key = Symbol::new(env, &format!("{}_window_{}", Self::STATS_KEY, window_id));
+        let key = (Symbol::new(env, Self::STATS_KEY), window_id);
         env.storage().persistent().set(&key, stats);
     }
 
     /// Get stored statistics for a time window
     pub fn get_stats(env: &Env, window_id: u64) -> Option<EventStats> {
-        let key = Symbol::new(env, &format!("{}_window_{}", Self::STATS_KEY, window_id));
+        let key = (Symbol::new(env, Self::STATS_KEY), window_id);
         env.storage().persistent().get(&key)
     }
 

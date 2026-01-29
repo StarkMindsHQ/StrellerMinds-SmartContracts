@@ -1,9 +1,10 @@
-use soroban_sdk::{contracttype, Address, BytesN, Env, String, Symbol};
+use soroban_sdk::{contracttype, Address, BytesN, Env, String, Symbol, Vec};
 
 /// Standard event schema version
 pub const EVENT_SCHEMA_VERSION: u32 = 1;
 
 /// Standard event wrapper that all contracts should use
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct StandardEvent {
     /// Schema version for future compatibility
@@ -23,6 +24,7 @@ pub struct StandardEvent {
 }
 
 /// Event categories for better organization and filtering
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum EventCategory {
     /// Access control and permission events
@@ -38,10 +40,11 @@ pub enum EventCategory {
     /// System and configuration events
     System,
     /// Error and audit events
-    Error,
+    Err,
 }
 
 /// Standardized event data types
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum EventData {
     /// Access control events
@@ -57,164 +60,257 @@ pub enum EventData {
     /// System events
     System(SystemEventData),
     /// Error events
-    Error(ErrorEventData),
+    Err(ErrorEventData),
 }
 
+// Access Control Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContractInitializedEvent {
+    pub admin: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleGrantedEvent {
+    pub granter: Address,
+    pub user: Address,
+    pub role_level: u32,
+    pub granted_at: u64,
+    pub expires_at: Option<u64>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleRevokedEvent {
+    pub revoker: Address,
+    pub user: Address,
+    pub role_level: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleTransferredEvent {
+    pub from: Address,
+    pub to: Address,
+    pub role_level: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleUpdatedEvent {
+    pub updater: Address,
+    pub user: Address,
+    pub role_level: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PermissionGrantedEvent {
+    pub granter: Address,
+    pub user: Address,
+    pub permission: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PermissionRevokedEvent {
+    pub revoker: Address,
+    pub user: Address,
+    pub permission: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct DynamicPermissionGrantedEvent {
+    pub granter: Address,
+    pub user: Address,
+    pub permission: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleInheritanceUpdatedEvent {
+    pub updater: Address,
+    pub user: Address,
+    pub inherited_roles: Vec<u32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TemplateCreatedEvent {
+    pub admin: Address,
+    pub template_id: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AdminChangedEvent {
+    pub old_admin: Address,
+    pub new_admin: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RoleExpiredEvent {
+    pub user: Address,
+    pub role_level: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AccessDeniedEvent {
+    pub user: Address,
+    pub permission: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct HierarchyViolationEvent {
+    pub granter: Address,
+    pub target: Address,
+    pub target_level: u32,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum AccessControlEventData {
-    ContractInitialized {
-        admin: Address,
-    },
-    RoleGranted {
-        granter: Address,
-        user: Address,
-        role_level: u32,
-        granted_at: u64,
-        expires_at: Option<u64>,
-    },
-    RoleRevoked {
-        revoker: Address,
-        user: Address,
-        role_level: u32,
-    },
-    RoleTransferred {
-        from: Address,
-        to: Address,
-        role_level: u32,
-    },
-    RoleUpdated {
-        updater: Address,
-        user: Address,
-        role_level: u32,
-    },
-    PermissionGranted {
-        granter: Address,
-        user: Address,
-        permission: String,
-    },
-    PermissionRevoked {
-        revoker: Address,
-        user: Address,
-        permission: String,
-    },
-    DynamicPermissionGranted {
-        granter: Address,
-        user: Address,
-        permission: Symbol,
-    },
-    RoleInheritanceUpdated {
-        updater: Address,
-        user: Address,
-        inherited_roles: soroban_sdk::Vec<u32>,
-    },
-    TemplateCreated {
-        admin: Address,
-        template_id: Symbol,
-    },
-    AdminChanged {
-        old_admin: Address,
-        new_admin: Address,
-    },
-    RoleExpired {
-        user: Address,
-        role_level: u32,
-    },
-    AccessDenied {
-        user: Address,
-        permission: String,
-    },
-    HierarchyViolation {
-        granter: Address,
-        target: Address,
-        target_level: u32,
-    },
+    ContractInitialized(ContractInitializedEvent),
+    RoleGranted(RoleGrantedEvent),
+    RoleRevoked(RoleRevokedEvent),
+    RoleTransferred(RoleTransferredEvent),
+    RoleUpdated(RoleUpdatedEvent),
+    PermissionGranted(PermissionGrantedEvent),
+    PermissionRevoked(PermissionRevokedEvent),
+    DynamicPermissionGranted(DynamicPermissionGrantedEvent),
+    RoleInheritanceUpdated(RoleInheritanceUpdatedEvent),
+    TemplateCreated(TemplateCreatedEvent),
+    AdminChanged(AdminChangedEvent),
+    RoleExpired(RoleExpiredEvent),
+    AccessDenied(AccessDeniedEvent),
+    HierarchyViolation(HierarchyViolationEvent),
 }
 
+// Certificate Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateMintedEvent {
+    pub certificate_id: BytesN<32>,
+    pub student: Address,
+    pub issuer: Address,
+    pub token_id: BytesN<32>,
+    pub metadata_hash: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateRevokedEvent {
+    pub certificate_id: BytesN<32>,
+    pub revoker: Address,
+    pub reason: Option<String>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateTransferredEvent {
+    pub certificate_id: BytesN<32>,
+    pub from: Address,
+    pub to: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MetadataUpdatedEvent {
+    pub certificate_id: BytesN<32>,
+    pub updater: Address,
+    pub old_uri: String,
+    pub new_uri: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RenewalRequestedEvent {
+    pub certificate_id: BytesN<32>,
+    pub requester: Address,
+    pub requested_extension: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RenewalApprovedEvent {
+    pub certificate_id: BytesN<32>,
+    pub approver: Address,
+    pub requester: Address,
+    pub extension_period: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RenewalRejectedEvent {
+    pub certificate_id: BytesN<32>,
+    pub approver: Address,
+    pub requester: Address,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateExtendedEvent {
+    pub certificate_id: BytesN<32>,
+    pub admin: Address,
+    pub owner: Address,
+    pub extension_period: u64,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateExpiredEvent {
+    pub certificate_id: BytesN<32>,
+    pub owner: Address,
+    pub expiry_date: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateAutoRenewedEvent {
+    pub certificate_id: BytesN<32>,
+    pub owner: Address,
+    pub new_expiry_date: u64,
+    pub renewal_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ExpiryNotificationEvent {
+    pub certificate_id: BytesN<32>,
+    pub owner: Address,
+    pub notification_type: String,
+    pub expiry_date: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct NotificationAcknowledgedEvent {
+    pub certificate_id: BytesN<32>,
+    pub user: Address,
+    pub notification_type: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct BatchMintCompletedEvent {
+    pub issuer: Address,
+    pub total_count: u32,
+    pub success_count: u32,
+    pub failure_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct IssuerAddedEvent {
+    pub admin: Address,
+    pub issuer: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct IssuerRemovedEvent {
+    pub admin: Address,
+    pub issuer: Address,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum CertificateEventData {
-    CertificateMinted {
-        certificate_id: BytesN<32>,
-        student: Address,
-        issuer: Address,
-        token_id: BytesN<32>,
-        metadata_hash: String,
-    },
-    CertificateRevoked {
-        certificate_id: BytesN<32>,
-        revoker: Address,
-        reason: Option<String>,
-    },
-    CertificateTransferred {
-        certificate_id: BytesN<32>,
-        from: Address,
-        to: Address,
-    },
-    MetadataUpdated {
-        certificate_id: BytesN<32>,
-        updater: Address,
-        old_uri: String,
-        new_uri: String,
-    },
-    RenewalRequested {
-        certificate_id: BytesN<32>,
-        requester: Address,
-        requested_extension: u64,
-    },
-    RenewalApproved {
-        certificate_id: BytesN<32>,
-        approver: Address,
-        requester: Address,
-        extension_period: u64,
-    },
-    RenewalRejected {
-        certificate_id: BytesN<32>,
-        approver: Address,
-        requester: Address,
-        reason: String,
-    },
-    CertificateExtended {
-        certificate_id: BytesN<32>,
-        admin: Address,
-        owner: Address,
-        extension_period: u64,
-        reason: String,
-    },
-    CertificateExpired {
-        certificate_id: BytesN<32>,
-        owner: Address,
-        expiry_date: u64,
-    },
-    CertificateAutoRenewed {
-        certificate_id: BytesN<32>,
-        owner: Address,
-        new_expiry_date: u64,
-        renewal_count: u32,
-    },
-    ExpiryNotification {
-        certificate_id: BytesN<32>,
-        owner: Address,
-        notification_type: String,
-        expiry_date: u64,
-    },
-    NotificationAcknowledged {
-        certificate_id: BytesN<32>,
-        user: Address,
-        notification_type: String,
-    },
-    BatchMintCompleted {
-        issuer: Address,
-        total_count: u32,
-        success_count: u32,
-        failure_count: u32,
-    },
-    IssuerAdded {
-        admin: Address,
-        issuer: Address,
-    },
-    IssuerRemoved {
-        admin: Address,
-        issuer: Address,
-    },
+    CertificateMinted(CertificateMintedEvent),
+    CertificateRevoked(CertificateRevokedEvent),
+    CertificateTransferred(CertificateTransferredEvent),
+    MetadataUpdated(MetadataUpdatedEvent),
+    RenewalRequested(RenewalRequestedEvent),
+    RenewalApproved(RenewalApprovedEvent),
+    RenewalRejected(RenewalRejectedEvent),
+    CertificateExtended(CertificateExtendedEvent),
+    CertificateExpired(CertificateExpiredEvent),
+    CertificateAutoRenewed(CertificateAutoRenewedEvent),
+    ExpiryNotification(ExpiryNotificationEvent),
+    NotificationAcknowledged(NotificationAcknowledgedEvent),
+    BatchMintCompleted(BatchMintCompletedEvent),
+    IssuerAdded(IssuerAddedEvent),
+    IssuerRemoved(IssuerRemovedEvent),
 }
 
 /// Analytics event data
@@ -234,231 +330,356 @@ pub enum AnalyticsEventData {
     DataAggregated(Symbol, u64, u32, u32), // course_id, date, active_students, total_sessions
     TrendChange(Address, Symbol, String, String), // student, course_id, old_trend, new_trend
     StreakMilestone(Address, Symbol, u32, String), // student, course_id, streak_days, milestone_type
+    InsightRequested(Address, Symbol, String),     // student, course_id, insight_type
+    InsightReceived(Address, BytesN<32>, String, String, u64), // student, insight_id, insight_type, content, timestamp
 }
 
-/// Token event data
+// Token Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TokensTransferredEvent {
+    pub from: Address,
+    pub to: Address,
+    pub amount: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TokensMintedEvent {
+    pub to: Address,
+    pub amount: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TokensBurnedEvent {
+    pub from: Address,
+    pub amount: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct IncentiveEarnedEvent {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub amount: i128,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RewardClaimedEvent {
+    pub student: Address,
+    pub amount: i128,
+    pub reward_type: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EventCreatedEvent {
+    pub event_id: Symbol,
+    pub multiplier: u32,
+    pub start_date: u64,
+    pub end_date: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EventEndedEvent {
+    pub event_id: Symbol,
+    pub participants: u32,
+    pub total_rewards: i128,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum TokenEventData {
-    TokensTransferred {
-        from: Address,
-        to: Address,
-        amount: i128,
-    },
-    TokensMinted {
-        to: Address,
-        amount: i128,
-    },
-    TokensBurned {
-        from: Address,
-        amount: i128,
-    },
-    IncentiveEarned {
-        student: Address,
-        course_id: Symbol,
-        amount: i128,
-        reason: String,
-    },
-    RewardClaimed {
-        student: Address,
-        amount: i128,
-        reward_type: String,
-    },
-    EventCreated {
-        event_id: Symbol,
-        multiplier: u32,
-        start_date: u64,
-        end_date: u64,
-    },
-    EventEnded {
-        event_id: Symbol,
-        participants: u32,
-        total_rewards: i128,
-    },
+    TokensTransferred(TokensTransferredEvent),
+    TokensMinted(TokensMintedEvent),
+    TokensBurned(TokensBurnedEvent),
+    IncentiveEarned(IncentiveEarnedEvent),
+    RewardClaimed(RewardClaimedEvent),
+    EventCreated(EventCreatedEvent),
+    EventEnded(EventEndedEvent),
 }
 
-/// Progress event data
+// Progress Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProgressUpdatedEvent {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub module_id: Symbol,
+    pub progress_percentage: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ModuleCompletedEvent {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub module_id: Symbol,
+    pub completion_time: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CourseCompletedEvent {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub completion_time: u64,
+    pub final_score: Option<u32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProgressResetEvent {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub reset_by: Address,
+    pub reason: String,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum ProgressEventData {
-    ProgressUpdated {
-        student: Address,
-        course_id: Symbol,
-        module_id: Symbol,
-        progress_percentage: u32,
-    },
-    ModuleCompleted {
-        student: Address,
-        course_id: Symbol,
-        module_id: Symbol,
-        completion_time: u64,
-    },
-    CourseCompleted {
-        student: Address,
-        course_id: Symbol,
-        completion_time: u64,
-        final_score: Option<u32>,
-    },
-    ProgressReset {
-        student: Address,
-        course_id: Symbol,
-        reset_by: Address,
-        reason: String,
-    },
+    ProgressUpdated(ProgressUpdatedEvent),
+    ModuleCompleted(ModuleCompletedEvent),
+    CourseCompleted(CourseCompletedEvent),
+    ProgressReset(ProgressResetEvent),
 }
 
-/// System event data
+// System Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContractInitializedSystemEvent {
+    pub admin: Address,
+    pub config: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContractUpgradedEvent {
+    pub admin: Address,
+    pub old_version: String,
+    pub new_version: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ConfigurationChangedEvent {
+    pub admin: Address,
+    pub setting: String,
+    pub old_value: String,
+    pub new_value: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MaintenanceModeEvent {
+    pub enabled: bool,
+    pub admin: Address,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProxyInitializedEvent {
+    pub admin: Address,
+    pub implementation: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProxyUpgradedEvent {
+    pub admin: Address,
+    pub new_impl: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProxyRollbackEvent {
+    pub admin: Address,
+    pub prev_impl: Address,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum SystemEventData {
-    ContractInitialized {
-        admin: Address,
-        config: String,
-    },
-    ContractUpgraded {
-        admin: Address,
-        old_version: String,
-        new_version: String,
-    },
-    ConfigurationChanged {
-        admin: Address,
-        setting: String,
-        old_value: String,
-        new_value: String,
-    },
-    MaintenanceMode {
-        enabled: bool,
-        admin: Address,
-        reason: String,
-    },
-    ProxyInitialized {
-        admin: Address,
-        implementation: Address,
-    },
-    ProxyUpgraded {
-        admin: Address,
-        new_impl: Address,
-    },
-    ProxyRollback {
-        admin: Address,
-        prev_impl: Address,
-    },
+    ContractInitialized(ContractInitializedSystemEvent),
+    ContractUpgraded(ContractUpgradedEvent),
+    ConfigurationChanged(ConfigurationChangedEvent),
+    MaintenanceMode(MaintenanceModeEvent),
+    ProxyInitialized(ProxyInitializedEvent),
+    ProxyUpgraded(ProxyUpgradedEvent),
+    ProxyRollback(ProxyRollbackEvent),
 }
 
-/// Error event data
+// Error Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ValidationErrorEvent {
+    pub function: String,
+    pub error_code: u32,
+    pub error_message: String,
+    pub context: Option<String>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PermissionDeniedEvent {
+    pub user: Address,
+    pub required_permission: String,
+    pub attempted_action: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ResourceNotFoundEvent {
+    pub resource_type: String,
+    pub resource_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct InvalidInputEvent {
+    pub function: String,
+    pub parameter: String,
+    pub provided_value: String,
+    pub expected_format: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SystemErrorEvent {
+    pub function: String,
+    pub error_code: u32,
+    pub error_message: String,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum ErrorEventData {
-    ValidationError {
-        function: String,
-        error_code: u32,
-        error_message: String,
-        context: Option<String>,
-    },
-    PermissionDenied {
-        user: Address,
-        required_permission: String,
-        attempted_action: String,
-    },
-    ResourceNotFound {
-        resource_type: String,
-        resource_id: String,
-    },
-    InvalidInput {
-        function: String,
-        parameter: String,
-        provided_value: String,
-        expected_format: String,
-    },
-    SystemError {
-        function: String,
-        error_code: u32,
-        error_message: String,
-    },
+    ValidationError(ValidationErrorEvent),
+    PermissionDenied(PermissionDeniedEvent),
+    ResourceNotFound(ResourceNotFoundEvent),
+    InvalidInput(InvalidInputEvent),
+    SystemError(SystemErrorEvent),
 }
 
-/// Multisig event data
+// Multisig Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RequestCreatedEvent {
+    pub request_id: BytesN<32>,
+    pub requester: Address,
+    pub course_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ApprovalGrantedEvent {
+    pub request_id: BytesN<32>,
+    pub approver: Address,
+    pub current_approvals: u32,
+    pub required_approvals: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RequestRejectedEvent {
+    pub request_id: BytesN<32>,
+    pub rejector: Address,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RequestApprovedEvent {
+    pub request_id: BytesN<32>,
+    pub certificate_id: BytesN<32>,
+    pub final_approvals: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RequestExpiredEvent {
+    pub request_id: BytesN<32>,
+    pub certificate_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateIssuedEvent {
+    pub request_id: BytesN<32>,
+    pub certificate_id: BytesN<32>,
+    pub student: Address,
+    pub approvers_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ConfigUpdatedEvent {
+    pub course_id: String,
+    pub admin: Address,
+    pub required_approvals: u32,
+    pub approvers_count: u32,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum MultisigEventData {
-    RequestCreated {
-        request_id: BytesN<32>,
-        requester: Address,
-        course_id: String,
-    },
-    ApprovalGranted {
-        request_id: BytesN<32>,
-        approver: Address,
-        current_approvals: u32,
-        required_approvals: u32,
-    },
-    RequestRejected {
-        request_id: BytesN<32>,
-        rejector: Address,
-        reason: String,
-    },
-    RequestApproved {
-        request_id: BytesN<32>,
-        certificate_id: BytesN<32>,
-        final_approvals: u32,
-    },
-    RequestExpired {
-        request_id: BytesN<32>,
-        certificate_id: BytesN<32>,
-    },
-    CertificateIssued {
-        request_id: BytesN<32>,
-        certificate_id: BytesN<32>,
-        student: Address,
-        approvers_count: u32,
-    },
-    ConfigUpdated {
-        course_id: String,
-        admin: Address,
-        required_approvals: u32,
-        approvers_count: u32,
-    },
+    RequestCreated(RequestCreatedEvent),
+    ApprovalGranted(ApprovalGrantedEvent),
+    RequestRejected(RequestRejectedEvent),
+    RequestApproved(RequestApprovedEvent),
+    RequestExpired(RequestExpiredEvent),
+    CertificateIssued(CertificateIssuedEvent),
+    ConfigUpdated(ConfigUpdatedEvent),
 }
 
-/// Prerequisite event data
+// Prerequisite Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PrerequisiteDefinedEvent {
+    pub course_id: String,
+    pub admin: Address,
+    pub prerequisite_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PrerequisiteCheckedEvent {
+    pub student: Address,
+    pub course_id: String,
+    pub eligible: bool,
+    pub missing_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct OverrideGrantedEvent {
+    pub student: Address,
+    pub course_id: String,
+    pub admin: Address,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct OverrideRevokedEvent {
+    pub student: Address,
+    pub course_id: String,
+    pub admin: Address,
+    pub reason: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ViolationEvent {
+    pub student: Address,
+    pub course_id: String,
+    pub attempted_by: Address,
+    pub missing_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct LearningPathGeneratedEvent {
+    pub student: Address,
+    pub target_course: String,
+    pub path_length: u32,
+    pub estimated_time: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EnrollmentValidatedEvent {
+    pub student: Address,
+    pub course_id: String,
+    pub enrolled_by: Address,
+    pub validation_result: bool,
+}
+
+#[contracttype]
 #[derive(Clone, Debug)]
 pub enum PrerequisiteEventData {
-    PrerequisiteDefined {
-        course_id: String,
-        admin: Address,
-        prerequisite_count: u32,
-    },
-    PrerequisiteChecked {
-        student: Address,
-        course_id: String,
-        eligible: bool,
-        missing_count: u32,
-    },
-    OverrideGranted {
-        student: Address,
-        course_id: String,
-        admin: Address,
-        reason: String,
-    },
-    OverrideRevoked {
-        student: Address,
-        course_id: String,
-        admin: Address,
-        reason: String,
-    },
-    Violation {
-        student: Address,
-        course_id: String,
-        attempted_by: Address,
-        missing_count: u32,
-    },
-    LearningPathGenerated {
-        student: Address,
-        target_course: String,
-        path_length: u32,
-        estimated_time: u64,
-    },
-    EnrollmentValidated {
-        student: Address,
-        course_id: String,
-        enrolled_by: Address,
-        validation_result: bool,
-    },
+    PrerequisiteDefined(PrerequisiteDefinedEvent),
+    PrerequisiteChecked(PrerequisiteCheckedEvent),
+    OverrideGranted(OverrideGrantedEvent),
+    OverrideRevoked(OverrideRevokedEvent),
+    Violation(ViolationEvent),
+    LearningPathGenerated(LearningPathGeneratedEvent),
+    EnrollmentValidated(EnrollmentValidatedEvent),
 }
 
 impl StandardEvent {
@@ -526,7 +747,7 @@ impl StandardEvent {
             EventData::Token(_) => "token",
             EventData::Progress(_) => "progress",
             EventData::System(_) => "system",
-            EventData::Error(_) => "error",
+            EventData::Err(_) => "error",
         }
     }
 
@@ -534,87 +755,85 @@ impl StandardEvent {
     pub fn get_event_type(&self) -> &'static str {
         match &self.event_data {
             EventData::AccessControl(data) => match data {
-                AccessControlEventData::ContractInitialized { .. } => "contract_initialized",
-                AccessControlEventData::RoleGranted { .. } => "role_granted",
-                AccessControlEventData::RoleRevoked { .. } => "role_revoked",
-                AccessControlEventData::RoleTransferred { .. } => "role_transferred",
-                AccessControlEventData::RoleUpdated { .. } => "role_updated",
-                AccessControlEventData::PermissionGranted { .. } => "permission_granted",
-                AccessControlEventData::PermissionRevoked { .. } => "permission_revoked",
-                AccessControlEventData::AdminChanged { .. } => "admin_changed",
-                AccessControlEventData::RoleExpired { .. } => "role_expired",
-                AccessControlEventData::AccessDenied { .. } => "access_denied",
-                AccessControlEventData::HierarchyViolation { .. } => "hierarchy_violation",
-                AccessControlEventData::DynamicPermissionGranted { .. } => {
-                    "dynamic_permission_granted"
-                }
-                AccessControlEventData::RoleInheritanceUpdated { .. } => "role_inheritance_updated",
-                AccessControlEventData::TemplateCreated { .. } => "template_created",
+                AccessControlEventData::ContractInitialized(_) => "contract_initialized",
+                AccessControlEventData::RoleGranted(_) => "role_granted",
+                AccessControlEventData::RoleRevoked(_) => "role_revoked",
+                AccessControlEventData::RoleTransferred(_) => "role_transferred",
+                AccessControlEventData::RoleUpdated(_) => "role_updated",
+                AccessControlEventData::PermissionGranted(_) => "permission_granted",
+                AccessControlEventData::PermissionRevoked(_) => "permission_revoked",
+                AccessControlEventData::AdminChanged(_) => "admin_changed",
+                AccessControlEventData::RoleExpired(_) => "role_expired",
+                AccessControlEventData::AccessDenied(_) => "access_denied",
+                AccessControlEventData::HierarchyViolation(_) => "hierarchy_violation",
+                AccessControlEventData::DynamicPermissionGranted(_) => "dynamic_permission_granted",
+                AccessControlEventData::RoleInheritanceUpdated(_) => "role_inheritance_updated",
+                AccessControlEventData::TemplateCreated(_) => "template_created",
             },
             EventData::Certificate(data) => match data {
-                CertificateEventData::CertificateMinted { .. } => "certificate_minted",
-                CertificateEventData::CertificateRevoked { .. } => "certificate_revoked",
-                CertificateEventData::CertificateTransferred { .. } => "certificate_transferred",
-                CertificateEventData::MetadataUpdated { .. } => "metadata_updated",
-                CertificateEventData::RenewalRequested { .. } => "renewal_requested",
-                CertificateEventData::RenewalApproved { .. } => "renewal_approved",
-                CertificateEventData::RenewalRejected { .. } => "renewal_rejected",
-                CertificateEventData::CertificateExtended { .. } => "certificate_extended",
-                CertificateEventData::CertificateExpired { .. } => "certificate_expired",
-                CertificateEventData::CertificateAutoRenewed { .. } => "certificate_auto_renewed",
-                CertificateEventData::ExpiryNotification { .. } => "expiry_notification",
-                CertificateEventData::NotificationAcknowledged { .. } => {
-                    "notification_acknowledged"
-                }
-                CertificateEventData::BatchMintCompleted { .. } => "batch_mint_completed",
-                CertificateEventData::IssuerAdded { .. } => "issuer_added",
-                CertificateEventData::IssuerRemoved { .. } => "issuer_removed",
+                CertificateEventData::CertificateMinted(_) => "certificate_minted",
+                CertificateEventData::CertificateRevoked(_) => "certificate_revoked",
+                CertificateEventData::CertificateTransferred(_) => "certificate_transferred",
+                CertificateEventData::MetadataUpdated(_) => "metadata_updated",
+                CertificateEventData::RenewalRequested(_) => "renewal_requested",
+                CertificateEventData::RenewalApproved(_) => "renewal_approved",
+                CertificateEventData::RenewalRejected(_) => "renewal_rejected",
+                CertificateEventData::CertificateExtended(_) => "certificate_extended",
+                CertificateEventData::CertificateExpired(_) => "certificate_expired",
+                CertificateEventData::CertificateAutoRenewed(_) => "certificate_auto_renewed",
+                CertificateEventData::ExpiryNotification(_) => "expiry_notification",
+                CertificateEventData::NotificationAcknowledged(_) => "notification_acknowledged",
+                CertificateEventData::BatchMintCompleted(_) => "batch_mint_completed",
+                CertificateEventData::IssuerAdded(_) => "issuer_added",
+                CertificateEventData::IssuerRemoved(_) => "issuer_removed",
             },
             EventData::Analytics(data) => match data {
-                AnalyticsEventData::SessionRecorded { .. } => "session_recorded",
-                AnalyticsEventData::SessionCompleted { .. } => "session_completed",
-                AnalyticsEventData::ProgressUpdated { .. } => "progress_updated",
-                AnalyticsEventData::CourseAnalyticsUpdated { .. } => "course_analytics_updated",
-                AnalyticsEventData::ModuleAnalyticsUpdated { .. } => "module_analytics_updated",
-                AnalyticsEventData::AchievementEarned { .. } => "achievement_earned",
-                AnalyticsEventData::LeaderboardUpdated { .. } => "leaderboard_updated",
-                AnalyticsEventData::ReportGenerated { .. } => "report_generated",
-                AnalyticsEventData::BatchProcessed { .. } => "batch_processed",
-                AnalyticsEventData::ConfigUpdated { .. } => "config_updated",
-                AnalyticsEventData::DataAggregated { .. } => "data_aggregated",
-                AnalyticsEventData::TrendChange { .. } => "trend_change",
-                AnalyticsEventData::StreakMilestone { .. } => "streak_milestone",
+                AnalyticsEventData::SessionRecorded(..) => "session_recorded",
+                AnalyticsEventData::SessionCompleted(..) => "session_completed",
+                AnalyticsEventData::ProgressUpdated(..) => "progress_updated",
+                AnalyticsEventData::CourseAnalyticsUpdated(..) => "course_analytics_updated",
+                AnalyticsEventData::ModuleAnalyticsUpdated(..) => "module_analytics_updated",
+                AnalyticsEventData::AchievementEarned(..) => "achievement_earned",
+                AnalyticsEventData::LeaderboardUpdated(..) => "leaderboard_updated",
+                AnalyticsEventData::ReportGenerated(..) => "report_generated",
+                AnalyticsEventData::BatchProcessed(..) => "batch_processed",
+                AnalyticsEventData::ConfigUpdated(..) => "config_updated",
+                AnalyticsEventData::DataAggregated(..) => "data_aggregated",
+                AnalyticsEventData::TrendChange(..) => "trend_change",
+                AnalyticsEventData::StreakMilestone(..) => "streak_milestone",
+                AnalyticsEventData::InsightRequested(..) => "insight_requested",
+                AnalyticsEventData::InsightReceived(..) => "insight_received",
             },
             EventData::Token(data) => match data {
-                TokenEventData::TokensTransferred { .. } => "tokens_transferred",
-                TokenEventData::TokensMinted { .. } => "tokens_minted",
-                TokenEventData::TokensBurned { .. } => "tokens_burned",
-                TokenEventData::IncentiveEarned { .. } => "incentive_earned",
-                TokenEventData::RewardClaimed { .. } => "reward_claimed",
-                TokenEventData::EventCreated { .. } => "event_created",
-                TokenEventData::EventEnded { .. } => "event_ended",
+                TokenEventData::TokensTransferred(_) => "tokens_transferred",
+                TokenEventData::TokensMinted(_) => "tokens_minted",
+                TokenEventData::TokensBurned(_) => "tokens_burned",
+                TokenEventData::IncentiveEarned(_) => "incentive_earned",
+                TokenEventData::RewardClaimed(_) => "reward_claimed",
+                TokenEventData::EventCreated(_) => "event_created",
+                TokenEventData::EventEnded(_) => "event_ended",
             },
             EventData::Progress(data) => match data {
-                ProgressEventData::ProgressUpdated { .. } => "progress_updated",
-                ProgressEventData::ModuleCompleted { .. } => "module_completed",
-                ProgressEventData::CourseCompleted { .. } => "course_completed",
-                ProgressEventData::ProgressReset { .. } => "progress_reset",
+                ProgressEventData::ProgressUpdated(_) => "progress_updated",
+                ProgressEventData::ModuleCompleted(_) => "module_completed",
+                ProgressEventData::CourseCompleted(_) => "course_completed",
+                ProgressEventData::ProgressReset(_) => "progress_reset",
             },
             EventData::System(data) => match data {
-                SystemEventData::ContractInitialized { .. } => "contract_initialized",
-                SystemEventData::ContractUpgraded { .. } => "contract_upgraded",
-                SystemEventData::ConfigurationChanged { .. } => "configuration_changed",
-                SystemEventData::MaintenanceMode { .. } => "maintenance_mode",
-                SystemEventData::ProxyInitialized { .. } => "proxy_initialized",
-                SystemEventData::ProxyUpgraded { .. } => "proxy_upgraded",
-                SystemEventData::ProxyRollback { .. } => "proxy_rollback",
+                SystemEventData::ContractInitialized(_) => "contract_initialized",
+                SystemEventData::ContractUpgraded(_) => "contract_upgraded",
+                SystemEventData::ConfigurationChanged(_) => "configuration_changed",
+                SystemEventData::MaintenanceMode(_) => "maintenance_mode",
+                SystemEventData::ProxyInitialized(_) => "proxy_initialized",
+                SystemEventData::ProxyUpgraded(_) => "proxy_upgraded",
+                SystemEventData::ProxyRollback(_) => "proxy_rollback",
             },
-            EventData::Error(data) => match data {
-                ErrorEventData::ValidationError { .. } => "validation_error",
-                ErrorEventData::PermissionDenied { .. } => "permission_denied",
-                ErrorEventData::ResourceNotFound { .. } => "resource_not_found",
-                ErrorEventData::InvalidInput { .. } => "invalid_input",
-                ErrorEventData::SystemError { .. } => "system_error",
+            EventData::Err(data) => match data {
+                ErrorEventData::ValidationError(_) => "validation_error",
+                ErrorEventData::PermissionDenied(_) => "permission_denied",
+                ErrorEventData::ResourceNotFound(_) => "resource_not_found",
+                ErrorEventData::InvalidInput(_) => "invalid_input",
+                ErrorEventData::SystemError(_) => "system_error",
             },
         }
     }
@@ -630,7 +849,7 @@ impl StandardEvent {
             EventData::Token(_) => String::from_str(env, "token_event"),
             EventData::Progress(_) => String::from_str(env, "progress_event"),
             EventData::System(_) => String::from_str(env, "system_event"),
-            EventData::Error(_) => String::from_str(env, "error_event"),
+            EventData::Err(_) => String::from_str(env, "error_event"),
         }
     }
 }
@@ -681,6 +900,6 @@ macro_rules! emit_system_event {
 #[macro_export]
 macro_rules! emit_error_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Error($data)).emit($env)
+        StandardEvent::new($env, $contract, $actor, EventData::Err($data)).emit($env)
     };
 }

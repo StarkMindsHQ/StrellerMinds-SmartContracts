@@ -6,7 +6,9 @@ use soroban_sdk::{
 
 // Import String for event logging
 use shared::access_control::AccessControl;
+use shared::logger::{LogLevel, Logger};
 use shared::roles::Permission;
+
 use soroban_sdk::String;
 
 // Storage keys
@@ -64,25 +66,21 @@ impl Progress {
         }
 
         // Create a storage key for this course
-        let key = (COURSE_KEY, course_id);
+        let key = (COURSE_KEY, course_id.clone());
 
         // Store course info
         env.storage().instance().set(&key, &total_modules);
 
         Logger::log(
-        &env,
-        LogLevel::Info,
-        Symbol::new(&env, "Course"), 
-        String::from_str(&env, "Course Added"),
-        (student.clone(), score).into_val(&env) 
-    );
+            &env,
+            LogLevel::Info,
+            course_id,
+            String::from_str(&env, "Course Added"),
+            String::from_str(&env, "Course initialized"),
+        );
 
-    
-    Logger::metric(
-        &env, 
-        Symbol::new(&env, "calc_time"), 
-        score.into_val(&env)
-    );
+        // Log metric for course creation
+        Logger::metric(&env, Symbol::new(&env, "course_add"), 1);
 
         Ok(())
     }

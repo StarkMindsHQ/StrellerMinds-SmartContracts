@@ -3,13 +3,14 @@ use crate::{
     events::AnalyticsEvents,
     storage::AnalyticsStorage,
     types::{
-        Achievement, AchievementType, AggregatedMetrics, AnalyticsConfig, CourseAnalytics,
-        DifficultyRating, InsightType, LeaderboardEntry, LeaderboardMetric, LearningSession,
-        MLInsight, ModuleAnalytics, PerformanceTrend, ProgressAnalytics, SessionType,
+        Achievement, AchievementType, CourseAnalytics, DifficultyRating, InsightType,
+        LearningSession, MLInsight, ModuleAnalytics, PerformanceTrend, ProgressAnalytics,
+        SessionType,
     },
 };
 use shared::logger::{LogLevel, Logger};
-use soroban_sdk::{Address, BytesN, Env, IntoVal, String, Symbol, Vec};
+use soroban_sdk::xdr::ToXdr;
+use soroban_sdk::{Address, Env, IntoVal, String, Symbol, Vec};
 
 /// Core analytics calculation engine
 pub struct AnalyticsEngine;
@@ -30,7 +31,7 @@ impl AnalyticsEngine {
         let mut total_time_spent = 0u64;
         let mut total_sessions = 0u32;
         let mut completed_modules = 0u32;
-        let mut total_modules = 0u32;
+        let total_modules;
         let mut scores: Vec<u32> = Vec::new(env);
         let mut first_activity = u64::MAX;
         let mut last_activity = 0u64;
@@ -144,13 +145,13 @@ impl AnalyticsEngine {
             LogLevel::Info,
             Symbol::new(&env, "analytics"),
             String::from_str(&env, "Progress Updated"),
-            (student.clone(), average_score.unwrap_or(0)).into_val(&env),
+            String::from_str(&env, "analytics_progress"),
         );
 
         Logger::metric(
             &env,
             Symbol::new(&env, "calc_time"),
-            total_time_spent.into_val(&env),
+            total_time_spent as i128,
         );
 
         Ok(analytics)
@@ -167,14 +168,14 @@ impl AnalyticsEngine {
             return Err(AnalyticsError::InsufficientData);
         }
 
-        let mut total_students = students.len();
+        let total_students = students.len();
         let mut active_students = 0u32;
         let mut completed_students = 0u32;
         let mut total_completion_time = 0u64;
         let mut completion_times: Vec<u64> = Vec::new(env);
         let mut all_scores: Vec<u32> = Vec::new(env);
         let mut total_time_invested = 0u64;
-        let mut module_difficulty_data: Vec<(Symbol, u32, u64)> = Vec::new(env); // (module_id, attempts, total_time)
+        let _module_difficulty_data: Vec<(Symbol, u32, u64)> = Vec::new(env); // (module_id, attempts, total_time)
 
         let current_time = env.ledger().timestamp();
         let active_threshold = 30 * 24 * 3600; // 30 days in seconds
@@ -282,7 +283,7 @@ impl AnalyticsEngine {
 
         let mut total_attempts = 0u32;
         let mut completions = 0u32;
-        let mut total_time = 0u64;
+        let mut _total_time = 0u64;
         let mut completion_times: Vec<u64> = Vec::new(env);
         let mut scores: Vec<u32> = Vec::new(env);
 
@@ -296,7 +297,7 @@ impl AnalyticsEngine {
                 if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
                     if session.module_id == *module_id {
                         total_attempts += 1;
-                        total_time += session.time_spent;
+                        _total_time += session.time_spent;
 
                         if session.completion_percentage == 100 {
                             completions += 1;
@@ -386,7 +387,7 @@ impl AnalyticsEngine {
             return 0;
         }
 
-        let config =
+        let _config =
             AnalyticsStorage::get_config(env).unwrap_or(AnalyticsStorage::get_default_config(env));
 
         let mut activity_days: Vec<u64> = Vec::new(env);
@@ -413,7 +414,7 @@ impl AnalyticsEngine {
         }
 
         // Sort activity days (simple bubble sort for small datasets)
-        for i in 0..activity_days.len() {
+        for _i in 0..activity_days.len() {
             for j in 0..activity_days.len() - 1 {
                 if activity_days.get(j).unwrap() > activity_days.get(j + 1).unwrap() {
                     let temp = activity_days.get(j).unwrap();
@@ -443,9 +444,9 @@ impl AnalyticsEngine {
 
     /// Calculate performance trend based on recent scores
     fn calculate_performance_trend(
-        env: &Env,
-        student: &Address,
-        course_id: &Symbol,
+        _env: &Env,
+        _student: &Address,
+        _course_id: &Symbol,
         scores: &Vec<u32>,
     ) -> PerformanceTrend {
         if scores.len() < 3 {
@@ -490,14 +491,14 @@ impl AnalyticsEngine {
 
     /// Estimate total modules in a course
     fn estimate_total_modules(
-        env: &Env,
-        course_id: &Symbol,
+        _env: &Env,
+        _course_id: &Symbol,
         completed_modules: &Vec<Symbol>,
     ) -> u32 {
         // This is a simplified estimation - in a real system, this would come from course metadata
         let mut max_module_num = 0u32;
 
-        for i in 0..completed_modules.len() {
+        for _i in 0..completed_modules.len() {
             // Try to extract module number from symbol (assuming format like "module_1", "module_2", etc.)
             // This is a placeholder - real implementation would have proper course structure
             max_module_num += 1;
@@ -580,7 +581,7 @@ impl AnalyticsEngine {
     fn calculate_difficulty_rating(
         env: &Env,
         completion_rate: u32,
-        avg_time: u64,
+        _avg_time: u64,
     ) -> DifficultyRating {
         let config =
             AnalyticsStorage::get_config(env).unwrap_or(AnalyticsStorage::get_default_config(env));
@@ -682,12 +683,12 @@ impl AnalyticsEngine {
 
         let mut study_time = 0u64;
         let mut assessment_time = 0u64;
-        let mut session_count = 0u32;
+        let mut _session_count = 0u32;
 
         for i in 0..sessions.len() {
             let session_id = sessions.get(i).unwrap();
             if let Some(session) = AnalyticsStorage::get_session(env, &session_id) {
-                session_count += 1;
+                _session_count += 1;
                 match session.session_type {
                     SessionType::Study => study_time += session.time_spent,
                     SessionType::Assessment => assessment_time += session.time_spent,
@@ -702,7 +703,7 @@ impl AnalyticsEngine {
             100
         };
 
-        let mut pattern_data = String::from_str(env, "Study-to-Assessment Ratio: ");
+        let mut pattern_data;
         // Simple manual formatting as Soroban String doesn't support format! easily
         // In a real implementation, we might use a more robust JSON builder
         pattern_data = String::from_str(env, "Study intensive pattern detected");
@@ -753,9 +754,9 @@ impl AnalyticsEngine {
             14 // Default to 2 weeks if just started
         };
 
-        let predicted_date = env.ledger().timestamp() + (days_to_complete * 86400);
+        let _predicted_date = env.ledger().timestamp() + (days_to_complete * 86400);
 
-        let mut time_str = String::from_str(env, "Days: ");
+        let time_str;
         if days_to_complete > 60 {
             time_str = String::from_str(env, "Over 2 months");
         } else if days_to_complete > 30 {
@@ -766,8 +767,7 @@ impl AnalyticsEngine {
             time_str = String::from_str(env, "Less than 2 weeks");
         }
 
-        let mut prediction_summary = String::from_str(env, "Prediction: ");
-        prediction_summary = String::from_str(env, "Estimated completion in ");
+        let prediction_summary;
         // Note: In Soroban SDK 22, String concatenation is limited.
         // We provide the categorical estimate as the summary.
         prediction_summary = time_str;
@@ -793,14 +793,14 @@ impl AnalyticsEngine {
 
         let mut recommendation = String::from_str(env, "Focus on consistent daily study sessions");
 
-        if let Some(easy) = easiest {
+        if let Some(_easy) = easiest {
             recommendation = String::from_str(
                 env,
                 "High success rate detected in similar modules. Suggested next: ",
             );
             // In a production environment, we would use a more complex string builder
             // or return a structured object that the UI parses.
-        } else if let Some(diff) = most_diff {
+        } else if let Some(_diff) = most_diff {
             recommendation = String::from_str(
                 env,
                 "Challenging module detected. Consider reviewing foundational material.",
@@ -867,12 +867,13 @@ impl AnalyticsEngine {
     }
 
     /// Prepare privacy-preserving data summary for external ML
+    #[allow(dead_code)]
     pub fn prepare_ml_data(
         env: &Env,
         student: &Address,
         course_id: &Symbol,
     ) -> Result<String, AnalyticsError> {
-        let analytics = AnalyticsStorage::get_progress_analytics(env, student, course_id)
+        let _analytics = AnalyticsStorage::get_progress_analytics(env, student, course_id)
             .ok_or(AnalyticsError::InsufficientData)?;
 
         // Create a summary string (masked student ID for privacy)

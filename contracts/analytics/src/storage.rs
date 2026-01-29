@@ -285,19 +285,21 @@ impl AnalyticsStorage {
     }
 
     /// Check if progress analytics exists
+    #[allow(dead_code)]
     pub fn has_progress_analytics(env: &Env, student: &Address, course_id: &Symbol) -> bool {
         let key = DataKey::ProgressAnalytics(student.clone(), course_id.clone());
         env.storage().persistent().has(&key)
     }
 
     /// Remove old sessions (for cleanup)
+    #[allow(dead_code)]
     pub fn remove_session(env: &Env, session_id: &BytesN<32>) {
         let key = DataKey::Session(session_id.clone());
         env.storage().persistent().remove(&key);
     }
 
     /// Get default analytics configuration
-    pub fn get_default_config(env: &Env) -> AnalyticsConfig {
+    pub fn get_default_config(_env: &Env) -> AnalyticsConfig {
         AnalyticsConfig {
             min_session_time: 60,      // 1 minute
             max_session_time: 14400,   // 4 hours

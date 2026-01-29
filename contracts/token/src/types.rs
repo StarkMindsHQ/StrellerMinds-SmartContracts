@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Env, Map, String, Vec};
+use soroban_sdk::{contracttype, Address, String, Vec};
 
 /// Token incentive system data types
 #[derive(Clone, Debug, Eq, PartialEq)]

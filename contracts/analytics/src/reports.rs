@@ -1,11 +1,10 @@
 use crate::{
-    analytics_engine::AnalyticsEngine,
     errors::AnalyticsError,
     events::AnalyticsEvents,
     storage::AnalyticsStorage,
     types::{
         Achievement, AggregatedMetrics, AnalyticsFilter, LeaderboardEntry, LeaderboardMetric,
-        LearningSession, OptionalSessionType, ProgressReport, ReportPeriod, SessionType,
+        LearningSession, OptionalSessionType, ProgressReport, ReportPeriod,
     },
 };
 use soroban_sdk::{Address, Env, Symbol, Vec};
@@ -426,7 +425,7 @@ impl ReportGenerator {
         // }
 
         let sess = &filter.session_type;
-        let res = match sess {
+        let _res = match sess {
             OptionalSessionType::None => return false,
             OptionalSessionType::Some(session_type) => {
                 if session.session_type != *session_type {
@@ -450,9 +449,9 @@ impl ReportGenerator {
     }
 
     /// Sort leaderboard entries by score (descending)
-    fn sort_leaderboard_entries(env: &Env, entries: &mut Vec<LeaderboardEntry>) {
+    fn sort_leaderboard_entries(_env: &Env, entries: &mut Vec<LeaderboardEntry>) {
         // Simple bubble sort for small datasets
-        for i in 0..entries.len() {
+        for _i in 0..entries.len() {
             for j in 0..entries.len() - 1 {
                 let entry_j = entries.get(j).unwrap();
                 let entry_j_plus_1 = entries.get(j + 1).unwrap();
