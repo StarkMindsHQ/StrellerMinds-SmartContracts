@@ -1,7 +1,8 @@
 use crate::event_schema::{EventData, StandardEvent};
-use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{BytesN, Env, String, Symbol, Vec};
 
 /// Event replay state
+#[soroban_sdk::contracttype]
 #[derive(Clone, Debug)]
 pub struct ReplayState {
     /// Current replay sequence
@@ -144,7 +145,7 @@ impl EventReplay {
         }
 
         // Start replay
-        let state = Self::start_replay(env, start_seq.unwrap(), Some(end_seq.unwrap()))?;
+        let _state = Self::start_replay(env, start_seq.unwrap(), Some(end_seq.unwrap()))?;
 
         // Replay all events
         let mut all_events = Vec::new(env);
@@ -174,10 +175,9 @@ impl EventReplay {
         env.storage().persistent().get::<_, u32>(&key).unwrap_or(0)
     }
 
-    // Private helper functions
-
     fn get_event_reference(env: &Env, sequence: u32) -> Option<(u32, u64, Symbol)> {
-        let key = Symbol::new(env, &format!("evt_seq_{}", sequence));
+        // Use tuple key to match event_publisher behavior
+        let key = (Symbol::new(env, "evt_seq"), sequence);
         env.storage().temporary().get(&key)
     }
 
@@ -188,17 +188,24 @@ impl EventReplay {
     ) -> StandardEvent {
         // This is a simplified reconstruction
         // In production, you'd store full event data for replay
+
+        // Use current contract as placeholder actor
+        let placeholder_actor = env.current_contract_address();
+
         StandardEvent {
             version: crate::event_schema::EVENT_SCHEMA_VERSION,
             contract: reference.2.clone(),
-            actor: Address::generate(env), // Placeholder
+            actor: placeholder_actor.clone(), // Placeholder
             timestamp: reference.1,
             tx_hash: BytesN::from_array(env, &[0u8; 32]), // Placeholder
+            sequence: Some(sequence),
             event_data: EventData::System(
-                crate::event_schema::SystemEventData::ContractInitialized {
-                    admin: Address::generate(env),
-                    config: String::from_str(env, "replay"),
-                },
+                crate::event_schema::SystemEventData::ContractInitialized(
+                    crate::event_schema::ContractInitializedSystemEvent {
+                        admin: placeholder_actor,
+                        config: String::from_str(env, "replay"),
+                    },
+                ),
             ),
         }
     }

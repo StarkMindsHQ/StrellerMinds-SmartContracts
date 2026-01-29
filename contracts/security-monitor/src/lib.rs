@@ -117,7 +117,7 @@ impl SecurityMonitorTrait for SecurityMonitor {
 
         // Mark as mitigated
         threat.auto_mitigated = true;
-        threat.mitigation_action = Some(action.clone());
+        threat.mitigation_action = action.clone();
 
         // Save updated threat
         SecurityStorage::set_threat(&env, &threat);

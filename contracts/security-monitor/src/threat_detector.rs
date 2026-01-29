@@ -1,6 +1,6 @@
 use crate::errors::SecurityError;
 use crate::storage::SecurityStorage;
-use crate::types::{SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType};
+use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType};
 use soroban_sdk::{Env, String, Symbol};
 
 /// Core threat detection engine
@@ -41,7 +41,7 @@ impl ThreatDetector {
                 metric_value: event_count,
                 threshold_value: config.burst_detection_threshold,
                 auto_mitigated: false,
-                mitigation_action: None,
+                mitigation_action: MitigationAction::NoAction,
             };
 
             Ok(Some(threat))
@@ -85,7 +85,7 @@ impl ThreatDetector {
                 metric_value: metrics.error_rate,
                 threshold_value: config.error_rate_threshold,
                 auto_mitigated: false,
-                mitigation_action: None,
+                mitigation_action: MitigationAction::NoAction,
             };
 
             Ok(Some(threat))

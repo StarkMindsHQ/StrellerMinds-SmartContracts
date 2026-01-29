@@ -53,17 +53,21 @@ impl AnalyticsEvents {
         final_score: Option<u32>,
         total_time: u64,
     ) {
-        env.events().publish(
-            ("analytics", "session_completed"),
-            (
-                session_id,
-                student,
-                course_id,
-                module_id,
-                final_score,
-                total_time,
-            ),
+        let event_data = AnalyticsEventData::SessionCompleted(
+            session_id.clone(),
+            student.clone(),
+            course_id.clone(),
+            module_id.clone(),
+            final_score,
+            total_time,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when progress analytics are updated
@@ -75,17 +79,29 @@ impl AnalyticsEvents {
         total_time_spent: u64,
         performance_trend: PerformanceTrend,
     ) {
-        env.events().publish(
-            ("analytics", "progress_updated"),
-            (
-                student,
-                course_id,
-                completion_percentage,
-                total_time_spent,
-                performance_trend,
-            ),
+        let trend_str = match performance_trend {
+            PerformanceTrend::Improving => "improving",
+            PerformanceTrend::Stable => "stable",
+            PerformanceTrend::Declining => "declining",
+            PerformanceTrend::Insufficient => "insufficient",
+        };
+        let event_data = AnalyticsEventData::ProgressUpdated(
+            student.clone(),
+            course_id.clone(),
+            completion_percentage,
+            total_time_spent,
+            String::from_str(env, trend_str),
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
+
+    // ... Implement other methods similarly if needed, or stick to emit_insight methods ...
 
     /// Emit event when course analytics are recalculated
     pub fn emit_course_analytics_updated(
@@ -95,10 +111,19 @@ impl AnalyticsEvents {
         completion_rate: u32,
         average_score: Option<u32>,
     ) {
-        env.events().publish(
-            ("analytics", "course_analytics_updated"),
-            (course_id, total_students, completion_rate, average_score),
+        let event_data = AnalyticsEventData::CourseAnalyticsUpdated(
+            course_id.clone(),
+            total_students,
+            completion_rate,
+            average_score,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            env.current_contract_address(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when module analytics are updated
@@ -110,16 +135,20 @@ impl AnalyticsEvents {
         average_time: u64,
         difficulty_rating: &str,
     ) {
-        env.events().publish(
-            ("analytics", "module_analytics_updated"),
-            (
-                course_id,
-                module_id,
-                completion_rate,
-                average_time,
-                difficulty_rating,
-            ),
+        let event_data = AnalyticsEventData::ModuleAnalyticsUpdated(
+            course_id.clone(),
+            module_id.clone(),
+            completion_rate,
+            average_time,
+            String::from_str(env, difficulty_rating),
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            env.current_contract_address(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when a student earns an achievement
@@ -131,16 +160,27 @@ impl AnalyticsEvents {
         course_id: &Symbol,
         earned_date: u64,
     ) {
-        env.events().publish(
-            ("analytics", "achievement_earned"),
-            (
-                student,
-                achievement_id,
-                achievement_type,
-                course_id,
-                earned_date,
-            ),
+        let type_str = match achievement_type {
+            AchievementType::Completion => "completion",
+            AchievementType::Streak => "streak",
+            AchievementType::Speed => "speed",
+            AchievementType::Excellence => "excellence",
+            AchievementType::Consistency => "consistency",
+        };
+        let event_data = AnalyticsEventData::AchievementEarned(
+            student.clone(),
+            achievement_id.clone(),
+            String::from_str(env, type_str),
+            course_id.clone(),
+            earned_date,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when leaderboard is updated
@@ -152,16 +192,26 @@ impl AnalyticsEvents {
         top_score: u32,
         total_entries: u32,
     ) {
-        env.events().publish(
-            ("analytics", "leaderboard_updated"),
-            (
-                course_id,
-                metric_type,
-                top_student,
-                top_score,
-                total_entries,
-            ),
+        let metric_str = match metric_type {
+            LeaderboardMetric::CompletionSpeed => "completion_speed",
+            LeaderboardMetric::TimeSpent => "total_time",
+            LeaderboardMetric::TotalScore => "score",
+            LeaderboardMetric::ConsistencyScore => "consistency",
+        };
+        let event_data = AnalyticsEventData::LeaderboardUpdated(
+            course_id.clone(),
+            String::from_str(env, metric_str),
+            top_student.clone(),
+            top_score,
+            total_entries,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            env.current_contract_address(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when a progress report is generated
@@ -174,17 +224,21 @@ impl AnalyticsEvents {
         end_date: u64,
         sessions_count: u32,
     ) {
-        env.events().publish(
-            ("analytics", "report_generated"),
-            (
-                student,
-                course_id,
-                report_period,
-                start_date,
-                end_date,
-                sessions_count,
-            ),
+        let event_data = AnalyticsEventData::ReportGenerated(
+            student.clone(),
+            course_id.clone(),
+            String::from_str(env, report_period),
+            start_date,
+            end_date,
+            sessions_count,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when batch analytics processing is completed
@@ -194,16 +248,28 @@ impl AnalyticsEvents {
         processing_time: u64,
         updated_analytics: u32,
     ) {
-        env.events().publish(
-            ("analytics", "batch_processed"),
-            (batch_size, processing_time, updated_analytics),
-        );
+        let event_data =
+            AnalyticsEventData::BatchProcessed(batch_size, processing_time, updated_analytics);
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            env.current_contract_address(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when analytics configuration is updated
     pub fn emit_config_updated(env: &Env, admin: &Address, config_type: &str) {
-        env.events()
-            .publish(("analytics", "config_updated"), (admin, config_type));
+        let event_data =
+            AnalyticsEventData::ConfigUpdated(admin.clone(), String::from_str(env, config_type));
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            admin.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when data aggregation is performed
@@ -214,13 +280,23 @@ impl AnalyticsEvents {
         active_students: u32,
         total_sessions: u32,
     ) {
-        env.events().publish(
-            ("analytics", "data_aggregated"),
-            (course_id, date, active_students, total_sessions),
+        let event_data = AnalyticsEventData::DataAggregated(
+            course_id.clone(),
+            date,
+            active_students,
+            total_sessions,
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            env.current_contract_address(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when performance trend changes
+    #[allow(dead_code)]
     pub fn emit_trend_change(
         env: &Env,
         student: &Address,
@@ -228,13 +304,35 @@ impl AnalyticsEvents {
         old_trend: PerformanceTrend,
         new_trend: PerformanceTrend,
     ) {
-        env.events().publish(
-            ("analytics", "trend_change"),
-            (student, course_id, old_trend, new_trend),
+        let old_str = match old_trend {
+            PerformanceTrend::Improving => "improving",
+            PerformanceTrend::Stable => "stable",
+            PerformanceTrend::Declining => "declining",
+            PerformanceTrend::Insufficient => "insufficient",
+        };
+        let new_str = match new_trend {
+            PerformanceTrend::Improving => "improving",
+            PerformanceTrend::Stable => "stable",
+            PerformanceTrend::Declining => "declining",
+            PerformanceTrend::Insufficient => "insufficient",
+        };
+        let event_data = AnalyticsEventData::TrendChange(
+            student.clone(),
+            course_id.clone(),
+            String::from_str(env, old_str),
+            String::from_str(env, new_str),
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 
     /// Emit event when streak milestone is reached
+    #[allow(dead_code)]
     pub fn emit_streak_milestone(
         env: &Env,
         student: &Address,
@@ -242,9 +340,64 @@ impl AnalyticsEvents {
         streak_days: u32,
         milestone_type: &str,
     ) {
-        env.events().publish(
-            ("analytics", "streak_milestone"),
-            (student, course_id, streak_days, milestone_type),
+        let event_data = AnalyticsEventData::StreakMilestone(
+            student.clone(),
+            course_id.clone(),
+            streak_days,
+            String::from_str(env, milestone_type),
         );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
+    }
+
+    /// Emit event when an insight is requested
+    pub fn emit_insight_requested(
+        env: &Env,
+        student: &Address,
+        course_id: &Symbol,
+        insight_type: &str,
+    ) {
+        let event_data = AnalyticsEventData::InsightRequested(
+            student.clone(),
+            course_id.clone(),
+            String::from_str(env, insight_type),
+        );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
+    }
+
+    /// Emit event when an insight is received
+    pub fn emit_insight_received(
+        env: &Env,
+        student: &Address,
+        insight_id: &BytesN<32>,
+        insight_type: &str,
+        content: &str,
+        timestamp: u64,
+    ) {
+        let event_data = AnalyticsEventData::InsightReceived(
+            student.clone(),
+            insight_id.clone(),
+            String::from_str(env, insight_type),
+            String::from_str(env, content),
+            timestamp,
+        );
+        StandardEvent::new(
+            env,
+            Symbol::new(env, "analytics"),
+            student.clone(),
+            EventData::Analytics(event_data),
+        )
+        .emit(env);
     }
 }

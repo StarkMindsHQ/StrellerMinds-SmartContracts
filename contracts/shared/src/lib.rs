@@ -1,3 +1,10 @@
+#![no_std]
+extern crate alloc;
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+
 pub mod access_control;
 pub mod errors;
 // Temporarily commented out to fix compilation issues with Vec<StandardEvent>
@@ -11,13 +18,13 @@ pub mod event_schema;
 // pub mod event_utils;
 pub mod events;
 pub mod gas_testing;
+pub mod logger;
 pub mod permissions;
 pub mod reentrancy_guard;
 pub mod roles;
 pub mod storage;
 pub mod upgrade;
 pub mod validation;
-pub mod logger;
 
 #[cfg(test)]
 mod simple_tests;

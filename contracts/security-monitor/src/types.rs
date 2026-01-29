@@ -25,8 +25,8 @@ pub enum ThreatType {
 }
 
 /// Automated mitigation actions
-#[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MitigationAction {
     RateLimitApplied,
     CircuitBreakerTriggered,
@@ -36,8 +36,8 @@ pub enum MitigationAction {
 }
 
 /// Security threat detection record
-#[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SecurityThreat {
     pub threat_id: BytesN<32>,
     pub threat_type: ThreatType,
@@ -49,12 +49,12 @@ pub struct SecurityThreat {
     pub metric_value: u32,      // The metric that triggered detection
     pub threshold_value: u32,    // The threshold that was exceeded
     pub auto_mitigated: bool,
-    pub mitigation_action: Option<MitigationAction>,
+    pub mitigation_action: MitigationAction,  // Use NoAction variant instead of None
 }
 
 /// Security metrics for a time window
-#[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SecurityMetrics {
     pub window_id: u64,
     pub contract: Symbol,

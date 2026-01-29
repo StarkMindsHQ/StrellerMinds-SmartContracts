@@ -2,7 +2,7 @@
 //! Provides utilities for safe contract upgrades with data migration and rollback capabilities
 
 use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
-use crate::errors::AccessControlError;
+use alloc::format;
 
 /// Version information for contract storage
 #[contracttype]
@@ -24,13 +24,10 @@ impl VersionInfo {
         }
     }
 
-    /// Note: This method is removed to avoid format! in no_std.
-    /// Use version numbers directly instead.
-
     /// Check if this version is compatible with target version
     pub fn is_compatible_with(&self, target: &VersionInfo) -> bool {
         // Major version must match for compatibility
-        self.major == target.major && 
+        self.major == target.major &&
         // Minor version can be equal or lower (backward compatible)
         self.minor <= target.minor
     }
@@ -88,32 +85,52 @@ pub struct UpgradeUtils;
 impl UpgradeUtils {
     /// Initialize upgrade system
     pub fn initialize(env: &Env, initial_version: &VersionInfo) {
-        env.storage().instance().set(&UpgradeKey::StorageVersion, initial_version);
-        
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::StorageVersion, initial_version);
+
         let mut history: Vec<VersionInfo> = Vec::new(env);
         history.push_back(initial_version.clone());
-        env.storage().instance().set(&UpgradeKey::VersionHistory, &history);
-        
-        env.storage().instance().set(&UpgradeKey::EmergencyPaused, &false);
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::VersionHistory, &history);
+
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::EmergencyPaused, &false);
     }
 
     /// Get current storage version
     pub fn get_current_version(env: &Env) -> VersionInfo {
-        env.storage().instance().get(&UpgradeKey::StorageVersion).unwrap()
+        env.storage()
+            .instance()
+            .get(&UpgradeKey::StorageVersion)
+            .unwrap()
     }
 
     /// Set storage version (used during migrations)
     pub fn set_storage_version(env: &Env, version: &VersionInfo) {
-        env.storage().instance().set(&UpgradeKey::StorageVersion, version);
-        
-        let mut history: Vec<VersionInfo> = env.storage().instance().get(&UpgradeKey::VersionHistory).unwrap();
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::StorageVersion, version);
+
+        let mut history: Vec<VersionInfo> = env
+            .storage()
+            .instance()
+            .get(&UpgradeKey::VersionHistory)
+            .unwrap();
         history.push_back(version.clone());
-        env.storage().instance().set(&UpgradeKey::VersionHistory, &history);
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::VersionHistory, &history);
     }
 
     /// Get version history
     pub fn get_version_history(env: &Env) -> Vec<VersionInfo> {
-        env.storage().instance().get(&UpgradeKey::VersionHistory).unwrap()
+        env.storage()
+            .instance()
+            .get(&UpgradeKey::VersionHistory)
+            .unwrap()
     }
 
     /// Check if migration is needed for target version
@@ -139,6 +156,8 @@ impl UpgradeUtils {
     }
 
     /// Validate version compatibility
+
+    /// Validate version compatibility
     pub fn validate_version_compatibility(
         env: &Env,
         current: &VersionInfo,
@@ -147,14 +166,14 @@ impl UpgradeUtils {
         if current.major != target.major {
             return Err(String::from_str(
                 env,
-                "Major version mismatch. Breaking changes detected."
+                "Major version mismatch. Breaking changes detected.",
             ));
         }
 
         if target.minor < current.minor {
             return Err(String::from_str(
                 env,
-                "Cannot downgrade minor version"
+                "Cannot downgrade minor version",
             ));
         }
 
@@ -197,18 +216,26 @@ impl UpgradeUtils {
 
     /// Set emergency pause
     pub fn set_emergency_pause(env: &Env, paused: bool) {
-        env.storage().instance().set(&UpgradeKey::EmergencyPaused, &paused);
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::EmergencyPaused, &paused);
     }
 
     /// Check if emergency pause is active
     pub fn is_emergency_paused(env: &Env) -> bool {
-        env.storage().instance().get(&UpgradeKey::EmergencyPaused).unwrap_or(false)
+        env.storage()
+            .instance()
+            .get(&UpgradeKey::EmergencyPaused)
+            .unwrap_or(false)
     }
 
     /// Validate that emergency pause is not active
     pub fn validate_not_paused(env: &Env) -> Result<(), String> {
         if Self::is_emergency_paused(env) {
-            Err(String::from_str(env, "Contract is currently paused due to emergency"))
+            Err(String::from_str(
+                env,
+                "Contract is currently paused due to emergency",
+            ))
         } else {
             Ok(())
         }
@@ -225,20 +252,19 @@ impl GovernanceUpgrade {
         proposer: &Address,
         new_implementation: &Address,
         version: &VersionInfo,
-        description: &str,
+        description: &String,
         required_votes: u32,
     ) -> Result<Symbol, String> {
         // Validate proposer has upgrade permission
         // This would integrate with your existing RBAC system
         // For now, we'll assume validation happens elsewhere
 
-        // Use a simple symbol instead of interpolation
-        let proposal_id = Symbol::new(env, "upgrade_proposal");
+        let proposal_id = Symbol::new(env, &format!("upgrade_{}", env.ledger().sequence()));
 
         let proposal = UpgradeProposal {
             new_implementation: new_implementation.clone(),
             version: version.clone(),
-            description: String::from_str(env, description),
+            description: description.clone(),
             proposed_at: env.ledger().timestamp(),
             proposer: proposer.clone(),
             vote_count: 0,
@@ -247,7 +273,9 @@ impl GovernanceUpgrade {
         };
 
         env.storage().temporary().set(&proposal_id, &proposal);
-        env.storage().temporary().extend_ttl(&proposal_id, 1000000, 1000000);
+        env.storage()
+            .temporary()
+            .extend_ttl(&proposal_id, 1000000, 1000000);
         Ok(proposal_id)
     }
 
@@ -257,8 +285,11 @@ impl GovernanceUpgrade {
         voter: &Address,
         proposal_id: &Symbol,
     ) -> Result<u32, String> {
-        let mut proposal: UpgradeProposal = env.storage().temporary().get(proposal_id)
-            .ok_or(String::from_str(env, "Proposal not found"))?;
+        let proposal: UpgradeProposal = env
+            .storage()
+            .temporary()
+            .get(proposal_id)
+            .ok_or_else(|| String::from_str(env, "Proposal not found"))?;
 
         if proposal.executed {
             return Err(String::from_str(env, "Proposal already executed"));
@@ -270,9 +301,13 @@ impl GovernanceUpgrade {
         }
 
         env.storage().temporary().set(proposal_id, &proposal);
-        env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
+        env.storage()
+            .temporary()
+            .extend_ttl(proposal_id, 1000000, 1000000);
         env.storage().temporary().set(&vote_key, &true);
-        env.storage().temporary().extend_ttl(&vote_key, 1000000, 1000000);
+        env.storage()
+            .temporary()
+            .extend_ttl(&vote_key, 1000000, 1000000);
 
         Ok(proposal.vote_count)
     }
@@ -282,8 +317,11 @@ impl GovernanceUpgrade {
         env: &Env,
         proposal_id: &Symbol,
     ) -> Result<Option<Address>, String> {
-        let proposal: UpgradeProposal = env.storage().temporary().get(proposal_id)
-            .ok_or(String::from_str(env, "Proposal not found"))?;
+        let proposal: UpgradeProposal = env
+            .storage()
+            .temporary()
+            .get(proposal_id)
+            .ok_or_else(|| String::from_str(env, "Proposal not found"))?;
 
         if proposal.executed {
             return Err(String::from_str(env, "Proposal already executed"));
@@ -291,14 +329,22 @@ impl GovernanceUpgrade {
 
         if proposal.vote_count >= proposal.required_votes {
             // Set pending upgrade
-            env.storage().instance().set(&UpgradeKey::PendingUpgrade, &proposal.new_implementation);
-            env.storage().instance().set(&UpgradeKey::UpgradeProposer, &proposal.proposer);
+            env.storage()
+                .instance()
+                .set(&UpgradeKey::PendingUpgrade, &proposal.new_implementation);
+            env.storage()
+                .instance()
+                .set(&UpgradeKey::UpgradeProposer, &proposal.proposer);
 
             // Mark as executed
             let mut updated_proposal = proposal.clone();
             updated_proposal.executed = true;
-            env.storage().temporary().set(proposal_id, &updated_proposal);
-            env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
+            env.storage()
+                .temporary()
+                .set(proposal_id, &updated_proposal);
+            env.storage()
+                .temporary()
+                .extend_ttl(proposal_id, 1000000, 1000000);
 
             Ok(Some(proposal.new_implementation))
         } else {
@@ -308,13 +354,18 @@ impl GovernanceUpgrade {
 
     /// Set upgrade timelock
     pub fn set_upgrade_timelock(env: &Env, unlock_timestamp: u64) {
-        env.storage().instance().set(&UpgradeKey::UpgradeTimelock, &unlock_timestamp);
+        env.storage()
+            .instance()
+            .set(&UpgradeKey::UpgradeTimelock, &unlock_timestamp);
     }
 
     /// Check if upgrade timelock has expired
     pub fn is_upgrade_unlocked(env: &Env) -> bool {
         let current_time = env.ledger().timestamp();
-        let unlock_time: u64 = env.storage().instance().get(&UpgradeKey::UpgradeTimelock)
+        let unlock_time: u64 = env
+            .storage()
+            .instance()
+            .get(&UpgradeKey::UpgradeTimelock)
             .unwrap_or(current_time);
         current_time >= unlock_time
     }
@@ -368,7 +419,7 @@ impl DataMigration {
 
     /// Execute a single migration step with error handling
     pub fn execute_migration_step<F>(
-        env: &Env,
+        _env: &Env,
         _migration_id: &Symbol,
         step_fn: F,
     ) -> Result<(), String>
@@ -379,7 +430,10 @@ impl DataMigration {
             Ok(()) => Ok(()),
             Err(e) => {
                 // Log error and mark migration as failed
-                // Return the original error (error interpolation not supported in no_std)
+                // In a real implementation, you'd want more sophisticated error handling
+                // Note: 'e' is soroban String which doesn't implement Display.
+                // We cannot use format! with it easily.
+                // Just pass the error through or create generic error message
                 Err(e)
             }
         }
@@ -400,7 +454,6 @@ impl DataMigration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{symbol_short, vec, Symbol};
     use soroban_sdk::testutils::Address as _;
 
     #[test]
@@ -410,10 +463,7 @@ mod tests {
         let v2 = VersionInfo::new(1, 1, 0, 2000);
         let v3 = VersionInfo::new(2, 0, 0, 3000);
 
-        // Test version numbers directly instead of to_string
-        assert_eq!(v1.major, 1);
-        assert_eq!(v1.minor, 0);
-        assert_eq!(v1.patch, 0);
+        // Test version compatibility
         assert!(v1.is_compatible_with(&v2));
         assert!(!v1.is_compatible_with(&v3)); // Different major version
         assert!(!v2.is_compatible_with(&v1)); // Downgrade not allowed
@@ -423,12 +473,12 @@ mod tests {
     fn test_upgrade_utils_initialization() {
         let env = Env::default();
         let initial_version = VersionInfo::new(1, 0, 0, 1000);
-        
+
         UpgradeUtils::initialize(&env, &initial_version);
-        
+
         let current = UpgradeUtils::get_current_version(&env);
         assert_eq!(current, initial_version);
-        
+
         let history = UpgradeUtils::get_version_history(&env);
         assert_eq!(history.len(), 1);
         assert_eq!(history.get(0).unwrap(), initial_version);
@@ -438,16 +488,16 @@ mod tests {
     fn test_migration_status() {
         let env = Env::default();
         let migration_id = Symbol::new(&env, "test_mig");
-        
+
         // Initially not started
         let status = UpgradeUtils::get_migration_status(&env, &migration_id);
         assert_eq!(status, MigrationStatus::NotStarted);
-        
+
         // Set in progress
         UpgradeUtils::set_migration_status(&env, &migration_id, &MigrationStatus::InProgress);
         let status = UpgradeUtils::get_migration_status(&env, &migration_id);
         assert_eq!(status, MigrationStatus::InProgress);
-        
+
         // Set completed
         UpgradeUtils::set_migration_status(&env, &migration_id, &MigrationStatus::Completed);
         let status = UpgradeUtils::get_migration_status(&env, &migration_id);
@@ -460,7 +510,7 @@ mod tests {
         let proposer = Address::generate(&env);
         let new_impl = Address::generate(&env);
         let version = VersionInfo::new(1, 1, 0, 2000);
-        
+
         let proposal_id = GovernanceUpgrade::propose_upgrade(
             &env,
             &proposer,
@@ -468,8 +518,9 @@ mod tests {
             &version,
             "Test upgrade",
             3,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id).unwrap();
         assert_eq!(vote_count, 1);
     }

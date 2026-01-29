@@ -686,27 +686,26 @@ mod analytics_tests {
         let (env, admin, _, student) = create_test_env();
         let client = setup_analytics_contract(&env, &admin);
         let course_id = Symbol::new(&env, "RUST101");
-        
+
         // Arrange: create and complete a session so there is data to summarize
         let mut session = create_test_session(&env, &student, "RUST101", "module_1");
         client.record_session(&session);
-        
+
         let end_time = session.start_time + 1800; // 30 minutes
         client.complete_session(&session.session_id, &end_time, &Some(85), &100);
-        
+
         // Act: prepare ML data
         let ml_data = client.prepare_ml_data(&course_id);
-        
+
         // Assert: should return a non-empty, masked summary string
         let ml_data_str = ml_data.to_string();
-        
+
         assert!(!ml_data_str.is_empty());
-        
+
         // Course-level info is allowed
         assert!(ml_data_str.contains("RUST101"));
-        
+
         // PII must not be present
         assert!(!ml_data_str.contains(&student.to_string()));
     }
-    
 }

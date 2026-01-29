@@ -269,8 +269,8 @@ impl Token {
         Ok(burn_id)
     }
 
-       // ==================== BATCH OPERATIONS ====================
-    
+    // ==================== BATCH OPERATIONS ====================
+
     /// Batch transfer to multiple recipients with gas optimization
     pub fn batch_transfer(
         env: Env,
@@ -306,12 +306,12 @@ impl Token {
 
         // Perform batch transfer
         set_balance(&env, &from, from_balance - total_amount);
-        
+
         let mut success_count: u32 = 0;
         for i in 0..recipients.len() {
             let recipient = recipients.get(i).unwrap();
             let amount = amounts.get(i).unwrap();
-            
+
             let recipient_balance = get_balance(&env, &recipient);
             set_balance(&env, &recipient, recipient_balance + amount);
             success_count += 1;
@@ -321,7 +321,7 @@ impl Token {
     }
 
     // ==================== FLASH LOAN PROTECTION ====================
-    
+
     /// Execute a flash loan with protection mechanisms
     pub fn flash_loan(
         env: Env,
@@ -344,7 +344,7 @@ impl Token {
         env.storage().instance().set(&FLASH_LOAN_ACTIVE_KEY, &true);
 
         let initial_balance = get_balance(&env, &borrower);
-        
+
         // Transfer loan amount to borrower
         set_balance(&env, &borrower, initial_balance + amount);
 
@@ -353,8 +353,12 @@ impl Token {
         let repay_amount = amount + fee;
 
         // Store expected repayment
-        env.storage().instance().set(&FLASH_LOAN_AMOUNT_KEY, &repay_amount);
-        env.storage().instance().set(&FLASH_LOAN_BORROWER_KEY, &borrower);
+        env.storage()
+            .instance()
+            .set(&FLASH_LOAN_AMOUNT_KEY, &repay_amount);
+        env.storage()
+            .instance()
+            .set(&FLASH_LOAN_BORROWER_KEY, &borrower);
 
         Ok(())
     }
@@ -367,7 +371,8 @@ impl Token {
             return Err(Error::InvalidInput);
         }
 
-        let expected_borrower: Address = env.storage()
+        let expected_borrower: Address = env
+            .storage()
             .instance()
             .get(&FLASH_LOAN_BORROWER_KEY)
             .unwrap();
@@ -376,7 +381,8 @@ impl Token {
             return Err(Error::Unauthorized);
         }
 
-        let repay_amount: i128 = env.storage()
+        let repay_amount: i128 = env
+            .storage()
             .instance()
             .get(&FLASH_LOAN_AMOUNT_KEY)
             .unwrap();
@@ -398,14 +404,14 @@ impl Token {
     }
 
     // ==================== ADVANCED STAKING POOLS ====================
-    
+
     /// Create advanced staking pool with yield farming
     pub fn create_advanced_staking_pool(
         env: Env,
         pool_id: String,
         name: String,
-        apy_bps: u32,          // basis points (1000 = 10%)
-        lock_duration: u64,     // seconds
+        apy_bps: u32,       // basis points (1000 = 10%)
+        lock_duration: u64, // seconds
         min_stake: i128,
         compound_enabled: bool,
     ) -> Result<(), Error> {
@@ -429,7 +435,9 @@ impl Token {
             is_active: true,
         };
 
-        env.storage().instance().set(&(STAKING_POOL_KEY, pool_id), &pool);
+        env.storage()
+            .instance()
+            .set(&(STAKING_POOL_KEY, pool_id), &pool);
 
         Ok(())
     }
@@ -448,7 +456,8 @@ impl Token {
             return Err(Error::InvalidAmount);
         }
 
-        let mut pool: AdvancedStakingPool = env.storage()
+        let mut pool: AdvancedStakingPool = env
+            .storage()
             .instance()
             .get(&(STAKING_POOL_KEY, pool_id.clone()))
             .ok_or(Error::PoolNotFound)?;
@@ -482,26 +491,28 @@ impl Token {
         set_balance(&env, &user, user_balance - amount);
         pool.total_staked += amount;
 
-        env.storage().instance().set(&(STAKING_POOL_KEY, pool_id.clone()), &pool);
-        env.storage().instance().set(&(USER_STAKE_KEY, user.clone(), pool_id), &stake);
+        env.storage()
+            .instance()
+            .set(&(STAKING_POOL_KEY, pool_id.clone()), &pool);
+        env.storage()
+            .instance()
+            .set(&(USER_STAKE_KEY, user.clone(), pool_id), &stake);
 
         Ok(())
     }
 
     /// Calculate and claim staking rewards
-    pub fn claim_staking_rewards(
-        env: Env,
-        user: Address,
-        pool_id: String,
-    ) -> Result<i128, Error> {
+    pub fn claim_staking_rewards(env: Env, user: Address, pool_id: String) -> Result<i128, Error> {
         user.require_auth();
 
-        let mut stake: AdvancedStake = env.storage()
+        let mut stake: AdvancedStake = env
+            .storage()
             .instance()
             .get(&(USER_STAKE_KEY, user.clone(), pool_id.clone()))
             .ok_or(Error::InvalidInput)?;
 
-        let pool: AdvancedStakingPool = env.storage()
+        let pool: AdvancedStakingPool = env
+            .storage()
             .instance()
             .get(&(STAKING_POOL_KEY, pool_id.clone()))
             .ok_or(Error::PoolNotFound)?;
@@ -511,7 +522,7 @@ impl Token {
 
         // Calculate rewards: (amount * apy_bps * time_staked) / (10000 * SECONDS_PER_YEAR)
         let seconds_per_year: u64 = 31536000;
-        let rewards = (stake.amount * pool.apy_bps as i128 * time_staked as i128) 
+        let rewards = (stake.amount * pool.apy_bps as i128 * time_staked as i128)
             / (10000 * seconds_per_year as i128);
 
         if rewards > 0 {
@@ -527,21 +538,20 @@ impl Token {
             stake.rewards_earned += rewards;
             stake.last_claim = current_time;
 
-            env.storage().instance().set(&(USER_STAKE_KEY, user, pool_id), &stake);
+            env.storage()
+                .instance()
+                .set(&(USER_STAKE_KEY, user, pool_id), &stake);
         }
 
         Ok(rewards)
     }
 
     /// Unstake tokens (after lock period)
-    pub fn unstake_advanced(
-        env: Env,
-        user: Address,
-        pool_id: String,
-    ) -> Result<i128, Error> {
+    pub fn unstake_advanced(env: Env, user: Address, pool_id: String) -> Result<i128, Error> {
         user.require_auth();
 
-        let stake: AdvancedStake = env.storage()
+        let stake: AdvancedStake = env
+            .storage()
             .instance()
             .get(&(USER_STAKE_KEY, user.clone(), pool_id.clone()))
             .ok_or(Error::InvalidInput)?;
@@ -551,7 +561,8 @@ impl Token {
             return Err(Error::LockPeriodNotExpired);
         }
 
-        let mut pool: AdvancedStakingPool = env.storage()
+        let mut pool: AdvancedStakingPool = env
+            .storage()
             .instance()
             .get(&(STAKING_POOL_KEY, pool_id.clone()))
             .ok_or(Error::PoolNotFound)?;
@@ -559,7 +570,7 @@ impl Token {
         // Calculate final rewards
         let time_staked = current_time - stake.last_claim;
         let seconds_per_year: u64 = 31536000;
-        let final_rewards = (stake.amount * pool.apy_bps as i128 * time_staked as i128) 
+        let final_rewards = (stake.amount * pool.apy_bps as i128 * time_staked as i128)
             / (10000 * seconds_per_year as i128);
 
         let total_return = stake.amount + final_rewards;
@@ -572,14 +583,18 @@ impl Token {
         pool.total_rewards_paid += final_rewards;
 
         // Remove stake
-        env.storage().instance().remove(&(USER_STAKE_KEY, user, pool_id.clone()));
-        env.storage().instance().set(&(STAKING_POOL_KEY, pool_id), &pool);
+        env.storage()
+            .instance()
+            .remove(&(USER_STAKE_KEY, user, pool_id.clone()));
+        env.storage()
+            .instance()
+            .set(&(STAKING_POOL_KEY, pool_id), &pool);
 
         Ok(total_return)
     }
 
     // ==================== AUTOMATED MARKET MAKER (AMM) ====================
-    
+
     /// Create liquidity pool for AMM
     pub fn create_liquidity_pool(
         env: Env,
@@ -590,13 +605,10 @@ impl Token {
         let admin = get_admin(&env)?;
         admin.require_auth();
 
-        let pool_count: u32 = env.storage()
-            .instance()
-            .get(&POOL_COUNT_KEY)
-            .unwrap_or(0);
+        let pool_count: u32 = env.storage().instance().get(&POOL_COUNT_KEY).unwrap_or(0);
 
         let pool_id = String::from_str(&env, "amm_pool_");
-        
+
         let pool = LiquidityPool {
             id: pool_id.clone(),
             token_a,
@@ -608,8 +620,12 @@ impl Token {
             created_at: env.ledger().timestamp(),
         };
 
-        env.storage().instance().set(&(AMM_POOL_KEY, pool_id.clone()), &pool);
-        env.storage().instance().set(&POOL_COUNT_KEY, &(pool_count + 1));
+        env.storage()
+            .instance()
+            .set(&(AMM_POOL_KEY, pool_id.clone()), &pool);
+        env.storage()
+            .instance()
+            .set(&POOL_COUNT_KEY, &(pool_count + 1));
 
         Ok(pool_id)
     }
@@ -629,7 +645,8 @@ impl Token {
             return Err(Error::InvalidAmount);
         }
 
-        let mut pool: LiquidityPool = env.storage()
+        let mut pool: LiquidityPool = env
+            .storage()
             .instance()
             .get(&(AMM_POOL_KEY, pool_id.clone()))
             .ok_or(Error::PoolNotFound)?;
@@ -647,7 +664,11 @@ impl Token {
             // Subsequent providers - maintain ratio
             let share_a = (amount_a * pool.total_shares) / pool.reserve_a;
             let share_b = (amount_b * pool.total_shares) / pool.reserve_b;
-            if share_a < share_b { share_a } else { share_b }
+            if share_a < share_b {
+                share_a
+            } else {
+                share_b
+            }
         };
 
         if shares < min_shares {
@@ -666,7 +687,9 @@ impl Token {
         let current_shares = get_lp_shares(&env, &user, &pool_id);
         set_lp_shares(&env, &user, &pool_id, current_shares + shares);
 
-        env.storage().instance().set(&(AMM_POOL_KEY, pool_id), &pool);
+        env.storage()
+            .instance()
+            .set(&(AMM_POOL_KEY, pool_id), &pool);
 
         Ok(shares)
     }
@@ -686,7 +709,8 @@ impl Token {
             return Err(Error::InvalidAmount);
         }
 
-        let mut pool: LiquidityPool = env.storage()
+        let mut pool: LiquidityPool = env
+            .storage()
             .instance()
             .get(&(AMM_POOL_KEY, pool_id.clone()))
             .ok_or(Error::PoolNotFound)?;
@@ -727,7 +751,9 @@ impl Token {
         }
         set_balance(&env, &user, user_balance - amount_in + amount_out);
 
-        env.storage().instance().set(&(AMM_POOL_KEY, pool_id), &pool);
+        env.storage()
+            .instance()
+            .set(&(AMM_POOL_KEY, pool_id), &pool);
 
         Ok(amount_out)
     }
@@ -743,7 +769,8 @@ impl Token {
             return Err(Error::InvalidAmount);
         }
 
-        let pool: LiquidityPool = env.storage()
+        let pool: LiquidityPool = env
+            .storage()
             .instance()
             .get(&(AMM_POOL_KEY, pool_id))
             .ok_or(Error::PoolNotFound)?;
@@ -821,7 +848,6 @@ struct LiquidityPool {
     created_at: u64,
 }
 
-
 // Helper functions
 fn get_balance(env: &Env, id: &Address) -> i128 {
     env.storage()
@@ -862,14 +888,27 @@ fn int_sqrt(n: i128) -> i128 {
     if n == 0 {
         return 0;
     }
-    
+
     let mut x = n;
     let mut y = (x + 1) / 2;
-    
+
     while y < x {
         x = y;
         y = (x + n / x) / 2;
     }
-    
+
     x
+}
+
+fn get_lp_shares(env: &Env, user: &Address, pool_id: &String) -> i128 {
+    env.storage()
+        .instance()
+        .get(&(LP_SHARES_KEY, user.clone(), pool_id.clone()))
+        .unwrap_or(0)
+}
+
+fn set_lp_shares(env: &Env, user: &Address, pool_id: &String, amount: i128) {
+    env.storage()
+        .instance()
+        .set(&(LP_SHARES_KEY, user.clone(), pool_id.clone()), &amount);
 }

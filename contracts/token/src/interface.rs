@@ -7,6 +7,7 @@ use crate::Error;
 use soroban_sdk::{Address, Env, String, Vec};
 
 /// Token contract interface with incentive system
+#[allow(dead_code)]
 pub trait TokenTrait {
     // === Basic Token Operations ===
 

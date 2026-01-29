@@ -6,7 +6,7 @@ use crate::{
         MLInsight, ModuleAnalytics, ProgressAnalytics, ProgressReport, ReportPeriod,
     },
 };
-use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
 /// Analytics contract interface
 // #[contracttrait]

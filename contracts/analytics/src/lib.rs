@@ -17,12 +17,7 @@ mod integration_tests;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
 
 // Import shared RBAC system
-use shared::{
-    access_control::AccessControl,
-    errors::AccessControlError,
-    reentrancy_guard::ReentrancyLock,
-    roles::{Permission, RoleLevel},
-};
+use shared::{access_control::AccessControl, reentrancy_guard::ReentrancyLock, roles::Permission};
 
 use analytics_engine::AnalyticsEngine;
 use errors::AnalyticsError;
@@ -33,7 +28,7 @@ use storage::AnalyticsStorage;
 use types::{
     Achievement, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter, BatchSessionUpdate,
     CourseAnalytics, InsightType, LeaderboardEntry, LeaderboardMetric, LearningSession, MLInsight,
-    ModuleAnalytics, ProgressAnalytics, ProgressReport, ReportPeriod, SessionType,
+    ModuleAnalytics, ProgressAnalytics, ProgressReport, ReportPeriod,
 };
 
 #[contract]
@@ -224,7 +219,7 @@ impl AnalyticsTrait for Analytics {
         // Update analytics if requested
         if batch.update_analytics && processed > 0 {
             // Get unique course-student pairs for analytics updates
-            let mut updates = 0u32;
+            let mut _updates = 0u32;
             for i in 0..batch.sessions.len() {
                 let session = batch.sessions.get(i).unwrap();
                 if AnalyticsEngine::calculate_progress_analytics(
@@ -234,7 +229,7 @@ impl AnalyticsTrait for Analytics {
                 )
                 .is_ok()
                 {
-                    updates += 1;
+                    _updates += 1;
                 }
             }
         }
@@ -645,14 +640,13 @@ impl AnalyticsTrait for Analytics {
         }
 
         // Emit request event for oracle to pick up (for more advanced external ML)
-        // TODO: Add emit_insight_requested to AnalyticsEvents
-        // AnalyticsEvents::emit_insight_requested(
-        //     &env,
-        //     &student,
-        //     &course_id,
-        //     insight_type,
-        //     request_id.clone(),
-        // );
+        let insight_type_str = match insight_type {
+            InsightType::PatternRecognition => "pattern_recognition",
+            InsightType::CompletionPrediction => "completion_prediction",
+            InsightType::Recommendation => "recommendation",
+            InsightType::AnomalyDetection => "anomaly_detection",
+        };
+        AnalyticsEvents::emit_insight_requested(&env, &student, &course_id, insight_type_str);
 
         Ok(request_id)
     }
@@ -680,13 +674,20 @@ impl AnalyticsTrait for Analytics {
         AnalyticsStorage::set_ml_insight(&env, &insight);
 
         // Emit received event
-        // TODO: Add emit_insight_received to AnalyticsEvents
-        // AnalyticsEvents::emit_insight_received(
-        //     &env,
-        //     &insight.student,
-        //     insight.insight_type,
-        //     insight.confidence,
-        // );
+        let insight_type_str = match insight.insight_type {
+            InsightType::PatternRecognition => "pattern_recognition",
+            InsightType::CompletionPrediction => "completion_prediction",
+            InsightType::Recommendation => "recommendation",
+            InsightType::AnomalyDetection => "anomaly_detection",
+        };
+        AnalyticsEvents::emit_insight_received(
+            &env,
+            &insight.student,
+            &insight.insight_id,
+            insight_type_str,
+            "insight_received",
+            insight.timestamp,
+        );
 
         Ok(())
     }
