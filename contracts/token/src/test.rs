@@ -2,9 +2,8 @@
 
 use super::*;
 use soroban_sdk::{
-    symbol_short,
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
-    Address, Env, IntoVal,
+    testutils::Address as _,
+    Address, Env,
 };
 
 // Helper function to create a test environment
