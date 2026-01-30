@@ -411,8 +411,9 @@ impl CoreValidator {
 }
 
 #[cfg(test)]
-use soroban_sdk::testutils::Ledger;
 mod tests {
+    use super::*;
+    use soroban_sdk::{Env, BytesN};
 
     #[test]
     fn test_validate_string_length_success() {

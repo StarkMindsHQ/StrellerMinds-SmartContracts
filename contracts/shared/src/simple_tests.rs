@@ -4,7 +4,7 @@ use crate::{
     permissions::RolePermissions,
     roles::{Permission, RoleLevel},
 };
-use soroban_sdk::{Env, Vec};
+use soroban_sdk::Env;
 
 #[test]
 fn test_default_role_permissions() {

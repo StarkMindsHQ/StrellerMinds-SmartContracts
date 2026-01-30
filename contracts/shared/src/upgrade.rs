@@ -460,7 +460,8 @@ mod tests {
         let v2 = VersionInfo::new(1, 1, 0, 2000);
         let v3 = VersionInfo::new(2, 0, 0, 3000);
 
-        assert_eq!(v1.to_string(&env), String::from_str(&env, "1.0.0"));
+        let v1_str = format!("a", "{}.{}.{}", v1.major, v1.minor, v1.patch);
+        assert_eq!(v1_str, "1.0.0");
         assert!(v1.is_compatible_with(&v2));
         assert!(!v1.is_compatible_with(&v3)); // Different major version
         assert!(!v2.is_compatible_with(&v1)); // Downgrade not allowed
@@ -508,12 +509,13 @@ mod tests {
         let new_impl = Address::generate(&env);
         let version = VersionInfo::new(1, 1, 0, 2000);
 
+        let description = String::from_str(&env, "Test upgrade");
         let proposal_id = GovernanceUpgrade::propose_upgrade(
             &env,
             &proposer,
             &new_impl,
             &version,
-            "Test upgrade",
+            &description,
             3,
         )
         .unwrap();

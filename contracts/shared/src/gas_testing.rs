@@ -84,7 +84,7 @@ impl GasTester {
     /// Generate stable test addresses for consistent measurements
     /// Note: Simplified version for demonstration
     #[cfg(any(test, feature = "testutils"))]
-    pub fn generate_test_address(env: &Env, index: u32) -> Address {
+    pub fn generate_test_address(env: &Env, _index: u32) -> Address {
         // In a real implementation, you would generate deterministic addresses
         // For now, we'll use the testutils Address generation
         use soroban_sdk::testutils::Address as _;
@@ -161,7 +161,7 @@ mod tests {
     fn test_gas_measurement_basic() {
         let env = Env::default();
 
-        let (result, measurement) = GasTester::measure_gas(&env, "test_operation", || {
+        let (_result, measurement) = GasTester::measure_gas(&env, "test_operation", || {
             // Simple operation
             let _addr = Address::generate(&env);
             Ok::<(), AccessControlError>(())
