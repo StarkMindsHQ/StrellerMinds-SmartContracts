@@ -18,8 +18,8 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
-      - name: Build Contract
-        run: cargo build --target wasm32-unknown-unknown --release -p teachlink-contract
+      - name: Build Contracts (workspace)
+        run: cargo build --target wasm32-unknown-unknown --release --workspace
 
       - name: Run Benchmarks
         run: ./scripts/benchmark.sh
