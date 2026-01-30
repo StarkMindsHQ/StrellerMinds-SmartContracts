@@ -6,7 +6,6 @@ resolver = "2"
 soroban-sdk = "22.0.0"
 stellar-strkey = "0.0.7"
 ed25519-dalek = "2.0.0"
-rand = { version = "0.8.5", optional = true }
 
 [profile.release]
 opt-level = "z"
