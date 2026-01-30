@@ -19,7 +19,14 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build Contracts (workspace)
-        run: cargo build --target wasm32-unknown-unknown --release --workspace
+        run: |
+          cd contracts
+          for dir in */; do
+            if [ -f "$dir/Cargo.toml" ]; then
+              echo "Building $dir..."
+              cargo build --target wasm32-unknown-unknown --release --manifest-path "$dir/Cargo.toml"
+            fi
+          done
 
       - name: Run Benchmarks
         run: ./scripts/benchmark.sh

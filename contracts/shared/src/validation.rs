@@ -413,7 +413,7 @@ impl CoreValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{Env, BytesN};
+    use soroban_sdk::{BytesN, Env};
 
     #[test]
     fn test_validate_string_length_success() {

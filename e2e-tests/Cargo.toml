@@ -22,7 +22,7 @@ analytics = { path = "../contracts/analytics" }
 token = { path = "../contracts/token" }
 
 # Random number generation for test data
-rand = "0.8"
+rand = { workspace = true }
 
 # Optional: For more advanced testing scenarios
 futures = "0.3"
