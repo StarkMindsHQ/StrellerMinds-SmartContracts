@@ -1,6 +1,6 @@
-use soroban_sdk::{BytesN, Env};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use soroban_sdk::{BytesN, Env};
 
 /// Configuration constants for metadata validation that can be reused across contracts
 pub struct ValidationConfig;

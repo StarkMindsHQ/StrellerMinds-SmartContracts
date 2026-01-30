@@ -1,8 +1,8 @@
 //! Upgrade framework for smart contracts
 //! Provides utilities for safe contract upgrades with data migration and rollback capabilities
 
-use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 use alloc::format;
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
 /// Version information for contract storage
 #[contracttype]
@@ -171,10 +171,7 @@ impl UpgradeUtils {
         }
 
         if target.minor < current.minor {
-            return Err(String::from_str(
-                env,
-                "Cannot downgrade minor version",
-            ));
+            return Err(String::from_str(env, "Cannot downgrade minor version"));
         }
 
         Ok(())
