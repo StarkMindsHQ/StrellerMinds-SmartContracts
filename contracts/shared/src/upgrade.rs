@@ -455,7 +455,7 @@ mod tests {
 
     #[test]
     fn test_version_info() {
-        let env = Env::default();
+        let _env = Env::default();
         let v1 = VersionInfo::new(1, 0, 0, 1000);
         let v2 = VersionInfo::new(1, 1, 0, 2000);
         let v3 = VersionInfo::new(2, 0, 0, 3000);

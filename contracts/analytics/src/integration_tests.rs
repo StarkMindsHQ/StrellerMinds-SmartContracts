@@ -5,14 +5,13 @@ mod integration_tests {
     use crate::{
         errors::AnalyticsError,
         types::{
-            AchievementType, AnalyticsConfig, AnalyticsFilter, CourseAnalytics,
-            DifficultyThresholds, LeaderboardMetric, LearningSession, OptionalSessionType,
-            PerformanceTrend, ProgressAnalytics, ReportPeriod, SessionType,
+            AchievementType, AnalyticsConfig, DifficultyThresholds, LeaderboardMetric,
+            LearningSession, SessionType,
         },
         Analytics, AnalyticsClient,
     };
     use soroban_sdk::{
-        testutils::{Address as _, Ledger, LedgerInfo},
+        testutils::Address as _,
         Address, BytesN, Env, Symbol, Vec,
     };
     use std::format;
@@ -28,7 +27,7 @@ mod integration_tests {
 
         env.mock_all_auths();
 
-        let contract_id = env.register_contract(None, Analytics);
+        let contract_id = env.register(Analytics, ());
         let client = AnalyticsClient::new(&env, &contract_id);
 
         let config = AnalyticsConfig {
@@ -41,6 +40,7 @@ mod integration_tests {
                 medium_completion_rate: 60,
                 hard_completion_rate: 40,
             },
+            oracle_address: None,
         };
 
         client.initialize(&admin, &config);
@@ -76,7 +76,7 @@ mod integration_tests {
 
     #[test]
     fn test_complete_learning_journey() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "BLOCKCHAIN_FUNDAMENTALS");
 
@@ -86,7 +86,7 @@ mod integration_tests {
         // Week 1: Student starts strong
         for day in 0..7 {
             for module in 1..=2 {
-                let mut session = create_learning_session(
+                let session = create_learning_session(
                     &env,
                     &student,
                     "BLOCKCHAIN_FUNDAMENTALS",
@@ -107,7 +107,7 @@ mod integration_tests {
 
         // Week 2: Student struggles a bit
         for day in 7..14 {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student,
                 "BLOCKCHAIN_FUNDAMENTALS",
@@ -133,7 +133,7 @@ mod integration_tests {
 
         // Week 3: Student recovers
         for day in 14..21 {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student,
                 "BLOCKCHAIN_FUNDAMENTALS",
@@ -189,7 +189,7 @@ mod integration_tests {
 
     #[test]
     fn test_multi_student_course_analytics() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let course_id = Symbol::new(&env, "DATA_STRUCTURES");
 
         // Create diverse student performance patterns
@@ -206,7 +206,7 @@ mod integration_tests {
             let mut session_counter = (i * 10) as u8;
 
             for module in 1..=*modules {
-                let mut session = create_learning_session(
+                let session = create_learning_session(
                     &env,
                     &student,
                     "DATA_STRUCTURES",
@@ -259,7 +259,7 @@ mod integration_tests {
 
     #[test]
     fn test_time_based_analytics_and_trends() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "MACHINE_LEARNING");
 
@@ -277,7 +277,7 @@ mod integration_tests {
             };
 
             for session_num in 0..sessions_per_day {
-                let mut session = create_learning_session(
+                let session = create_learning_session(
                     &env,
                     &student,
                     "MACHINE_LEARNING",
@@ -332,16 +332,16 @@ mod integration_tests {
 
     #[test]
     fn test_achievement_system_integration() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let student = students.get(0).unwrap();
-        let course_id = Symbol::new(&env, "WEB_DEVELOPMENT");
+        let _course_id = Symbol::new(&env, "WEB_DEVELOPMENT");
 
         let mut session_counter = 0u8;
 
         // Create sessions that should trigger various achievements
 
         // 1. Excellence achievement (high score)
-        let mut session = create_learning_session(
+        let session = create_learning_session(
             &env,
             &student,
             "WEB_DEVELOPMENT",
@@ -357,7 +357,7 @@ mod integration_tests {
 
         // 2. Multiple completions for streak
         for day in 1..=7 {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student,
                 "WEB_DEVELOPMENT",
@@ -378,14 +378,14 @@ mod integration_tests {
 
         // Verify achievement types
         let mut has_excellence = false;
-        let mut has_streak = false;
+        let mut _has_streak = false;
         let mut has_completion = false;
 
         for i in 0..achievements.len() {
             let achievement = achievements.get(i).unwrap();
             match achievement.achievement_type {
                 AchievementType::Excellence => has_excellence = true,
-                AchievementType::Streak => has_streak = true,
+                AchievementType::Streak => _has_streak = true,
                 AchievementType::Completion => has_completion = true,
                 _ => {}
             }
@@ -396,7 +396,7 @@ mod integration_tests {
 
     #[test]
     fn test_filtered_analytics_queries() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "CYBERSECURITY");
 
@@ -412,7 +412,7 @@ mod integration_tests {
         let scores = [70, 85, 95];
 
         for (i, (session_type, score)) in session_types.iter().zip(scores.iter()).enumerate() {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student,
                 "CYBERSECURITY",
@@ -475,7 +475,7 @@ mod integration_tests {
 
     #[test]
     fn test_performance_comparison_and_insights() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        let (env, client, _admin, students) = create_comprehensive_test_env();
         let student1 = students.get(0).unwrap();
         let student2 = students.get(1).unwrap();
         let course_id = Symbol::new(&env, "ALGORITHMS");
@@ -484,7 +484,7 @@ mod integration_tests {
 
         // Student 1: Consistent high performer
         for i in 0..5 {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student1,
                 "ALGORITHMS",
@@ -500,7 +500,7 @@ mod integration_tests {
 
         // Student 2: Slower but improving
         for i in 0..5 {
-            let mut session = create_learning_session(
+            let session = create_learning_session(
                 &env,
                 &student2,
                 "ALGORITHMS",
@@ -581,6 +581,7 @@ mod integration_tests {
                 medium_completion_rate: 65,
                 hard_completion_rate: 45,
             },
+            oracle_address: None,
         };
 
         let result = client.update_config(&admin, &new_config);
