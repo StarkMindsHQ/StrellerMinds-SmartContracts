@@ -26,8 +26,11 @@ allow = [
     "Unicode-DFS-2016",
     "Unlicense",
 ]
-# Clarification for crates that have unclear license fields
-clarify = {}
+# Clarifications for crates with unclear license fields can be added below
+# [[licenses.clarify]]
+# name = "crate-name"
+# expression = "MIT"
+
 # Deny specific licenses if needed
 deny = []
 
