@@ -216,34 +216,6 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-              "function_name": "complete_session",
-              "args": [
-                {
-                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                {
-                  "u64": 1800
-                },
-                {
-                  "u32": 85
-                },
-                {
-                  "u32": 100
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
               "function_name": "record_session",
               "args": [
                 {
@@ -285,7 +257,7 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
@@ -339,34 +311,6 @@
                       }
                     }
                   ]
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-              "function_name": "complete_session",
-              "args": [
-                {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                },
-                {
-                  "u64": 5400
-                },
-                {
-                  "u32": 85
-                },
-                {
-                  "u32": 100
                 }
               ]
             }
@@ -457,7 +401,7 @@
                         "symbol": "start_time"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 7200
                       }
                     },
                     {
@@ -485,7 +429,446 @@
         }
       ]
     ],
-    []
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+              "function_name": "record_session",
+              "args": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 16
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0303030303030303030303030303030303030303030303030303030303030303"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 10800
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+              "function_name": "record_session",
+              "args": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 18
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0404040404040404040404040404040404040404040404040404040404040404"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 14400
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+              "function_name": "record_session",
+              "args": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0505050505050505050505050505050505050505050505050505050505050505"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 18000
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+              "function_name": "record_session",
+              "args": [
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 22
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0606060606060606060606060606060606060606060606060606060606060606"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 21600
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ]
   ],
   "ledger": {
     "protocol_version": 22,
@@ -698,6 +1081,72 @@
       [
         {
           "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 6277191135259896685
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 6277191135259896685
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 8370022561469687789
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 8370022561469687789
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
             "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
             "key": {
               "vec": [
@@ -751,402 +1200,6 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                },
-                {
-                  "symbol": "module_1"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                    },
-                    {
-                      "symbol": "module_1"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 85
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_1"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                },
-                {
-                  "symbol": "module_2"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                    },
-                    {
-                      "symbol": "module_2"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 85
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_2"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "ProgressAnalytics"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ProgressAnalytics"
-                    },
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                    },
-                    {
-                      "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 85
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_session_time"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completed_modules"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_percentage"
-                      },
-                      "val": {
-                        "u32": 40
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "first_activity"
-                      },
-                      "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "last_activity"
-                      },
-                      "val": {
-                        "u64": 5400
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "performance_trend"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Stable"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "streak_days"
-                      },
-                      "val": {
-                        "u32": 1
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_modules"
-                      },
-                      "val": {
-                        "u32": 5
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_sessions"
-                      },
-                      "val": {
-                        "u32": 4
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_time_spent"
-                      },
-                      "val": {
-                        "u64": 7200
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
-            "key": {
-              "vec": [
-                {
                   "symbol": "Session"
                 },
                 {
@@ -1182,7 +1235,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -1198,7 +1251,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1221,9 +1274,7 @@
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 85
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -1266,7 +1317,7 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     }
                   ]
@@ -1320,7 +1371,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -1336,7 +1387,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 5400
+                        "u64": 0
                       }
                     },
                     {
@@ -1352,16 +1403,14 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 85
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -1404,7 +1453,7 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     }
                   ]
@@ -1524,7 +1573,7 @@
                         "symbol": "start_time"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 7200
                       }
                     },
                     {
@@ -1559,10 +1608,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "StudentAchievements"
+                  "symbol": "Session"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  "bytes": "0303030303030303030303030303030303030303030303030303030303030303"
                 }
               ]
             },
@@ -1579,111 +1628,513 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "StudentAchievements"
+                      "symbol": "Session"
                     },
                     {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      "bytes": "0303030303030303030303030303030303030303030303030303030303030303"
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "vec": [
+                  "map": [
                     {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 16
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0303030303030303030303030303030303030303030303030303030303030303"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
                           }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 10800
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Session"
+                },
+                {
+                  "bytes": "0404040404040404040404040404040404040404040404040404040404040404"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Session"
+                    },
+                    {
+                      "bytes": "0404040404040404040404040404040404040404040404040404040404040404"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 18
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0404040404040404040404040404040404040404040404040404040404040404"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
                           }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 14400
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Session"
+                },
+                {
+                  "bytes": "0505050505050505050505050505050505050505050505050505050505050505"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Session"
+                    },
+                    {
+                      "bytes": "0505050505050505050505050505050505050505050505050505050505050505"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0505050505050505050505050505050505050505050505050505050505050505"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
                           }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 18000
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Session"
+                },
+                {
+                  "bytes": "0606060606060606060606060606060606060606060606060606060606060606"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Session"
+                    },
+                    {
+                      "bytes": "0606060606060606060606060606060606060606060606060606060606060606"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "BLOCKCHAIN_FUNDAMENTALS"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 22
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0606060606060606060606060606060606060606060606060606060606060606"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
                           }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 21600
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
                     }
                   ]
                 }
@@ -1741,16 +2192,22 @@
                       "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                     },
                     {
-                      "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                    },
-                    {
-                      "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                    },
-                    {
                       "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
                     },
                     {
                       "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
+                    },
+                    {
+                      "bytes": "0303030303030303030303030303030303030303030303030303030303030303"
+                    },
+                    {
+                      "bytes": "0404040404040404040404040404040404040404040404040404040404040404"
+                    },
+                    {
+                      "bytes": "0505050505050505050505050505050505050505050505050505050505050505"
+                    },
+                    {
+                      "bytes": "0606060606060606060606060606060606060606060606060606060606060606"
                     }
                   ]
                 }
@@ -2203,7 +2660,7 @@
                 "symbol": "analytics"
               },
               {
-                "symbol": "session_completed"
+                "symbol": "session_recorded"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
@@ -2231,7 +2688,7 @@
           }
         }
       },
-      "failed_call": true
+      "failed_call": false
     }
   ]
 }

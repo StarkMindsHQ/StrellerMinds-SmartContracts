@@ -216,34 +216,6 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-              "function_name": "complete_session",
-              "args": [
-                {
-                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                {
-                  "u64": 1800
-                },
-                {
-                  "u32": 80
-                },
-                {
-                  "u32": 100
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "function_name": "record_session",
               "args": [
                 {
@@ -285,7 +257,7 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
@@ -354,34 +326,6 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-              "function_name": "complete_session",
-              "args": [
-                {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                },
-                {
-                  "u64": 1800
-                },
-                {
-                  "u32": 85
-                },
-                {
-                  "u32": 100
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "function_name": "record_session",
               "args": [
                 {
@@ -423,7 +367,7 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_3"
+                        "symbol": "module_1"
                       }
                     },
                     {
@@ -477,34 +421,6 @@
                       }
                     }
                   ]
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-              "function_name": "complete_session",
-              "args": [
-                {
-                  "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
-                },
-                {
-                  "u64": 1800
-                },
-                {
-                  "u32": 90
-                },
-                {
-                  "u32": 100
                 }
               ]
             }
@@ -614,360 +530,6 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "RUST101"
-                },
-                {
-                  "symbol": "module_1"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "RUST101"
-                    },
-                    {
-                      "symbol": "module_1"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 80
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "RUST101"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_1"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "RUST101"
-                },
-                {
-                  "symbol": "module_2"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "RUST101"
-                    },
-                    {
-                      "symbol": "module_2"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 85
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "RUST101"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_2"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "RUST101"
-                },
-                {
-                  "symbol": "module_3"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "RUST101"
-                    },
-                    {
-                      "symbol": "module_3"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 90
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "RUST101"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_3"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "vec": [
-                {
                   "symbol": "ProgressAnalytics"
                 },
                 {
@@ -1008,16 +570,14 @@
                       "key": {
                         "symbol": "average_score"
                       },
-                      "val": {
-                        "u32": 85
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
                         "symbol": "average_session_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1025,7 +585,7 @@
                         "symbol": "completed_modules"
                       },
                       "val": {
-                        "u32": 3
+                        "u32": 0
                       }
                     },
                     {
@@ -1033,7 +593,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 60
+                        "u32": 0
                       }
                     },
                     {
@@ -1057,7 +617,7 @@
                         "symbol": "last_activity"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1067,7 +627,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Improving"
+                            "symbol": "Insufficient"
                           }
                         ]
                       }
@@ -1101,7 +661,7 @@
                         "symbol": "total_sessions"
                       },
                       "val": {
-                        "u32": 6
+                        "u32": 3
                       }
                     },
                     {
@@ -1109,7 +669,7 @@
                         "symbol": "total_time_spent"
                       },
                       "val": {
-                        "u64": 10800
+                        "u64": 0
                       }
                     }
                   ]
@@ -1163,7 +723,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -1179,7 +739,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1202,9 +762,7 @@
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 80
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -1247,7 +805,7 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     }
                   ]
@@ -1301,7 +859,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -1317,7 +875,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1333,16 +891,14 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 85
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -1385,7 +941,7 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     }
                   ]
@@ -1439,7 +995,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -1455,7 +1011,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -1471,16 +1027,14 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_3"
+                        "symbol": "module_1"
                       }
                     },
                     {
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 90
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -1523,198 +1077,8 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "StudentAchievements"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "StudentAchievements"
-                    },
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "vec": [
-                    {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
                     }
                   ]
                 }
@@ -1772,16 +1136,7 @@
                       "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                     },
                     {
-                      "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                    },
-                    {
                       "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                    },
-                    {
-                      "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                    },
-                    {
-                      "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
                     },
                     {
                       "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
@@ -2234,72 +1589,6 @@
             "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
             "key": {
               "ledger_key_nonce": {
-                "nonce": 2032731177588607455
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 2032731177588607455
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 4270020994084947596
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 4270020994084947596
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-            "key": {
-              "ledger_key_nonce": {
                 "nonce": 4837995959683129791
               }
             },
@@ -2362,39 +1651,6 @@
       ],
       [
         {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 8370022561469687789
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 8370022561469687789
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
           "contract_code": {
             "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           }
@@ -2416,5 +1672,172 @@
       ]
     ]
   },
-  "events": []
+  "events": [
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000002",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "analytics"
+              },
+              {
+                "symbol": "analytics"
+              },
+              {
+                "symbol": "progress_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "analytics_event"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000002",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "LOG"
+              },
+              {
+                "symbol": "analytics"
+              },
+              {
+                "u32": 1
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "level"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "message"
+                  },
+                  "val": {
+                    "string": "Progress Updated"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payload"
+                  },
+                  "val": {
+                    "string": "analytics_progress"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000002",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "LOG"
+              },
+              {
+                "symbol": "calc_time"
+              },
+              {
+                "u32": 4
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "level"
+                  },
+                  "val": {
+                    "u32": 4
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "message"
+                  },
+                  "val": {
+                    "string": "Performance Metric"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payload"
+                  },
+                  "val": {
+                    "string": "value"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    }
+  ]
 }

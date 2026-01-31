@@ -216,19 +216,101 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-              "function_name": "complete_session",
+              "function_name": "record_session",
               "args": [
                 {
-                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                {
-                  "u64": 1800
-                },
-                {
-                  "u32": 85
-                },
-                {
-                  "u32": 100
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "RUST101"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 86400
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -285,7 +367,7 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
@@ -299,7 +381,7 @@
                         "symbol": "session_id"
                       },
                       "val": {
-                        "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                        "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
                       }
                     },
                     {
@@ -319,7 +401,7 @@
                         "symbol": "start_time"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 172800
                       }
                     },
                     {
@@ -448,131 +530,16 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "ModuleAnalytics"
-                },
-                {
-                  "symbol": "RUST101"
-                },
-                {
-                  "symbol": "module_1"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "ModuleAnalytics"
-                    },
-                    {
-                      "symbol": "RUST101"
-                    },
-                    {
-                      "symbol": "module_1"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "average_score"
-                      },
-                      "val": {
-                        "u32": 85
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "average_time_to_complete"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_rate"
-                      },
-                      "val": {
-                        "u32": 100
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "RUST101"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "difficulty_rating"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Easy"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "module_id"
-                      },
-                      "val": {
-                        "symbol": "module_1"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student_feedback_score"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_attempts"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "ProgressAnalytics"
+                  "symbol": "ProgressReport"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
                   "symbol": "RUST101"
+                },
+                {
+                  "u64": 0
                 }
               ]
             },
@@ -589,13 +556,16 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "ProgressAnalytics"
+                      "symbol": "ProgressReport"
                     },
                     {
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                     },
                     {
                       "symbol": "RUST101"
+                    },
+                    {
+                      "u64": 0
                     }
                   ]
                 },
@@ -604,47 +574,15 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "average_score"
+                        "symbol": "achievements"
                       },
                       "val": {
-                        "u32": 85
+                        "vec": []
                       }
                     },
                     {
                       "key": {
-                        "symbol": "average_session_time"
-                      },
-                      "val": {
-                        "u64": 1800
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completed_modules"
-                      },
-                      "val": {
-                        "u32": 1
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "completion_percentage"
-                      },
-                      "val": {
-                        "u32": 20
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "course_id"
-                      },
-                      "val": {
-                        "symbol": "RUST101"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "first_activity"
+                        "symbol": "average_daily_time"
                       },
                       "val": {
                         "u64": 0
@@ -652,30 +590,62 @@
                     },
                     {
                       "key": {
-                        "symbol": "last_activity"
+                        "symbol": "consistency_score"
                       },
                       "val": {
-                        "u64": 1800
+                        "u32": 37
                       }
                     },
                     {
                       "key": {
-                        "symbol": "performance_trend"
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "RUST101"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_date"
+                      },
+                      "val": {
+                        "u64": 604800
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "modules_completed"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "report_period"
                       },
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Insufficient"
+                            "symbol": "Weekly"
                           }
                         ]
                       }
                     },
                     {
                       "key": {
-                        "symbol": "streak_days"
+                        "symbol": "sessions_count"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 3
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_date"
+                      },
+                      "val": {
+                        "u64": 0
                       }
                     },
                     {
@@ -688,26 +658,10 @@
                     },
                     {
                       "key": {
-                        "symbol": "total_modules"
+                        "symbol": "total_time"
                       },
                       "val": {
-                        "u32": 5
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_sessions"
-                      },
-                      "val": {
-                        "u32": 2
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total_time_spent"
-                      },
-                      "val": {
-                        "u64": 3600
+                        "u64": 0
                       }
                     }
                   ]
@@ -761,7 +715,7 @@
                         "symbol": "completion_percentage"
                       },
                       "val": {
-                        "u32": 100
+                        "u32": 0
                       }
                     },
                     {
@@ -777,7 +731,7 @@
                         "symbol": "end_time"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     },
                     {
@@ -800,9 +754,7 @@
                       "key": {
                         "symbol": "score"
                       },
-                      "val": {
-                        "u32": 85
-                      }
+                      "val": "void"
                     },
                     {
                       "key": {
@@ -845,7 +797,7 @@
                         "symbol": "time_spent"
                       },
                       "val": {
-                        "u64": 1800
+                        "u64": 0
                       }
                     }
                   ]
@@ -931,7 +883,7 @@
                         "symbol": "module_id"
                       },
                       "val": {
-                        "symbol": "module_2"
+                        "symbol": "module_1"
                       }
                     },
                     {
@@ -1000,10 +952,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "StudentAchievements"
+                  "symbol": "Session"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
                 }
               ]
             },
@@ -1020,63 +972,105 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "StudentAchievements"
+                      "symbol": "Session"
                     },
                     {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "vec": [
+                  "map": [
                     {
-                      "map": [
-                        {
-                          "key": {
-                            "symbol": "achievement_id"
-                          },
-                          "val": {
-                            "symbol": "module_complete"
+                      "key": {
+                        "symbol": "completion_percentage"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "symbol": "RUST101"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "interactions"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "module_id"
+                      },
+                      "val": {
+                        "symbol": "module_1"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "score"
+                      },
+                      "val": "void"
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_id"
+                      },
+                      "val": {
+                        "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "session_type"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Study"
                           }
-                        },
-                        {
-                          "key": {
-                            "symbol": "achievement_type"
-                          },
-                          "val": {
-                            "vec": [
-                              {
-                                "symbol": "Completion"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "description"
-                          },
-                          "val": {
-                            "string": "Successfully completed a learning module"
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "earned_date"
-                          },
-                          "val": {
-                            "u64": 0
-                          }
-                        },
-                        {
-                          "key": {
-                            "symbol": "title"
-                          },
-                          "val": {
-                            "string": "Module Completed"
-                          }
-                        }
-                      ]
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_time"
+                      },
+                      "val": {
+                        "u64": 172800
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "student"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_spent"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
                     }
                   ]
                 }
@@ -1134,10 +1128,10 @@
                       "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
                     },
                     {
-                      "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
                     },
                     {
-                      "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                      "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
                     }
                   ]
                 }
@@ -1689,7 +1683,7 @@
                 "symbol": "analytics"
               },
               {
-                "symbol": "session_completed"
+                "symbol": "report_generated"
               },
               {
                 "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
@@ -1717,7 +1711,7 @@
           }
         }
       },
-      "failed_call": true
+      "failed_call": false
     }
   ]
 }
