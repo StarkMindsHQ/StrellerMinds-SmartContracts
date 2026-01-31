@@ -42,22 +42,17 @@ jobs:
           
     - name: Install Soroban CLI
       run: |
-        curl -L https://github.com/stellar/stellar-cli/releases/download/v25.0.0/stellar-cli-25.0.0-x86_64-unknown-linux-gnu.tar.gz -o stellar-cli.tar.gz
-        tar -xzf stellar-cli.tar.gz
-        cd stellar-cli-25.0.0-x86_64-unknown-linux-gnu
-        if [ -f "./soroban" ]; then
-          sudo cp ./soroban /usr/local/bin/soroban
-        elif [ -f "./stellar" ]; then
-          sudo cp ./stellar /usr/local/bin/stellar
-          sudo ln -sf /usr/local/bin/stellar /usr/local/bin/soroban
-        fi
-        soroban --version
+        cargo install --locked stellar-cli
+        stellar --version
+        # Create soroban alias for backward compatibility
+        sudo ln -sf $(which stellar) /usr/local/bin/soroban || true
+        soroban --version || stellar --version
         
     - name: Start Soroban Local Network
       run: |
-        soroban network standalone &
-        sleep 5
-        soroban config network standalone --global --rpc-url http://localhost:8000
+        stellar network start local &
+        sleep 10
+        stellar network container logs local || true
         
     - name: Build Contracts
       run: |
@@ -155,8 +150,5 @@ jobs:
         cd contracts/analytics
         cargo doc --no-deps
         
-    - name: Check Documentation Coverage
-      run: |
-        cd contracts/analytics
-        cargo install cargo-doc-coverage
-        cargo doc-coverage
+    # Note: cargo-doc-coverage is removed as it uses unstable Rust features
+    # and is not compatible with stable Rust toolchain
