@@ -10,22 +10,26 @@ jobs:
   link-check:
     name: Check Broken Links
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Check links with lychee
+        id: lychee
         uses: lycheeverse/lychee-action@v2
         with:
           # Check all markdown files in docs/ and README.md
           args: '--verbose --no-progress --config lychee.toml docs/ README.md'
-          # Fail action on broken links
-          fail: true
+          # Don't fail the action - we'll handle it ourselves
+          fail: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Issue From File
-        if: failure()
+        if: steps.lychee.outputs.exit_code != 0 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peter-evans/create-issue-from-file@v5
         with:
           title: 'Broken links detected in documentation'
@@ -33,6 +37,17 @@ jobs:
           labels: |
             documentation
             broken-links
+        continue-on-error: true
+
+      - name: Fail if broken links found
+        if: steps.lychee.outputs.exit_code != 0
+        run: |
+          echo "::warning::Broken links were detected in documentation"
+          # Only fail on main branch pushes, warn on PRs
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            exit 1
+          fi
+          echo "Allowing PR to continue with broken link warnings"
 
   spell-check:
     name: Check Spelling

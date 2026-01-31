@@ -42,13 +42,13 @@ impl RoleLevel {
     }
 
     pub fn has_default_permission(&self, permission: &Permission) -> bool {
-        match (self, permission) {
-            (RoleLevel::SuperAdmin, _) => true,
-            (RoleLevel::Admin, _) => true,
-            (RoleLevel::Instructor, Permission::ViewAudit) => true,
-            (RoleLevel::Moderator, Permission::ViewAudit) => true,
-            _ => false,
-        }
+        matches!(
+            (self, permission),
+            (RoleLevel::SuperAdmin, _)
+                | (RoleLevel::Admin, _)
+                | (RoleLevel::Instructor, Permission::ViewAudit)
+                | (RoleLevel::Moderator, Permission::ViewAudit)
+        )
     }
 }
 
@@ -74,7 +74,7 @@ impl Role {
         Self {
             level,
             permissions,
-            inherited_roles: Vec::new(&granted_by.env()),
+            inherited_roles: Vec::new(granted_by.env()),
             granted_by,
             granted_at,
             expires_at: None,

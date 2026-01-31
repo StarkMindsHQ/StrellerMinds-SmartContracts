@@ -53,22 +53,23 @@ check_soroban_cli() {
         exit 1
     fi
     
-    local version=$(soroban version 2>/dev/null || echo "unknown")
+    local version
+    version="$(soroban version 2>/dev/null || echo "unknown")"
     log_info "Soroban CLI version: $version"
 }
 
 # Function to stop existing container if running
 stop_existing_container() {
-    if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
+    if docker ps -q -f name="${CONTAINER_NAME}" | grep -q .; then
         log_warning "Stopping existing ${CONTAINER_NAME} container..."
-        soroban container stop ${NETWORK_NAME} || docker stop ${CONTAINER_NAME} || true
+        soroban container stop "${NETWORK_NAME}" || docker stop "${CONTAINER_NAME}" || true
         sleep 2
     fi
     
     # Remove any stopped container with the same name
-    if docker ps -aq -f name=${CONTAINER_NAME} | grep -q .; then
+    if docker ps -aq -f name="${CONTAINER_NAME}" | grep -q .; then
         log_info "Removing existing ${CONTAINER_NAME} container..."
-        docker rm ${CONTAINER_NAME} || true
+        docker rm "${CONTAINER_NAME}" || true
     fi
 }
 
@@ -77,9 +78,9 @@ start_localnet() {
     log_info "Starting Soroban localnet container..."
     
     # Start the container using Soroban CLI
-    soroban container start ${NETWORK_NAME} \
-        --name ${CONTAINER_NAME} \
-        --ports-mapping ${HOST_PORT}:${CONTAINER_PORT} \
+    soroban container start "${NETWORK_NAME}" \
+        --name "${CONTAINER_NAME}" \
+        --ports-mapping "${HOST_PORT}:${CONTAINER_PORT}" \
         -d
     
     # Wait for the container to be ready
@@ -101,7 +102,7 @@ start_localnet() {
     if [ $attempt -eq $max_attempts ]; then
         log_error "Localnet failed to start within timeout"
         log_info "Container logs:"
-        soroban container logs ${NETWORK_NAME} || docker logs ${CONTAINER_NAME}
+        soroban container logs "${NETWORK_NAME}" || docker logs "${CONTAINER_NAME}"
         exit 1
     fi
     
@@ -138,7 +139,7 @@ setup_test_accounts() {
     local users=("alice" "bob" "charlie")
     for user in "${users[@]}"; do
         if ! soroban keys ls | grep -q "^${user}$"; then
-            soroban keys generate ${user} --network local
+            soroban keys generate "${user}" --network local
             log_success "Created ${user} account"
         else
             log_info "${user} account already exists"
@@ -147,9 +148,11 @@ setup_test_accounts() {
     
     # Fund the accounts using friendbot
     log_info "Funding accounts..."
+    # shellcheck disable=SC2207
     local accounts=($(soroban keys ls))
     for account in "${accounts[@]}"; do
-        local address=$(soroban keys address ${account})
+        local address
+        address=$(soroban keys address "${account}")
         curl -X POST "${RPC_URL}/friendbot?addr=${address}" > /dev/null 2>&1 || true
     done
     
@@ -163,7 +166,7 @@ show_status() {
     echo "  Container: ${CONTAINER_NAME}"
     echo "  Network: ${NETWORK_NAME}"
     
-    if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
+    if docker ps -q -f name="${CONTAINER_NAME}" | grep -q .; then
         echo -e "  Status: ${GREEN}Running${NC}"
     else
         echo -e "  Status: ${RED}Stopped${NC}"
@@ -172,10 +175,12 @@ show_status() {
     echo
     log_info "Available accounts:"
     if command -v soroban &> /dev/null; then
+        # shellcheck disable=SC2207
         local accounts=($(soroban keys ls 2>/dev/null || echo ""))
         for account in "${accounts[@]}"; do
             if [ -n "$account" ]; then
-                local address=$(soroban keys address ${account} 2>/dev/null || echo "unknown")
+                local address
+                address=$(soroban keys address "${account}" 2>/dev/null || echo "unknown")
                 echo "  ${account}: ${address}"
             fi
         done
@@ -203,8 +208,8 @@ main() {
             ;;
         stop)
             log_info "Stopping Soroban localnet..."
-            soroban container stop ${NETWORK_NAME} || docker stop ${CONTAINER_NAME} || true
-            docker rm ${CONTAINER_NAME} || true
+            soroban container stop "${NETWORK_NAME}" || docker stop "${CONTAINER_NAME}" || true
+            docker rm "${CONTAINER_NAME}" || true
             log_success "Localnet stopped"
             ;;
         status)
@@ -217,7 +222,7 @@ main() {
             ;;
         logs)
             log_info "Showing localnet logs:"
-            soroban container logs ${NETWORK_NAME} || docker logs ${CONTAINER_NAME}
+            soroban container logs "${NETWORK_NAME}" || docker logs "${CONTAINER_NAME}"
             ;;
         *)
             echo "Usage: $0 {start|stop|restart|status|logs}"

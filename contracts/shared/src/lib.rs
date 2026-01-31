@@ -6,6 +6,7 @@ extern crate alloc;
 static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 pub mod access_control;
+pub mod error_handling;
 pub mod errors;
 // Temporarily commented out to fix compilation issues with Vec<StandardEvent>
 // These modules will need to be refactored to not use StandardEvent in vectors

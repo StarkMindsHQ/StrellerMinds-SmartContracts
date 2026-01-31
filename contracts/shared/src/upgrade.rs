@@ -1,8 +1,8 @@
 //! Upgrade framework for smart contracts
 //! Provides utilities for safe contract upgrades with data migration and rollback capabilities
 
-use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 use alloc::format;
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec};
 
 /// Version information for contract storage
 #[contracttype]
@@ -30,6 +30,12 @@ impl VersionInfo {
         self.major == target.major &&
         // Minor version can be equal or lower (backward compatible)
         self.minor <= target.minor
+    }
+
+    /// Convert version to string representation
+    pub fn to_string(&self, env: &Env) -> String {
+        let s = format!("{}.{}.{}", self.major, self.minor, self.patch);
+        String::from_str(env, &s)
     }
 }
 
@@ -156,8 +162,6 @@ impl UpgradeUtils {
     }
 
     /// Validate version compatibility
-
-    /// Validate version compatibility
     pub fn validate_version_compatibility(
         env: &Env,
         current: &VersionInfo,
@@ -171,10 +175,7 @@ impl UpgradeUtils {
         }
 
         if target.minor < current.minor {
-            return Err(String::from_str(
-                env,
-                "Cannot downgrade minor version",
-            ));
+            return Err(String::from_str(env, "Cannot downgrade minor version"));
         }
 
         Ok(())
@@ -481,7 +482,10 @@ mod tests {
 
         let history = UpgradeUtils::get_version_history(&env);
         assert_eq!(history.len(), 1);
-        assert_eq!(history.get(0).unwrap(), initial_version);
+        assert_eq!(
+            history.get(0).expect("should have initial version"),
+            initial_version
+        );
     }
 
     #[test]
@@ -516,12 +520,13 @@ mod tests {
             &proposer,
             &new_impl,
             &version,
-            "Test upgrade",
+            &String::from_str(&env, "Test upgrade"),
             3,
         )
-        .unwrap();
+        .expect("proposal should be created");
 
-        let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id).unwrap();
+        let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id)
+            .expect("vote should succeed");
         assert_eq!(vote_count, 1);
     }
 }

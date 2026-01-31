@@ -59,7 +59,6 @@ OPTIONS:
     -t, --tests-only    Only run tests (assumes localnet is already running)
     -v, --verbose       Enable verbose output
     -c, --clean         Clean build artifacts before starting
-    --no-deploy         Skip contract deployment
     --quick             Run quick smoke tests only
 
 TEST_FILTER:
@@ -85,7 +84,6 @@ BUILD_ONLY=false
 TESTS_ONLY=false
 VERBOSE=false
 CLEAN=false
-NO_DEPLOY=false
 QUICK=false
 TEST_FILTER=""
 
@@ -113,10 +111,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--clean)
             CLEAN=true
-            shift
-            ;;
-        --no-deploy)
-            NO_DEPLOY=true
             shift
             ;;
         --quick)

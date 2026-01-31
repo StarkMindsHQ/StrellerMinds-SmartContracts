@@ -295,7 +295,7 @@ impl Token {
             if amt <= 0 {
                 return Err(Error::InvalidAmount);
             }
-            total_amount = total_amount + amt;
+            total_amount += amt;
         }
 
         // Check sender has sufficient balance
