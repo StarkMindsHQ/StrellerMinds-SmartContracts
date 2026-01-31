@@ -1,16 +1,13 @@
-//! Test utilities and helper functions for analytics integration tests
-
 use serde::{Deserialize, Serialize};
-use soroban_sdk::{Address, BytesN, Env, Symbol};
 use std::collections::HashMap;
 
-// Re-export types from the analytics contract for testing
+// Re-export types from the analytics contract for testing - using standard types for host-side
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LearningSession {
-    pub session_id: BytesN<32>,
-    pub student: Address,
-    pub course_id: Symbol,
-    pub module_id: Symbol,
+    pub session_id: String, // Hex string
+    pub student: String,    // Address string
+    pub course_id: String,  // Symbol string
+    pub module_id: String,  // Symbol string
     pub start_time: u64,
     pub end_time: u64,
     pub completion_percentage: u32,
@@ -30,8 +27,8 @@ pub enum SessionType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgressAnalytics {
-    pub student: Address,
-    pub course_id: Symbol,
+    pub student: String,
+    pub course_id: String,
     pub total_modules: u32,
     pub completed_modules: u32,
     pub completion_percentage: u32,
@@ -55,22 +52,22 @@ pub enum PerformanceTrend {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CourseAnalytics {
-    pub course_id: Symbol,
+    pub course_id: String,
     pub total_students: u32,
     pub active_students: u32, // students with activity in last 30 days
     pub completion_rate: u32, // percentage of students who completed the course
     pub average_completion_time: u64, // in seconds
     pub average_score: Option<u32>,
     pub dropout_rate: u32,
-    pub most_difficult_module: Option<Symbol>,
-    pub easiest_module: Option<Symbol>,
+    pub most_difficult_module: Option<String>,
+    pub easiest_module: Option<String>,
     pub total_time_invested: u64, // sum of all student time
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleAnalytics {
-    pub course_id: Symbol,
-    pub module_id: Symbol,
+    pub course_id: String,
+    pub module_id: String,
     pub total_attempts: u32,
     pub completion_rate: u32,
     pub average_time_to_complete: u64,
@@ -89,8 +86,8 @@ pub enum DifficultyRating {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgressReport {
-    pub student: Address,
-    pub course_id: Symbol,
+    pub student: String,
+    pub course_id: String,
     pub report_period: ReportPeriod,
     pub start_date: u64,
     pub end_date: u64,
@@ -112,7 +109,7 @@ pub enum ReportPeriod {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Achievement {
-    pub achievement_id: Symbol,
+    pub achievement_id: String,
     pub title: String,
     pub description: String,
     pub earned_date: u64,
@@ -130,7 +127,7 @@ pub enum AchievementType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregatedMetrics {
-    pub course_id: Symbol,
+    pub course_id: String,
     pub date: u64, // Daily aggregation timestamp
     pub active_students: u32,
     pub total_sessions: u32,
@@ -141,14 +138,14 @@ pub struct AggregatedMetrics {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeaderboardEntry {
-    pub student: Address,
+    pub student: String,
     pub score: u32,
     pub rank: u32,
-    pub course_id: Symbol,
+    pub course_id: String,
     pub metric_type: LeaderboardMetric,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum LeaderboardMetric {
     CompletionSpeed,
     TotalScore,
@@ -165,8 +162,8 @@ pub struct BatchSessionUpdate {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyticsFilter {
-    pub course_id: Option<Symbol>,
-    pub student: Option<Address>,
+    pub course_id: Option<String>,
+    pub student: Option<String>,
     pub start_date: Option<u64>,
     pub end_date: Option<u64>,
     pub session_type: OptionalSessionType,
@@ -288,6 +285,12 @@ pub struct PerformanceTracker {
     checkpoints: HashMap<String, std::time::Instant>,
 }
 
+impl Default for PerformanceTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PerformanceTracker {
     pub fn new() -> Self {
         Self {
@@ -402,7 +405,7 @@ impl MockDataGenerator {
     /// Generate sessions with specific performance characteristics
     pub fn generate_performance_scenario(
         student_address: &str,
-        course_id: Symbol,
+        course_id: &str,
         target_completion: u32,
         target_score: u32,
         session_count: usize,
@@ -419,11 +422,17 @@ impl MockDataGenerator {
             let session_start = base_time + (i as u64 * 24 * 60 * 60);
             let session_duration = 3600; // 1 hour
 
+            let bytes = (i as u8).to_be_bytes();
+            // Just padding to 32 bytes for hex representation
+            let mut id_bytes = [0u8; 32];
+            id_bytes[0] = bytes[0];
+            let session_id = hex::encode(id_bytes);
+
             let session = LearningSession {
-                session_id: BytesN::from_array(&[(i as u8).to_be_bytes(); 32]),
-                student: Address::from_string(student_address),
-                course_id,
-                module_id: Symbol::from_str(&Env::default(), &format!("perf_module_{}", i % 5 + 1)),
+                session_id,
+                student: student_address.to_string(),
+                course_id: course_id.to_string(),
+                module_id: format!("perf_module_{}", i % 5 + 1),
                 start_time: session_start,
                 end_time: session_start + session_duration,
                 completion_percentage: target_completion,
@@ -440,45 +449,69 @@ impl MockDataGenerator {
     }
 
     /// Generate edge case sessions for boundary testing
-    pub fn generate_boundary_sessions(student_address: &str) -> Vec<LearningSession> {
-        let base_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        let mut sessions = Vec::new();
-
-        // Session with minimum valid duration
-        sessions.push(LearningSession {
-            session_id: BytesN::from_array(&[1u8; 32]),
-            student: Address::from_string(student_address),
-            course_id: Symbol::from_str(&Env::default(), "boundary_test"),
-            module_id: Symbol::from_str(&Env::default(), "min_duration"),
-            start_time: base_time,
-            end_time: base_time + 300, // 5 minutes
-            completion_percentage: 100,
-            time_spent: 300,
-            interactions: 1,
-            score: Some(100),
-            session_type: SessionType::Study,
-        });
-
-        // Session with maximum valid duration
-        sessions.push(LearningSession {
-            session_id: BytesN::from_array(&[2u8; 32]),
-            student: Address::from_string(student_address),
-            course_id: Symbol::from_str(&Env::default(), "boundary_test"),
-            module_id: Symbol::from_str(&Env::default(), "max_duration"),
-            start_time: base_time + 3600,
-            end_time: base_time + 3600 + 14400, // 4 hours
-            completion_percentage: 100,
-            time_spent: 14400,
-            interactions: 50,
-            score: Some(0),
-            session_type: SessionType::Study,
-        });
-
-        sessions
+    pub fn generate_edge_cases(
+        student_id: &str,
+        course_id: &str,
+        base_time: u64,
+    ) -> Vec<LearningSession> {
+        vec![
+            // Session with minimum valid duration
+            LearningSession {
+                session_id: format!("{}_min", student_id),
+                student: student_id.to_string(),
+                course_id: course_id.to_string(),
+                module_id: "intro".to_string(),
+                time_spent: 1, // 1 second
+                start_time: base_time,
+                end_time: base_time + 1,
+                completion_percentage: 100,
+                interactions: 1,
+                score: Some(50), // Minimum passing
+                session_type: SessionType::Study,
+            },
+            // Session with maximum reasonable duration
+            LearningSession {
+                session_id: format!("{}_max", student_id),
+                student: student_id.to_string(),
+                course_id: course_id.to_string(),
+                module_id: "deep_dive".to_string(),
+                time_spent: 4 * 60 * 60, // 4 hours
+                start_time: base_time + 3600,
+                end_time: base_time + 3600 + (4 * 60 * 60),
+                completion_percentage: 100,
+                interactions: 100,
+                score: Some(100),
+                session_type: SessionType::Study,
+            },
+            // Failed session
+            LearningSession {
+                session_id: format!("{}_fail", student_id),
+                student: student_id.to_string(),
+                course_id: course_id.to_string(),
+                module_id: "quiz".to_string(),
+                time_spent: 1800,
+                start_time: base_time + 7200,
+                end_time: base_time + 7200 + 1800,
+                completion_percentage: 30,
+                interactions: 10,
+                score: Some(30),
+                session_type: SessionType::Practice,
+            },
+            // Perfect session
+            LearningSession {
+                session_id: format!("{}_perfect", student_id),
+                student: student_id.to_string(),
+                course_id: course_id.to_string(),
+                module_id: "final".to_string(),
+                time_spent: 3600,
+                start_time: base_time + 10800,
+                end_time: base_time + 10800 + 3600,
+                completion_percentage: 100,
+                interactions: 50,
+                score: Some(100),
+                session_type: SessionType::Study,
+            },
+        ]
     }
 }
 
@@ -502,12 +535,11 @@ impl TestEnvironment {
             let mut student_sessions = Vec::new();
 
             for (course_name, module_count) in &courses {
-                let course_id = Symbol::from_str(&Env::default(), course_name);
                 let course_sessions = MockDataGenerator::generate_performance_scenario(
                     student,
-                    course_id,
-                    75 + (students.iter().position(|&s| s == student).unwrap() as u32 * 5),
-                    80 + (students.iter().position(|&s| s == student).unwrap() as u32 * 3),
+                    course_name,
+                    75 + (students.iter().position(|&s| s == *student).unwrap() as u32 * 5),
+                    80 + (students.iter().position(|&s| s == *student).unwrap() as u32 * 3),
                     *module_count,
                 );
                 student_sessions.extend(course_sessions);
@@ -539,30 +571,44 @@ impl TestEnvironment {
         let completed_modules = sessions
             .iter()
             .filter(|s| s.completion_percentage == 100)
-            .map(|s| s.module_id)
+            .map(|s| &s.module_id)
             .collect::<std::collections::HashSet<_>>()
             .len() as u32;
 
-        let completion_percentage = if sessions
-            .iter()
-            .any(|s| s.course_id == sessions[0].course_id)
+        let completion_percentage = if !sessions.is_empty()
+            && sessions
+                .iter()
+                .any(|s| s.course_id == sessions[0].course_id)
         {
             (completed_modules * 100) / 8 // Assume 8 modules total
         } else {
             0
         };
 
+        let last_activity = sessions.iter().map(|s| s.end_time).max().unwrap_or(0);
+        let first_activity = sessions.iter().map(|s| s.start_time).min().unwrap_or(0);
+        let student = if sessions.is_empty() {
+            "".to_string()
+        } else {
+            sessions[0].student.clone()
+        };
+        let course_id = if sessions.is_empty() {
+            "".to_string()
+        } else {
+            sessions[0].course_id.clone()
+        };
+
         ProgressAnalytics {
-            student: sessions[0].student.clone(),
-            course_id: sessions[0].course_id,
+            student,
+            course_id,
             total_modules: 8,
             completed_modules,
             completion_percentage,
             total_time_spent,
             average_session_time,
             total_sessions,
-            last_activity: sessions.iter().map(|s| s.end_time).max().unwrap_or(0),
-            first_activity: sessions.iter().map(|s| s.start_time).min().unwrap_or(0),
+            last_activity,
+            first_activity,
             average_score,
             streak_days: 0, // Would need more complex calculation
             performance_trend: PerformanceTrend::Stable,

@@ -14,6 +14,7 @@ load_env() {
   local env_file=".env.$network"
   if [ -f "$env_file" ]; then
     set -a
+    # shellcheck source=/dev/null
     source "$env_file"
     set +a
   else
@@ -25,8 +26,8 @@ load_env() {
 # Dry-run wrapper
 run_or_dry() {
   if [ "$DRY_RUN" = true ]; then
-    echo "[DRY-RUN] $@"
+    echo "[DRY-RUN] $*"
   else
-    eval "$@"
+    "$@"
   fi
 }

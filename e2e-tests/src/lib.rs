@@ -9,6 +9,9 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 
+pub mod test_data;
+pub mod test_utils;
+
 /// Configuration for the E2E test environment
 #[derive(Debug, Clone)]
 pub struct E2ETestConfig {
@@ -36,7 +39,7 @@ impl Default for E2ETestConfig {
 /// Soroban RPC client for E2E testing
 pub struct SorobanClient {
     client: Client,
-    config: E2ETestConfig,
+    pub config: E2ETestConfig,
 }
 
 impl SorobanClient {
@@ -51,7 +54,7 @@ impl SorobanClient {
     pub async fn health_check(&self) -> Result<bool> {
         let response = self
             .client
-            .get(&format!("{}/health", self.config.rpc_url))
+            .get(format!("{}/health", self.config.rpc_url))
             .timeout(Duration::from_secs(5))
             .send()
             .await?;

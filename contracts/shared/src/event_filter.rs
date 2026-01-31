@@ -223,3 +223,9 @@ impl EventFilterBuilder {
         self.filter
     }
 }
+
+impl Default for EventFilterBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}

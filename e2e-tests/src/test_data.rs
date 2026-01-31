@@ -3,14 +3,13 @@
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
-use soroban_sdk::{Address, BytesN, Env, Symbol};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::test_utils::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LearningScenario {
-    pub course_id: Symbol,
+    pub course_id: String,
     pub sessions: Vec<LearningSession>,
     pub expected_outcome: ScenarioOutcome,
 }
@@ -50,10 +49,10 @@ pub fn create_realistic_learning_sessions(student_address: &str) -> Vec<Learning
                 day_start + (session_num * 6 * 60 * 60) + rng.gen_range(0..2 * 60 * 60);
 
             let session = LearningSession {
-                session_id: generate_session_id(&mut rng, day, session_num),
-                student: Address::from_string(student_address),
-                course_id: Symbol::from_str(&Env::default(), "intro_to_rust"),
-                module_id: Symbol::from_str(&Env::default(), &format!("module_{}", day % 8 + 1)),
+                session_id: generate_session_id(&mut rng, day as usize, session_num as usize),
+                student: student_address.to_string(),
+                course_id: "intro_to_rust".to_string(),
+                module_id: format!("module_{}", day % 8 + 1),
                 start_time: session_start,
                 end_time: 0,              // Will be set when completed
                 completion_percentage: 0, // Will be set when completed
@@ -87,10 +86,10 @@ pub fn create_batch_learning_sessions(student_address: &str) -> Vec<LearningSess
     // Create 20 sessions for batch testing
     for i in 0..20 {
         let session = LearningSession {
-            session_id: generate_session_id(&mut rng, i, 0),
-            student: Address::from_string(student_address),
-            course_id: Symbol::from_str(&Env::default(), "batch_test_course"),
-            module_id: Symbol::from_str(&Env::default(), &format!("batch_module_{}", i % 5 + 1)),
+            session_id: generate_session_id(&mut rng, i as usize, 0),
+            student: student_address.to_string(),
+            course_id: "batch_test_course".to_string(),
+            module_id: format!("batch_module_{}", i % 5 + 1),
             start_time: base_time + (i * 60 * 60),
             end_time: base_time + (i * 60 * 60) + 3600,
             completion_percentage: rng.gen_range(70..100),
@@ -108,37 +107,32 @@ pub fn create_batch_learning_sessions(student_address: &str) -> Vec<LearningSess
 
 /// Create diverse learning scenarios for testing analytics
 pub fn create_diverse_learning_scenarios(student_address: &str) -> Vec<LearningScenario> {
-    let mut scenarios = Vec::new();
-
-    // Scenario 1: Excellent student - high completion, consistent study
-    scenarios.push(LearningScenario {
-        course_id: Symbol::from_str(&Env::default(), "advanced_blockchain"),
-        sessions: create_excellent_student_sessions(student_address),
-        expected_outcome: ScenarioOutcome::Excellent,
-    });
-
-    // Scenario 2: Good student - steady progress, occasional breaks
-    scenarios.push(LearningScenario {
-        course_id: Symbol::from_str(&Env::default(), "smart_contract_development"),
-        sessions: create_good_student_sessions(student_address),
-        expected_outcome: ScenarioOutcome::Good,
-    });
-
-    // Scenario 3: Average student - inconsistent progress
-    scenarios.push(LearningScenario {
-        course_id: Symbol::from_str(&Env::default(), "rust_programming"),
-        sessions: create_average_student_sessions(student_address),
-        expected_outcome: ScenarioOutcome::Average,
-    });
-
-    // Scenario 4: Struggling student - low completion, long gaps
-    scenarios.push(LearningScenario {
-        course_id: Symbol::from_str(&Env::default(), "cryptography_basics"),
-        sessions: create_struggling_student_sessions(student_address),
-        expected_outcome: ScenarioOutcome::Poor,
-    });
-
-    scenarios
+    vec![
+        // Scenario 1: Excellent student - high completion, consistent study
+        LearningScenario {
+            course_id: "advanced_blockchain".to_string(),
+            sessions: create_excellent_student_sessions(student_address),
+            expected_outcome: ScenarioOutcome::Excellent,
+        },
+        // Scenario 2: Good student - steady progress, occasional breaks
+        LearningScenario {
+            course_id: "smart_contract_development".to_string(),
+            sessions: create_good_student_sessions(student_address),
+            expected_outcome: ScenarioOutcome::Good,
+        },
+        // Scenario 3: Average student - inconsistent progress
+        LearningScenario {
+            course_id: "rust_programming".to_string(),
+            sessions: create_average_student_sessions(student_address),
+            expected_outcome: ScenarioOutcome::Average,
+        },
+        // Scenario 4: Struggling student - low completion, long gaps
+        LearningScenario {
+            course_id: "cryptography_basics".to_string(),
+            sessions: create_struggling_student_sessions(student_address),
+            expected_outcome: ScenarioOutcome::Poor,
+        },
+    ]
 }
 
 /// Create sessions for an excellent student
@@ -164,13 +158,10 @@ fn create_excellent_student_sessions(student_address: &str) -> Vec<LearningSessi
                 let session_duration = rng.gen_range(7200..14400); // 2-4 hours
 
                 let session = LearningSession {
-                    session_id: generate_session_id(&mut rng, day, session_num),
-                    student: Address::from_string(student_address),
-                    course_id: Symbol::from_str(&Env::default(), "advanced_blockchain"),
-                    module_id: Symbol::from_str(
-                        &Env::default(),
-                        &format!("module_{}", day % 10 + 1),
-                    ),
+                    session_id: generate_session_id(&mut rng, day as usize, session_num as usize),
+                    student: student_address.to_string(),
+                    course_id: "advanced_blockchain".to_string(),
+                    module_id: format!("module_{}", day % 10 + 1),
                     start_time: session_start,
                     end_time: session_start + session_duration,
                     completion_percentage: rng.gen_range(85..100),
@@ -215,13 +206,10 @@ fn create_good_student_sessions(student_address: &str) -> Vec<LearningSession> {
                 let session_duration = rng.gen_range(3600..7200); // 1-2 hours
 
                 let session = LearningSession {
-                    session_id: generate_session_id(&mut rng, day, session_num),
-                    student: Address::from_string(student_address),
-                    course_id: Symbol::from_str(&Env::default(), "smart_contract_development"),
-                    module_id: Symbol::from_str(
-                        &Env::default(),
-                        &format!("module_{}", day % 8 + 1),
-                    ),
+                    session_id: generate_session_id(&mut rng, day as usize, session_num as usize),
+                    student: student_address.to_string(),
+                    course_id: "smart_contract_development".to_string(),
+                    module_id: format!("module_{}", day % 8 + 1),
                     start_time: session_start,
                     end_time: session_start + session_duration,
                     completion_percentage: rng.gen_range(75..95),
@@ -263,10 +251,10 @@ fn create_average_student_sessions(student_address: &str) -> Vec<LearningSession
             let session_duration = rng.gen_range(1800..5400); // 30 min - 1.5 hours
 
             let session = LearningSession {
-                session_id: generate_session_id(&mut rng, day, 0),
-                student: Address::from_string(student_address),
-                course_id: Symbol::from_str(&Env::default(), "rust_programming"),
-                module_id: Symbol::from_str(&Env::default(), &format!("module_{}", day % 6 + 1)),
+                session_id: generate_session_id(&mut rng, day as usize, 0),
+                student: student_address.to_string(),
+                course_id: "rust_programming".to_string(),
+                module_id: format!("module_{}", day % 6 + 1),
                 start_time: session_start,
                 end_time: session_start + session_duration,
                 completion_percentage: rng.gen_range(60..85),
@@ -304,10 +292,10 @@ fn create_struggling_student_sessions(student_address: &str) -> Vec<LearningSess
             let session_duration = rng.gen_range(900..3600); // 15 min - 1 hour
 
             let session = LearningSession {
-                session_id: generate_session_id(&mut rng, day, 0),
-                student: Address::from_string(student_address),
-                course_id: Symbol::from_str(&Env::default(), "cryptography_basics"),
-                module_id: Symbol::from_str(&Env::default(), &format!("module_{}", day % 4 + 1)),
+                session_id: generate_session_id(&mut rng, day as usize, 0),
+                student: student_address.to_string(),
+                course_id: "cryptography_basics".to_string(),
+                module_id: format!("module_{}", day % 4 + 1),
                 start_time: session_start,
                 end_time: session_start + session_duration,
                 completion_percentage: rng.gen_range(30..65),
@@ -327,7 +315,7 @@ fn create_struggling_student_sessions(student_address: &str) -> Vec<LearningSess
 /// Create competitive learning sessions for leaderboard testing
 pub fn create_competitive_sessions(
     student_address: &str,
-    course_id: Symbol,
+    course_id: &str,
     performance_rank: usize,
 ) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(performance_rank as u64);
@@ -357,13 +345,10 @@ pub fn create_competitive_sessions(
             let session_duration = rng.gen_range(3600..7200);
 
             let session = LearningSession {
-                session_id: generate_session_id(&mut rng, day, session_num),
-                student: Address::from_string(student_address),
-                course_id,
-                module_id: Symbol::from_str(
-                    &Env::default(),
-                    &format!("comp_module_{}", day % 5 + 1),
-                ),
+                session_id: generate_session_id(&mut rng, day as usize, session_num as usize),
+                student: student_address.to_string(),
+                course_id: course_id.to_string(),
+                module_id: format!("comp_module_{}", day % 5 + 1),
                 start_time: session_start,
                 end_time: session_start + session_duration,
                 completion_percentage: (base_score - (day * 2)) as u32,
@@ -383,21 +368,19 @@ pub fn create_competitive_sessions(
 /// Create time-based sessions for metrics aggregation
 pub fn create_time_based_session(
     student_address: &str,
-    course_id: Symbol,
+    course_id: &str,
     start_time: u64,
     day_offset: usize,
 ) -> LearningSession {
     let mut rng = StdRng::seed_from_u64(day_offset as u64);
-    let session_duration = rng.gen_range(1800..7200);
+    _ = rng; // To squash unused warning if session_duration isn't used effectively in mocked logic, but it is below.
+    let _session_duration = rng.gen_range(1800..7200);
 
     LearningSession {
         session_id: generate_session_id(&mut rng, day_offset, 0),
-        student: Address::from_string(student_address),
-        course_id,
-        module_id: Symbol::from_str(
-            &Env::default(),
-            &format!("metrics_module_{}", day_offset % 7 + 1),
-        ),
+        student: student_address.to_string(),
+        course_id: course_id.to_string(),
+        module_id: format!("metrics_module_{}", day_offset % 7 + 1),
         start_time,
         end_time: 0,              // Will be set when completed
         completion_percentage: 0, // Will be set when completed
@@ -426,16 +409,13 @@ pub fn create_consistency_test_sessions(student_address: &str) -> Vec<LearningSe
         // 2 sessions per day
         for session_num in 0..2 {
             let session_start = day_start + (session_num * 6 * 60 * 60);
-            let session_duration = 3600; // 1 hour
+            let _session_duration = 3600; // 1 hour
 
             let session = LearningSession {
-                session_id: generate_session_id(&mut rng, day, session_num),
-                student: Address::from_string(student_address),
-                course_id: Symbol::from_str(&Env::default(), "consistency_test_course"),
-                module_id: Symbol::from_str(
-                    &Env::default(),
-                    &format!("consistency_module_{}", day % 3 + 1),
-                ),
+                session_id: generate_session_id(&mut rng, day as usize, session_num as usize),
+                student: student_address.to_string(),
+                course_id: "consistency_test_course".to_string(),
+                module_id: format!("consistency_module_{}", day % 3 + 1),
                 start_time: session_start,
                 end_time: 0,              // Will be set when completed
                 completion_percentage: 0, // Will be set when completed
@@ -462,9 +442,9 @@ pub fn create_edge_case_session(student_address: &str) -> LearningSession {
 
     LearningSession {
         session_id: generate_session_id(&mut rng, 0, 0),
-        student: Address::from_string(student_address),
-        course_id: Symbol::from_str(&Env::default(), "edge_case_course"),
-        module_id: Symbol::from_str(&Env::default(), "edge_case_module"),
+        student: student_address.to_string(),
+        course_id: "edge_case_course".to_string(),
+        module_id: "edge_case_module".to_string(),
         start_time: base_time,
         end_time: 0,              // Will be set when completed
         completion_percentage: 0, // Will be set when completed
@@ -483,10 +463,10 @@ pub fn create_smoke_test_session(student_address: &str) -> LearningSession {
         .as_secs();
 
     LearningSession {
-        session_id: BytesN::from_array(&[5u8; 32]),
-        student: Address::from_string(student_address),
-        course_id: Symbol::from_str(&Env::default(), "smoke_test_course"),
-        module_id: Symbol::from_str(&Env::default(), "smoke_test_module"),
+        session_id: hex::encode([5u8; 32]),
+        student: student_address.to_string(),
+        course_id: "smoke_test_course".to_string(),
+        module_id: "smoke_test_module".to_string(),
         start_time: base_time,
         end_time: 0,              // Will be set when completed
         completion_percentage: 0, // Will be set when completed
@@ -498,7 +478,7 @@ pub fn create_smoke_test_session(student_address: &str) -> LearningSession {
 }
 
 /// Generate unique session ID
-fn generate_session_id(rng: &mut StdRng, day: usize, session_num: usize) -> BytesN<32> {
+fn generate_session_id(_rng: &mut StdRng, day: usize, session_num: usize) -> String {
     let mut bytes = [0u8; 32];
     let seed = (day as u64) << 32 | (session_num as u64);
     let mut local_rng = StdRng::seed_from_u64(seed);
@@ -507,7 +487,7 @@ fn generate_session_id(rng: &mut StdRng, day: usize, session_num: usize) -> Byte
         *byte = local_rng.gen_range(0..255);
     }
 
-    BytesN::from_array(&bytes)
+    hex::encode(bytes)
 }
 
 /// Create test configuration for analytics contract

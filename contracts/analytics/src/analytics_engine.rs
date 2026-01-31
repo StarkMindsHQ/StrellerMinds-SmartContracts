@@ -31,7 +31,6 @@ impl AnalyticsEngine {
         let mut total_time_spent = 0u64;
         let mut total_sessions = 0u32;
         let mut completed_modules = 0u32;
-        let total_modules;
         let mut scores: Vec<u32> = Vec::new(env);
         let mut first_activity = u64::MAX;
         let mut last_activity = 0u64;
@@ -92,7 +91,7 @@ impl AnalyticsEngine {
         };
 
         // Estimate total modules (this would ideally come from course metadata)
-        total_modules = Self::estimate_total_modules(env, course_id, &module_completions);
+        let total_modules = Self::estimate_total_modules(env, course_id, &module_completions);
 
         // Calculate completion percentage
         let completion_percentage = if total_modules > 0 {
@@ -141,18 +140,14 @@ impl AnalyticsEngine {
         );
 
         Logger::log(
-            &env,
+            env,
             LogLevel::Info,
-            Symbol::new(&env, "analytics"),
-            String::from_str(&env, "Progress Updated"),
-            String::from_str(&env, "analytics_progress"),
+            Symbol::new(env, "analytics"),
+            String::from_str(env, "Progress Updated"),
+            String::from_str(env, "analytics_progress"),
         );
 
-        Logger::metric(
-            &env,
-            Symbol::new(&env, "calc_time"),
-            total_time_spent as i128,
-        );
+        Logger::metric(env, Symbol::new(env, "calc_time"), total_time_spent as i128);
 
         Ok(analytics)
     }
@@ -190,7 +185,13 @@ impl AnalyticsEngine {
                 total_time_invested += analytics.total_time_spent;
 
                 // Check if student is active
-                if current_time - analytics.last_activity <= active_threshold {
+                let time_diff = if current_time >= analytics.last_activity {
+                    current_time - analytics.last_activity
+                } else {
+                    0
+                };
+
+                if time_diff <= active_threshold {
                     active_students += 1;
                 }
 
@@ -430,6 +431,10 @@ impl AnalyticsEngine {
 
         for i in (0..activity_days.len()).rev() {
             let day = activity_days.get(i).unwrap();
+            if day > current_day {
+                continue;
+            }
+
             let expected_day = current_day - streak as u64;
 
             if day == expected_day || (streak == 0 && current_day - day <= 1) {
@@ -508,7 +513,7 @@ impl AnalyticsEngine {
         if max_module_num < 5 {
             5
         } else {
-            max_module_num + 2 // Add buffer for incomplete modules
+            max_module_num
         }
     }
 
@@ -739,10 +744,21 @@ impl AnalyticsEngine {
         // Calculate expected total time based on current progress
         let expected_total_time =
             (analytics.total_time_spent * 100) / analytics.completion_percentage as u64;
-        let remaining_time = expected_total_time - analytics.total_time_spent;
+        
+        let remaining_time = if expected_total_time > analytics.total_time_spent {
+            expected_total_time - analytics.total_time_spent
+        } else {
+            0
+        };
 
         // Estimate date based on average activity frequency (simplified)
-        let total_days_active = (env.ledger().timestamp() - analytics.first_activity) / 86400;
+        let current_timestamp = env.ledger().timestamp();
+        let total_days_active = if current_timestamp >= analytics.first_activity {
+            (current_timestamp - analytics.first_activity) / 86400
+        } else {
+            0
+        };
+
         let days_to_complete = if total_days_active > 0 {
             let time_per_day = analytics.total_time_spent / total_days_active;
             if time_per_day > 0 {
@@ -767,10 +783,7 @@ impl AnalyticsEngine {
             time_str = String::from_str(env, "Less than 2 weeks");
         }
 
-        let prediction_summary;
-        // Note: In Soroban SDK 22, String concatenation is limited.
-        // We provide the categorical estimate as the summary.
-        prediction_summary = time_str;
+        let prediction_summary = time_str;
 
         Ok(MLInsight {
             insight_id: env.crypto().sha256(&student.to_xdr(env)).into(),

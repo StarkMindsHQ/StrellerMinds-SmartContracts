@@ -1,6 +1,6 @@
-use soroban_sdk::{BytesN, Env};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use soroban_sdk::{BytesN, Env};
 
 /// Configuration constants for metadata validation that can be reused across contracts
 pub struct ValidationConfig;
@@ -236,18 +236,18 @@ impl CoreValidator {
         }
 
         // For HTTPS URIs, validate domain structure
-        if uri.starts_with("https://") {
-            Self::validate_https_uri(&uri[8..])?;
+        if let Some(stripped) = uri.strip_prefix("https://") {
+            Self::validate_https_uri(stripped)?;
         }
 
         // For IPFS URIs, validate hash format
-        if uri.starts_with("ipfs://") {
-            Self::validate_ipfs_uri(&uri[7..])?;
+        if let Some(stripped) = uri.strip_prefix("ipfs://") {
+            Self::validate_ipfs_uri(stripped)?;
         }
 
         // For Arweave URIs, validate transaction ID format
-        if uri.starts_with("ar://") {
-            Self::validate_arweave_uri(&uri[5..])?;
+        if let Some(stripped) = uri.strip_prefix("ar://") {
+            Self::validate_arweave_uri(stripped)?;
         }
 
         Ok(())
@@ -316,7 +316,6 @@ impl CoreValidator {
                 });
             }
         }
-
         Ok(())
     }
 
@@ -411,8 +410,10 @@ impl CoreValidator {
 }
 
 #[cfg(test)]
-use soroban_sdk::testutils::Ledger;
 mod tests {
+    use super::*;
+    use soroban_sdk::testutils::Ledger;
+    use soroban_sdk::{BytesN, Env};
 
     #[test]
     fn test_validate_string_length_success() {

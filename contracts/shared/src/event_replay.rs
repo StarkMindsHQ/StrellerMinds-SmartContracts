@@ -137,6 +137,7 @@ impl EventReplay {
         }
 
         // Find sequences for time range
+        // Find sequences for time range
         let start_seq = Self::find_sequence_by_timestamp(env, start_timestamp);
         let end_seq = Self::find_sequence_by_timestamp(env, end_timestamp);
 
@@ -145,21 +146,20 @@ impl EventReplay {
         }
 
         // Start replay
-        let _state = Self::start_replay(env, start_seq.unwrap(), Some(end_seq.unwrap()))?;
+        let _state = Self::start_replay(
+            env,
+            start_seq.expect("checked above"),
+            Some(end_seq.expect("checked above")),
+        )?;
 
         // Replay all events
         let mut all_events = Vec::new(env);
-        loop {
-            match Self::replay_next_batch(env, 100) {
-                Ok((events, new_state)) => {
-                    for event in events.iter() {
-                        all_events.push_back(event.clone());
-                    }
-                    if new_state.current_sequence > new_state.end_sequence.unwrap_or(u32::MAX) {
-                        break;
-                    }
-                }
-                Err(_) => break,
+        while let Ok((events, new_state)) = Self::replay_next_batch(env, 100) {
+            for event in events.iter() {
+                all_events.push_back(event.clone());
+            }
+            if new_state.current_sequence > new_state.end_sequence.unwrap_or(u32::MAX) {
+                break;
             }
         }
 

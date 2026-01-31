@@ -111,7 +111,7 @@ impl EventUtils {
         // Include key fields in hash
         let seq_bytes = event.timestamp.to_be_bytes();
         let version_bytes = event.version.to_be_bytes();
-        
+
         // Simple hash based on timestamp and version (production should use proper hashing)
         for i in 0..32 {
             if i < 8 {

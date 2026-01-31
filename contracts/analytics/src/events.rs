@@ -7,6 +7,7 @@ pub struct AnalyticsEvents;
 
 impl AnalyticsEvents {
     /// Emit event when a new learning session is recorded
+    #[allow(clippy::too_many_arguments)]
     pub fn emit_session_recorded(
         env: &Env,
         session_id: &BytesN<32>,

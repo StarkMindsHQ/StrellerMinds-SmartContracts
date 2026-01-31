@@ -23,7 +23,7 @@ fn setup_test() -> (Env, Address, Address, Address) {
 
     // Initialize access control
     env.mock_all_auths();
-    AccessControl::initialize(&env, &admin).unwrap();
+    AccessControl::initialize(&env, &admin).expect("should initialize");
 
     (env, admin, user1, user2)
 }
@@ -68,7 +68,7 @@ fn test_grant_role() {
     // Verify role was granted
     let role = AccessControl::get_role(&env, &user1);
     assert!(role.is_some());
-    let role = role.unwrap();
+    let role = role.expect("role should exist");
     assert_eq!(role.level, RoleLevel::Instructor);
     assert!(role.has_permission(&Permission::IssueCertificate));
 }
@@ -108,7 +108,7 @@ fn test_grant_custom_role() {
     // Verify custom role was granted
     let role = AccessControl::get_role(&env, &user1);
     assert!(role.is_some());
-    let role = role.unwrap();
+    let role = role.expect("role should exist");
     assert_eq!(role.level, RoleLevel::Instructor);
     assert!(role.has_permission(&Permission::IssueCertificate));
     assert!(role.has_permission(&Permission::ViewProgress));
@@ -129,7 +129,7 @@ fn test_revoke_role() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Revoke role
     env.mock_auths(&[MockAuth {
@@ -164,7 +164,7 @@ fn test_transfer_role() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Transfer role from user1 to user2
     env.mock_auths(&[MockAuth {
@@ -186,7 +186,7 @@ fn test_transfer_role() {
 
     let role2 = AccessControl::get_role(&env, &user2);
     assert!(role2.is_some());
-    let role2 = role2.unwrap();
+    let role2 = role2.expect("role should exist");
     assert_eq!(role2.level, RoleLevel::Instructor);
 }
 
@@ -204,7 +204,7 @@ fn test_permission_checks() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Test permission checks
     assert!(AccessControl::has_permission(&env, &user1, &Permission::IssueCertificate));
@@ -233,7 +233,7 @@ fn test_role_hierarchy() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Admin).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Admin).expect("should grant role");
 
     // Grant Instructor role to user2
     env.mock_auths(&[MockAuth {
@@ -245,7 +245,7 @@ fn test_role_hierarchy() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user2, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user2, RoleLevel::Instructor).expect("should grant role");
 
     // Admin should be able to grant Instructor role
     env.mock_auths(&[MockAuth {
@@ -288,7 +288,7 @@ fn test_self_revocation_prevention() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Try to revoke own role (should fail)
     env.mock_auths(&[MockAuth {
@@ -318,7 +318,7 @@ fn test_permission_granting() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Student).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Student).expect("should grant role");
 
     // Grant additional permission
     env.mock_auths(&[MockAuth {
@@ -352,7 +352,7 @@ fn test_permission_revoking() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Revoke a permission
     env.mock_auths(&[MockAuth {
@@ -386,7 +386,7 @@ fn test_role_history() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Revoke role
     env.mock_auths(&[MockAuth {
@@ -398,7 +398,7 @@ fn test_role_history() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::revoke_role(&env, &admin, &user1).unwrap();
+    AccessControl::revoke_role(&env, &admin, &user1).expect("should revoke role");
 
     // Check role history
     let history = AccessControl::get_role_history(&env, &user1);
@@ -425,7 +425,7 @@ fn test_require_permission_modifiers() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).unwrap();
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
 
     // Test require_permission
     let result = AccessControl::require_permission(&env, &user1, &Permission::IssueCertificate);
