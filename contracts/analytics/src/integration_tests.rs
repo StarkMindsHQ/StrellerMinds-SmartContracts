@@ -1,12 +1,14 @@
 #[cfg(test)]
 extern crate std;
+
 mod integration_tests {
     use super::*;
     use crate::{
         errors::AnalyticsError,
         types::{
-            AchievementType, AnalyticsConfig, DifficultyThresholds, LeaderboardMetric,
-            LearningSession, SessionType,
+            AchievementType, AnalyticsConfig, AnalyticsFilter, DifficultyThresholds,
+            LeaderboardMetric, LearningSession, OptionalSessionType, PerformanceTrend,
+            ReportPeriod, SessionType,
         },
         Analytics, AnalyticsClient,
     };
@@ -16,20 +18,21 @@ mod integration_tests {
     };
     use std::format;
 
-    fn create_comprehensive_test_env<'a>() -> (Env, AnalyticsClient<'a>, Address, Vec<Address>) {
+    /// Minimal setup for integration tests: Fresh Env, admin, and students
+    fn setup_integration_env() -> (Env, Address, Vec<Address>) {
         let env = Env::default();
         let admin = Address::generate(&env);
         let mut students = Vec::new(&env);
-
         for _ in 0..5 {
             students.push_back(Address::generate(&env));
         }
+        (env, admin, students)
+    }
 
-        env.mock_all_auths();
-
+    /// Helper to create and initialize contract
+    fn init_contract<'a>(env: &'a Env, admin: &Address) -> AnalyticsClient<'a> {
         let contract_id = env.register(Analytics, ());
-        let client = AnalyticsClient::new(&env, &contract_id);
-
+        let client = AnalyticsClient::new(env, &contract_id);
         let config = AnalyticsConfig {
             min_session_time: 60,
             max_session_time: 14400,
@@ -42,12 +45,11 @@ mod integration_tests {
             },
             oracle_address: None,
         };
-
-        client.initialize(&admin, &config);
-
-        (env, client, admin, students)
+        client.initialize(admin, &config);
+        client
     }
 
+    /// Helper to create learning session (does not modify contract state)
     fn create_learning_session(
         env: &Env,
         student: &Address,
@@ -76,7 +78,10 @@ mod integration_tests {
 
     #[test]
     fn test_complete_learning_journey() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "BLOCKCHAIN_FUNDAMENTALS");
 
@@ -189,7 +194,10 @@ mod integration_tests {
 
     #[test]
     fn test_multi_student_course_analytics() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let course_id = Symbol::new(&env, "DATA_STRUCTURES");
 
         // Create diverse student performance patterns
@@ -259,7 +267,10 @@ mod integration_tests {
 
     #[test]
     fn test_time_based_analytics_and_trends() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "MACHINE_LEARNING");
 
@@ -332,7 +343,10 @@ mod integration_tests {
 
     #[test]
     fn test_achievement_system_integration() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let student = students.get(0).unwrap();
         let _course_id = Symbol::new(&env, "WEB_DEVELOPMENT");
 
@@ -396,7 +410,10 @@ mod integration_tests {
 
     #[test]
     fn test_filtered_analytics_queries() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let student = students.get(0).unwrap();
         let course_id = Symbol::new(&env, "CYBERSECURITY");
 
@@ -412,7 +429,7 @@ mod integration_tests {
         let scores = [70, 85, 95];
 
         for (i, (session_type, score)) in session_types.iter().zip(scores.iter()).enumerate() {
-            let session = create_learning_session(
+            let mut session = create_learning_session(
                 &env,
                 &student,
                 "CYBERSECURITY",
@@ -475,7 +492,10 @@ mod integration_tests {
 
     #[test]
     fn test_performance_comparison_and_insights() {
-        let (env, client, _admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let student1 = students.get(0).unwrap();
         let student2 = students.get(1).unwrap();
         let course_id = Symbol::new(&env, "ALGORITHMS");
@@ -557,13 +577,16 @@ mod integration_tests {
 
     #[test]
     fn test_admin_operations_and_maintenance() {
-        let (env, client, admin, students) = create_comprehensive_test_env();
+        // Fresh setup per test - new Env, new contract, new students
+        let (env, admin, students) = setup_integration_env();
+        env.mock_all_auths();
+        let client = init_contract(&env, &admin);
         let new_admin = Address::generate(&env);
-        let course_id = Symbol::new(&env, "DATABASE_SYSTEMS");
+        let _course_id = Symbol::new(&env, "DATABASE_SYSTEMS");
 
         // Create some test data
         let student = students.get(0).unwrap();
-        let mut session =
+        let session =
             create_learning_session(&env, &student, "DATABASE_SYSTEMS", "module_1", 1, 0);
 
         client.record_session(&session);
@@ -584,16 +607,16 @@ mod integration_tests {
             oracle_address: None,
         };
 
-        let result = client.update_config(&admin, &new_config);
-        // // assert!(result.is_ok());
+        let _result = client.update_config(&admin, &new_config);
+        // // assert!(_result.is_ok());
 
         // Test recalculation of analytics
-        // let result = client.recalculate_course_analytics(&admin, &course_id);
-        // // assert!(result.is_ok());
+        // let _result = client.recalculate_course_analytics(&admin, &_course_id);
+        // // assert!(_result.is_ok());
 
         // Test admin transfer
-        let result = client.transfer_admin(&admin, &new_admin);
-        // // assert!(result.is_ok());
+        let _result = client.transfer_admin(&admin, &new_admin);
+        // // assert!(_result.is_ok());
 
         // Verify new admin
         let current_admin = client.get_admin().unwrap();
@@ -601,8 +624,8 @@ mod integration_tests {
 
         // Test cleanup operation (should work with new admin)
         let old_date = env.ledger().timestamp() - 86400; // 1 day ago
-        let result = client.cleanup_old_data(&new_admin, &old_date);
-        // assert!(result);
+        let _result = client.cleanup_old_data(&new_admin, &old_date);
+        // assert!(_result);
 
         // Test unauthorized operations fail
         let unauthorized_user = Address::generate(&env);
