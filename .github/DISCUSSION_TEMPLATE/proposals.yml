@@ -1,0 +1,110 @@
+title: "📋 [TIP]: "
+labels:
+  - proposal
+  - governance
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TeachLink Improvement Proposal (TIP)
+        
+        Use this template to propose significant changes to TeachLink.
+        For minor changes, please use a regular issue or feature request.
+
+  - type: input
+    id: title
+    attributes:
+      label: Proposal Title
+      placeholder: "TIP-XXX: Short descriptive title"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - "Core (TIP-C): Smart contract changes"
+        - "Process (TIP-P): Governance/process changes"
+        - "Informational (TIP-I): Guidelines, standards"
+        - "Meta (TIP-M): TIP process itself"
+    validations:
+      required: true
+
+  - type: textarea
+    id: abstract
+    attributes:
+      label: Abstract
+      description: Brief description (200 words max)
+      placeholder: This proposal introduces...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change needed?
+      placeholder: |
+        The current situation is...
+        This causes problems because...
+        This proposal solves...
+    validations:
+      required: true
+
+  - type: textarea
+    id: specification
+    attributes:
+      label: Specification
+      description: Technical details of the proposed change
+      placeholder: |
+        The implementation would include:
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why this approach over alternatives?
+      placeholder: This approach was chosen because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: backwards
+    attributes:
+      label: Backwards Compatibility
+      description: Would this introduce breaking changes?
+      placeholder: |
+        - [ ] This proposal is backwards compatible
+        - [ ] This proposal introduces breaking changes (describe below)
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security Considerations
+      description: Any security implications?
+      placeholder: Security considerations include...
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Reference Implementation
+      description: Code, pseudocode, or link to implementation
+      placeholder: |
+        ```rust
+        // Implementation example
+        ```
+
+  - type: checkboxes
+    id: commitment
+    attributes:
+      label: Proposer Commitment
+      options:
+        - label: I commit to championing this proposal through the review process
+          required: true
+        - label: I will address feedback and update the proposal as needed
+          required: true

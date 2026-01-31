@@ -1,0 +1,197 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  # Label new issues with 'triage' and add welcome message
+  welcome-and-label:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Add triage label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['triage']
+            });
+
+      - name: Check if first-time contributor
+        id: check-first-time
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const creator = context.payload.issue.user.login;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            // Check if this is their first issue
+            const isFirstTime = issues.length === 1;
+            return isFirstTime;
+          result-encoding: string
+
+      - name: Welcome first-time contributor
+        if: steps.check-first-time.outputs.result == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const welcomeMessage = `
+            👋 Welcome to TeachLink, @${context.payload.issue.user.login}! Thanks for opening your first issue!
+            
+            A maintainer will review this soon. In the meantime:
+            
+            - 📖 Check our [Contributing Guide](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md)
+            - 💬 Join our [Discord](https://discord.gg/teachlink) for real-time help
+            - 🏷️ This issue has been labeled \`triage\` and will be reviewed shortly
+            
+            Thank you for helping improve TeachLink! 🎓
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: welcomeMessage
+            });
+
+  # Auto-categorize based on issue template
+  auto-categorize:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Categorize by title prefix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title.toLowerCase();
+            const labels = [];
+            
+            // Detect issue type from title prefix
+            if (title.startsWith('[bug]')) {
+              labels.push('bug');
+            } else if (title.startsWith('[feature]')) {
+              labels.push('enhancement');
+            } else if (title.startsWith('[task]')) {
+              labels.push('task');
+            } else if (title.startsWith('[security]')) {
+              labels.push('security');
+            } else if (title.startsWith('[docs]')) {
+              labels.push('documentation');
+            }
+            
+            // Detect component from body
+            const body = context.payload.issue.body?.toLowerCase() || '';
+            if (body.includes('teachlink') && body.includes('contract')) {
+              labels.push('contract: teachlink');
+            }
+            if (body.includes('insurance')) {
+              labels.push('contract: insurance');
+            }
+            if (body.includes('bridge')) {
+              labels.push('module: bridge');
+            }
+            if (body.includes('escrow')) {
+              labels.push('module: escrow');
+            }
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
+
+  # Handle priority labels
+  priority-response:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled'
+    steps:
+      - name: Critical priority notification
+        if: "github.event.label.name == 'priority: critical'"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `
+            🚨 **Critical Priority Issue**
+            
+            This issue has been marked as critical priority. A maintainer will respond within 24 hours.
+            
+            If this is a security vulnerability, please ensure you've followed our [Security Policy](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/SECURITY.md).
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+  # Handle needs-info timeout
+  needs-info-reminder:
+    runs-on: ubuntu-latest
+    if: "github.event.action == 'labeled' && github.event.label.name == 'needs-info'"
+    steps:
+      - name: Add info request comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `
+            ℹ️ **Additional Information Needed**
+            
+            We need more information to proceed with this issue. Please provide the requested details.
+            
+            This issue will be automatically closed in 14 days if no response is received.
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+  # Handle good first issue label
+  good-first-issue:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled' && github.event.label.name == 'good first issue'
+    steps:
+      - name: Add newcomer-friendly comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `
+            🌱 **Good First Issue**
+            
+            This issue has been marked as a good first issue for newcomers!
+            
+            **If you're new to TeachLink and want to work on this:**
+            1. Comment below to let us know you're interested
+            2. Read our [Contributing Guide](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md)
+            3. Fork the repository and create a branch
+            4. Ask questions if you get stuck - we're here to help!
+            
+            Welcome to the TeachLink community! 🎓
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });

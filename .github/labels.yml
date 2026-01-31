@@ -1,0 +1,190 @@
+# GitHub Labels Configuration
+# Apply using: gh label import .github/labels.yml
+
+# Type Labels
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+
+- name: enhancement
+  color: a2eeef
+  description: New feature or request
+
+- name: documentation
+  color: 0075ca
+  description: Documentation improvements
+
+- name: security
+  color: d93f0b
+  description: Security related issue
+
+- name: question
+  color: d876e3
+  description: Further information requested
+
+- name: task
+  color: fbca04
+  description: Internal project task
+
+- name: testing
+  color: bfd4f2
+  description: Test-related changes
+
+# Priority Labels
+- name: "priority: critical"
+  color: b60205
+  description: Immediate attention needed
+
+- name: "priority: high"
+  color: d93f0b
+  description: Should be addressed soon
+
+- name: "priority: medium"
+  color: fbca04
+  description: Normal priority
+
+- name: "priority: low"
+  color: 0e8a16
+  description: Nice to have
+
+# Status Labels
+- name: triage
+  color: e4e669
+  description: Needs initial review
+
+- name: needs-info
+  color: d876e3
+  description: Awaiting reporter response
+
+- name: confirmed
+  color: 0e8a16
+  description: Verified and accepted
+
+- name: in-progress
+  color: 1d76db
+  description: Currently being worked on
+
+- name: blocked
+  color: fef2c0
+  description: Waiting on dependency
+
+- name: wontfix
+  color: ffffff
+  description: Will not be addressed
+
+- name: duplicate
+  color: cfd3d7
+  description: Duplicate of another issue
+
+- name: stale
+  color: fef2c0
+  description: No recent activity
+
+# Component Labels
+- name: "contract: teachlink"
+  color: 5319e7
+  description: Main TeachLink contract
+
+- name: "contract: insurance"
+  color: 5319e7
+  description: Insurance module
+
+- name: "module: bridge"
+  color: 5319e7
+  description: Bridge functionality
+
+- name: "module: escrow"
+  color: 5319e7
+  description: Escrow functionality
+
+- name: tooling
+  color: bfd4f2
+  description: Scripts and developer tools
+
+- name: ci/cd
+  color: bfd4f2
+  description: CI/CD pipeline
+
+- name: configuration
+  color: bfd4f2
+  description: Configuration files
+
+# Effort Labels
+- name: "effort: xs"
+  color: c5def5
+  description: "< 1 hour"
+
+- name: "effort: s"
+  color: c5def5
+  description: 1-4 hours
+
+- name: "effort: m"
+  color: c5def5
+  description: 1-2 days
+
+- name: "effort: l"
+  color: c5def5
+  description: 3-5 days
+
+- name: "effort: xl"
+  color: c5def5
+  description: "1+ week"
+
+# Size Labels (for PRs)
+- name: "size: xs"
+  color: c2e0c6
+  description: "< 10 lines changed"
+
+- name: "size: s"
+  color: c2e0c6
+  description: "< 50 lines changed"
+
+- name: "size: m"
+  color: c2e0c6
+  description: "< 200 lines changed"
+
+- name: "size: l"
+  color: c2e0c6
+  description: "< 500 lines changed"
+
+- name: "size: xl"
+  color: c2e0c6
+  description: "500+ lines changed"
+
+# Special Labels
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+
+- name: help wanted
+  color: "008672"
+  description: Extra attention needed
+
+- name: breaking-change
+  color: b60205
+  description: Would introduce breaking changes
+
+- name: pinned
+  color: "006b75"
+  description: Pinned issue, won't go stale
+
+# Community Labels
+- name: idea
+  color: bfdadc
+  description: Community idea
+
+- name: proposal
+  color: 1d76db
+  description: TeachLink Improvement Proposal
+
+- name: governance
+  color: 1d76db
+  description: Governance related
+
+- name: nomination
+  color: fbca04
+  description: Hall of Fame nomination
+
+- name: community
+  color: bfdadc
+  description: Community related

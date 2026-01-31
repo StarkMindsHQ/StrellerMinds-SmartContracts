@@ -1,0 +1,231 @@
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read  # Add this for better token access
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    # if: false  # Temporarily disabled to fix CI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Label PR based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const labels = new Set();
+            
+            for (const file of files) {
+              const filename = file.filename;
+              
+              // Contract labels
+              if (filename.startsWith('contracts/teachlink/')) {
+                labels.add('contract: teachlink');
+              }
+              if (filename.startsWith('contracts/insurance/')) {
+                labels.add('contract: insurance');
+              }
+              
+              // Module labels
+              if (filename.includes('bridge')) {
+                labels.add('module: bridge');
+              }
+              if (filename.includes('escrow')) {
+                labels.add('module: escrow');
+              }
+              
+              // Type labels based on file type
+              if (filename.endsWith('.md')) {
+                labels.add('documentation');
+              }
+              if (filename.includes('test') || filename.includes('spec')) {
+                labels.add('testing');
+              }
+              if (filename.startsWith('scripts/') || filename.startsWith('.github/')) {
+                labels.add('tooling');
+              }
+              if (filename.startsWith('config/')) {
+                labels.add('configuration');
+              }
+            }
+            
+            // Size labels based on changes
+            const additions = files.reduce((sum, f) => sum + f.additions, 0);
+            const deletions = files.reduce((sum, f) => sum + f.deletions, 0);
+            const changes = additions + deletions;
+            
+            if (changes < 10) {
+              labels.add('size: xs');
+            } else if (changes < 50) {
+              labels.add('size: s');
+            } else if (changes < 200) {
+              labels.add('size: m');
+            } else if (changes < 500) {
+              labels.add('size: l');
+            } else {
+              labels.add('size: xl');
+            }
+            
+            // Apply labels with error handling
+            if (labels.size > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: Array.from(labels)
+                });
+              } catch (error) {
+                console.log('Failed to add labels:', error.message);
+                // Try to create labels that don't exist
+                for (const label of labels) {
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label,
+                      color: '0366d6'
+                    });
+                  } catch (labelError) {
+                    console.log(`Label ${label} already exists or failed to create:`, labelError.message);
+                  }
+                }
+                
+                // Try adding labels again
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    labels: Array.from(labels)
+                  });
+                } catch (retryError) {
+                  console.log('Failed to add labels after creation:', retryError.message);
+                }
+              }
+            }
+
+  # Check PR title format
+  title-check:
+    runs-on: ubuntu-latest
+    # if: false  # Temporarily disabled to fix CI
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check PR title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            
+            // Expected format: type(scope): description
+            // e.g., feat(contract): add reward distribution
+            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+/;
+            
+            if (!conventionalCommitRegex.test(title)) {
+              const body = `
+            ⚠️ **PR Title Format**
+            
+            Please update your PR title to follow the conventional commit format:
+            
+            \`\`\`
+            type(scope): description
+            \`\`\`
+            
+            **Types:** feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert
+            
+            **Examples:**
+            - \`feat(contract): add learning reward distribution\`
+            - \`fix(escrow): resolve timeout calculation bug\`
+            - \`docs: update contributing guidelines\`
+            
+            See [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md) for details.
+              `;
+              
+              // Check if we already commented about this
+              try {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number
+                });
+                
+                const hasWarning = comments.some(c => c.body.includes('PR Title Format'));
+                
+                if (!hasWarning) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    body: body
+                  });
+                }
+              } catch (error) {
+                console.log('Failed to check/create title format comment:', error.message);
+              }
+            }
+
+  # Welcome first-time contributors
+  welcome:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Check if first-time contributor
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const creator = context.payload.pull_request.user.login;
+            
+            // Check for previous PRs
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+            
+            const userPRs = prs.filter(pr => pr.user.login === creator);
+            return userPRs.length === 1;
+          result-encoding: string
+
+      - name: Welcome message
+        if: steps.check.outputs.result == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `
+            🎉 **Welcome to TeachLink, @${context.payload.pull_request.user.login}!**
+            
+            Thank you for your first contribution! A maintainer will review your PR soon.
+            
+            **While you wait:**
+            - Make sure all CI checks pass ✅
+            - Review the [PR checklist](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/.github/PULL_REQUEST_TEMPLATE.md)
+            - Join our [Discord](https://discord.gg/teachlink) to connect with the community
+            
+            We appreciate your contribution to decentralized education! 🎓
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });

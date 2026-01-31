@@ -236,18 +236,18 @@ impl CoreValidator {
         }
 
         // For HTTPS URIs, validate domain structure
-        if let Some(stripped) = uri.strip_prefix("https://") {
-            Self::validate_https_uri(stripped)?;
+        if uri.starts_with("https://") {
+            Self::validate_https_uri(&uri[8..])?;
         }
 
         // For IPFS URIs, validate hash format
-        if let Some(stripped) = uri.strip_prefix("ipfs://") {
-            Self::validate_ipfs_uri(stripped)?;
+        if uri.starts_with("ipfs://") {
+            Self::validate_ipfs_uri(&uri[7..])?;
         }
 
         // For Arweave URIs, validate transaction ID format
-        if let Some(stripped) = uri.strip_prefix("ar://") {
-            Self::validate_arweave_uri(stripped)?;
+        if uri.starts_with("ar://") {
+            Self::validate_arweave_uri(&uri[5..])?;
         }
 
         Ok(())
@@ -316,6 +316,7 @@ impl CoreValidator {
                 });
             }
         }
+
         Ok(())
     }
 

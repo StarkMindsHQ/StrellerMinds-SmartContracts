@@ -1,0 +1,121 @@
+name: 📋 Task
+description: Create a task for project work or improvements
+title: "[Task]: "
+labels: ["task", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Task Creation
+        Use this template for internal project tasks, refactoring, or maintenance work.
+
+  - type: dropdown
+    id: task_type
+    attributes:
+      label: Task Type
+      description: What type of task is this?
+      options:
+        - "Refactoring"
+        - "Technical Debt"
+        - "Performance Optimization"
+        - "Code Cleanup"
+        - "Dependency Update"
+        - "Infrastructure"
+        - "Research/Spike"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: Describe the task in detail
+      placeholder: What needs to be done and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What defines this task as complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this task?
+      options:
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      description: How much effort do you estimate this will take?
+      options:
+        - "XS (< 1 hour)"
+        - "S (1-4 hours)"
+        - "M (1-2 days)"
+        - "L (3-5 days)"
+        - "XL (1+ week)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected_files
+    attributes:
+      label: Affected Files/Modules
+      description: List any files or modules that will be affected
+      placeholder: |
+        - contracts/teachlink/src/lib.rs
+        - contracts/teachlink/src/escrow.rs
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List any blocking issues or prerequisites
+      placeholder: |
+        - Blocked by #123
+        - Requires completion of #456
+
+  - type: textarea
+    id: technical_notes
+    attributes:
+      label: Technical Notes
+      description: Any technical considerations or implementation notes
+      placeholder: Implementation details, gotchas, or architectural considerations...
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing Requirements
+      description: What testing is required for this task?
+      placeholder: |
+        - Unit tests for...
+        - Integration tests for...
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Task Scope Confirmation
+      options:
+        - label: This task is self-contained and can be completed independently
+          required: true
+        - label: I have verified this doesn't duplicate existing work
+          required: true

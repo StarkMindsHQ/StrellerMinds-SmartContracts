@@ -425,8 +425,8 @@ impl ReportGenerator {
         // }
 
         let sess = &filter.session_type;
-        match sess {
-            OptionalSessionType::None => {}
+        let _res = match sess {
+            OptionalSessionType::None => return false,
             OptionalSessionType::Some(session_type) => {
                 if session.session_type != *session_type {
                     return false;

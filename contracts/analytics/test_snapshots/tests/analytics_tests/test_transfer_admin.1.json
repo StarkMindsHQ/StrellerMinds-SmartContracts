@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 4,
+    "address": 3,
     "nonce": 0
   },
   "auth": [
@@ -11,7 +11,7 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "function_name": "initialize",
               "args": [
                 {
@@ -105,7 +105,7 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "function_name": "transfer_admin",
               "args": [
                 {
@@ -120,13 +120,12 @@
           "sub_invocations": []
         }
       ]
-    ],
-    []
+    ]
   ],
   "ledger": {
     "protocol_version": 22,
     "sequence_number": 0,
-    "timestamp": 10000,
+    "timestamp": 0,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
     "base_reserve": 0,
     "min_persistent_entry_ttl": 4096,
@@ -202,7 +201,7 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
             "key": "ledger_key_contract_instance",
             "durability": "persistent"
           }
@@ -213,7 +212,7 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
                 "key": "ledger_key_contract_instance",
                 "durability": "persistent",
                 "val": {
@@ -337,7 +336,7 @@
                               "symbol": "Role"
                             },
                             {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                             }
                           ]
                         },
@@ -354,7 +353,7 @@
                                 "symbol": "granted_at"
                               },
                               "val": {
-                                "u64": 10000
+                                "u64": 0
                               }
                             },
                             {
@@ -588,795 +587,6 @@
                             }
                           ]
                         }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "RoleGrants"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": [
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "expires_at"
-                                  },
-                                  "val": "void"
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_at"
-                                  },
-                                  "val": {
-                                    "u64": 10000
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_by"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "inherited_roles"
-                                  },
-                                  "val": {
-                                    "vec": []
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "level"
-                                  },
-                                  "val": {
-                                    "u32": 5
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "permissions"
-                                  },
-                                  "val": {
-                                    "vec": [
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "IssueCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCertificateMetadata"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "CreateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "DeleteCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EnrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UnenrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MarkCompletion"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "GrantRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "InitializeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpgradeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyPause"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyResume"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MintTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BurnTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchMintCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchRevokeCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCourses"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllUsers"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewSystemStats"
-                                          }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "RoleHistory"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": [
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "expires_at"
-                                  },
-                                  "val": "void"
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_at"
-                                  },
-                                  "val": {
-                                    "u64": 10000
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_by"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "inherited_roles"
-                                  },
-                                  "val": {
-                                    "vec": []
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "level"
-                                  },
-                                  "val": {
-                                    "u32": 5
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "permissions"
-                                  },
-                                  "val": {
-                                    "vec": [
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "IssueCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCertificateMetadata"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "CreateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "DeleteCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EnrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UnenrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MarkCompletion"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "GrantRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "InitializeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpgradeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyPause"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyResume"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MintTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BurnTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchMintCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchRevokeCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCourses"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllUsers"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewSystemStats"
-                                          }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "vec": [
-                            {
-                              "symbol": "RoleRevocations"
-                            },
-                            {
-                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                            }
-                          ]
-                        },
-                        "val": {
-                          "vec": [
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "expires_at"
-                                  },
-                                  "val": "void"
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_at"
-                                  },
-                                  "val": {
-                                    "u64": 10000
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "granted_by"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "inherited_roles"
-                                  },
-                                  "val": {
-                                    "vec": []
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "level"
-                                  },
-                                  "val": {
-                                    "u32": 5
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "permissions"
-                                  },
-                                  "val": {
-                                    "vec": [
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "IssueCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferCertificate"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCertificateMetadata"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "CreateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "DeleteCourse"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EnrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UnenrollStudent"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpdateProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewProgress"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MarkCompletion"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "GrantRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "RevokeRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferRole"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "InitializeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "UpgradeContract"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyPause"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "EmergencyResume"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "MintTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BurnTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "TransferTokens"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchMintCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "BatchRevokeCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCertificates"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllCourses"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewAllUsers"
-                                          }
-                                        ]
-                                      },
-                                      {
-                                        "vec": [
-                                          {
-                                            "symbol": "ViewSystemStats"
-                                          }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
                       }
                     ]
                   }
@@ -1411,5 +621,54 @@
       ]
     ]
   },
-  "events": []
+  "events": [
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000002",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "analytics"
+              },
+              {
+                "symbol": "analytics"
+              },
+              {
+                "symbol": "config_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "analytics_event"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    }
+  ]
 }

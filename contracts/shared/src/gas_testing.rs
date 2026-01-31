@@ -166,7 +166,7 @@ mod tests {
             let _addr = Address::generate(&env);
             Ok::<(), AccessControlError>(())
         })
-        .expect("gas measurement should succeed");
+        .unwrap();
 
         assert!(measurement.success);
         assert_eq!(
@@ -200,6 +200,6 @@ mod tests {
 
         let addr = GasTester::generate_test_address(&env, 1);
         // Just verify we can generate an address
-        assert!(!addr.to_string().is_empty());
+        assert!(addr.to_string().len() > 0);
     }
 }

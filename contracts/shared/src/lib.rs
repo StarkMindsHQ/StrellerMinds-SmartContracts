@@ -6,7 +6,6 @@ extern crate alloc;
 static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 pub mod access_control;
-pub mod error_handling;
 pub mod errors;
 pub mod event_aggregator;
 pub mod event_filter;

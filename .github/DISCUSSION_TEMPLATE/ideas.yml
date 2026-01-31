@@ -1,0 +1,58 @@
+title: "💡 [Idea]: "
+labels:
+  - idea
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Share Your Idea
+        We love hearing new ideas from our community! Please describe your idea below.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: "What's your idea?"
+      description: Describe your idea in detail
+      placeholder: |
+        I think it would be great if TeachLink could...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Feature
+        - Improvement
+        - Integration
+        - Documentation
+        - Community
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: How would this benefit TeachLink?
+      description: Explain the value this would bring
+      placeholder: This would help because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Have you considered alternatives?
+      description: Other approaches you've thought about
+      placeholder: I also considered...
+
+  - type: checkboxes
+    id: involvement
+    attributes:
+      label: Would you like to help?
+      options:
+        - label: I'd be interested in helping implement this
+        - label: I'd be interested in testing this
+        - label: I'd be interested in documenting this

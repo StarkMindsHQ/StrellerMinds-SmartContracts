@@ -19,6 +19,7 @@ NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
 # Default values
 CONTRACT=""
 DRY_RUN=false
+PROFILE=""
 VERBOSE=false
 
 # Required tools and environment variables
@@ -65,6 +66,7 @@ Deploy Stellar/Soroban smart contracts to MAINNET with safety checks and validat
 OPTIONS:
     --contract CONTRACT     Deploy specific contract (optional, deploys all if not specified)
     --dry-run              Preview deployment without executing (show commands only)
+    --profile PROFILE      AWS profile or config profile to use (optional)
     --verbose              Enable verbose output
     --help                 Show this help message
 
@@ -97,6 +99,10 @@ parse_arguments() {
             --dry-run)
                 DRY_RUN=true
                 shift
+                ;;
+            --profile)
+                PROFILE="$2"
+                shift 2
                 ;;
             --verbose)
                 VERBOSE=true

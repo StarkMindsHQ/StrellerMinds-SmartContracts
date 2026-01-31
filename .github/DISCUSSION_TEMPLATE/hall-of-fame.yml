@@ -1,0 +1,73 @@
+title: "🏆 [Nomination]: "
+labels:
+  - nomination
+  - community
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Hall of Fame Nomination
+        
+        Nominate a community member for recognition in the TeachLink Hall of Fame!
+        Self-nominations are welcome.
+
+  - type: input
+    id: nominee
+    attributes:
+      label: Nominee GitHub Username
+      placeholder: "@username"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Recognition Category
+      options:
+        - "🌟 Legends - Transformative impact"
+        - "🛡️ Security Hero - Security contributions"
+        - "💡 Innovation Champion - Groundbreaking features"
+        - "💬 Community Champion - Community support"
+        - "📚 Documentation Hero - Documentation improvements"
+    validations:
+      required: true
+
+  - type: textarea
+    id: contributions
+    attributes:
+      label: Notable Contributions
+      description: Describe their contributions with links to PRs, issues, or community activity
+      placeholder: |
+        - PR #123: Implemented feature X
+        - Issue #456: Found and reported critical bug
+        - Discord: Helped 50+ newcomers get started
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact on TeachLink
+      description: How have their contributions impacted the project?
+      placeholder: Their work has led to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: values
+    attributes:
+      label: Community Values
+      description: How do they embody TeachLink's community values?
+      placeholder: They exemplify our values by...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I believe this person meets the Hall of Fame criteria
+          required: true
+        - label: I have reviewed the Hall of Fame requirements
+          required: true

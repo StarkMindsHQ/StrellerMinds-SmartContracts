@@ -31,12 +31,6 @@ impl VersionInfo {
         // Minor version can be equal or lower (backward compatible)
         self.minor <= target.minor
     }
-
-    /// Convert version to string representation
-    pub fn to_string(&self, env: &Env) -> String {
-        let s = format!("{}.{}.{}", self.major, self.minor, self.patch);
-        String::from_str(env, &s)
-    }
 }
 
 /// Storage keys for upgrade system
@@ -160,6 +154,8 @@ impl UpgradeUtils {
             MigrationStatus::NotStarted
         }
     }
+
+    /// Validate version compatibility
 
     /// Validate version compatibility
     pub fn validate_version_compatibility(
@@ -459,12 +455,13 @@ mod tests {
 
     #[test]
     fn test_version_info() {
-        let env = Env::default();
+        let _env = Env::default();
         let v1 = VersionInfo::new(1, 0, 0, 1000);
         let v2 = VersionInfo::new(1, 1, 0, 2000);
         let v3 = VersionInfo::new(2, 0, 0, 3000);
 
-        assert_eq!(v1.to_string(&env), String::from_str(&env, "1.0.0"));
+        let v1_str = format!("{}.{}.{}", v1.major, v1.minor, v1.patch);
+        assert_eq!(v1_str, "1.0.0");
         assert!(v1.is_compatible_with(&v2));
         assert!(!v1.is_compatible_with(&v3)); // Different major version
         assert!(!v2.is_compatible_with(&v1)); // Downgrade not allowed
@@ -482,10 +479,7 @@ mod tests {
 
         let history = UpgradeUtils::get_version_history(&env);
         assert_eq!(history.len(), 1);
-        assert_eq!(
-            history.get(0).expect("should have initial version"),
-            initial_version
-        );
+        assert_eq!(history.get(0).unwrap(), initial_version);
     }
 
     #[test]
@@ -515,18 +509,18 @@ mod tests {
         let new_impl = Address::generate(&env);
         let version = VersionInfo::new(1, 1, 0, 2000);
 
+        let description = String::from_str(&env, "Test upgrade");
         let proposal_id = GovernanceUpgrade::propose_upgrade(
             &env,
             &proposer,
             &new_impl,
             &version,
-            &String::from_str(&env, "Test upgrade"),
+            &description,
             3,
         )
-        .expect("proposal should be created");
+        .unwrap();
 
-        let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id)
-            .expect("vote should succeed");
+        let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id).unwrap();
         assert_eq!(vote_count, 1);
     }
 }

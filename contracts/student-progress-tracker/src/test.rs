@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use soroban_sdk::{
     symbol_short,
@@ -8,7 +10,7 @@ use soroban_sdk::{
 // Helper function to create a test environment
 fn setup_test_env() -> (Env, ProgressTrackerClient<'static>, Address, Address) {
     let env = Env::default();
-    let contract_id = env.register(ProgressTracker, ());
+    let contract_id = env.register(ProgressTracker, {});
     let client = ProgressTrackerClient::new(&env, &contract_id);
 
     let admin = Address::generate(&env);

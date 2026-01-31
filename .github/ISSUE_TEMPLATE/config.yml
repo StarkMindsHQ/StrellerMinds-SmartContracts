@@ -1,8 +1,14 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
-  - name: StrellerMinds Community Support
-    url: https://github.com/StrellerMinds-SmartContracts/discussions
-    about: Please ask and answer questions here.
-  - name: Security Issues
-    url: https://github.com/StrellerMinds-SmartContracts/security
-    about: Please report security vulnerabilities privately.
+  - name: 🔐 Security Vulnerability (Private)
+    url: https://github.com/rinafcode/teachLink_contract/security/advisories/new
+    about: Report critical security vulnerabilities privately through GitHub Security Advisories
+  - name: 💬 Discussions
+    url: https://github.com/rinafcode/teachLink_contract/discussions
+    about: Ask questions, share ideas, or discuss features with the community
+  - name: 📖 Documentation
+    url: https://docs.teachlink.io
+    about: Check our documentation before opening an issue
+  - name: 💬 Discord Community
+    url: https://discord.gg/teachlink
+    about: Get real-time help from the community
