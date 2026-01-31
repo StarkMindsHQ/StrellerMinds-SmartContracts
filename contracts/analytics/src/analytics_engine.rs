@@ -744,10 +744,21 @@ impl AnalyticsEngine {
         // Calculate expected total time based on current progress
         let expected_total_time =
             (analytics.total_time_spent * 100) / analytics.completion_percentage as u64;
-        let remaining_time = expected_total_time - analytics.total_time_spent;
+        
+        let remaining_time = if expected_total_time > analytics.total_time_spent {
+            expected_total_time - analytics.total_time_spent
+        } else {
+            0
+        };
 
         // Estimate date based on average activity frequency (simplified)
-        let total_days_active = (env.ledger().timestamp() - analytics.first_activity) / 86400;
+        let current_timestamp = env.ledger().timestamp();
+        let total_days_active = if current_timestamp >= analytics.first_activity {
+            (current_timestamp - analytics.first_activity) / 86400
+        } else {
+            0
+        };
+
         let days_to_complete = if total_days_active > 0 {
             let time_per_day = analytics.total_time_spent / total_days_active;
             if time_per_day > 0 {

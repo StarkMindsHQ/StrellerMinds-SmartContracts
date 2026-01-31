@@ -1,0 +1,53 @@
+# This file configures cargo-deny for security and license compliance checks
+
+[graph]
+# Configuration graph for all checks
+all-features = true
+
+[advisories]
+# The path to the local copy of the advisory database
+db-path = "~/.cargo/advisory-db"
+# Fetch the advisory database when running cargo deny
+version = 2
+# Ignore advisories for known false positives or accepted risks
+ignore = []
+
+[licenses]
+version = 2
+# Allow common open source licenses used by Stellar/Soroban ecosystem
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "MPL-2.0",
+    "Unicode-DFS-2016",
+    "Unlicense",
+]
+# Clarification for crates that have unclear license fields
+clarify = {}
+# Deny specific licenses if needed
+deny = []
+
+[bans]
+# Deny multiple versions of the same crate (optional, can be noisy)
+multiple-versions = "warn"
+# Wildcards in dependency specifications (e.g., "*")
+wildcards = "allow"
+# Allow all crates by default
+allow = []
+# Deny specific crates if needed
+deny = []
+# Skip specific crates from analysis
+skip = []
+# Skip tree analysis for specific crates
+skip-tree = []
+
+[sources]
+# Only allow crates from crates.io
+unknown-registry = "warn"
+unknown-git = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
