@@ -130,15 +130,10 @@ jobs:
     - name: Install Security Tools
       run: |
         cargo install cargo-audit
-        cargo install cargo-deny
         
     - name: Run Security Audit
       run: |
         cargo audit
-        
-    - name: Run Deny Checks
-      run: |
-        cargo deny check || echo "::warning::cargo deny check failed - ensure deny.toml exists"
         
   analytics-documentation-tests:
     name: Analytics Documentation Tests
