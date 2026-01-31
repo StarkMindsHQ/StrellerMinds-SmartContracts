@@ -39,8 +39,8 @@ jobs:
 
       - name: Install Soroban CLI
         run: |
-          cargo install --locked soroban-cli --features opt || true
-          soroban --version
+          cargo install --locked stellar-cli || cargo install --locked soroban-cli || true
+          stellar --version || soroban --version
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -63,12 +63,12 @@ jobs:
       - name: Start Soroban Localnet
         run: |
           echo "Starting Soroban localnet with Docker Compose..."
-          docker-compose up -d
+          docker compose up -d || docker-compose up -d
 
           echo "Waiting for localnet to be ready..."
-          timeout 120 bash -c 'until docker-compose ps | grep -q healthy; do sleep 2; done' || {
+          timeout 120 bash -c 'until docker compose ps 2>/dev/null | grep -q healthy || docker-compose ps 2>/dev/null | grep -q healthy; do sleep 2; done' || {
             echo "Localnet failed to start. Showing logs:"
-            docker-compose logs
+            docker compose logs 2>/dev/null || docker-compose logs
             exit 1
           }
 
@@ -85,7 +85,7 @@ jobs:
           echo "Deploying contracts to localnet..."
           npm run deploy:local || {
             echo "Deployment failed. Showing localnet logs:"
-            docker-compose logs
+            docker compose logs 2>/dev/null || docker-compose logs
             exit 1
           }
 
@@ -122,7 +122,7 @@ jobs:
         if: always()
         run: |
           echo "Stopping localnet..."
-          docker-compose down -v
+          docker compose down -v 2>/dev/null || docker-compose down -v 2>/dev/null || true
 
   e2e-success:
     name: E2E Tests Success
