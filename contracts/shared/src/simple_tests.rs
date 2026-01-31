@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::{
     permissions::RolePermissions,
     roles::{Permission, RoleLevel},

@@ -1,15 +1,14 @@
 # StrellerMinds-SmartContracts
 
 [![CI](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml)
-[![E2E Tests](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml)
 [![Release](https://img.shields.io/github/v/release/StarkMindsHQ/StrellerMinds-SmartContracts?sort=semver)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/releases)
 [![License](https://img.shields.io/github/license/StarkMindsHQ/StrellerMinds-SmartContracts)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/blob/main/LICENSE)
 [![Codecov](https://codecov.io/gh/StarkMindsHQ/StrellerMinds-SmartContracts/branch/main/graph/badge.svg)](https://codecov.io/gh/StarkMindsHQ/StrellerMinds-SmartContracts)
-[![Soroban](https://img.shields.io/badge/Soroban-Stellar-purple.svg)](https://soroban.stellar.org)
+[![Soroban](https://img.shields.io/badge/Soroban-Stellar-purple.svg)](https://developers.stellar.org/)
 
 StrellerMinds-SmartContracts is a comprehensive suite of Stellar smart contracts built with Soroban, powering the StarkMinds blockchain education platform. This repository provides secure, efficient on-chain logic for educational credentialing, learning analytics, token incentives, and progress tracking. Designed for educational institutions, online learning platforms, and EdTech developers who need reliable blockchain infrastructure for verifiable learning achievements and decentralized education ecosystems.
 
-> Documentation site: https://starkmindshq.github.io/StrellerMinds-SmartContracts
+> 📖 **Documentation:** See the [docs/](docs/) directory and run `mkdocs serve` for local preview
 
 ## 🚀 Quick Start
 
@@ -45,7 +44,7 @@ That's it! Your contracts are built and tested. See [Getting Started](#getting-s
 Before you begin, ensure you have the following installed:
 
 - [Rust](https://www.rust-lang.org/tools/install) (v1.75 or later)
-- [Stellar CLI & Soroban CLI](https://soroban.stellar.org/docs/getting-started)
+- [Stellar CLI & Soroban CLI](https://developers.stellar.org/docs/build/smart-contracts/getting-started)
 - Docker (optional, for running a local Stellar testnet)
 - Node.js v18+ (for E2E tests)
 
@@ -249,7 +248,6 @@ Please read our [Contributing Guidelines](docs/contributing.md) for more details
 
 ## 📚 Documentation
 
-- **Published Site**: https://starkmindshq.github.io/StrellerMinds-SmartContracts/
 - [Development Guide](docs/development.md)
 - [Security Guidelines](docs/security.md)
 - [RBAC Implementation](docs/RBAC_IMPLEMENTATION.md)
@@ -313,7 +311,6 @@ StrellerMinds-SmartContracts/
 ## 🔗 Helpful Links
 
 ### Development & Documentation
-- **[Published Documentation](https://starkmindshq.github.io/StrellerMinds-SmartContracts/)** - Full API documentation and guides
 - **[Development Guide](docs/development.md)** - Detailed setup and development workflow
 - **[Security Guidelines](docs/security.md)** - Security best practices and audit reports
 - **[RBAC Implementation](docs/RBAC_IMPLEMENTATION.md)** - Role-based access control documentation
@@ -321,11 +318,9 @@ StrellerMinds-SmartContracts/
 - **[Token Incentive System](docs/TOKEN_INCENTIVE_SYSTEM.md)** - Token economics and incentives
 
 ### Platform & Community
-- **[StarkMinds Website](https://starkminds.io)** - Main platform website
 - **[Stellar Documentation](https://stellar.org/developers)** - Stellar network documentation
-- **[Soroban Documentation](https://soroban.stellar.org/docs)** - Smart contract development guide
+- **[Soroban Documentation](https://developers.stellar.org/)** - Smart contract development guide
 - **[Issue Tracker](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/issues)** - Bug reports and feature requests
-- **[Discussions](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/discussions)** - Community discussions and Q&A
 
 ### Contribution Resources
 - **[Contributing Guidelines](docs/contributing.md)** - Detailed contribution process

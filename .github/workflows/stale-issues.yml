@@ -1,0 +1,122 @@
+name: Stale Issue Management
+
+on:
+  schedule:
+    # Run every day at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          # Issue configuration
+          stale-issue-message: |
+            👋 This issue has been automatically marked as stale because it has not had recent activity.
+            
+            It will be closed in 14 days if no further activity occurs.
+            
+            If this issue is still relevant:
+            - Comment with an update on the status
+            - Remove the `stale` label
+            
+            Thank you for your contributions to TeachLink! 🎓
+          
+          stale-issue-label: 'stale'
+          days-before-issue-stale: 30
+          days-before-issue-close: 14
+          
+          # Exempt labels - these issues won't go stale
+          exempt-issue-labels: |
+            priority: critical
+            priority: high
+            security
+            pinned
+            in-progress
+            help wanted
+            good first issue
+          
+          # PR configuration
+          stale-pr-message: |
+            👋 This pull request has been automatically marked as stale because it has not had recent activity.
+            
+            It will be closed in 14 days if no further activity occurs.
+            
+            If you're still working on this:
+            - Push new commits to update the PR
+            - Comment with a status update
+            - Remove the `stale` label
+            
+            Thank you for your contributions to TeachLink! 🎓
+          
+          stale-pr-label: 'stale'
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          
+          # Exempt PR labels
+          exempt-pr-labels: |
+            priority: critical
+            priority: high
+            security
+            work-in-progress
+            awaiting-review
+          
+          # Close message
+          close-issue-message: |
+            🔒 This issue has been automatically closed due to inactivity.
+            
+            If this issue is still relevant, please feel free to reopen it or create a new issue with updated information.
+            
+            Thank you for your interest in TeachLink! 🎓
+          
+          close-pr-message: |
+            🔒 This pull request has been automatically closed due to inactivity.
+            
+            If you'd like to continue this work, please feel free to reopen or create a new PR.
+            
+            Thank you for your contributions to TeachLink! 🎓
+          
+          # Don't close issues with these labels even if stale
+          close-issue-reason: 'not_planned'
+          
+          # Operations per run (to avoid rate limiting)
+          operations-per-run: 100
+          
+          # Remove stale label when updated
+          remove-stale-when-updated: true
+          
+          # Only process issues/PRs with activity in the last year
+          start-date: '2025-01-01'
+
+  # Weekly summary of stale items
+  stale-summary:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Generate stale summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'stale',
+              per_page: 100
+            });
+            
+            if (issues.length > 0) {
+              console.log(`Found ${issues.length} stale issues:`);
+              issues.forEach(issue => {
+                console.log(`  #${issue.number}: ${issue.title}`);
+              });
+            } else {
+              console.log('No stale issues found.');
+            }

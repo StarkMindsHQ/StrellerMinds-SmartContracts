@@ -1,0 +1,114 @@
+name: 🔒 Security Report
+description: Report a security concern (non-critical). For critical vulnerabilities, please use private disclosure.
+title: "[Security]: "
+labels: ["security", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Security Report
+
+        ⚠️ **IMPORTANT**: For critical security vulnerabilities, please DO NOT use this public form.
+        Instead, follow our [Security Policy](https://github.com/rinafcode/teachLink_contract/blob/main/SECURITY.md) for private disclosure.
+
+        This template is for non-critical security concerns, improvements, or hardening suggestions.
+
+  - type: checkboxes
+    id: critical_check
+    attributes:
+      label: Severity Confirmation
+      description: Please confirm this is NOT a critical vulnerability
+      options:
+        - label: I confirm this is NOT a critical vulnerability that could lead to fund loss or system compromise
+          required: true
+        - label: I have read the [SECURITY.md](https://github.com/rinafcode/teachLink_contract/blob/main/SECURITY.md) policy
+          required: true
+
+  - type: dropdown
+    id: security_type
+    attributes:
+      label: Security Concern Type
+      description: What type of security issue is this?
+      options:
+        - "Input Validation"
+        - "Access Control"
+        - "Data Exposure"
+        - "Dependency Vulnerability"
+        - "Configuration Issue"
+        - "Best Practice Violation"
+        - "Code Quality/Hardening"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the security concern
+      placeholder: |
+        Provide a clear description of the security issue or improvement suggestion.
+        Be specific about the affected code, function, or configuration.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected_contract
+    attributes:
+      label: Affected Component
+      description: Which component is affected?
+      options:
+        - TeachLink (main contract)
+        - Insurance module
+        - Bridge module
+        - Escrow module
+        - Scripts/Tooling
+        - Configuration
+        - Multiple/All
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could happen if this is exploited or not addressed?
+      placeholder: Describe the potential impact...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps (if applicable)
+      description: How can this be reproduced or demonstrated?
+      placeholder: |
+        1. Step one
+        2. Step two
+        3. Observe...
+
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommended Fix
+      description: If you have suggestions for how to fix this, please share
+      placeholder: Describe how this could be fixed or mitigated...
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Any relevant CVEs, articles, or documentation
+      placeholder: |
+        - CVE-XXXX-XXXXX
+        - https://example.com/security-article
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      options:
+        - label: I would be willing to submit a PR to fix this issue
+        - label: I would be willing to help review the fix

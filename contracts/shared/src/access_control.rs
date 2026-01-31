@@ -24,7 +24,7 @@ impl AccessControl {
 
         // Grant SuperAdmin role to the initial admin
         let super_admin_role = RolePermissions::create_role_with_default_permissions(
-            env,
+            &env,
             RoleLevel::SuperAdmin,
             admin.clone(),
             env.ledger().timestamp(),
@@ -68,7 +68,7 @@ impl AccessControl {
 
         // Create role with default permissions
         let role = RolePermissions::create_role_with_default_permissions(
-            env,
+            &env,
             role_level,
             granter.clone(),
             env.ledger().timestamp(),
@@ -108,7 +108,7 @@ impl AccessControl {
 
         // Create role with default permissions and expiry
         let role = RolePermissions::create_role_with_default_permissions(
-            env,
+            &env,
             role_level,
             granter.clone(),
             env.ledger().timestamp(),

@@ -3,12 +3,10 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/common.sh
-# shellcheck disable=SC1091
 source "$SCRIPT_DIR/common.sh"
 
 NETWORK=""
-export DRY_RUN=false
+DRY_RUN=false
 CONTRACT=""
 WASM_PATH=""
 
@@ -20,7 +18,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --dry-run)
-      export DRY_RUN=true
+      DRY_RUN=true
       shift
       ;;
     --contract)
@@ -46,7 +44,7 @@ fi
 load_env "$NETWORK"
 
 # Example: Soroban CLI deploy command
-DEPLOY_CMD=(soroban contract deploy --wasm "$WASM_PATH" --network "$NETWORK" --contract-name "$CONTRACT")
-run_or_dry "${DEPLOY_CMD[@]}"
+DEPLOY_CMD="soroban contract deploy --wasm $WASM_PATH --network $NETWORK --contract-name $CONTRACT"
+run_or_dry "$DEPLOY_CMD"
 
 echo "Deployment script completed."

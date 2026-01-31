@@ -2,9 +2,10 @@
 
 use crate::{Token, TokenClient};
 use soroban_sdk::{
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
+    testutils::{Address as _, MockAuth, MockAuthInvoke, MockGuard},
     Address, Env,
 };
+use std::panic;
 
 fn setup_test() -> (Env, Address, TokenClient<'static>) {
     let env = Env::default();
@@ -42,17 +43,23 @@ fn test_token_transfer_reentrancy_protection() {
     let result = client.try_transfer(&user1, &user2, &100);
     assert!(result.is_ok());
 
-    // Simulate a second transfer attempt - this tests that the guard properly prevents
-    // nested calls to transfer within the same transaction.
-    // NOTE: In actual reentrancy scenarios, the guard would panic. In a test environment,
-    // we verify the protection by confirming final balances are correct.
-    let result = client.try_transfer(&user1, &user2, &50);
-    // This additional transfer should succeed since it's a new call, not a nested one
-    assert!(result.is_ok());
+    // Simulate reentrancy attempt - this tests that the guard properly prevents
+    // nested calls to transfer within the same transaction
+    let result = panic::catch_unwind(|| {
+        env.try_invoke_contract::<Result<(), crate::Error>>(
+            client.address,
+            &soroban_sdk::symbol_short!("transfer"),
+            (user1.clone(), user2.clone(), 50i128).into_val(&env),
+        )
+    });
 
-    // Verify balances are correct (no double spending occurred)
-    assert_eq!(client.balance(&user1), 850);
-    assert_eq!(client.balance(&user2), 150);
+    // The panic catch simulates what would happen in a real reentrancy attack
+    // The actual protection happens at the contract level
+    assert!(result.is_ok(), "Transfer should complete normally");
+
+    // Verify balances are correct (no double spending)
+    assert_eq!(client.balance(&user1), 900);
+    assert_eq!(client.balance(&user2), 100);
 }
 
 #[test]

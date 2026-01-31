@@ -123,7 +123,6 @@ impl Proxy {
     }
 
     /// Governance-based upgrade proposal
-    #[allow(clippy::too_many_arguments)]
     pub fn propose_upgrade(
         env: Env,
         proposer: Address,
