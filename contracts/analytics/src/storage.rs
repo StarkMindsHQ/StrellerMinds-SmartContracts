@@ -43,6 +43,13 @@ impl AnalyticsStorage {
             .get(&key)
             .unwrap_or(Vec::new(env));
 
+        // Check if session already exists
+        for i in 0..sessions.len() {
+            if sessions.get(i).unwrap() == *session_id {
+                return;
+            }
+        }
+
         sessions.push_back(session_id.clone());
         env.storage().persistent().set(&key, &sessions);
     }

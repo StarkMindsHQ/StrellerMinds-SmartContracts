@@ -156,7 +156,7 @@ impl Progress {
         }
 
         // VALIDATION 1: Check if the module is already completed
-        let current_status = course_progress.get(module as u32).unwrap_or(false);
+        let current_status = course_progress.get(module).unwrap_or(false);
         if current_status && completed {
             // Log the attempt to modify a completed module
             env.events().publish(
@@ -177,7 +177,7 @@ impl Progress {
         }
 
         // Update the module progress (modules are 1-indexed in the API but 0-indexed in storage)
-        course_progress.set(module as u32, completed);
+        course_progress.set(module, completed);
 
         // Update the user progress map
         user_progress.set(course_id, course_progress);
@@ -233,7 +233,7 @@ impl Progress {
         // Count completed modules (skip index 0 since modules are 1-indexed)
         let mut completed = 0;
         for i in 1..progress.len() {
-            if progress.get(i as u32).unwrap_or(false) {
+            if progress.get(i).unwrap_or(false) {
                 completed += 1;
             }
         }
@@ -246,7 +246,7 @@ impl Progress {
 
         let percentage = (completed * 100) / total;
 
-        Ok(percentage as u32)
+        Ok(percentage)
     }
 
     // Helper function to get admin
@@ -269,7 +269,7 @@ mod test {
     // Helper function to set up a test environment with a course and initial progress
     fn setup_test_env() -> (Env, ProgressClient<'static>, Address, Address, Symbol) {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -288,7 +288,7 @@ mod test {
     #[test]
     fn test_initialize() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
 
@@ -305,7 +305,7 @@ mod test {
     #[test]
     fn test_course_management() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
 
@@ -333,7 +333,7 @@ mod test {
     #[test]
     fn test_user_progress() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -452,7 +452,7 @@ mod test {
     #[test]
     fn test_multiple_users_progress() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user1 = Address::generate(&env);
@@ -509,7 +509,7 @@ mod test {
     #[test]
     fn test_multiple_courses_progress() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -569,7 +569,7 @@ mod test {
     #[test]
     fn test_edge_cases() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -605,7 +605,7 @@ mod test {
     #[test]
     fn test_progress_boundary_conditions() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -648,7 +648,7 @@ mod test {
     #[test]
     fn test_progress_state_consistency() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -695,7 +695,7 @@ mod test {
     #[test]
     fn test_course_not_found_scenarios() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
@@ -727,7 +727,7 @@ mod test {
     #[test]
     fn test_progress_events() {
         let env = Env::default();
-        let contract_id = env.register(Progress, {});
+        let contract_id = env.register(Progress, ());
         let client = ProgressClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let user = Address::generate(&env);

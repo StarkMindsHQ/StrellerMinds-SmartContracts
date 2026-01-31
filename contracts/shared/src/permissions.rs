@@ -168,7 +168,7 @@ impl RolePermissions {
 
     /// Remove a permission from a role
     pub fn remove_permission(role: &mut Role, permission: &Permission) {
-        let mut new_permissions = Vec::new(&role.granted_by.env());
+        let mut new_permissions = Vec::new(role.granted_by.env());
         for p in role.permissions.iter() {
             if p != *permission {
                 new_permissions.push_back(p);

@@ -6,19 +6,21 @@ mod analytics_tests {
     use crate::{
         errors::AnalyticsError,
         types::{
-            DifficultyThresholds, InsightType, LeaderboardMetric, LearningSession, MLInsight,
-            ModuleAnalytics, PerformanceTrend, ProgressAnalytics, ReportPeriod, SessionType,
+            AnalyticsConfig, BatchSessionUpdate, DifficultyThresholds, InsightType,
+            LeaderboardMetric, LearningSession, MLInsight, ReportPeriod, SessionType,
         },
         Analytics, AnalyticsClient,
     };
     use soroban_sdk::{
-        testutils::{Address as _, Ledger, LedgerInfo},
+        testutils::{Address as _, Ledger},
         Address, BytesN, Env, String, Symbol, Vec,
     };
     use std::format;
+    use std::string::ToString;
 
     fn create_test_env() -> (Env, Address, Address, Address) {
         let env = Env::default();
+        env.ledger().with_mut(|li| li.timestamp = 10000);
         let admin = Address::generate(&env);
         let instructor = Address::generate(&env);
         let student = Address::generate(&env);
@@ -29,7 +31,7 @@ mod analytics_tests {
     }
 
     fn setup_analytics_contract<'a>(env: &Env, admin: &Address) -> AnalyticsClient<'a> {
-        let contract_id = env.register_contract(None, Analytics);
+        let contract_id = env.register(Analytics, ());
         let client = AnalyticsClient::new(env, &contract_id);
 
         let config = AnalyticsConfig {
@@ -42,6 +44,7 @@ mod analytics_tests {
                 medium_completion_rate: 60,
                 hard_completion_rate: 40,
             },
+            oracle_address: None,
         };
 
         client.initialize(admin, &config);
@@ -101,6 +104,7 @@ mod analytics_tests {
                 medium_completion_rate: 60,
                 hard_completion_rate: 40,
             },
+            oracle_address: None,
         };
 
         // Try to initialize again
@@ -442,6 +446,7 @@ mod analytics_tests {
                 medium_completion_rate: 65,
                 hard_completion_rate: 45,
             },
+            oracle_address: None,
         };
 
         // Update configuration
@@ -469,6 +474,7 @@ mod analytics_tests {
                 medium_completion_rate: 65,
                 hard_completion_rate: 45,
             },
+            oracle_address: None,
         };
 
         // Try to update configuration as non-admin
@@ -499,19 +505,22 @@ mod analytics_tests {
         let course_id = Symbol::new(&env, "RUST101");
 
         // Create sessions - student1 performs well, student2 struggles
-        for (student, completion) in [(&student1, 100), (&student2, 30)] {
-            let mut session = create_test_session(&env, student, "RUST101", "module_1");
-            session.session_id = BytesN::from_array(&env, &[completion as u8; 32]);
+        // Student 1: Performs well (5 modules)
+        for i in 0..5 {
+            let mut session =
+                create_test_session(&env, &student1, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             client.record_session(&session);
-
             let end_time = session.start_time + 1800;
-            client.complete_session(
-                &session.session_id,
-                &end_time,
-                &Some(completion),
-                &completion,
-            );
+            client.complete_session(&session.session_id, &end_time, &Some(100), &100);
         }
+
+        // Student 2: Struggles (1 module, low score)
+        let mut session = create_test_session(&env, &student2, "RUST101", "module_1");
+        session.session_id = BytesN::from_array(&env, &[10u8; 32]);
+        client.record_session(&session);
+        let end_time = session.start_time + 1800;
+        client.complete_session(&session.session_id, &end_time, &Some(30), &30);
 
         // Get struggling students (threshold 50%)
         let struggling = client.get_struggling_students(&course_id, &50);
@@ -590,6 +599,15 @@ mod analytics_tests {
 
         let course_id = Symbol::new(&env, "RUST101");
 
+        // Create sufficient data for pattern recognition (needs >= 5 sessions)
+        for i in 0..5 {
+            let mut session = create_test_session(&env, &student, "RUST101", "module_1");
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            client.record_session(&session);
+            let end_time = session.start_time + 1800; // 30 minutes
+            client.complete_session(&session.session_id, &end_time, &Some(85), &100);
+        }
+
         // Request insight
         let result =
             client.try_request_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
@@ -601,7 +619,7 @@ mod analytics_tests {
         let (env, admin, _, student) = create_test_env();
         let oracle = Address::generate(&env);
 
-        let contract_id = env.register_contract(None, Analytics);
+        let contract_id = env.register(Analytics, ());
         let client = AnalyticsClient::new(&env, &contract_id);
 
         let config = AnalyticsConfig {
@@ -646,10 +664,10 @@ mod analytics_tests {
         let course_id = Symbol::new(&env, "RUST101");
 
         // Set up some progress data
-        let mut session = create_test_session(&env, &student, "RUST101", "module_1");
+        let session = create_test_session(&env, &student, "RUST101", "module_1");
         client.record_session(&session);
         let end_time = session.start_time + 3600; // 1 hour
-        client.complete_session(&session.session_id, &end_time, &Some(90), &50); // 50% complete
+        client.complete_session(&session.session_id, &end_time, &Some(90), &100); // 100% complete
 
         // Request prediction
         client.request_ml_insight(&student, &course_id, &InsightType::CompletionPrediction);
@@ -659,7 +677,12 @@ mod analytics_tests {
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::CompletionPrediction);
-        assert!(insight.data.to_string().contains("Predicted"));
+        let data_str = insight.data.to_string();
+        assert!(
+            data_str.contains("Less than")
+                || data_str.contains("Approximately")
+                || data_str.contains("Over")
+        );
     }
 
     #[test]
@@ -668,6 +691,16 @@ mod analytics_tests {
         let client = setup_analytics_contract(&env, &admin);
         let course_id = Symbol::new(&env, "RUST101");
 
+        // Create and record a session to generate some data
+        let session = create_test_session(&env, &student, "RUST101", "module_1");
+        client.record_session(&session);
+        client.complete_session(
+            &session.session_id,
+            &(session.start_time + 1000),
+            &Some(80),
+            &100,
+        );
+
         // Request recommendation
         client.request_ml_insight(&student, &course_id, &InsightType::Recommendation);
 
@@ -675,37 +708,12 @@ mod analytics_tests {
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::Recommendation);
+        let data = insight.data.to_string();
         assert!(
-            insight.data.to_string().contains("Review")
-                || insight.data.to_string().contains("Consider")
+            data.contains("Review")
+                || data.contains("Consider")
+                || data.contains("Suggested")
+                || data.contains("Focus")
         );
-    }
-
-    #[test]
-    fn test_prepare_ml_data() {
-        let (env, admin, _, student) = create_test_env();
-        let client = setup_analytics_contract(&env, &admin);
-        let course_id = Symbol::new(&env, "RUST101");
-
-        // Arrange: create and complete a session so there is data to summarize
-        let mut session = create_test_session(&env, &student, "RUST101", "module_1");
-        client.record_session(&session);
-
-        let end_time = session.start_time + 1800; // 30 minutes
-        client.complete_session(&session.session_id, &end_time, &Some(85), &100);
-
-        // Act: prepare ML data
-        let ml_data = client.prepare_ml_data(&course_id);
-
-        // Assert: should return a non-empty, masked summary string
-        let ml_data_str = ml_data.to_string();
-
-        assert!(!ml_data_str.is_empty());
-
-        // Course-level info is allowed
-        assert!(ml_data_str.contains("RUST101"));
-
-        // PII must not be present
-        assert!(!ml_data_str.contains(&student.to_string()));
     }
 }

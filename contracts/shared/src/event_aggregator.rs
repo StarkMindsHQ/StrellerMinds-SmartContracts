@@ -151,18 +151,37 @@ impl EventAggregator {
         let contract_counts = Self::aggregate_by_contract(env, events);
         let mut pairs = Vec::new(env);
 
-        // Note: In a real implementation, we'd sort this properly
-        // For now, we return the first N entries
-        let mut count = 0u32;
         for (contract, count_val) in contract_counts.iter() {
-            if count >= top_n {
-                break;
-            }
             pairs.push_back((contract, count_val));
-            count += 1;
         }
 
-        pairs
+        // Sort by count descending
+        // Using bubble sort since we don't have standard sort available
+        let len = pairs.len();
+        if len > 0 {
+            for i in 0..len {
+                for j in 0..len - 1 - i {
+                    let a = pairs.get(j).expect("index within bounds");
+                    let b = pairs.get(j + 1).expect("index within bounds");
+                    if a.1 < b.1 {
+                        pairs.set(j, b);
+                        pairs.set(j + 1, a);
+                    }
+                }
+            }
+        }
+
+        // Return top N
+        let mut result = Vec::new(env);
+        let limit = if len < top_n { len } else { top_n };
+
+        for i in 0..limit {
+            if let Some(pair) = pairs.get(i) {
+                result.push_back(pair);
+            }
+        }
+
+        result
     }
 
     /// Get top N actors by event count
@@ -170,16 +189,36 @@ impl EventAggregator {
         let actor_counts = Self::aggregate_by_actor(env, events);
         let mut pairs = Vec::new(env);
 
-        let mut count = 0u32;
         for (actor, count_val) in actor_counts.iter() {
-            if count >= top_n {
-                break;
-            }
             pairs.push_back((actor, count_val));
-            count += 1;
         }
 
-        pairs
+        // Sort by count descending
+        let len = pairs.len();
+        if len > 0 {
+            for i in 0..len {
+                for j in 0..len - 1 - i {
+                    let a = pairs.get(j).expect("index within bounds");
+                    let b = pairs.get(j + 1).expect("index within bounds");
+                    if a.1 < b.1 {
+                        pairs.set(j, b);
+                        pairs.set(j + 1, a);
+                    }
+                }
+            }
+        }
+
+        // Return top N
+        let mut result = Vec::new(env);
+        let limit = if len < top_n { len } else { top_n };
+
+        for i in 0..limit {
+            if let Some(pair) = pairs.get(i) {
+                result.push_back(pair);
+            }
+        }
+
+        result
     }
 
     /// Store aggregated statistics
