@@ -1,6 +1,8 @@
+<!--- cspell:ignore contractimpl --->
+
 # Diagnostics Platform Integration Guide
 
-This guide will help you integrate the debugging and diagnostics platform into your StrellerMinds smart contracts project.
+This guide will help you integrate the debugging and diagnostics platform into your **StellarMinds** smart contracts project.
 
 ## Files to Add
 
@@ -9,7 +11,7 @@ This guide will help you integrate the debugging and diagnostics platform into y
 Copy the entire `contracts/diagnostics/` directory to your project:
 
 ```
-StrellerMinds-SmartContracts/
+StellarMinds-SmartContracts/
 └── contracts/
     └── diagnostics/          ← NEW
         ├── Cargo.toml
@@ -28,7 +30,7 @@ StrellerMinds-SmartContracts/
 Add the documentation file:
 
 ```
-StrellerMinds-SmartContracts/
+StellarMinds-SmartContracts/
 └── docs/
     └── DIAGNOSTICS_PLATFORM.md    ← NEW
 ```
@@ -40,9 +42,9 @@ You can either:
 **Option A: Replace the existing CLI**
 
 ```
-StrellerMinds-SmartContracts/
+StellarMinds-SmartContracts/
 └── utils/
-    └── streller-cli/
+    └── stellar-cli/
         └── src/
             └── main.rs          ← REPLACE with enhanced version
 ```
@@ -50,10 +52,10 @@ StrellerMinds-SmartContracts/
 **Option B: Add alongside existing CLI**
 
 ```
-StrellerMinds-SmartContracts/
+StellarMinds-SmartContracts/
 └── utils/
-    ├── streller-cli/            ← Keep original
-    └── streller-cli-enhanced/   ← NEW (add as separate tool)
+    ├── stellar-cli/            ← Keep original
+    └── stellar-cli-enhanced/   ← NEW (add as separate tool)
 ```
 
 ## Integration Steps
@@ -67,7 +69,7 @@ Add the diagnostics contract to your workspace members in the root `Cargo.toml`:
 members = [
     "contracts/*",
     "e2e-tests",
-    "utils/streller-cli"
+    "utils/stellar-cli"
 ]
 ```
 
@@ -254,11 +256,11 @@ DiagnosticsContract::update_config(env, admin_address, config);
 If you want to replace the existing CLI with the enhanced version:
 
 ```bash
-cd utils/streller-cli
+cd utils/stellar-cli
 # Backup original
 cp src/main.rs src/main.rs.backup
 # Copy enhanced version
-cp ../../diagnostics-platform/utils/streller-cli-enhanced/src/main.rs src/main.rs
+cp ../../diagnostics-platform/utils/stellar-cli-enhanced/src/main.rs src/main.rs
 # Rebuild
 cargo build --release
 ```
@@ -269,10 +271,10 @@ Add the enhanced CLI as a separate binary:
 
 ```bash
 cd utils
-mkdir streller-diagnostics
-cd streller-diagnostics
+mkdir stellar-diagnostics
+cd stellar-diagnostics
 # Copy Cargo.toml and src from enhanced CLI
-cargo init --name streller-diagnostics
+cargo init --name stellar-diagnostics
 # Copy the enhanced main.rs
 ```
 
@@ -304,10 +306,10 @@ cargo test
 
 ```bash
 # If you replaced the CLI
-./utils/streller-cli/target/release/streller-cli
+./utils/stellar-cli/target/release/stellar-cli
 
 # Or if you added it separately
-./utils/streller-diagnostics/target/release/streller-diagnostics
+./utils/stellar-diagnostics/target/release/stellar-diagnostics
 ```
 
 ## Example: Adding Diagnostics to Analytics Contract
@@ -461,7 +463,7 @@ If you encounter issues:
 - Check the main README.md
 - Review DIAGNOSTICS_PLATFORM.md for detailed documentation
 - Open an issue on GitHub
-- Join the StarkMinds community
+- Join the **StarkMinds** community
 
 ## Contributing
 

@@ -1,324 +1,178 @@
-# Debugging and Diagnostics Platform
+<!--- cspell:ignore contractimpl --->
 
-## Overview
+# Diagnostics Platform Integration Guide
 
-The StrellerMinds Debugging and Diagnostics Platform is an advanced monitoring and analysis system designed to help developers build robust, efficient Soroban smart contracts. It provides real-time insights into contract behavior, performance characteristics, and potential issues.
+This guide will help you integrate the debugging and diagnostics platform into your **StellarMinds** smart contracts project.
 
-## Architecture
+## Files to Add
 
-### Components
+### 1. Diagnostics Contract
+
+Copy the entire `contracts/diagnostics/` directory to your project:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  Diagnostics Platform                    │
-├─────────────────────────────────────────────────────────┤
-│                                                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │    State     │  │ Transaction  │  │ Performance  │  │
-│  │   Tracker    │  │    Tracer    │  │   Profiler   │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│                                                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Anomaly    │  │  Dashboard   │  │  CLI Tools   │  │
-│  │   Detector   │  │   Interface  │  │              │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│                                                           │
-└─────────────────────────────────────────────────────────┘
+StellarMinds-SmartContracts/
+└── contracts/
+    └── diagnostics/          ← NEW
+        ├── Cargo.toml
+        ├── README.md
+        └── src/
+            ├── lib.rs
+            ├── types.rs
+            ├── state_tracker.rs
+            ├── transaction_tracer.rs
+            ├── performance_profiler.rs
+            └── anomaly_detector.rs
 ```
 
-### System Flow
+### 2. Documentation
 
-1. **Initialization**: Contract is deployed and initialized with admin credentials
-2. **Session Management**: Diagnostic sessions group related monitoring activities
-3. **Data Collection**: Metrics, traces, and snapshots are collected during operations
-4. **Analysis**: Automated analysis identifies patterns, bottlenecks, and anomalies
-5. **Reporting**: Results are made available through contract queries and CLI tools
-6. **Action**: Developers use insights to optimize contracts
+Add the documentation file:
 
-## Features
-
-### 1. Real-Time Contract State Visualization
-
-#### Capabilities
-
-- Snapshot contract state at any moment
-- Track storage entry counts
-- Monitor memory usage
-- Generate state hashes for integrity verification
-- Compare states across time periods
-- Detect unauthorized state modifications
-
-#### Use Cases
-
-- Debug unexpected state changes
-- Verify contract upgrades
-- Monitor storage growth
-- Detect state corruption
-- Audit contract behavior
-
-#### Example Workflow
-
-```rust
-// Capture initial state
-let snapshot_before = diagnostics::capture_state_snapshot(env.clone(), contract_id);
-
-// Perform operation
-my_contract::update_data(env.clone(), new_data);
-
-// Capture final state
-let snapshot_after = diagnostics::capture_state_snapshot(env.clone(), contract_id);
-
-// Analyze changes
-let differences = diagnostics::compare_snapshots(
-    env,
-    snapshot_before,
-    snapshot_after
-);
-
-// Review differences
-for diff in differences {
-    log::info!("State change detected: {}", diff);
-}
+```
+StellarMinds-SmartContracts/
+└── docs/
+    └── DIAGNOSTICS_PLATFORM.md    ← NEW
 ```
 
-### 2. Transaction Flow Tracing and Analysis
+### 3. Enhanced CLI (Optional)
 
-#### Capabilities
+You can either:
 
-- Start/stop transaction tracing
-- Record execution time and gas usage
-- Track child contract calls
-- Build call tree visualizations
-- Analyze success/failure patterns
-- Detect unusual execution behaviors
+**Option A: Replace the existing CLI**
 
-#### Use Cases
-
-- Debug complex transaction flows
-- Optimize gas consumption
-- Identify performance regressions
-- Understand contract interactions
-- Audit security-critical operations
-
-#### Example Workflow
-
-```rust
-// Start tracing
-let trace_id = diagnostics::start_trace(
-    env.clone(),
-    contract_id,
-    Symbol::new(&env, "transfer_tokens"),
-    caller_address
-);
-
-// Execute operation
-let result = token_contract::transfer(env.clone(), from, to, amount);
-
-// Complete trace
-let trace = diagnostics::complete_trace(
-    env.clone(),
-    trace_id,
-    contract_id,
-    Symbol::new(&env, "transfer_tokens"),
-    caller_address,
-    result.is_ok(),
-    result.err().map(|e| e.to_string()),
-    child_calls_vec,
-    gas_used
-);
-
-// Build call tree for visualization
-let call_tree = diagnostics::build_call_tree(env, trace);
-println!("Call tree: {}", call_tree);
+```
+StellarMinds-SmartContracts/
+└── utils/
+    └── stellar-cli/
+        └── src/
+            └── main.rs          ← REPLACE with enhanced version
 ```
 
-### 3. Performance Bottleneck Detection
+**Option B: Add alongside existing CLI**
 
-#### Capabilities
-
-- Record detailed performance metrics
-- Identify slow operations automatically
-- Calculate efficiency scores
-- Compare performance across periods
-- Generate optimization recommendations
-- Track CPU, memory, and I/O usage
-
-#### Use Cases
-
-- Optimize contract performance
-- Reduce gas costs
-- Improve user experience
-- Meet performance SLAs
-- Prevent system degradation
-
-#### Metrics Collected
-
-| Metric           | Description                | Threshold             |
-| ---------------- | -------------------------- | --------------------- |
-| Execution Time   | Time to complete operation | >500ms = bottleneck   |
-| Gas Consumed     | Total gas used             | >200,000 = bottleneck |
-| Memory Peak      | Maximum memory usage       | >10MB = bottleneck    |
-| CPU Instructions | Computational complexity   | Varies by operation   |
-| I/O Operations   | Storage reads/writes       | >50 = concern         |
-
-#### Example Workflow
-
-```rust
-// Record metric
-let metric = diagnostics::record_performance_metric(
-    env.clone(),
-    contract_id,
-    Symbol::new(&env, "complex_calculation"),
-    execution_time_ms,
-    gas_consumed,
-    memory_peak_bytes,
-    cpu_instructions,
-    io_operations
-);
-
-// Collect metrics over time
-let mut metrics = Vec::new(&env);
-metrics.push_back(metric);
-// ... collect more metrics ...
-
-// Identify bottlenecks
-let bottlenecks = diagnostics::identify_bottlenecks(
-    env.clone(),
-    metrics,
-    Some(Symbol::new(&env, "complex_calculation")) // Filter by operation
-);
-
-// Review bottlenecks
-for bottleneck in bottlenecks {
-    println!("Bottleneck severity: {:?}", bottleneck.severity);
-    println!("Average time: {}ms", bottleneck.avg_execution_time);
-    println!("Average gas: {}", bottleneck.avg_gas_usage);
-
-    // Get recommendations
-    let recommendations = diagnostics::get_recommendations(env.clone(), bottleneck);
-    for rec in recommendations {
-        println!("Recommendation: {}", rec);
-    }
-}
+```
+StellarMinds-SmartContracts/
+└── utils/
+    ├── stellar-cli/            ← Keep original
+    └── stellar-cli-enhanced/   ← NEW (add as separate tool)
 ```
 
-### 4. Automated Anomaly Detection
+## Integration Steps
 
-#### Capabilities
+### Step 1: Update Workspace Cargo.toml
 
-- Detect gas usage spikes
-- Identify slow execution patterns
-- Find memory leaks
-- Alert on high error rates
-- Provide root cause analysis
-- Suggest remediation steps
+Add the diagnostics contract to your workspace members in the root `Cargo.toml`:
 
-#### Anomaly Types
-
-| Type                | Description                    | Detection Method         |
-| ------------------- | ------------------------------ | ------------------------ |
-| Gas Spike           | Sudden increase in gas usage   | >2x baseline average     |
-| Memory Leak         | Consistently increasing memory | 4+ consecutive increases |
-| Slow Execution      | Degraded performance           | >2x baseline time        |
-| High Error Rate     | Excessive failures             | >20% failure rate        |
-| State Inconsistency | Unexpected state changes       | State hash mismatch      |
-
-#### Example Workflow
-
-```rust
-// Collect baseline metrics during normal operation
-let baseline_metrics = collect_baseline_metrics(env.clone(), 24_hours);
-
-// Collect recent metrics
-let recent_metrics = collect_recent_metrics(env.clone(), 1_hour);
-
-// Detect anomalies
-let anomalies = diagnostics::detect_anomalies(
-    env.clone(),
-    contract_id,
-    recent_metrics,
-    baseline_metrics
-);
-
-// Handle anomalies
-for anomaly in anomalies {
-    println!("Anomaly detected: {:?}", anomaly.anomaly_type);
-    println!("Severity: {:?}", anomaly.severity);
-    println!("Description: {}", anomaly.description);
-    println!("Root cause: {}", anomaly.root_cause_analysis);
-
-    // Review suggested fixes
-    for fix in anomaly.suggested_fixes {
-        println!("Suggested fix: {}", fix);
-    }
-
-    // Take action based on severity
-    match anomaly.severity {
-        AnomalySeverity::Critical => {
-            // Alert on-call engineer
-            send_alert(anomaly);
-        }
-        AnomalySeverity::Error => {
-            // Create incident ticket
-            create_ticket(anomaly);
-        }
-        AnomalySeverity::Warning => {
-            // Log for review
-            log_warning(anomaly);
-        }
-        AnomalySeverity::Info => {
-            // Monitor trend
-            track_trend(anomaly);
-        }
-    }
-}
+```toml
+[workspace]
+members = [
+    "contracts/*",
+    "e2e-tests",
+    "utils/stellar-cli"
+]
 ```
 
-### 5. Interactive Debugging Dashboard (CLI)
+The wildcard `contracts/*` already includes it, so no change needed if you're using wildcards.
 
-#### Commands
+### Step 2: Build the Diagnostics Contract
 
 ```bash
-# Start diagnostic session
-streller diagnostics start --contract <contract-id> [--session-name <name>]
-
-# End session
-streller diagnostics end --session <session-id>
-
-# View session details
-streller diagnostics session <session-id>
-
-# Capture state snapshot
-streller diagnostics snapshot --contract <contract-id>
-
-# Compare snapshots
-streller diagnostics compare --snapshot1 <id> --snapshot2 <id>
-
-# View real-time metrics
-streller diagnostics metrics --contract <contract-id> [--live]
-
-# Analyze bottlenecks
-streller diagnostics bottlenecks --contract <contract-id> [--operation <name>]
-
-# Detect anomalies
-streller diagnostics anomalies --contract <contract-id> [--severity <level>]
-
-# View transaction traces
-streller diagnostics traces --session <session-id> [--filter <pattern>]
-
-# Generate performance report
-streller diagnostics report --contract <contract-id> --period <days>
-
-# Calculate efficiency score
-streller diagnostics efficiency --contract <contract-id>
-
-# Export data
-streller diagnostics export --session <session-id> --format <json|csv>
+cd contracts/diagnostics
+cargo build --release --target wasm32-unknown-unknown
 ```
 
-## Integration Patterns
+Or use the existing build script:
 
-### Development Workflow
+```bash
+./scripts/build.sh
+```
+
+### Step 3: Deploy Diagnostics Contract
+
+#### Option A: Add to existing deployment script
+
+Edit `scripts/deploy.sh` or `scripts/deploy_testnet.sh` to include diagnostics:
+
+```bash
+# Add this line with other contract deployments
+soroban contract deploy \
+    --wasm target/wasm32-unknown-unknown/release/diagnostics.wasm \
+    --source $DEPLOYER_ACCOUNT \
+    --network testnet
+```
+
+#### Option B: Deploy manually
+
+```bash
+soroban contract deploy \
+    --wasm target/wasm32-unknown-unknown/release/diagnostics.wasm \
+    --source admin \
+    --network testnet
+```
+
+Save the returned contract ID to use in your code.
+
+### Step 4: Initialize Diagnostics Contract
+
+After deployment, initialize it:
+
+```bash
+soroban contract invoke \
+    --id <DIAGNOSTICS_CONTRACT_ID> \
+    --source admin \
+    --network testnet \
+    -- \
+    initialize \
+    --admin <ADMIN_ADDRESS>
+```
+
+### Step 5: Use in Your Contracts
+
+Add diagnostics to your existing contracts:
+
+```rust
+// In your contract's Cargo.toml
+[dependencies]
+diagnostics = { path = "../diagnostics" }
+
+// In your contract code
+use diagnostics::{DiagnosticsContract, StateSnapshot, TransactionTrace};
+
+// Example usage in a function
+pub fn my_function(env: Env, params: MyParams) -> Result<(), Error> {
+    // Start tracing
+    let trace_id = diagnostics::start_trace(
+        &env,
+        &env.current_contract_address(),
+        Symbol::new(&env, "my_function"),
+        &env.invoker()
+    );
+
+    // Your existing logic
+    let result = perform_operation(&env, params);
+
+    // Complete trace
+    diagnostics::complete_trace(
+        &env,
+        trace_id,
+        &env.current_contract_address(),
+        Symbol::new(&env, "my_function"),
+        &env.invoker(),
+        result.is_ok(),
+        result.as_ref().err().map(|e| String::from_str(&env, &e.to_string())),
+        Vec::new(&env),
+        // Gas estimation - in production, get actual gas used
+        estimate_gas_used()
+    );
+
+    result
+}
+```
+
+### Step 6: Update Tests
+
+Add diagnostic checks to your test suite:
 
 ```rust
 #[cfg(test)]
@@ -328,263 +182,289 @@ mod tests {
     #[test]
     fn test_with_diagnostics() {
         let env = Env::default();
-        let diagnostics = deploy_diagnostics_contract(&env);
-        let contract_id = deploy_my_contract(&env);
 
-        // Start diagnostic session
-        let session_id = diagnostics.start_session(env.clone(), contract_id);
+        // Deploy diagnostics
+        let diagnostics_contract_id = deploy_diagnostics(&env);
 
-        // Capture initial state
-        let snapshot_before = diagnostics.capture_state_snapshot(
+        // Initialize
+        let admin = Address::generate(&env);
+        DiagnosticsContract::initialize(env.clone(), admin);
+
+        // Start session
+        let contract_id = env.current_contract_address();
+        let session_id = DiagnosticsContract::start_session(
             env.clone(),
-            contract_id
+            contract_id.clone()
         );
 
-        // Start trace
-        let trace_id = diagnostics.start_trace(
+        // Capture state before
+        let snapshot_before = DiagnosticsContract::capture_state_snapshot(
             env.clone(),
-            contract_id,
-            Symbol::new(&env, "my_function"),
-            test_user
+            contract_id.clone()
         );
 
-        // Execute operation
-        let start_time = env.ledger().timestamp();
-        let result = my_contract.my_function(env.clone(), params);
-        let end_time = env.ledger().timestamp();
+        // Run your test
+        let result = my_contract_function(env.clone(), test_params);
 
-        // Complete trace
-        let trace = diagnostics.complete_trace(
+        // Capture state after
+        let snapshot_after = DiagnosticsContract::capture_state_snapshot(
             env.clone(),
-            trace_id,
-            contract_id,
-            Symbol::new(&env, "my_function"),
-            test_user,
-            result.is_ok(),
-            None,
-            Vec::new(&env),
-            50000 // gas estimate
+            contract_id.clone()
         );
 
-        // Record performance
-        let metric = diagnostics.record_performance_metric(
+        // Check for issues
+        let differences = DiagnosticsContract::compare_snapshots(
             env.clone(),
-            contract_id,
-            Symbol::new(&env, "my_function"),
-            ((end_time - start_time) * 1000) as u32,
-            50000,
-            1000000,
-            50000,
-            5
+            snapshot_before,
+            snapshot_after
         );
-
-        // Capture final state
-        let snapshot_after = diagnostics.capture_state_snapshot(
-            env.clone(),
-            contract_id
-        );
-
-        // Verify no memory leak
-        let mut snapshots = Vec::new(&env);
-        snapshots.push_back(snapshot_before);
-        snapshots.push_back(snapshot_after);
-        assert!(!diagnostics.detect_memory_leak(env.clone(), snapshots));
 
         // End session
-        let session = diagnostics.end_session(env, session_id).unwrap();
+        DiagnosticsContract::end_session(env, session_id);
 
         // Assertions
         assert!(result.is_ok());
-        assert!(trace.success);
-        assert!(metric.execution_time_ms < 500);
+        assert!(differences.len() == expected_changes);
     }
 }
 ```
 
-### Production Monitoring
+### Step 7: Configure Diagnostics
+
+Set up your diagnostics configuration:
 
 ```rust
-// Periodic health check
-pub fn check_contract_health(env: Env, contract_id: Address) -> HealthReport {
-    let diagnostics = get_diagnostics_contract(&env);
+use diagnostics::DiagnosticConfig;
 
-    // Collect recent metrics (last hour)
-    let recent_metrics = collect_recent_metrics(env.clone(), 3600);
-
-    // Collect baseline (last 24 hours)
-    let baseline_metrics = collect_baseline_metrics(env.clone(), 86400);
-
-    // Detect anomalies
-    let anomalies = diagnostics.detect_anomalies(
-        env.clone(),
-        contract_id,
-        recent_metrics.clone(),
-        baseline_metrics
-    );
-
-    // Calculate efficiency
-    let efficiency_score = diagnostics.calculate_efficiency_score(
-        env.clone(),
-        recent_metrics.clone()
-    );
-
-    // Identify bottlenecks
-    let bottlenecks = diagnostics.identify_bottlenecks(
-        env,
-        recent_metrics,
-        None
-    );
-
-    HealthReport {
-        anomaly_count: anomalies.len() as u32,
-        critical_anomalies: count_critical(anomalies),
-        efficiency_score,
-        bottleneck_count: bottlenecks.len() as u32,
-        status: calculate_health_status(efficiency_score, anomalies.len()),
-    }
-}
-```
-
-## Best Practices
-
-### 1. Session Management
-
-- Always use diagnostic sessions to group related operations
-- End sessions when done to free resources
-- Use descriptive session names for easier tracking
-
-### 2. Baseline Establishment
-
-- Collect baseline metrics during stable operation
-- Update baselines periodically to reflect legitimate changes
-- Use sufficient sample size (100+ operations minimum)
-
-### 3. Metric Collection
-
-- Record metrics for all critical operations
-- Balance granularity with storage costs
-- Focus on operations with user impact
-
-### 4. Anomaly Response
-
-- Define clear escalation procedures for each severity level
-- Automate responses where possible
-- Document and track all anomalies
-
-### 5. Performance Optimization
-
-- Act on bottleneck recommendations promptly
-- Re-measure after optimizations to verify improvements
-- Track efficiency scores over time
-
-### 6. Storage Management
-
-- Configure appropriate retention periods
-- Archive historical data regularly
-- Clean up expired sessions and traces
-
-## Configuration
-
-### Recommended Settings
-
-**Development Environment:**
-
-```rust
-DiagnosticConfig {
-    enable_state_tracking: true,
-    enable_transaction_tracing: true,
-    enable_performance_profiling: true,
-    enable_anomaly_detection: true,
-    trace_retention_days: 7,
-    anomaly_threshold_multiplier: 2,
-    max_traces_per_session: 10000,
-}
-```
-
-**Production Environment:**
-
-```rust
-DiagnosticConfig {
+let config = DiagnosticConfig {
     enable_state_tracking: true,
     enable_transaction_tracing: true,
     enable_performance_profiling: true,
     enable_anomaly_detection: true,
     trace_retention_days: 30,
-    anomaly_threshold_multiplier: 3,
+    anomaly_threshold_multiplier: 2,
     max_traces_per_session: 1000,
+};
+
+DiagnosticsContract::update_config(env, admin_address, config);
+```
+
+## CLI Integration
+
+### Option 1: Replace Existing CLI
+
+If you want to replace the existing CLI with the enhanced version:
+
+```bash
+cd utils/stellar-cli
+# Backup original
+cp src/main.rs src/main.rs.backup
+# Copy enhanced version
+cp ../../diagnostics-platform/utils/stellar-cli-enhanced/src/main.rs src/main.rs
+# Rebuild
+cargo build --release
+```
+
+### Option 2: Add as Separate Tool
+
+Add the enhanced CLI as a separate binary:
+
+```bash
+cd utils
+mkdir stellar-diagnostics
+cd stellar-diagnostics
+# Copy Cargo.toml and src from enhanced CLI
+cargo init --name stellar-diagnostics
+# Copy the enhanced main.rs
+```
+
+## Testing the Integration
+
+### 1. Build Everything
+
+```bash
+./scripts/build.sh
+```
+
+### 2. Run Tests
+
+```bash
+# Run diagnostics contract tests
+cargo test -p diagnostics
+
+# Run all tests
+cargo test
+```
+
+### 3. Deploy to Testnet
+
+```bash
+./scripts/deploy_testnet.sh
+```
+
+### 4. Test CLI
+
+```bash
+# If you replaced the CLI
+./utils/stellar-cli/target/release/stellar-cli
+
+# Or if you added it separately
+./utils/stellar-diagnostics/target/release/stellar-diagnostics
+```
+
+## Example: Adding Diagnostics to Analytics Contract
+
+Here's a concrete example of adding diagnostics to the existing analytics contract:
+
+```rust
+// In contracts/analytics/src/lib.rs
+
+use diagnostics::{DiagnosticsContract, PerformanceMetric};
+
+#[contractimpl]
+impl AnalyticsContract {
+    pub fn record_learning_session(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        module_id: u32,
+        duration_seconds: u32,
+        score: u32,
+    ) -> Result<(), AnalyticsError> {
+        // Start performance tracking
+        let start_time = env.ledger().timestamp();
+
+        // Start transaction trace
+        let trace_id = diagnostics::start_trace(
+            &env,
+            &env.current_contract_address(),
+            Symbol::new(&env, "record_session"),
+            &student
+        );
+
+        // Your existing logic
+        let result = self.internal_record_session(
+            env.clone(),
+            student.clone(),
+            course_id,
+            module_id,
+            duration_seconds,
+            score
+        );
+
+        // Calculate metrics
+        let end_time = env.ledger().timestamp();
+        let execution_time_ms = ((end_time - start_time) * 1000) as u32;
+
+        // Record performance metric
+        diagnostics::record_performance_metric(
+            &env,
+            &env.current_contract_address(),
+            Symbol::new(&env, "record_session"),
+            execution_time_ms,
+            50000, // estimated gas
+            1000000, // estimated memory
+            execution_time_ms as u64 * 1000,
+            5 // IO operations
+        );
+
+        // Complete trace
+        diagnostics::complete_trace(
+            &env,
+            trace_id,
+            &env.current_contract_address(),
+            Symbol::new(&env, "record_session"),
+            &student,
+            result.is_ok(),
+            result.as_ref().err().map(|e| String::from_str(&env, &e.to_string())),
+            Vec::new(&env),
+            50000
+        );
+
+        result
+    }
 }
 ```
 
-## Performance Considerations
+## Monitoring in Production
 
-### Storage Costs
+### Set Up Periodic Health Checks
 
-- Each snapshot: ~500 bytes
-- Each trace: ~300 bytes
-- Each metric: ~200 bytes
-- Budget accordingly based on retention policy
+```rust
+// Add a cron job or scheduled task
+pub fn check_contract_health(env: Env, contract_id: Address) {
+    let recent_metrics = get_recent_metrics(env.clone(), 3600); // last hour
+    let baseline_metrics = get_baseline_metrics(env.clone(), 86400); // last day
 
-### Gas Usage
+    let anomalies = DiagnosticsContract::detect_anomalies(
+        env.clone(),
+        contract_id,
+        recent_metrics,
+        baseline_metrics
+    );
 
-- State snapshot: ~10,000 gas
-- Transaction trace: ~5,000 gas
-- Performance metric: ~3,000 gas
-- Anomaly detection: ~15,000 gas
-
-### Optimization Tips
-
-1. Batch metric collection when possible
-2. Use session-based cleanup
-3. Implement sampling for high-volume operations
-4. Archive old data to cheaper storage
+    // Alert if critical anomalies found
+    for anomaly in anomalies {
+        if anomaly.severity == AnomalySeverity::Critical {
+            send_alert(anomaly);
+        }
+    }
+}
+```
 
 ## Troubleshooting
 
-### Common Issues
+### Build Errors
 
-**Issue**: High storage costs
+If you get compilation errors:
 
-- **Solution**: Reduce retention period, implement sampling
+1. Make sure you're using Rust 1.75+
+2. Ensure soroban-sdk version matches across all contracts
+3. Run `cargo clean` and rebuild
 
-**Issue**: Anomaly false positives
+### Deployment Issues
 
-- **Solution**: Increase threshold multiplier, update baseline
+If deployment fails:
 
-**Issue**: Missing traces
+1. Check your Soroban CLI version: `soroban --version`
+2. Verify network configuration
+3. Ensure sufficient balance in deployer account
 
-- **Solution**: Verify trace completion, check session limits
+### Runtime Errors
 
-**Issue**: Slow dashboard queries
+If diagnostics fail at runtime:
 
-- **Solution**: Add indexes, implement caching, reduce query scope
+1. Verify contract was initialized
+2. Check admin permissions
+3. Review storage limits and retention settings
 
-## Security Considerations
+## Best Practices
 
-- Admin-only configuration updates
-- Access control for sensitive diagnostics
-- Audit trail for all diagnostic operations
-- Data privacy for user-specific metrics
-- Rate limiting for diagnostic queries
+1. **Start Small**: Begin with one contract, validate the integration, then expand
+2. **Monitor Costs**: Track storage and gas costs from diagnostics
+3. **Baseline First**: Collect baseline metrics before enabling anomaly detection
+4. **Regular Reviews**: Check diagnostic reports weekly
+5. **Archive Data**: Export and archive old diagnostic data regularly
 
-## Future Enhancements
+## Next Steps
 
-- [ ] Machine learning-based anomaly detection
-- [ ] Predictive performance modeling
-- [ ] Automated optimization suggestions
-- [ ] Integration with IDE debugging tools
-- [ ] Real-time alerting system
-- [ ] Advanced visualization dashboard
-- [ ] Distributed tracing across contracts
-- [ ] Historical trend analysis
+After successful integration:
+
+1. Set up automated monitoring
+2. Create custom dashboards (optional)
+3. Define alerting thresholds
+4. Train your team on using the CLI
+5. Document your specific monitoring workflows
 
 ## Support
 
-For questions, issues, or feature requests:
+If you encounter issues:
 
+- Check the main README.md
+- Review DIAGNOSTICS_PLATFORM.md for detailed documentation
 - Open an issue on GitHub
-- Join the StarkMinds community
-- Check the documentation site
+- Join the **StarkMinds** community
 
-## License
+## Contributing
 
-See LICENSE file in the repository root.
+Improvements to the diagnostics platform are welcome! See CONTRIBUTING.md for guidelines.
