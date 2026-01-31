@@ -67,7 +67,8 @@ fn test_module_analytics_calculation() {
     };
     analytics.record_session(session2);
 
-    let module_stats = analytics.calculate_module_analytics(Symbol::new(&env, "course1"), Symbol::new(&env, "module1"));
+    let module_stats = analytics
+        .calculate_module_analytics(Symbol::new(&env, "course1"), Symbol::new(&env, "module1"));
     assert_eq!(module_stats.total_students, 2);
     assert!(module_stats.avg_interactions > 0);
 }
