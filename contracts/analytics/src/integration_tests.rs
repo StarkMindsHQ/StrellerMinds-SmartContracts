@@ -12,10 +12,7 @@ mod integration_tests {
         },
         Analytics, AnalyticsClient,
     };
-    use soroban_sdk::{
-        testutils::Address as _,
-        Address, BytesN, Env, Symbol, Vec,
-    };
+    use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Symbol, Vec};
 
     fn setup_integration_env() -> (Env, Address, Vec<Address>) {
         let env = Env::default();
@@ -91,7 +88,7 @@ mod integration_tests {
             );
             client.record_session(&session);
         }
-        
+
         assert!(true);
     }
 
@@ -100,7 +97,7 @@ mod integration_tests {
         let (env, admin, students) = setup_integration_env();
         env.mock_all_auths();
         let client = init_contract(&env, &admin);
-        
+
         for (idx, student) in students.iter().enumerate() {
             for i in 0..3 {
                 let session = create_learning_session(
@@ -114,7 +111,7 @@ mod integration_tests {
                 client.record_session(&session);
             }
         }
-        
+
         assert!(true);
     }
 
@@ -136,7 +133,7 @@ mod integration_tests {
             );
             client.record_session(&session);
         }
-        
+
         assert!(true);
     }
 
@@ -158,7 +155,7 @@ mod integration_tests {
             );
             client.record_session(&session);
         }
-        
+
         assert!(true);
     }
 
@@ -167,7 +164,7 @@ mod integration_tests {
         let (env, admin, students) = setup_integration_env();
         env.mock_all_auths();
         let client = init_contract(&env, &admin);
-        
+
         for (idx, student) in students.iter().enumerate() {
             for i in 0..5 {
                 let session = create_learning_session(
@@ -181,7 +178,7 @@ mod integration_tests {
                 client.record_session(&session);
             }
         }
-        
+
         assert!(true);
     }
 
@@ -204,7 +201,7 @@ mod integration_tests {
                 client.record_session(&session);
             }
         }
-        
+
         assert!(true);
     }
 
@@ -226,7 +223,7 @@ mod integration_tests {
             },
             oracle_address: None,
         };
-        
+
         let _result = client.try_update_config(&admin, &new_config);
         assert!(true);
     }
