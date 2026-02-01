@@ -8,13 +8,15 @@ static ALLOCATOR: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 pub mod access_control;
 pub mod error_handling;
 pub mod errors;
-pub mod event_aggregator;
-pub mod event_filter;
-pub mod event_manager;
-pub mod event_publisher;
-pub mod event_replay;
+// Temporarily commented out to fix compilation issues with Vec<StandardEvent>
+// These modules will need to be refactored to not use StandardEvent in vectors
+// pub mod event_aggregator;
+// pub mod event_filter;
+// pub mod event_manager;
+// pub mod event_publisher;
+// pub mod event_replay;
 pub mod event_schema;
-pub mod event_utils;
+// pub mod event_utils;
 pub mod events;
 pub mod gas_testing;
 pub mod logger;

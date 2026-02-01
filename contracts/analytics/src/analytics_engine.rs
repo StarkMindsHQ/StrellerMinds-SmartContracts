@@ -9,13 +9,26 @@ use crate::{
     },
 };
 use shared::logger::{LogLevel, Logger};
-use soroban_sdk::xdr::ToXdr;
-use soroban_sdk::{Address, Env, IntoVal, String, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, IntoVal, String, Symbol, Vec};
 
 /// Core analytics calculation engine
 pub struct AnalyticsEngine;
 
 impl AnalyticsEngine {
+    /// Generate a unique insight ID
+    fn generate_insight_id(env: &Env) -> BytesN<32> {
+        let timestamp = env.ledger().timestamp();
+        let sequence = env.ledger().sequence();
+        let mut data = [0u8; 32];
+        let ts_bytes = timestamp.to_be_bytes();
+        let seq_bytes = sequence.to_be_bytes();
+        for i in 0..8 {
+            data[i] = ts_bytes[i];
+            data[i + 8] = seq_bytes[i];
+        }
+        BytesN::from_array(env, &data)
+    }
+
     /// Calculate comprehensive progress analytics for a student
     pub fn calculate_progress_analytics(
         env: &Env,
@@ -147,7 +160,11 @@ impl AnalyticsEngine {
             String::from_str(env, "analytics_progress"),
         );
 
-        Logger::metric(env, Symbol::new(env, "calc_time"), total_time_spent as i128);
+        Logger::metric(
+            env,
+            Symbol::new(&env, "calc_time"),
+            total_time_spent as i128,
+        );
 
         Ok(analytics)
     }
@@ -718,7 +735,7 @@ impl AnalyticsEngine {
         }
 
         Ok(MLInsight {
-            insight_id: env.crypto().sha256(&student.to_xdr(env)).into(),
+            insight_id: Self::generate_insight_id(env),
             student: student.clone(),
             course_id: course_id.clone(),
             insight_type: InsightType::PatternRecognition,
@@ -786,7 +803,7 @@ impl AnalyticsEngine {
         let prediction_summary = time_str;
 
         Ok(MLInsight {
-            insight_id: env.crypto().sha256(&student.to_xdr(env)).into(),
+            insight_id: Self::generate_insight_id(env),
             student: student.clone(),
             course_id: course_id.clone(),
             insight_type: InsightType::CompletionPrediction,
@@ -821,7 +838,7 @@ impl AnalyticsEngine {
         }
 
         Ok(MLInsight {
-            insight_id: env.crypto().sha256(&student.to_xdr(env)).into(),
+            insight_id: Self::generate_insight_id(env),
             student: student.clone(),
             course_id: course_id.clone(),
             insight_type: InsightType::Recommendation,
@@ -869,7 +886,7 @@ impl AnalyticsEngine {
         }
 
         Ok(MLInsight {
-            insight_id: env.crypto().sha256(&last_session_id.to_xdr(env)).into(),
+            insight_id: Self::generate_insight_id(env),
             student: student.clone(),
             course_id: course_id.clone(),
             insight_type: InsightType::AnomalyDetection,

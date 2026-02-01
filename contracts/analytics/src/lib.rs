@@ -14,7 +14,6 @@ mod tests;
 #[cfg(test)]
 mod integration_tests;
 
-use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
 
 // Import shared RBAC system
@@ -614,11 +613,17 @@ impl AnalyticsTrait for Analytics {
     ) -> Result<BytesN<32>, AnalyticsError> {
         student.require_auth();
 
-        // Prepare request ID
-        let request_id: BytesN<32> = env
-            .crypto()
-            .sha256(&env.ledger().timestamp().to_xdr(&env))
-            .into();
+        // Prepare request ID using timestamp and sequence
+        let timestamp = env.ledger().timestamp();
+        let sequence = env.ledger().sequence();
+        let mut data = [0u8; 32];
+        let ts_bytes = timestamp.to_be_bytes();
+        let seq_bytes = sequence.to_be_bytes();
+        for i in 0..8 {
+            data[i] = ts_bytes[i];
+            data[i + 8] = seq_bytes[i];
+        }
+        let request_id: BytesN<32> = BytesN::from_array(&env, &data);
 
         // Perform local analysis for supported types to provide immediate value
         let local_insight = match insight_type {

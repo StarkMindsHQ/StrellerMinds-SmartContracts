@@ -24,6 +24,7 @@ pub struct Logger;
 impl Logger {
     pub fn log(env: &Env, level: LogLevel, context: Symbol, message: String, payload: String) {
         let timestamp = env.ledger().timestamp();
+        // Emit log event with simple tuple data
         env.events().publish(
             (Symbol::new(env, "LOG"), context, level),
             LogEntry {
