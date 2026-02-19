@@ -140,11 +140,7 @@ impl CircuitBreaker {
     }
 
     /// Manually reset a circuit breaker (admin function)
-    pub fn reset(
-        env: &Env,
-        contract: &Symbol,
-        function: &Symbol,
-    ) -> Result<(), SecurityError> {
+    pub fn reset(env: &Env, contract: &Symbol, function: &Symbol) -> Result<(), SecurityError> {
         let config = SecurityStorage::get_config(env).ok_or(SecurityError::NotInitialized)?;
 
         let mut state = SecurityStorage::get_circuit_breaker_state(env, contract, function)

@@ -716,4 +716,410 @@ mod analytics_tests {
                 || data.contains("Focus")
         );
     }
+
+    #[test]
+    fn test_advanced_pattern_recognition() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create diverse learning sessions for pattern analysis
+        let session_types = [
+            SessionType::Study,
+            SessionType::Practice,
+            SessionType::Assessment,
+            SessionType::Review,
+        ];
+
+        for i in 0..10 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i % 3 + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.session_type = session_types[i % 4].clone();
+            session.interactions = 15 + i * 2;
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800 + (i as u64 * 300); // Varying session times
+            let score = Some(75 + i * 2);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Request pattern recognition insight
+        client.request_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::PatternRecognition);
+        assert!(insight.confidence >= 60);
+        assert!(insight.model_version >= 2);
+    }
+
+    #[test]
+    fn test_engagement_prediction() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sessions with varying engagement patterns
+        for i in 0..8 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.interactions = 20 + i * 3;
+            client.record_session(&session);
+
+            let end_time = session.start_time + 2400; // 40 minutes
+            let score = Some(70 + i * 3);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Request engagement prediction
+        client.request_ml_insight(&student, &course_id, &InsightType::EngagementPrediction);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::EngagementPrediction);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::EngagementPrediction);
+        assert!(insight.confidence >= 70);
+    }
+
+    #[test]
+    fn test_knowledge_gap_analysis() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sessions with varying performance to simulate knowledge gaps
+        let modules_scores = [("module_1", 85), ("module_2", 45), ("module_3", 90), ("module_4", 55)];
+        
+        for (i, (module, score)) in modules_scores.iter().enumerate() {
+            let mut session = create_test_session(&env, &student, "RUST101", module);
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800;
+            let final_score = Some(*score);
+            client.complete_session(&session.session_id, &end_time, &final_score, &100);
+        }
+
+        // Request knowledge gap analysis
+        client.request_ml_insight(&student, &course_id, &InsightType::KnowledgeGapAnalysis);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::KnowledgeGapAnalysis);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::KnowledgeGapAnalysis);
+        assert!(insight.confidence >= 75);
+    }
+
+    #[test]
+    fn test_collaborative_learning_analysis() {
+        let (env, admin, _, student1) = create_test_env();
+        let student2 = Address::generate(&env);
+        let student3 = Address::generate(&env);
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sessions for multiple students with different performance levels
+        let students_data = [
+            (&student1, 95, "high_performer"),
+            (&student2, 75, "average_performer"),
+            (&student3, 55, "struggling_student"),
+        ];
+
+        for (student, score, _label) in students_data {
+            for i in 0..3 {
+                let mut session = create_test_session(&env, student, "RUST101", &format!("module_{}", i + 1));
+                session.session_id = BytesN::from_array(&env, &[score as u8 + i as u8; 32]);
+                client.record_session(&session);
+
+                let end_time = session.start_time + 1800;
+                let final_score = Some(score);
+                client.complete_session(&session.session_id, &end_time, &final_score, &100);
+            }
+        }
+
+        // Request collaborative learning insight for student1
+        client.request_ml_insight(&student1, &course_id, &InsightType::CollaborativeInsight);
+
+        let insight = client.get_ml_insight(&student1, &course_id, &InsightType::CollaborativeInsight);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::CollaborativeInsight);
+        assert!(insight.confidence >= 70);
+    }
+
+    #[test]
+    fn test_advanced_anomaly_detection() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create normal sessions first
+        for i in 0..5 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.interactions = 20;
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800; // Consistent 30-minute sessions
+            let score = Some(80);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Create anomalous sessions (very short and very long)
+        let mut short_session = create_test_session(&env, &student, "RUST101", "module_6");
+        short_session.session_id = BytesN::from_array(&env, &[10u8; 32]);
+        short_session.interactions = 5;
+        client.record_session(&short_session);
+        client.complete_session(&short_session.session_id, &(short_session.start_time + 300), &Some(40), &50);
+
+        let mut long_session = create_test_session(&env, &student, "RUST101", "module_7");
+        long_session.session_id = BytesN::from_array(&env, &[11u8; 32]);
+        long_session.interactions = 50;
+        client.record_session(&long_session);
+        client.complete_session(&long_session.session_id, &(long_session.start_time + 7200), &Some(85), &100);
+
+        // Request anomaly detection
+        client.request_ml_insight(&student, &course_id, &InsightType::AnomalyDetection);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::AnomalyDetection);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::AnomalyDetection);
+        assert!(insight.confidence >= 75);
+    }
+
+    #[test]
+    fn test_learning_path_optimization() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sessions with mixed performance to trigger optimization
+        let modules_performance = [
+            ("module_1", 90, true),   // Completed successfully
+            ("module_2", 55, false),  // Struggling
+            ("module_3", 85, true),   // Completed successfully
+            ("module_4", 45, false),  // Struggling
+            ("module_5", 75, true),   // Completed successfully
+        ];
+
+        for (i, (module, score, completed)) in modules_performance.iter().enumerate() {
+            let mut session = create_test_session(&env, &student, "RUST101", module);
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800;
+            let final_score = Some(*score);
+            let completion = if *completed { 100 } else { 60 };
+            client.complete_session(&session.session_id, &end_time, &final_score, &completion);
+        }
+
+        // Request learning path optimization
+        client.request_ml_insight(&student, &course_id, &InsightType::LearningPathOptimization);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::LearningPathOptimization);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::LearningPathOptimization);
+        assert!(insight.confidence >= 70);
+    }
+
+    #[test]
+    fn test_effectiveness_metrics() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create diverse sessions for effectiveness analysis
+        let session_types_data = [
+            (SessionType::Study, 85, 1800),
+            (SessionType::Practice, 80, 2400),
+            (SessionType::Assessment, 90, 1500),
+            (SessionType::Review, 75, 1200),
+            (SessionType::Study, 88, 2000),
+            (SessionType::Practice, 82, 2200),
+            (SessionType::Assessment, 92, 1600),
+        ];
+
+        for (i, (session_type, score, duration)) in session_types_data.iter().enumerate() {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.session_type = session_type.clone();
+            session.interactions = 15 + i * 2;
+            client.record_session(&session);
+
+            let end_time = session.start_time + *duration;
+            let final_score = Some(*score);
+            client.complete_session(&session.session_id, &end_time, &final_score, &100);
+        }
+
+        // Request effectiveness metrics
+        client.request_ml_insight(&student, &course_id, &InsightType::EffectivenessMetrics);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::EffectivenessMetrics);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::EffectivenessMetrics);
+        assert!(insight.confidence >= 75);
+    }
+
+    #[test]
+    fn test_adaptive_recommendations() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sessions showing different progress levels
+        let progress_data = [
+            ("module_1", 95, true),   // Strong start
+            ("module_2", 70, true),   // Decent progress
+            ("module_3", 45, false),  // Struggling
+        ];
+
+        for (i, (module, score, completed)) in progress_data.iter().enumerate() {
+            let mut session = create_test_session(&env, &student, "RUST101", module);
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800;
+            let final_score = Some(*score);
+            let completion = if *completed { 100 } else { 50 };
+            client.complete_session(&session.session_id, &end_time, &final_score, &completion);
+        }
+
+        // Request adaptive recommendations
+        client.request_ml_insight(&student, &course_id, &InsightType::AdaptiveRecommendation);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::AdaptiveRecommendation);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        assert_eq!(insight.insight_type, InsightType::AdaptiveRecommendation);
+        assert!(insight.confidence >= 80);
+    }
+
+    #[test]
+    fn test_insufficient_data_handling() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create only 2 sessions (insufficient for most ML analyses)
+        for i in 0..2 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800;
+            let score = Some(80);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Request insights that should fail due to insufficient data
+        let insight_types = [
+            InsightType::PatternRecognition,
+            InsightType::EngagementPrediction,
+            InsightType::KnowledgeGapAnalysis,
+            InsightType::CollaborativeInsight,
+            InsightType::LearningPathOptimization,
+            InsightType::EffectivenessMetrics,
+        ];
+
+        for insight_type in insight_types {
+            client.request_ml_insight(&student, &course_id, &insight_type);
+            
+            // These should either not generate insights or generate low-confidence ones
+            let insight = client.get_ml_insight(&student, &course_id, &insight_type);
+            if let Some(insight) = insight {
+                // If insight exists, it should have low confidence due to insufficient data
+                assert!(insight.confidence <= 60);
+            }
+        }
+    }
+
+    #[test]
+    fn test_ml_insight_metadata() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create sufficient data for pattern recognition
+        for i in 0..6 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.interactions = 20 + i * 5;
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800 + (i as u64 * 300);
+            let score = Some(75 + i * 3);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Request pattern recognition
+        client.request_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+
+        let insight = client.get_ml_insight(&student, &course_id, &InsightType::PatternRecognition);
+        assert!(insight.is_some());
+        let insight = insight.unwrap();
+        
+        // Verify metadata structure
+        assert!(!insight.metadata.is_empty());
+        assert_eq!(insight.model_version, 2);
+        assert!(insight.timestamp > 0);
+        
+        // Check for expected metadata keys
+        let mut found_study_ratio = false;
+        let mut found_consistency = false;
+        
+        for i in 0..insight.metadata.len() {
+            let (key, _value) = insight.metadata.get(i).unwrap();
+            let key_str = key.to_string();
+            if key_str.contains("study_ratio") {
+                found_study_ratio = true;
+            }
+            if key_str.contains("consistency") {
+                found_consistency = true;
+            }
+        }
+        
+        assert!(found_study_ratio);
+        assert!(found_consistency);
+    }
+
+    #[test]
+    fn test_multiple_insight_types_for_same_student() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        let course_id = Symbol::new(&env, "RUST101");
+
+        // Create comprehensive data
+        for i in 0..8 {
+            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
+            session.interactions = 15 + i * 3;
+            client.record_session(&session);
+
+            let end_time = session.start_time + 1800;
+            let score = Some(70 + i * 3);
+            client.complete_session(&session.session_id, &end_time, &score, &100);
+        }
+
+        // Request multiple types of insights
+        let insight_types = [
+            InsightType::PatternRecognition,
+            InsightType::CompletionPrediction,
+            InsightType::Recommendation,
+            InsightType::EngagementPrediction,
+        ];
+
+        for insight_type in insight_types {
+            client.request_ml_insight(&student, &course_id, &insight_type);
+            
+            let insight = client.get_ml_insight(&student, &course_id, &insight_type);
+            assert!(insight.is_some());
+            let insight = insight.unwrap();
+            assert_eq!(insight.insight_type, insight_type);
+            assert!(insight.confidence >= 60);
+        }
+    }
 }

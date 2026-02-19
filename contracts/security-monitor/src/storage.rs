@@ -11,7 +11,9 @@ impl SecurityStorage {
     // ===== Config and Admin =====
 
     pub fn set_config(env: &Env, config: &SecurityConfig) {
-        env.storage().instance().set(&SecurityDataKey::Config, config);
+        env.storage()
+            .instance()
+            .set(&SecurityDataKey::Config, config);
     }
 
     pub fn get_config(env: &Env) -> Option<SecurityConfig> {
@@ -90,10 +92,8 @@ impl SecurityStorage {
     // ===== Circuit Breaker =====
 
     pub fn set_circuit_breaker_state(env: &Env, state: &CircuitBreakerState) {
-        let key = SecurityDataKey::CircuitBreaker(
-            state.contract.clone(),
-            state.function_name.clone(),
-        );
+        let key =
+            SecurityDataKey::CircuitBreaker(state.contract.clone(), state.function_name.clone());
         env.storage().persistent().set(&key, state);
     }
 
@@ -149,12 +149,19 @@ impl SecurityStorage {
         );
     }
 
-    pub fn get_recommendation(env: &Env, recommendation_id: &BytesN<32>) -> Option<SecurityRecommendation> {
+    pub fn get_recommendation(
+        env: &Env,
+        recommendation_id: &BytesN<32>,
+    ) -> Option<SecurityRecommendation> {
         let key = SecurityDataKey::Recommendation(recommendation_id.clone());
         env.storage().persistent().get(&key)
     }
 
-    pub fn add_threat_recommendation(env: &Env, threat_id: &BytesN<32>, recommendation_id: &BytesN<32>) {
+    pub fn add_threat_recommendation(
+        env: &Env,
+        threat_id: &BytesN<32>,
+        recommendation_id: &BytesN<32>,
+    ) {
         let key = SecurityDataKey::ThreatRecommendations(threat_id.clone());
         let mut recommendations: Vec<BytesN<32>> = env
             .storage()

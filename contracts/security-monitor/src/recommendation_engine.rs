@@ -1,8 +1,6 @@
 use crate::errors::SecurityError;
 use crate::storage::SecurityStorage;
-use crate::types::{
-    RecommendationCategory, SecurityRecommendation, SecurityThreat, ThreatType,
-};
+use crate::types::{RecommendationCategory, SecurityRecommendation, SecurityThreat, ThreatType};
 use soroban_sdk::{Env, String, Vec};
 
 /// Engine for generating automated security fix recommendations

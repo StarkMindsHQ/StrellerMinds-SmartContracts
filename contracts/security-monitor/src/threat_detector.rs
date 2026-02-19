@@ -20,7 +20,9 @@ impl ThreatDetector {
         // In a real implementation, we would use EventReplay to get actual events
         // For now, we'll use a simplified detection based on stored metrics
         let window_id = current_time / 3600;
-        let event_count = if let Some(metrics) = SecurityStorage::get_security_metrics(env, contract, window_id) {
+        let event_count = if let Some(metrics) =
+            SecurityStorage::get_security_metrics(env, contract, window_id)
+        {
             metrics.total_events
         } else {
             // No metrics available yet
@@ -28,7 +30,8 @@ impl ThreatDetector {
         };
 
         if event_count > config.burst_detection_threshold {
-            let threat_level = Self::classify_burst_threat_level(event_count, config.burst_detection_threshold);
+            let threat_level =
+                Self::classify_burst_threat_level(event_count, config.burst_detection_threshold);
 
             let threat = SecurityThreat {
                 threat_id: Self::generate_threat_id(env, contract),
@@ -139,7 +142,7 @@ impl ThreatDetector {
             total_events,
             error_events,
             error_rate,
-            unique_actors: 0, // Would be calculated from events
+            unique_actors: 0,     // Would be calculated from events
             access_violations: 0, // Would be filtered from access control events
             threat_count,
             highest_threat_level,
