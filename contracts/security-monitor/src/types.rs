@@ -46,10 +46,10 @@ pub struct SecurityThreat {
     pub contract: Symbol,
     pub actor: Option<Address>,
     pub description: String,
-    pub metric_value: u32,      // The metric that triggered detection
-    pub threshold_value: u32,    // The threshold that was exceeded
+    pub metric_value: u32,    // The metric that triggered detection
+    pub threshold_value: u32, // The threshold that was exceeded
     pub auto_mitigated: bool,
-    pub mitigation_action: MitigationAction,  // Use NoAction variant instead of None
+    pub mitigation_action: MitigationAction, // Use NoAction variant instead of None
 }
 
 /// Security metrics for a time window
@@ -62,21 +62,21 @@ pub struct SecurityMetrics {
     pub end_time: u64,
     pub total_events: u32,
     pub error_events: u32,
-    pub error_rate: u32,              // Percentage
+    pub error_rate: u32, // Percentage
     pub unique_actors: u32,
     pub access_violations: u32,
     pub threat_count: u32,
     pub highest_threat_level: ThreatLevel,
-    pub security_score: u32,          // 0-100
+    pub security_score: u32, // 0-100
 }
 
 /// Circuit breaker states
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum BreakerState {
-    Closed,       // Normal operation
-    Open,         // Blocking calls
-    HalfOpen,     // Testing recovery
+    Closed,   // Normal operation
+    Open,     // Blocking calls
+    HalfOpen, // Testing recovery
 }
 
 /// Circuit breaker state tracking
@@ -91,7 +91,7 @@ pub struct CircuitBreakerState {
     pub last_failure_time: u64,
     pub opened_at: Option<u64>,
     pub last_checked: u64,
-    pub timeout_duration: u64,        // How long to keep circuit open
+    pub timeout_duration: u64, // How long to keep circuit open
 }
 
 impl CircuitBreakerState {
@@ -114,12 +114,12 @@ impl CircuitBreakerState {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct SecurityConfig {
-    pub burst_detection_threshold: u32,      // Events per window
-    pub burst_window_seconds: u64,           // Time window for burst detection
-    pub error_rate_threshold: u32,           // Percentage
-    pub actor_anomaly_threshold: u32,        // Multiplier of normal behavior
-    pub circuit_breaker_threshold: u32,      // Failures before opening
-    pub circuit_breaker_timeout: u64,        // Seconds to keep open
+    pub burst_detection_threshold: u32, // Events per window
+    pub burst_window_seconds: u64,      // Time window for burst detection
+    pub error_rate_threshold: u32,      // Percentage
+    pub actor_anomaly_threshold: u32,   // Multiplier of normal behavior
+    pub circuit_breaker_threshold: u32, // Failures before opening
+    pub circuit_breaker_timeout: u64,   // Seconds to keep open
     pub auto_mitigation_enabled: bool,
     pub rate_limit_per_window: u32,
     pub rate_limit_window: u64,
@@ -128,15 +128,15 @@ pub struct SecurityConfig {
 impl SecurityConfig {
     pub fn default_config() -> Self {
         Self {
-            burst_detection_threshold: 100,      // 100 events
-            burst_window_seconds: 60,            // in 60 seconds
-            error_rate_threshold: 10,            // 10% error rate
-            actor_anomaly_threshold: 10,         // 10x normal behavior
-            circuit_breaker_threshold: 5,        // 5 failures
-            circuit_breaker_timeout: 300,        // 5 minutes
+            burst_detection_threshold: 100, // 100 events
+            burst_window_seconds: 60,       // in 60 seconds
+            error_rate_threshold: 10,       // 10% error rate
+            actor_anomaly_threshold: 10,    // 10x normal behavior
+            circuit_breaker_threshold: 5,   // 5 failures
+            circuit_breaker_timeout: 300,   // 5 minutes
             auto_mitigation_enabled: true,
-            rate_limit_per_window: 100,          // 100 events
-            rate_limit_window: 3600,             // per hour
+            rate_limit_per_window: 100, // 100 events
+            rate_limit_window: 3600,    // per hour
         }
     }
 }
@@ -175,12 +175,12 @@ pub struct SecurityRecommendation {
 pub enum SecurityDataKey {
     Config,
     Admin,
-    Threat(BytesN<32>),                           // threat_id
-    ContractThreats(Symbol),                      // contract -> Vec<BytesN<32>>
-    SecurityMetrics(Symbol, u64),                 // (contract, window_id)
-    CircuitBreaker(Symbol, Symbol),               // (contract, function)
-    ActorEventCount(Address, u64),                // (actor, window_id)
-    ContractEventBaseline(Symbol),                // contract -> baseline metrics
-    Recommendation(BytesN<32>),                   // recommendation_id
-    ThreatRecommendations(BytesN<32>),            // threat_id -> Vec<BytesN<32>>
+    Threat(BytesN<32>),                // threat_id
+    ContractThreats(Symbol),           // contract -> Vec<BytesN<32>>
+    SecurityMetrics(Symbol, u64),      // (contract, window_id)
+    CircuitBreaker(Symbol, Symbol),    // (contract, function)
+    ActorEventCount(Address, u64),     // (actor, window_id)
+    ContractEventBaseline(Symbol),     // contract -> baseline metrics
+    Recommendation(BytesN<32>),        // recommendation_id
+    ThreatRecommendations(BytesN<32>), // threat_id -> Vec<BytesN<32>>
 }

@@ -80,19 +80,12 @@ pub trait SecurityMonitorTrait {
     ) -> Result<(), SecurityError>;
 
     /// Update security configuration
-    fn update_config(
-        env: Env,
-        admin: Address,
-        config: SecurityConfig,
-    ) -> Result<(), SecurityError>;
+    fn update_config(env: Env, admin: Address, config: SecurityConfig)
+        -> Result<(), SecurityError>;
 
     /// Get current security configuration
     fn get_config(env: Env) -> Result<SecurityConfig, SecurityError>;
 
     /// Check if rate limit is exceeded for an actor
-    fn check_rate_limit(
-        env: Env,
-        actor: Address,
-        contract: Symbol,
-    ) -> Result<bool, SecurityError>;
+    fn check_rate_limit(env: Env, actor: Address, contract: Symbol) -> Result<bool, SecurityError>;
 }

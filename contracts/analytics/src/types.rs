@@ -268,7 +268,7 @@ pub enum OptionalSessionType {
     Some(SessionType),
 }
 
-/// ML Insight Types
+/// Advanced ML Insight Types
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum InsightType {
@@ -276,9 +276,17 @@ pub enum InsightType {
     CompletionPrediction,
     Recommendation,
     AnomalyDetection,
+    EngagementPrediction,
+    KnowledgeGapAnalysis,
+    CollaborativeInsight,
+    LearningPathOptimization,
+    PerformanceForecast,
+    AdaptiveRecommendation,
+    ContentAnalysis,
+    EffectivenessMetrics,
 }
 
-/// ML-generated learning insight
+/// Advanced ML-generated learning insight
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct MLInsight {
@@ -289,9 +297,11 @@ pub struct MLInsight {
     pub data: String, // Dynamic insight data
     pub confidence: u32,
     pub timestamp: u64,
+    pub model_version: u32,
+    pub metadata: Vec<(String, String)>, // Additional metadata
 }
 
-/// Predictive metrics for course completion
+/// Enhanced predictive metrics for course completion
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct PredictionMetrics {
@@ -299,22 +309,172 @@ pub struct PredictionMetrics {
     pub probability_of_completion: u32,
     pub risk_score: u32,
     pub estimated_remaining_hours: u32,
+    pub confidence_interval: (u32, u32), // Lower and upper bounds
+    pub influencing_factors: Vec<String>,
+    pub recommended_actions: Vec<String>,
 }
 
-/// Personalized learning recommendation
+/// Advanced personalized learning recommendation
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct LearningRecommendation {
     pub target_module: Symbol,
     pub reason: String,
     pub priority: u32,
+    pub estimated_difficulty: u32,
+    pub prerequisites: Vec<Symbol>,
+    pub learning_resources: Vec<String>,
+    pub adaptive_path: bool,
 }
 
-/// Anomaly detection data
+/// Enhanced anomaly detection data
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct AnomalyData {
     pub detected_at: u64,
     pub anomaly_score: u32,
     pub description: String,
+    pub anomaly_type: AnomalyType,
+    pub severity: AnomalySeverity,
+    pub suggested_intervention: String,
+}
+
+/// Types of learning anomalies
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum AnomalyType {
+    EngagementDrop,
+    PerformanceDecline,
+    UnusualPace,
+    SkippingContent,
+    Overstudying,
+    InconsistentPattern,
+}
+
+/// Anomaly severity levels
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum AnomalySeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+/// Student engagement metrics
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct EngagementMetrics {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub engagement_score: u32,
+    pub activity_frequency: u32,
+    pub session_regularity: u32,
+    pub interaction_quality: u32,
+    pub predicted_engagement: u32,
+    pub risk_of_dropout: u32,
+    pub trend: EngagementTrend,
+}
+
+/// Engagement trend indicators
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub enum EngagementTrend {
+    Increasing,
+    Stable,
+    Decreasing,
+    Fluctuating,
+}
+
+/// Knowledge gap analysis result
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct KnowledgeGapAnalysis {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub identified_gaps: Vec<KnowledgeGap>,
+    pub mastery_level: u32,
+    pub recommended_remediation: Vec<LearningRecommendation>,
+    pub confidence_score: u32,
+}
+
+/// Individual knowledge gap
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct KnowledgeGap {
+    pub topic: Symbol,
+    pub gap_severity: u32,
+    pub impact_on_progress: u32,
+    pub remediation_priority: u32,
+}
+
+/// Collaborative learning insights
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct CollaborativeInsight {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub peer_comparison_metrics: PeerComparison,
+    pub collaboration_opportunities: Vec<CollaborationOpportunity>,
+    pub social_learning_score: u32,
+}
+
+/// Peer comparison data
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct PeerComparison {
+    pub percentile_rank: u32,
+    pub performance_vs_peers: i32, // Positive means above average
+    pub pace_vs_peers: i32,
+    pub engagement_vs_peers: i32,
+}
+
+/// Collaboration opportunity
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct CollaborationOpportunity {
+    pub opportunity_type: String,
+    pub recommended_peers: Vec<Address>,
+    pub mutual_benefit: String,
+    pub confidence: u32,
+}
+
+/// Learning path optimization result
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct LearningPathOptimization {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub optimized_path: Vec<Symbol>,
+    pub estimated_time_savings: u32,
+    pub difficulty_progression: Vec<u32>,
+    pub adaptation_reason: String,
+    pub confidence: u32,
+}
+
+/// Multi-dimensional learning effectiveness metrics
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct EffectivenessMetrics {
+    pub student: Address,
+    pub course_id: Symbol,
+    pub retention_score: u32,
+    pub application_score: u32,
+    pub critical_thinking_score: u32,
+    pub overall_effectiveness: u32,
+    pub improvement_areas: Vec<String>,
+    pub strengths: Vec<String>,
+}
+
+/// Content analysis result
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct ContentAnalysis {
+    pub content_id: Symbol,
+    pub complexity_score: u32,
+    pub engagement_prediction: u32,
+    pub completion_prediction: u32,
+    pub content_tags: Vec<String>,
+    pub prerequisites: Vec<Symbol>,
+    pub learning_objectives: Vec<String>,
 }

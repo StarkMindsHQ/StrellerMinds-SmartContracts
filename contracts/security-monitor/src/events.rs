@@ -1,6 +1,5 @@
 use crate::types::{
-    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel,
-    ThreatType,
+    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
@@ -11,7 +10,10 @@ impl SecurityEvents {
     /// Emit contract initialized event
     pub fn emit_initialized(env: &Env, admin: &Address) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "initialized")),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "initialized"),
+            ),
             admin,
         );
     }
@@ -71,11 +73,7 @@ impl SecurityEvents {
             contract.clone(),
         );
 
-        let data = (
-            function.clone(),
-            failure_count,
-            env.ledger().timestamp(),
-        );
+        let data = (function.clone(), failure_count, env.ledger().timestamp());
 
         env.events().publish(topics, data);
     }
@@ -129,12 +127,7 @@ impl SecurityEvents {
             contract.clone(),
         );
 
-        let data = (
-            actor.clone(),
-            event_count,
-            limit,
-            env.ledger().timestamp(),
-        );
+        let data = (actor.clone(), event_count, limit, env.ledger().timestamp());
 
         env.events().publish(topics, data);
     }
