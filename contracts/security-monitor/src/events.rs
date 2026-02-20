@@ -1,6 +1,6 @@
 use crate::types::{
     BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
-    UserRiskScore, ThreatIntelligence
+    ThreatIntelligence
 };
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 

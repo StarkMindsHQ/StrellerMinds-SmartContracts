@@ -1,8 +1,8 @@
 use crate::errors::SecurityError;
 use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
-use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType, UserRiskScore};
-use soroban_sdk::{Env, String, Symbol, BytesN, Address};
+use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType};
+use soroban_sdk::{Env, String, Symbol, BytesN};
 
 /// Core threat detection engine
 pub struct ThreatDetector;
@@ -16,7 +16,7 @@ impl ThreatDetector {
     ) -> Result<Option<SecurityThreat>, SecurityError> {
         let config = SecurityStorage::get_config(env).ok_or(SecurityError::NotInitialized)?;
         let current_time = env.ledger().timestamp();
-        let window_start = current_time.saturating_sub(window_seconds);
+        let _window_start = current_time.saturating_sub(window_seconds);
 
         // In a real implementation, we would use EventReplay to get actual events
         // For now, we'll use a simplified detection based on stored metrics
@@ -247,7 +247,7 @@ impl ThreatDetector {
     }
 
     /// Generate a unique threat ID
-    pub fn generate_threat_id(env: &Env, contract: &Symbol) -> soroban_sdk::BytesN<32> {
+    pub fn generate_threat_id(env: &Env, _contract: &Symbol) -> soroban_sdk::BytesN<32> {
         let timestamp = env.ledger().timestamp();
         let sequence = env.ledger().sequence();
 
@@ -257,10 +257,8 @@ impl ThreatDetector {
         let seq_bytes = sequence.to_be_bytes();
 
         // Mix timestamp and sequence
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[..8].copy_from_slice(&ts_bytes);
+        data[8..(8 + 4)].copy_from_slice(&seq_bytes);
 
         // Mix in contract symbol hash (simplified without to_string)
         // Just use the timestamp/sequence for unique IDs since Symbol doesn't support to_string

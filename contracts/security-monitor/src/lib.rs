@@ -8,11 +8,10 @@ pub mod threat_detector;
 pub mod types;
 
 use crate::events::SecurityEvents;
-use crate::interface::SecurityMonitorTrait;
 use crate::storage::SecurityStorage;
 use crate::threat_detector::ThreatDetector;
 use crate::types::{
-    CircuitBreakerState, MitigationAction, SecurityConfig, SecurityMetrics, SecurityRecommendation,
+    SecurityConfig,
     SecurityThreat, UserRiskScore, ThreatIntelligence, IncidentReport, SecurityTrainingStatus
 };
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, Symbol, Vec, String};

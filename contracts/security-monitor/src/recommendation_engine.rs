@@ -261,9 +261,7 @@ impl RecommendationEngine {
         let mut data = [0u8; 32];
 
         // Copy threat ID
-        for i in 0..32 {
-            data[i] = threat_id.to_array()[i];
-        }
+        data.copy_from_slice(&threat_id.to_array());
 
         // XOR with index to make unique
         let index_bytes = index.to_be_bytes();

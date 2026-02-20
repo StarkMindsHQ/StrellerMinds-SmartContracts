@@ -1,7 +1,7 @@
 use crate::errors::SecurityError;
 use crate::types::{
     CircuitBreakerState, MitigationAction, SecurityConfig, SecurityMetrics, SecurityRecommendation,
-    SecurityThreat, UserRiskScore, ThreatIntelligence, IncidentReport, SecurityTrainingStatus
+    SecurityThreat, UserRiskScore, ThreatIntelligence
 };
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
