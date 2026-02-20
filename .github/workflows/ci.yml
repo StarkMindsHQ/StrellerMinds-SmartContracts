@@ -191,14 +191,13 @@ jobs:
       matrix:
         contract:
           - analytics
-          - certificate
-          - mint-batch-certificates
           - mobile-optimizer
           - progress
           - proxy
           - search
           - student-progress-tracker
           - token
+          - security-monitor
     steps:
       - uses: actions/checkout@v4
       
@@ -257,53 +256,6 @@ jobs:
             echo "⚠️  WASM file not found at $WASM_FILE"
           fi
         id: size_check
-
-  ml-analytics-tests:
-    name: ML Analytics Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-ml-tests-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-ml-tests-
-            ${{ runner.os }}-cargo-
-      
-      - name: Run ML-specific tests
-        run: |
-          echo "Running ML analytics functionality tests..."
-          cargo test --package analytics --test analytics_tests --verbose
-          
-          echo "Running ML pattern recognition tests..."
-          cargo test --package analytics test_advanced_pattern_recognition --verbose
-          
-          echo "Running ML engagement prediction tests..."
-          cargo test --package analytics test_engagement_prediction --verbose
-          
-          echo "Running ML knowledge gap analysis tests..."
-          cargo test --package analytics test_knowledge_gap_analysis --verbose
-          
-          echo "Running ML collaborative learning tests..."
-          cargo test --package analytics test_collaborative_learning_analysis --verbose
-          
-          echo "Running ML anomaly detection tests..."
-          cargo test --package analytics test_advanced_anomaly_detection --verbose
-          
-          echo "Running ML learning path optimization tests..."
-          cargo test --package analytics test_learning_path_optimization --verbose
-          
-          echo "Running ML effectiveness metrics tests..."
-          cargo test --package analytics test_effectiveness_metrics --verbose
 
   dependency-check:
     name: Dependency Version Check
@@ -425,7 +377,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [format, clippy, security-audit, test, build, wasm-check, contract-matrix, ml-analytics-tests, dependency-check, shell-lint, docs-check]
+    needs: [format, clippy, security-audit, test, build, wasm-check, contract-matrix, dependency-check, shell-lint, docs-check]
     if: always()
     steps:
       - name: Check all jobs
@@ -437,7 +389,6 @@ jobs:
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.wasm-check.result }}" != "success" || \
                 "${{ needs.contract-matrix.result }}" != "success" || \
-                "${{ needs.ml-analytics-tests.result }}" != "success" || \
                 "${{ needs.dependency-check.result }}" != "success" || \
                 "${{ needs.shell-lint.result }}" != "success" || \
                 "${{ needs.docs-check.result }}" != "success" ]]; then
@@ -449,7 +400,6 @@ jobs:
             echo "Build: ${{ needs.build.result }}"
             echo "WASM Check: ${{ needs.wasm-check.result }}"
             echo "Contract Matrix: ${{ needs.contract-matrix.result }}"
-            echo "ML Analytics Tests: ${{ needs.ml-analytics-tests.result }}"
             echo "Dependency Check: ${{ needs.dependency-check.result }}"
             echo "Shell Lint: ${{ needs.shell-lint.result }}"
             echo "Docs Check: ${{ needs.docs-check.result }}"

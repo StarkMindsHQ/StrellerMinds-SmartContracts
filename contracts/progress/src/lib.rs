@@ -1,6 +1,4 @@
-use soroban_sdk::{
-    contract, contractimpl, Address, Env, Error, Symbol, Vec,
-};
+use soroban_sdk::{contract, contractimpl, Address, Env, Error, Symbol, Vec};
 
 #[contract]
 pub struct Progress;
@@ -11,7 +9,12 @@ impl Progress {
         Ok(())
     }
 
-    pub fn record_progress(_env: Env, _student: Address, _course_id: Symbol, _progress: u32) -> Result<(), Error> {
+    pub fn record_progress(
+        _env: Env,
+        _student: Address,
+        _course_id: Symbol,
+        _progress: u32,
+    ) -> Result<(), Error> {
         Ok(())
     }
 

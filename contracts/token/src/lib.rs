@@ -1,6 +1,4 @@
-use soroban_sdk::{
-    contract, contractimpl, Address, BytesN, Env, Error, Symbol, Vec,
-};
+use soroban_sdk::{contract, contractimpl, Address, Env, Error};
 
 #[contract]
 pub struct Token;
