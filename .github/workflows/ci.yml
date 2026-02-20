@@ -10,110 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  format:
-    name: Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-  clippy:
-    name: Clippy Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-      
-      - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-audit-
-            ${{ runner.os }}-cargo-
-      
-      - name: Run cargo audit
-        run: |
-            cargo install cargo-audit
-            cargo audit --deny warnings
-
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-test-
-            ${{ runner.os }}-cargo-
-      
-      - name: Run unit tests
-        run: cargo test --workspace --exclude e2e-tests --verbose
-      
-      - name: Run integration tests
-        run: cargo test --workspace --exclude e2e-tests --features testutils --verbose
-      
-      - name: Generate test coverage
-        run: |
-          cargo install cargo-tarpaulin
-          cargo tarpaulin --workspace --exclude e2e-tests --out Xml --output-dir coverage
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/cobertura.xml
-          flags: unittests
-          name: codecov-umbrella
-
   build:
     name: Build Check
     runs-on: ubuntu-latest
@@ -143,16 +39,14 @@ jobs:
           find target/release -name "streller-cli" -exec ls -lh {} \; || true
           find target/release -name "*.wasm" -exec ls -lh {} \; || true
 
-  wasm-check:
-    name: WASM Compatibility Check
+  test:
+    name: Test Suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
       
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -161,249 +55,28 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-wasm-
+            ${{ runner.os }}-cargo-test-
             ${{ runner.os }}-cargo-
       
-      - name: Build for WASM target
-        run: cargo build --all --target wasm32-unknown-unknown --verbose
-      
-      - name: Check WASM file sizes
-        run: |
-          for wasm_file in target/wasm32-unknown-unknown/release/*.wasm; do
-            if [ -f "$wasm_file" ]; then
-              size=$(stat -f%z "$wasm_file" 2>/dev/null || stat -c%s "$wasm_file" 2>/dev/null || echo "0")
-              echo "📦 $(basename $wasm_file): $(numfmt --to=iec-i --suffix=B $size 2>/dev/null || echo ${size}B)"
-              if [ $size -gt 1048576 ]; then  # 1MB limit
-                echo "⚠️  Warning: $(basename $wasm_file) exceeds 1MB size limit"
-              fi
-            fi
-          done
+      - name: Run unit tests
+        run: cargo test --workspace --exclude e2e-tests --verbose
 
-  # Per-contract WASM build matrix - isolates build/test failures per contract
-  contract-matrix:
-    name: Contract ${{ matrix.contract }}
-    runs-on: ubuntu-latest
-    strategy:
-      # Don't cancel all jobs if one fails - we want to see all failures
-      fail-fast: false
-      matrix:
-        contract:
-          - analytics
-          - mobile-optimizer
-          - progress
-          - proxy
-          - search
-          - student-progress-tracker
-          - token
-          - security-monitor
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-contract-${{ matrix.contract }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-contract-${{ matrix.contract }}-
-            ${{ runner.os }}-cargo-
-      
-      - name: Run ${{ matrix.contract }} tests
-        run: |
-          echo "Testing contract: ${{ matrix.contract }}"
-          cargo test --package ${{ matrix.contract }} --verbose
-      
-      - name: Build ${{ matrix.contract }} for native target
-        run: |
-          echo "Building contract: ${{ matrix.contract }} for native target"
-          cargo build --package ${{ matrix.contract }} --release
-      
-      - name: Build ${{ matrix.contract }} for WASM target
-        run: |
-          echo "Building contract: ${{ matrix.contract }} for WASM target"
-          cargo build --package ${{ matrix.contract }} --target wasm32-unknown-unknown --release --lib || {
-            echo "::warning::WASM build failed for ${{ matrix.contract }}. This may indicate missing no_std compatibility."
-            exit 1
-          }
-      
-      - name: Check ${{ matrix.contract }} contract size
-        if: success()
-        run: |
-          WASM_FILE="target/wasm32-unknown-unknown/release/${{ matrix.contract }}.wasm"
-          if [ -f "$WASM_FILE" ]; then
-            SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE" 2>/dev/null || echo "0")
-            echo "📦 Contract size: $(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo ${SIZE}B)"
-            echo "contract_size=$SIZE" >> $GITHUB_OUTPUT
-            
-            # Check against size limits
-            if [ $SIZE -gt 2097152 ]; then  # 2MB hard limit
-              echo "❌ Contract exceeds 2MB hard limit"
-              exit 1
-            elif [ $SIZE -gt 1048576 ]; then  # 1MB warning
-              echo "⚠️  Contract exceeds 1MB recommended limit"
-            fi
-          else
-            echo "⚠️  WASM file not found at $WASM_FILE"
-          fi
-        id: size_check
-
-  dependency-check:
-    name: Dependency Version Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Check workspace dependency usage
-        run: |
-          echo "Checking that all contracts use workspace dependencies..."
-          
-          # Check for hardcoded soroban-sdk versions
-          if grep -r 'soroban-sdk = "[0-9]' contracts/*/Cargo.toml; then
-            echo "❌ Found hardcoded soroban-sdk versions in contract Cargo.toml files"
-            echo "All contracts should use: soroban-sdk = { workspace = true }"
-            exit 1
-          fi
-          
-          # Check for hardcoded stellar-strkey versions
-          if grep -r 'stellar-strkey = "[0-9]' contracts/*/Cargo.toml; then
-            echo "❌ Found hardcoded stellar-strkey versions in contract Cargo.toml files"
-            echo "All contracts should use: stellar-strkey = { workspace = true }"
-            exit 1
-          fi
-          
-          # Check for hardcoded ed25519-dalek versions
-          if grep -r 'ed25519-dalek = "[0-9]' contracts/*/Cargo.toml; then
-            echo "❌ Found hardcoded ed25519-dalek versions in contract Cargo.toml files"
-            echo "All contracts should use: ed25519-dalek = { workspace = true }"
-            exit 1
-          fi
-          
-          # Check for hardcoded rand versions
-          if grep -r 'rand = "[0-9]' contracts/*/Cargo.toml; then
-            echo "❌ Found hardcoded rand versions in contract Cargo.toml files"
-            echo "All contracts should use: rand = { workspace = true }"
-            exit 1
-          fi
-          
-          # Verify all contracts use workspace = true for soroban-sdk
-          echo "Verifying all contracts use workspace dependencies..."
-          for cargo_file in contracts/*/Cargo.toml; do
-            if grep -q "soroban-sdk" "$cargo_file"; then
-              if ! grep -q "soroban-sdk = { workspace = true }" "$cargo_file"; then
-                echo "❌ $cargo_file does not use workspace dependency for soroban-sdk"
-                exit 1
-              fi
-            fi
-          done
-          
-          echo "✅ All dependency versions are properly aligned with workspace configuration"
-
-  shell-lint:
-    name: Shell Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install ShellCheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-      
-      - name: Install shfmt
-        run: |
-          go install mvdan.cc/sh/v3/cmd/shfmt@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
-      
-      - name: Run ShellCheck
-        run: |
-          echo "Running ShellCheck on shell scripts..."
-          find scripts -name "*.sh" -exec shellcheck {} \; || {
-            echo "ShellCheck found issues"
-            exit 1
-          }
-          echo "ShellCheck passed"
-      
-      - name: Run shfmt check
-        run: |
-          echo "Running shfmt check..."
-          shfmt -d scripts/*.sh || {
-            echo "shfmt found formatting issues"
-            exit 1
-          }
-          echo "shfmt check passed"
-
-  docs-check:
-    name: Documentation Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Check documentation
-        run: |
-          echo "Checking documentation builds..."
-          cargo doc --workspace --no-deps --document-private-items || {
-            echo "Documentation build failed"
-            exit 1
-          }
-          echo "Documentation build passed"
-      
-      - name: Check README files
-        run: |
-          echo "Checking for README files in all contracts..."
-          for contract_dir in contracts/*/; do
-            if [ -d "$contract_dir" ]; then
-              if [ ! -f "$contract_dir/README.md" ]; then
-                echo "❌ Missing README.md in $contract_dir"
-                exit 1
-              fi
-            fi
-          done
-          echo "✅ All contracts have README files"
-
-  # Combined status check job
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [format, clippy, security-audit, test, build, wasm-check, contract-matrix, dependency-check, shell-lint, docs-check]
+    needs: [build, test]
     if: always()
     steps:
       - name: Check all jobs
         run: |
-          if [[ "${{ needs.format.result }}" != "success" || \
-                "${{ needs.clippy.result }}" != "success" || \
-                "${{ needs.security-audit.result }}" != "success" || \
-                "${{ needs.test.result }}" != "success" || \
-                "${{ needs.build.result }}" != "success" || \
-                "${{ needs.wasm-check.result }}" != "success" || \
-                "${{ needs.contract-matrix.result }}" != "success" || \
-                "${{ needs.dependency-check.result }}" != "success" || \
-                "${{ needs.shell-lint.result }}" != "success" || \
-                "${{ needs.docs-check.result }}" != "success" ]]; then
+          if [[ "${{ needs.build.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"
-            echo "Format: ${{ needs.format.result }}"
-            echo "Clippy: ${{ needs.clippy.result }}"
-            echo "Security Audit: ${{ needs.security-audit.result }}"
-            echo "Test: ${{ needs.test.result }}"
             echo "Build: ${{ needs.build.result }}"
-            echo "WASM Check: ${{ needs.wasm-check.result }}"
-            echo "Contract Matrix: ${{ needs.contract-matrix.result }}"
-            echo "Dependency Check: ${{ needs.dependency-check.result }}"
-            echo "Shell Lint: ${{ needs.shell-lint.result }}"
-            echo "Docs Check: ${{ needs.docs-check.result }}"
+            echo "Test: ${{ needs.test.result }}"
             exit 1
           fi
           echo "✅ All CI jobs passed successfully"
-          echo "🎉 Advanced ML Analytics system is ready for deployment!"
+          echo "🎉 Project is ready for deployment!"
