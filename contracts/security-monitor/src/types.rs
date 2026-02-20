@@ -200,7 +200,7 @@ pub enum SecurityDataKey {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct UserRiskScore {
-    pub score: u32,             // 0-100, where 100 is maximum risk
+    pub score: u32, // 0-100, where 100 is maximum risk
     pub last_updated: u64,
     pub risk_factors: Vec<Symbol>, // e.g., "FailedLogin", "AnomalousBehavior"
 }
@@ -209,8 +209,8 @@ pub struct UserRiskScore {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct ThreatIntelligence {
-    pub source: Symbol,           // e.g., "GlobalList", "PartnerAPI"
-    pub indicator_type: Symbol,   // e.g., "IP", "Address", "BehaviorPattern"
+    pub source: Symbol,         // e.g., "GlobalList", "PartnerAPI"
+    pub indicator_type: Symbol, // e.g., "IP", "Address", "BehaviorPattern"
     pub indicator_value: String,
     pub threat_level: ThreatLevel,
     pub added_at: u64,
@@ -225,7 +225,7 @@ pub struct IncidentReport {
     pub threat_ids: Vec<BytesN<32>>,
     pub impact_summary: String,
     pub actions_taken: Vec<MitigationAction>,
-    pub status: Symbol,          // e.g., "Open", "Mitigated", "Resolved"
+    pub status: Symbol, // e.g., "Open", "Mitigated", "Resolved"
     pub resolved_at: Option<u64>,
 }
 

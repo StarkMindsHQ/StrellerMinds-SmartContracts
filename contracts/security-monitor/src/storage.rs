@@ -1,7 +1,8 @@
 use crate::types::{
-    CircuitBreakerState, SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation,
-    SecurityThreat, UserRiskScore, ThreatIntelligence, IncidentReport, SecurityTrainingStatus
-};    
+    CircuitBreakerState, IncidentReport, SecurityConfig, SecurityDataKey, SecurityMetrics,
+    SecurityRecommendation, SecurityThreat, SecurityTrainingStatus, ThreatIntelligence,
+    UserRiskScore,
+};
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
 /// Storage utilities for the Security Monitor contract
@@ -198,7 +199,10 @@ impl SecurityStorage {
         env.storage().persistent().set(&key, intel);
     }
 
-    pub fn get_threat_intelligence(env: &Env, indicator_type: &Symbol) -> Option<ThreatIntelligence> {
+    pub fn get_threat_intelligence(
+        env: &Env,
+        indicator_type: &Symbol,
+    ) -> Option<ThreatIntelligence> {
         let key = SecurityDataKey::ThreatIntelligence(indicator_type.clone());
         env.storage().persistent().get(&key)
     }

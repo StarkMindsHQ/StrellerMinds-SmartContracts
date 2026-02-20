@@ -1,6 +1,6 @@
 use crate::types::{
-    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
-    ThreatIntelligence
+    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatIntelligence,
+    ThreatLevel, ThreatType,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
@@ -170,51 +170,99 @@ impl SecurityEvents {
 
     // --- Advanced Feature Events ---
 
-    pub fn emit_anomaly_analysis_requested(env: &Env, actor: &Address, contract: &Symbol, request_id: &BytesN<32>) {
+    pub fn emit_anomaly_analysis_requested(
+        env: &Env,
+        actor: &Address,
+        contract: &Symbol,
+        request_id: &BytesN<32>,
+    ) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "anomaly_requested"), contract.clone()),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "anomaly_requested"),
+                contract.clone(),
+            ),
             (actor.clone(), request_id.clone(), env.ledger().timestamp()),
         );
     }
 
-    pub fn emit_biometrics_verification_requested(env: &Env, actor: &Address, request_id: &BytesN<32>) {
+    pub fn emit_biometrics_verification_requested(
+        env: &Env,
+        actor: &Address,
+        request_id: &BytesN<32>,
+    ) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "biometrics_requested")),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "biometrics_requested"),
+            ),
             (actor.clone(), request_id.clone(), env.ledger().timestamp()),
         );
     }
 
     pub fn emit_fraud_verification_requested(env: &Env, actor: &Address, request_id: &BytesN<32>) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "fraud_requested")),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "fraud_requested"),
+            ),
             (actor.clone(), request_id.clone(), env.ledger().timestamp()),
         );
     }
 
-    pub fn emit_user_risk_score_updated(env: &Env, user: &Address, new_score: u32, risk_factor: &Symbol) {
+    pub fn emit_user_risk_score_updated(
+        env: &Env,
+        user: &Address,
+        new_score: u32,
+        risk_factor: &Symbol,
+    ) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "risk_score_updated")),
-            (user.clone(), new_score, risk_factor.clone(), env.ledger().timestamp()),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "risk_score_updated"),
+            ),
+            (
+                user.clone(),
+                new_score,
+                risk_factor.clone(),
+                env.ledger().timestamp(),
+            ),
         );
     }
 
     pub fn emit_threat_intelligence_added(env: &Env, intel: &ThreatIntelligence) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "intel_added"), intel.indicator_type.clone()),
-            (intel.source.clone(), intel.indicator_value.clone(), Self::threat_level_to_string(env, &intel.threat_level), env.ledger().timestamp()),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "intel_added"),
+                intel.indicator_type.clone(),
+            ),
+            (
+                intel.source.clone(),
+                intel.indicator_value.clone(),
+                Self::threat_level_to_string(env, &intel.threat_level),
+                env.ledger().timestamp(),
+            ),
         );
     }
 
     pub fn emit_security_training_recorded(env: &Env, user: &Address, module: &Symbol, score: u32) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "training_recorded"), module.clone()),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "training_recorded"),
+                module.clone(),
+            ),
             (user.clone(), score, env.ledger().timestamp()),
         );
     }
 
     pub fn emit_incident_report_generated(env: &Env, incident_id: &BytesN<32>, admin: &Address) {
         env.events().publish(
-            (Symbol::new(env, "security"), Symbol::new(env, "incident_reported")),
+            (
+                Symbol::new(env, "security"),
+                Symbol::new(env, "incident_reported"),
+            ),
             (incident_id.clone(), admin.clone(), env.ledger().timestamp()),
         );
     }

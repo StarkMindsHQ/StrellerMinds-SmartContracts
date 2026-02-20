@@ -220,9 +220,9 @@ impl RecommendationEngine {
                 recommendations.push_back(rec);
             }
 
-            ThreatType::BehavioralAnomaly 
-            | ThreatType::CredentialFraud 
-            | ThreatType::BiometricFailure 
+            ThreatType::BehavioralAnomaly
+            | ThreatType::CredentialFraud
+            | ThreatType::BiometricFailure
             | ThreatType::KnownMaliciousActor => {
                 // For AI/Oracle based threats, recommendations are integrated in the AI response or handled dynamically.
                 // Or we generate a generic placeholder:
@@ -236,7 +236,7 @@ impl RecommendationEngine {
                         env,
                         "Please verify the flagged behavior or credential with external evidence.",
                     ),
-                    code_location: None, 
+                    code_location: None,
                     fix_suggestion: String::from_str(
                         env,
                         "Evaluate the actor's recent activity logs and adjust threshold if necessary.",

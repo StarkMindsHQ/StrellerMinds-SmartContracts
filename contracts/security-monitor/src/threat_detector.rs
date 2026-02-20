@@ -2,7 +2,7 @@ use crate::errors::SecurityError;
 use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
 use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType};
-use soroban_sdk::{Env, String, Symbol, BytesN};
+use soroban_sdk::{BytesN, Env, String, Symbol};
 
 /// Core threat detection engine
 pub struct ThreatDetector;
@@ -186,12 +186,21 @@ impl ThreatDetector {
 
     // --- Advanced Features ---
 
-    pub fn handle_anomaly_callback(env: &Env, request_id: BytesN<32>, is_anomalous: bool, risk_score: u32) {
+    pub fn handle_anomaly_callback(
+        env: &Env,
+        request_id: BytesN<32>,
+        is_anomalous: bool,
+        risk_score: u32,
+    ) {
         if is_anomalous {
             let threat = SecurityThreat {
                 threat_id: request_id.clone(),
                 threat_type: ThreatType::BehavioralAnomaly,
-                threat_level: if risk_score > 80 { ThreatLevel::Critical } else { ThreatLevel::High },
+                threat_level: if risk_score > 80 {
+                    ThreatLevel::Critical
+                } else {
+                    ThreatLevel::High
+                },
                 detected_at: env.ledger().timestamp(),
                 contract: Symbol::new(env, "unknown"), // Would be passed through state or request_id mapping
                 actor: None,
@@ -227,7 +236,7 @@ impl ThreatDetector {
     }
 
     pub fn handle_fraud_callback(env: &Env, request_id: BytesN<32>, is_fraudulent: bool) {
-         if is_fraudulent {
+        if is_fraudulent {
             let threat = SecurityThreat {
                 threat_id: request_id.clone(),
                 threat_type: ThreatType::CredentialFraud,
@@ -243,7 +252,7 @@ impl ThreatDetector {
             };
             SecurityStorage::set_threat(env, &threat);
             SecurityEvents::emit_threat_detected(env, &threat);
-         }
+        }
     }
 
     /// Generate a unique threat ID

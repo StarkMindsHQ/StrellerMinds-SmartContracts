@@ -1,7 +1,7 @@
 use crate::errors::SecurityError;
 use crate::types::{
     CircuitBreakerState, MitigationAction, SecurityConfig, SecurityMetrics, SecurityRecommendation,
-    SecurityThreat, UserRiskScore, ThreatIntelligence
+    SecurityThreat, ThreatIntelligence, UserRiskScore,
 };
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
@@ -92,35 +92,84 @@ pub trait SecurityMonitorTrait {
     // --- Advanced Features ---
 
     /// Request AI anomaly analysis for an actor
-    fn request_anomaly_analysis(env: Env, actor: Address, contract: Symbol) -> Result<BytesN<32>, SecurityError>;
+    fn request_anomaly_analysis(
+        env: Env,
+        actor: Address,
+        contract: Symbol,
+    ) -> Result<BytesN<32>, SecurityError>;
 
     /// Oracle callback for AI anomaly analysis
-    fn callback_anomaly_analysis(env: Env, oracle: Address, request_id: BytesN<32>, is_anomalous: bool, risk_score: u32) -> Result<(), SecurityError>;
+    fn callback_anomaly_analysis(
+        env: Env,
+        oracle: Address,
+        request_id: BytesN<32>,
+        is_anomalous: bool,
+        risk_score: u32,
+    ) -> Result<(), SecurityError>;
 
     /// Request biometric verification (continuous auth)
-    fn verify_biometrics(env: Env, actor: Address, encrypted_payload: soroban_sdk::String) -> Result<BytesN<32>, SecurityError>;
+    fn verify_biometrics(
+        env: Env,
+        actor: Address,
+        encrypted_payload: soroban_sdk::String,
+    ) -> Result<BytesN<32>, SecurityError>;
 
     /// Oracle callback for biometric verification
-    fn callback_biometrics_verification(env: Env, oracle: Address, request_id: BytesN<32>, is_valid: bool) -> Result<(), SecurityError>;
+    fn callback_biometrics_verification(
+        env: Env,
+        oracle: Address,
+        request_id: BytesN<32>,
+        is_valid: bool,
+    ) -> Result<(), SecurityError>;
 
     /// Request credential fraud verification
-    fn verify_credential_fraud(env: Env, actor: Address, credential_hash: BytesN<32>) -> Result<BytesN<32>, SecurityError>;
+    fn verify_credential_fraud(
+        env: Env,
+        actor: Address,
+        credential_hash: BytesN<32>,
+    ) -> Result<BytesN<32>, SecurityError>;
 
     /// Oracle callback for credential fraud verification
-    fn callback_credential_fraud(env: Env, oracle: Address, request_id: BytesN<32>, is_fraudulent: bool) -> Result<(), SecurityError>;
+    fn callback_credential_fraud(
+        env: Env,
+        oracle: Address,
+        request_id: BytesN<32>,
+        is_fraudulent: bool,
+    ) -> Result<(), SecurityError>;
 
     /// Add or update threat intelligence
-    fn update_threat_intelligence(env: Env, admin: Address, intel: ThreatIntelligence) -> Result<(), SecurityError>;
+    fn update_threat_intelligence(
+        env: Env,
+        admin: Address,
+        intel: ThreatIntelligence,
+    ) -> Result<(), SecurityError>;
 
     /// Update user risk score
-    fn update_user_risk_score(env: Env, admin: Address, user: Address, score: u32, risk_factor: Symbol) -> Result<(), SecurityError>;
+    fn update_user_risk_score(
+        env: Env,
+        admin: Address,
+        user: Address,
+        score: u32,
+        risk_factor: Symbol,
+    ) -> Result<(), SecurityError>;
 
     /// Get user risk score
     fn get_user_risk_score(env: Env, user: Address) -> Option<UserRiskScore>;
 
     /// Record security awareness training
-    fn record_security_training(env: Env, admin: Address, user: Address, module: Symbol, score: u32) -> Result<(), SecurityError>;
+    fn record_security_training(
+        env: Env,
+        admin: Address,
+        user: Address,
+        module: Symbol,
+        score: u32,
+    ) -> Result<(), SecurityError>;
 
     /// Generate an incident report
-    fn generate_incident_report(env: Env, admin: Address, threat_ids: Vec<BytesN<32>>, impact_summary: soroban_sdk::String) -> Result<BytesN<32>, SecurityError>;
+    fn generate_incident_report(
+        env: Env,
+        admin: Address,
+        threat_ids: Vec<BytesN<32>>,
+        impact_summary: soroban_sdk::String,
+    ) -> Result<BytesN<32>, SecurityError>;
 }
