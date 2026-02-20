@@ -219,6 +219,34 @@ impl RecommendationEngine {
                 SecurityStorage::set_recommendation(env, &rec);
                 recommendations.push_back(rec);
             }
+
+            ThreatType::BehavioralAnomaly 
+            | ThreatType::CredentialFraud 
+            | ThreatType::BiometricFailure 
+            | ThreatType::KnownMaliciousActor => {
+                // For AI/Oracle based threats, recommendations are integrated in the AI response or handled dynamically.
+                // Or we generate a generic placeholder:
+                let rec = SecurityRecommendation {
+                    recommendation_id: Self::generate_recommendation_id(env, &threat.threat_id, 0),
+                    threat_id: threat.threat_id.clone(),
+                    severity: threat.threat_level.clone(),
+                    category: RecommendationCategory::Configuration,
+                    title: String::from_str(env, "Review AI Security Insight"),
+                    description: String::from_str(
+                        env,
+                        "Please verify the flagged behavior or credential with external evidence.",
+                    ),
+                    code_location: None, 
+                    fix_suggestion: String::from_str(
+                        env,
+                        "Evaluate the actor's recent activity logs and adjust threshold if necessary.",
+                    ),
+                    created_at: env.ledger().timestamp(),
+                    acknowledged: false,
+                };
+                SecurityStorage::set_recommendation(env, &rec);
+                recommendations.push_back(rec);
+            }
         }
 
         Ok(recommendations)

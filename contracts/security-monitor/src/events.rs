@@ -1,5 +1,6 @@
 use crate::types::{
     BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
+    UserRiskScore, ThreatIntelligence
 };
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
@@ -167,6 +168,57 @@ impl SecurityEvents {
         );
     }
 
+    // --- Advanced Feature Events ---
+
+    pub fn emit_anomaly_analysis_requested(env: &Env, actor: &Address, contract: &Symbol, request_id: &BytesN<32>) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "anomaly_requested"), contract.clone()),
+            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_biometrics_verification_requested(env: &Env, actor: &Address, request_id: &BytesN<32>) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "biometrics_requested")),
+            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_fraud_verification_requested(env: &Env, actor: &Address, request_id: &BytesN<32>) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "fraud_requested")),
+            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_user_risk_score_updated(env: &Env, user: &Address, new_score: u32, risk_factor: &Symbol) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "risk_score_updated")),
+            (user.clone(), new_score, risk_factor.clone(), env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_threat_intelligence_added(env: &Env, intel: &ThreatIntelligence) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "intel_added"), intel.indicator_type.clone()),
+            (intel.source.clone(), intel.indicator_value.clone(), Self::threat_level_to_string(env, &intel.threat_level), env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_security_training_recorded(env: &Env, user: &Address, module: &Symbol, score: u32) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "training_recorded"), module.clone()),
+            (user.clone(), score, env.ledger().timestamp()),
+        );
+    }
+
+    pub fn emit_incident_report_generated(env: &Env, incident_id: &BytesN<32>, admin: &Address) {
+        env.events().publish(
+            (Symbol::new(env, "security"), Symbol::new(env, "incident_reported")),
+            (incident_id.clone(), admin.clone(), env.ledger().timestamp()),
+        );
+    }
+
     // Helper functions to convert enums to strings
 
     fn threat_type_to_string(env: &Env, threat_type: &ThreatType) -> String {
@@ -179,6 +231,10 @@ impl SecurityEvents {
             ThreatType::ReentrancyAttempt => "reentrancy_attempt",
             ThreatType::ValidationFailure => "validation_failure",
             ThreatType::RateLimitExceeded => "rate_limit_exceeded",
+            ThreatType::BehavioralAnomaly => "behavioral_anomaly",
+            ThreatType::CredentialFraud => "credential_fraud",
+            ThreatType::BiometricFailure => "biometric_failure",
+            ThreatType::KnownMaliciousActor => "known_malicious_actor",
         };
         String::from_str(env, s)
     }
@@ -200,6 +256,8 @@ impl SecurityEvents {
             MitigationAction::AccessRestricted => "access_restricted",
             MitigationAction::AlertSent => "alert_sent",
             MitigationAction::NoAction => "no_action",
+            MitigationAction::RequireReauth => "require_reauth",
+            MitigationAction::LockAccount => "lock_account",
         };
         String::from_str(env, s)
     }

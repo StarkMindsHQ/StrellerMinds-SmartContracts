@@ -1,7 +1,7 @@
 use crate::types::{
     CircuitBreakerState, SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation,
-    SecurityThreat,
-};
+    SecurityThreat, UserRiskScore, ThreatIntelligence, IncidentReport, SecurityTrainingStatus
+};    
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
 /// Storage utilities for the Security Monitor contract
@@ -179,5 +179,61 @@ impl SecurityStorage {
             .persistent()
             .get(&key)
             .unwrap_or(Vec::new(env))
+    }
+
+    // ===== Advanced Security Features =====
+
+    pub fn set_user_risk_score(env: &Env, user: &Address, score: &UserRiskScore) {
+        let key = SecurityDataKey::UserRiskScore(user.clone());
+        env.storage().persistent().set(&key, score);
+    }
+
+    pub fn get_user_risk_score(env: &Env, user: &Address) -> Option<UserRiskScore> {
+        let key = SecurityDataKey::UserRiskScore(user.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn set_threat_intelligence(env: &Env, indicator_type: &Symbol, intel: &ThreatIntelligence) {
+        let key = SecurityDataKey::ThreatIntelligence(indicator_type.clone());
+        env.storage().persistent().set(&key, intel);
+    }
+
+    pub fn get_threat_intelligence(env: &Env, indicator_type: &Symbol) -> Option<ThreatIntelligence> {
+        let key = SecurityDataKey::ThreatIntelligence(indicator_type.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn set_training_status(env: &Env, user: &Address, status: &SecurityTrainingStatus) {
+        let key = SecurityDataKey::TrainingStatus(user.clone());
+        env.storage().persistent().set(&key, status);
+    }
+
+    pub fn get_training_status(env: &Env, user: &Address) -> Option<SecurityTrainingStatus> {
+        let key = SecurityDataKey::TrainingStatus(user.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn set_incident_report(env: &Env, report: &IncidentReport) {
+        let key = SecurityDataKey::IncidentReport(report.incident_id.clone());
+        env.storage().persistent().set(&key, report);
+    }
+
+    pub fn get_incident_report(env: &Env, incident_id: &BytesN<32>) -> Option<IncidentReport> {
+        let key = SecurityDataKey::IncidentReport(incident_id.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn set_oracle_authorization(env: &Env, oracle: &Address, authorized: bool) {
+        let key = SecurityDataKey::Oracle(oracle.clone());
+        if authorized {
+            env.storage().persistent().set(&key, &true);
+        } else {
+            env.storage().persistent().remove(&key);
+        }
+    }
+
+    pub fn is_oracle_authorized(env: &Env, oracle: &Address) -> bool {
+        let key = SecurityDataKey::Oracle(oracle.clone());
+        env.storage().persistent().get(&key).unwrap_or(false)
     }
 }

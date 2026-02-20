@@ -1,7 +1,8 @@
 use crate::errors::SecurityError;
+use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
-use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType};
-use soroban_sdk::{Env, String, Symbol};
+use crate::types::{MitigationAction, SecurityMetrics, SecurityThreat, ThreatLevel, ThreatType, UserRiskScore};
+use soroban_sdk::{Env, String, Symbol, BytesN, Address};
 
 /// Core threat detection engine
 pub struct ThreatDetector;
@@ -183,8 +184,70 @@ impl ThreatDetector {
         }
     }
 
+    // --- Advanced Features ---
+
+    pub fn handle_anomaly_callback(env: &Env, request_id: BytesN<32>, is_anomalous: bool, risk_score: u32) {
+        if is_anomalous {
+            let threat = SecurityThreat {
+                threat_id: request_id.clone(),
+                threat_type: ThreatType::BehavioralAnomaly,
+                threat_level: if risk_score > 80 { ThreatLevel::Critical } else { ThreatLevel::High },
+                detected_at: env.ledger().timestamp(),
+                contract: Symbol::new(env, "unknown"), // Would be passed through state or request_id mapping
+                actor: None,
+                description: String::from_str(env, "Behavioral anomaly detected by AI"),
+                metric_value: risk_score,
+                threshold_value: 50,
+                auto_mitigated: true,
+                mitigation_action: MitigationAction::RequireReauth,
+            };
+            SecurityStorage::set_threat(env, &threat);
+            SecurityEvents::emit_threat_detected(env, &threat);
+        }
+    }
+
+    pub fn handle_biometrics_callback(env: &Env, request_id: BytesN<32>, is_valid: bool) {
+        if !is_valid {
+            let threat = SecurityThreat {
+                threat_id: request_id.clone(),
+                threat_type: ThreatType::BiometricFailure,
+                threat_level: ThreatLevel::High,
+                detected_at: env.ledger().timestamp(),
+                contract: Symbol::new(env, "authentication"),
+                actor: None,
+                description: String::from_str(env, "Continuous biometrics failed"),
+                metric_value: 0,
+                threshold_value: 1,
+                auto_mitigated: true,
+                mitigation_action: MitigationAction::LockAccount,
+            };
+            SecurityStorage::set_threat(env, &threat);
+            SecurityEvents::emit_threat_detected(env, &threat);
+        }
+    }
+
+    pub fn handle_fraud_callback(env: &Env, request_id: BytesN<32>, is_fraudulent: bool) {
+         if is_fraudulent {
+            let threat = SecurityThreat {
+                threat_id: request_id.clone(),
+                threat_type: ThreatType::CredentialFraud,
+                threat_level: ThreatLevel::Critical,
+                detected_at: env.ledger().timestamp(),
+                contract: Symbol::new(env, "authentication"),
+                actor: None,
+                description: String::from_str(env, "Credential fraud detected"),
+                metric_value: 1,
+                threshold_value: 1,
+                auto_mitigated: true,
+                mitigation_action: MitigationAction::LockAccount,
+            };
+            SecurityStorage::set_threat(env, &threat);
+            SecurityEvents::emit_threat_detected(env, &threat);
+         }
+    }
+
     /// Generate a unique threat ID
-    fn generate_threat_id(env: &Env, contract: &Symbol) -> soroban_sdk::BytesN<32> {
+    pub fn generate_threat_id(env: &Env, contract: &Symbol) -> soroban_sdk::BytesN<32> {
         let timestamp = env.ledger().timestamp();
         let sequence = env.ledger().sequence();
 

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, String, Symbol};
+use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec};
 
 /// Security threat severity levels
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -22,6 +22,10 @@ pub enum ThreatType {
     ReentrancyAttempt,      // Potential reentrancy
     ValidationFailure,      // Input validation issues
     RateLimitExceeded,      // Rate limit violations
+    BehavioralAnomaly,      // Detected by AI oracle
+    CredentialFraud,        // Detected during verification/login
+    BiometricFailure,       // Continuous authentication failed
+    KnownMaliciousActor,    // Flagged by threat intelligence
 }
 
 /// Automated mitigation actions
@@ -33,6 +37,8 @@ pub enum MitigationAction {
     AccessRestricted,
     AlertSent,
     NoAction,
+    RequireReauth,
+    LockAccount,
 }
 
 /// Security threat detection record
@@ -183,4 +189,52 @@ pub enum SecurityDataKey {
     ContractEventBaseline(Symbol),     // contract -> baseline metrics
     Recommendation(BytesN<32>),        // recommendation_id
     ThreatRecommendations(BytesN<32>), // threat_id -> Vec<BytesN<32>>
+    UserRiskScore(Address),            // user -> risk score data
+    ThreatIntelligence(Symbol),        // indicator_type -> intel data
+    TrainingStatus(Address),           // user -> training status
+    IncidentReport(BytesN<32>),        // incident_id
+    Oracle(Address),                   // Authorized oracle
+}
+
+/// User Risk Score tracking
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct UserRiskScore {
+    pub score: u32,             // 0-100, where 100 is maximum risk
+    pub last_updated: u64,
+    pub risk_factors: Vec<Symbol>, // e.g., "FailedLogin", "AnomalousBehavior"
+}
+
+/// Threat Intelligence data
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct ThreatIntelligence {
+    pub source: Symbol,           // e.g., "GlobalList", "PartnerAPI"
+    pub indicator_type: Symbol,   // e.g., "IP", "Address", "BehaviorPattern"
+    pub indicator_value: String,
+    pub threat_level: ThreatLevel,
+    pub added_at: u64,
+}
+
+/// Incident Report for compliance
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct IncidentReport {
+    pub incident_id: BytesN<32>,
+    pub timestamp: u64,
+    pub threat_ids: Vec<BytesN<32>>,
+    pub impact_summary: String,
+    pub actions_taken: Vec<MitigationAction>,
+    pub status: Symbol,          // e.g., "Open", "Mitigated", "Resolved"
+    pub resolved_at: Option<u64>,
+}
+
+/// Security Awareness Training tracking
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct SecurityTrainingStatus {
+    pub user: Address,
+    pub completed_modules: Vec<Symbol>,
+    pub last_training_date: u64,
+    pub score: u32, // Passed quiz score, etc.
 }
