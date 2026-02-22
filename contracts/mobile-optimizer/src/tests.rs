@@ -416,12 +416,56 @@ fn test_notification_config() {
         max_daily_notifications: 5,
         channel_preferences: channel_prefs,
         priority_threshold: NotificationPriorityLevel::High,
+        language_preference: String::from_str(&env, "es"),
+        marketing_consent: true,
     };
 
     client.update_notification_config(&user, &config);
     let retrieved = client.get_notification_config(&user);
     assert_eq!(retrieved.max_daily_notifications, 5);
     assert_eq!(retrieved.quiet_hours_start, 23);
+    assert_eq!(retrieved.language_preference, String::from_str(&env, "es"));
+}
+
+#[test]
+fn test_notification_templates_and_campaigns() {
+    let (env, client, admin, _user) = setup_contract();
+
+    // Create Template
+    let mut localized = Map::new(&env);
+    localized.set(String::from_str(&env, "es"), String::from_str(&env, "Hola"));
+    
+    let mut channels = Vec::new(&env);
+    channels.push_back(String::from_str(&env, "push"));
+
+    let template = client.create_notification_template(
+        &admin,
+        &String::from_str(&env, "tpl_001"),
+        &ReminderType::DailyStudy,
+        &String::from_str(&env, "Hello"),
+        &localized,
+        &channels,
+    );
+    assert_eq!(template.template_id, String::from_str(&env, "tpl_001"));
+
+    // Create Campaign
+    let mut variants = Vec::new(&env);
+    variants.push_back(ABTestVariant {
+        variant_id: String::from_str(&env, "v1"),
+        template_id: String::from_str(&env, "tpl_001"),
+        weight: 100,
+    });
+
+    let campaign = client.create_notification_campaign(
+        &admin,
+        &String::from_str(&env, "camp_001"),
+        &String::from_str(&env, "Summer Learning"),
+        &variants,
+        &1000,
+        &2000,
+    );
+    assert_eq!(campaign.campaign_id, String::from_str(&env, "camp_001"));
+    assert_eq!(campaign.variants.len(), 1);
 }
 
 // ============================================================================

@@ -589,6 +589,41 @@ impl MobileOptimizerContract {
         NotificationManager::create_streak_reminder(&env, &user, streak_days)
     }
 
+    pub fn create_notification_template(
+        env: Env,
+        admin: Address,
+        template_id: String,
+        category: ReminderType,
+        default_content: String,
+        localized_content: Map<String, String>,
+        supported_channels: Vec<String>,
+    ) -> Result<NotificationTemplate, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        NotificationManager::create_notification_template(&env, template_id, category, default_content, localized_content, supported_channels)
+    }
+
+    pub fn create_notification_campaign(
+        env: Env,
+        admin: Address,
+        campaign_id: String,
+        name: String,
+        variants: Vec<ABTestVariant>,
+        start_date: u64,
+        end_date: u64,
+    ) -> Result<NotificationCampaign, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        NotificationManager::create_campaign(&env, campaign_id, name, variants, start_date, end_date)
+    }
+
+    pub fn track_notification_engagement(
+        env: Env,
+        user: Address,
+        notification_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::track_engagement(&env, &user, notification_id)
+    }
+
     // ========================================================================
     // Mobile Security & Biometric Auth (NEW)
     // ========================================================================
