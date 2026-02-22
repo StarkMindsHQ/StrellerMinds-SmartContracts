@@ -576,6 +576,48 @@ fn test_mentorship_flow() {
 }
 
 // ============================================================================
+// User Experience Tests
+// ============================================================================
+
+#[test]
+fn test_ui_preferences() {
+    let (env, client, _, user) = setup_contract();
+    let theme = String::from_str(&env, "dark_mode");
+    let lang = String::from_str(&env, "en");
+    let access = Map::new(&env);
+    
+    let prefs = client.set_ui_preferences(
+        &user,
+        &theme,
+        &lang,
+        &100,
+        &true,
+        &false,
+        &LayoutMode::MobileOptimized,
+        &access
+    );
+    
+    assert_eq!(prefs.theme_id, theme);
+    assert!(prefs.high_contrast);
+    assert_eq!(prefs.layout_mode, LayoutMode::MobileOptimized);
+}
+
+#[test]
+fn test_onboarding_flow() {
+    let (env, client, _, user) = setup_contract();
+    let step = String::from_str(&env, "welcome");
+    
+    let state = client.update_onboarding_progress(&user, &step, &false);
+    assert_eq!(state.current_step, 1);
+    assert_eq!(state.completed_steps.len(), 1);
+    
+    let step2 = String::from_str(&env, "profile_setup");
+    let state2 = client.update_onboarding_progress(&user, &step2, &true);
+    assert_eq!(state2.current_step, 2);
+    assert_eq!(state2.skipped_steps.len(), 1);
+}
+
+// ============================================================================
 // Security Tests
 // ============================================================================
 

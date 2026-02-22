@@ -1102,6 +1102,59 @@ pub enum DataKey {
     PeerReview(String),
     MentorshipSession(String),
     CollabProfile(Address),
+    UiPreferences(Address),
+    OnboardingState(Address),
+    UserFeedback(String),
+    UserFeedbackHistory(Address),
+}
+
+// ============================================================================
+// User Experience Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UiPreferences {
+    pub user: Address,
+    pub theme_id: String,
+    pub language: String,
+    pub font_scale: u32,
+    pub high_contrast: bool,
+    pub reduce_motion: bool,
+    pub layout_mode: LayoutMode,
+    pub accessibility_settings: Map<String, bool>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum LayoutMode {
+    Standard,
+    Compact,
+    Comfortable,
+    MobileOptimized,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OnboardingState {
+    pub user: Address,
+    pub is_completed: bool,
+    pub current_step: u32,
+    pub completed_steps: Vec<String>,
+    pub skipped_steps: Vec<String>,
+    pub last_updated: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserFeedback {
+    pub feedback_id: String,
+    pub user: Address,
+    pub category: String,
+    pub rating: u32,
+    pub comment: String,
+    pub context_data: Map<String, String>,
+    pub timestamp: u64,
 }
 
 // ============================================================================
@@ -1271,4 +1324,5 @@ pub enum MobileOptimizerError {
     InternalError = 34,
     ContentError = 35,
     CollaborationError = 36,
+    UserExperienceError = 37,
 }
