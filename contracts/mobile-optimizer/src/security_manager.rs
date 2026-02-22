@@ -5,10 +5,7 @@ use crate::types::*;
 pub struct SecurityManager;
 
 impl SecurityManager {
-    pub fn initialize_security_profile(
-        env: &Env,
-        user: &Address,
-    ) -> SecurityProfile {
+    pub fn initialize_security_profile(env: &Env, user: &Address) -> SecurityProfile {
         let profile = SecurityProfile {
             user: user.clone(),
             biometric_enabled: false,
@@ -90,7 +87,10 @@ impl SecurityManager {
                     user: user.clone(),
                     alert_type: SecurityAlertType::MultipleFailedAttempts,
                     severity: AlertSeverity::Warning,
-                    message: String::from_str(env, "Account locked due to multiple failed login attempts"),
+                    message: String::from_str(
+                        env,
+                        "Account locked due to multiple failed login attempts",
+                    ),
                     timestamp: now,
                     resolved: false,
                 };
@@ -161,10 +161,7 @@ impl SecurityManager {
             .ok_or(MobileOptimizerError::SecurityViolation)
     }
 
-    pub fn get_security_alerts(
-        env: &Env,
-        user: &Address,
-    ) -> Vec<SecurityAlert> {
+    pub fn get_security_alerts(env: &Env, user: &Address) -> Vec<SecurityAlert> {
         env.storage()
             .persistent()
             .get(&DataKey::SecurityAlerts(user.clone()))
@@ -210,10 +207,7 @@ impl SecurityManager {
         Ok(())
     }
 
-    pub fn enable_two_factor(
-        env: &Env,
-        user: &Address,
-    ) -> Result<(), MobileOptimizerError> {
+    pub fn enable_two_factor(env: &Env, user: &Address) -> Result<(), MobileOptimizerError> {
         let mut profile = Self::get_or_create_profile(env, user);
         profile.two_factor_enabled = true;
         profile.last_security_check = env.ledger().timestamp();
@@ -234,10 +228,7 @@ impl SecurityManager {
         Ok(elapsed < profile.session_lock_timeout)
     }
 
-    pub fn get_auth_history(
-        env: &Env,
-        user: &Address,
-    ) -> Vec<AuthenticationEvent> {
+    pub fn get_auth_history(env: &Env, user: &Address) -> Vec<AuthenticationEvent> {
         env.storage()
             .persistent()
             .get(&DataKey::AuthEvents(user.clone()))

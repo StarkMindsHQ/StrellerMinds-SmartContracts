@@ -5,10 +5,7 @@ use crate::types::*;
 pub struct BatteryOptimizer;
 
 impl BatteryOptimizer {
-    pub fn initialize_battery_config(
-        env: &Env,
-        user: &Address,
-    ) -> BatteryOptimizationConfig {
+    pub fn initialize_battery_config(env: &Env, user: &Address) -> BatteryOptimizationConfig {
         let config = BatteryOptimizationConfig {
             low_battery_threshold: 20,
             critical_battery_threshold: 5,
@@ -188,10 +185,7 @@ impl BatteryOptimizer {
             ));
         }
         if total_drain > 15 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Consider enabling power saver mode",
-            ));
+            recommendations.push_back(String::from_str(env, "Consider enabling power saver mode"));
         }
 
         BatteryImpactReport {

@@ -4,7 +4,12 @@ use crate::types::*;
 use crate::{MobileOptimizerContract, MobileOptimizerContractClient};
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Map, String, Vec};
 
-fn setup_contract() -> (Env, MobileOptimizerContractClient<'static>, Address, Address) {
+fn setup_contract() -> (
+    Env,
+    MobileOptimizerContractClient<'static>,
+    Address,
+    Address,
+) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(MobileOptimizerContract, ());
@@ -657,10 +662,8 @@ fn test_connection_settings() {
 #[test]
 fn test_bandwidth_optimization() {
     let (_, client, _, _) = setup_contract();
-    let opt = client.get_bandwidth_optimization(
-        &NetworkQuality::Fair,
-        &DataUsageMode::Conservative,
-    );
+    let opt =
+        client.get_bandwidth_optimization(&NetworkQuality::Fair, &DataUsageMode::Conservative);
     assert_eq!(opt.image_quality_percent, 60);
     assert_eq!(opt.prefetch_enabled, false);
 }
@@ -668,10 +671,7 @@ fn test_bandwidth_optimization() {
 #[test]
 fn test_network_adaptation() {
     let (_, client, _, _) = setup_contract();
-    let adaptation = client.adapt_network(
-        &NetworkQuality::Good,
-        &NetworkQuality::Poor,
-    );
+    let adaptation = client.adapt_network(&NetworkQuality::Good, &NetworkQuality::Poor);
     assert_eq!(adaptation.degraded, true);
     assert!(adaptation.actions.len() > 0);
 }
@@ -755,11 +755,8 @@ fn test_complete_mobile_workflow() {
     );
 
     // 5. Quick enroll
-    let enroll = client.quick_enroll_course(
-        &user,
-        &String::from_str(&env, "course_001"),
-        &session_id,
-    );
+    let enroll =
+        client.quick_enroll_course(&user, &String::from_str(&env, "course_001"), &session_id);
     assert_eq!(enroll.success, true);
 
     // 6. Update progress

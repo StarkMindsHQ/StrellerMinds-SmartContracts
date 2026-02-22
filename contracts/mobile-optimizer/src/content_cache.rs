@@ -8,7 +8,7 @@ impl ContentCacheManager {
     pub fn initialize_cache(env: &Env, user: &Address) -> CacheConfig {
         let config = CacheConfig {
             max_cache_size_bytes: 50 * 1024 * 1024, // 50 MB
-            default_ttl_seconds: 86400,              // 24 hours
+            default_ttl_seconds: 86400,             // 24 hours
             eviction_policy: EvictionPolicy::LeastRecentlyUsed,
             prefetch_enabled: true,
             compression_enabled: true,
@@ -216,10 +216,7 @@ impl ContentCacheManager {
         Ok(())
     }
 
-    pub fn get_cache_stats(
-        env: &Env,
-        user: &Address,
-    ) -> Result<CacheStats, MobileOptimizerError> {
+    pub fn get_cache_stats(env: &Env, user: &Address) -> Result<CacheStats, MobileOptimizerError> {
         env.storage()
             .persistent()
             .get(&DataKey::CacheStats(user.clone()))
@@ -237,10 +234,7 @@ impl ContentCacheManager {
         Ok(())
     }
 
-    pub fn clear_expired_entries(
-        env: &Env,
-        user: &Address,
-    ) -> Result<u32, MobileOptimizerError> {
+    pub fn clear_expired_entries(env: &Env, user: &Address) -> Result<u32, MobileOptimizerError> {
         // In a real implementation we'd iterate through all cache entries.
         // Here we record the cleanup action.
         let mut stats: CacheStats = env

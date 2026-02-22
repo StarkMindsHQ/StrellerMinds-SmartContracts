@@ -1,36 +1,38 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
 
-pub mod types;
+pub mod analytics_monitor;
 pub mod batch_manager;
+pub mod battery_optimizer;
+pub mod content_cache;
 pub mod gas_optimizer;
-pub mod session_manager;
-pub mod offline_manager;
 pub mod interaction_flows;
 pub mod network_manager;
-pub mod content_cache;
-pub mod battery_optimizer;
 pub mod notification_manager;
-pub mod security_manager;
+pub mod offline_manager;
 pub mod pwa_manager;
-pub mod analytics_monitor;
+pub mod security_manager;
+pub mod session_manager;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
-use types::*;
-use batch_manager::{BatchExecutionResult, BatchManager};
-use gas_optimizer::GasOptimizer;
-use session_manager::{SessionManager, SessionOptimization, SessionStats};
-use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
-use interaction_flows::{InteractionFlows, MobileInteractionResult};
-use network_manager::{BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics};
-use content_cache::ContentCacheManager;
-use battery_optimizer::{BatteryOptimizedSettings, BatteryOptimizer};
-use notification_manager::NotificationManager;
-use security_manager::SecurityManager;
-use pwa_manager::{OfflineCapabilityReport, PwaManager};
 use analytics_monitor::AnalyticsMonitor;
+use batch_manager::{BatchExecutionResult, BatchManager};
+use battery_optimizer::{BatteryOptimizedSettings, BatteryOptimizer};
+use content_cache::ContentCacheManager;
+use gas_optimizer::GasOptimizer;
+use interaction_flows::{InteractionFlows, MobileInteractionResult};
+use network_manager::{
+    BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics,
+};
+use notification_manager::NotificationManager;
+use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
+use pwa_manager::{OfflineCapabilityReport, PwaManager};
+use security_manager::SecurityManager;
+use session_manager::{SessionManager, SessionOptimization, SessionStats};
+use types::*;
 
 #[contract]
 pub struct MobileOptimizerContract;
@@ -64,9 +66,15 @@ impl MobileOptimizerContract {
         env.storage().persistent().set(&DataKey::Config, &config);
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Initialized, &true);
-        env.storage().persistent().set(&DataKey::TotalSessions, &0u64);
-        env.storage().persistent().set(&DataKey::TotalBatches, &0u64);
-        env.storage().persistent().set(&DataKey::TotalOfflineOps, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalSessions, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalBatches, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalOfflineOps, &0u64);
     }
 
     pub fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError> {
@@ -159,10 +167,7 @@ impl MobileOptimizerContract {
         SessionManager::end_session(&env, session_id)
     }
 
-    pub fn get_session_stats(
-        env: Env,
-        user: Address,
-    ) -> SessionStats {
+    pub fn get_session_stats(env: Env, user: Address) -> SessionStats {
         user.require_auth();
         SessionManager::get_session_stats(&env, &user)
     }
@@ -232,8 +237,7 @@ impl MobileOptimizerContract {
     ) -> Result<Vec<GasEstimate>, MobileOptimizerError> {
         let mut estimates = Vec::new(&env);
         for op in operations.iter() {
-            let estimate =
-                GasOptimizer::estimate_operation_gas(&env, &op, &network_quality)?;
+            let estimate = GasOptimizer::estimate_operation_gas(&env, &op, &network_quality)?;
             estimates.push_back(estimate);
         }
         Ok(estimates)
@@ -450,10 +454,7 @@ impl MobileOptimizerContract {
         ContentCacheManager::execute_prefetch(&env, &user, trigger, &nq)
     }
 
-    pub fn get_cache_stats(
-        env: Env,
-        user: Address,
-    ) -> Result<CacheStats, MobileOptimizerError> {
+    pub fn get_cache_stats(env: Env, user: Address) -> Result<CacheStats, MobileOptimizerError> {
         user.require_auth();
         ContentCacheManager::get_cache_stats(&env, &user)
     }
@@ -636,10 +637,7 @@ impl MobileOptimizerContract {
         SecurityManager::get_security_profile(&env, &user)
     }
 
-    pub fn get_security_alerts(
-        env: Env,
-        user: Address,
-    ) -> Vec<SecurityAlert> {
+    pub fn get_security_alerts(env: Env, user: Address) -> Vec<SecurityAlert> {
         user.require_auth();
         SecurityManager::get_security_alerts(&env, &user)
     }
@@ -653,10 +651,7 @@ impl MobileOptimizerContract {
         SecurityManager::resolve_security_alert(&env, &user, alert_id)
     }
 
-    pub fn enable_two_factor(
-        env: Env,
-        user: Address,
-    ) -> Result<(), MobileOptimizerError> {
+    pub fn enable_two_factor(env: Env, user: Address) -> Result<(), MobileOptimizerError> {
         user.require_auth();
         SecurityManager::enable_two_factor(&env, &user)
     }
@@ -665,10 +660,7 @@ impl MobileOptimizerContract {
     // PWA Capabilities (NEW)
     // ========================================================================
 
-    pub fn get_pwa_config(
-        env: Env,
-        user: Address,
-    ) -> Result<PwaConfig, MobileOptimizerError> {
+    pub fn get_pwa_config(env: Env, user: Address) -> Result<PwaConfig, MobileOptimizerError> {
         user.require_auth();
         PwaManager::get_pwa_config(&env, &user)
     }
@@ -730,10 +722,7 @@ impl MobileOptimizerContract {
         PwaManager::toggle_background_sync(&env, &user, enabled)
     }
 
-    pub fn get_offline_capability_report(
-        env: Env,
-        user: Address,
-    ) -> OfflineCapabilityReport {
+    pub fn get_offline_capability_report(env: Env, user: Address) -> OfflineCapabilityReport {
         user.require_auth();
         PwaManager::get_offline_capability_report(&env, &user)
     }
@@ -799,7 +788,10 @@ impl MobileOptimizerContract {
         AnalyticsMonitor::get_mobile_analytics(&env, &user, device_id, period_start, period_end)
     }
 
-    pub fn get_analytics_dashboard(env: Env, admin: Address) -> Result<AnalyticsDashboard, MobileOptimizerError> {
+    pub fn get_analytics_dashboard(
+        env: Env,
+        admin: Address,
+    ) -> Result<AnalyticsDashboard, MobileOptimizerError> {
         Self::require_admin(&env, &admin)?;
         Ok(AnalyticsMonitor::get_analytics_dashboard(&env))
     }

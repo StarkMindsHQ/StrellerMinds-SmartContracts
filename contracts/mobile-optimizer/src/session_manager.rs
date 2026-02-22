@@ -142,10 +142,7 @@ impl SessionManager {
         Ok(())
     }
 
-    pub fn suspend_session(
-        env: &Env,
-        session_id: String,
-    ) -> Result<(), MobileOptimizerError> {
+    pub fn suspend_session(env: &Env, session_id: String) -> Result<(), MobileOptimizerError> {
         Self::update_session(env, session_id, None, Some(SessionState::Suspended))
     }
 
@@ -162,10 +159,7 @@ impl SessionManager {
         )
     }
 
-    pub fn end_session(
-        env: &Env,
-        session_id: String,
-    ) -> Result<(), MobileOptimizerError> {
+    pub fn end_session(env: &Env, session_id: String) -> Result<(), MobileOptimizerError> {
         Self::update_session(env, session_id, None, Some(SessionState::Expired))
     }
 
@@ -208,10 +202,7 @@ impl SessionManager {
         Ok(target_session_id)
     }
 
-    pub fn get_session_stats(
-        env: &Env,
-        user: &Address,
-    ) -> SessionStats {
+    pub fn get_session_stats(env: &Env, user: &Address) -> SessionStats {
         let sessions: Vec<String> = env
             .storage()
             .persistent()

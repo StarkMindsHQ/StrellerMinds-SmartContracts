@@ -16,9 +16,7 @@ impl NetworkManager {
         }
     }
 
-    pub fn optimize_connection_settings(
-        network_quality: &NetworkQuality,
-    ) -> ConnectionSettings {
+    pub fn optimize_connection_settings(network_quality: &NetworkQuality) -> ConnectionSettings {
         match network_quality {
             NetworkQuality::Excellent => ConnectionSettings {
                 timeout_ms: 5000,
@@ -117,8 +115,7 @@ impl NetworkManager {
         previous_quality: &NetworkQuality,
         current_quality: &NetworkQuality,
     ) -> NetworkAdaptation {
-        let degraded = Self::quality_level(current_quality)
-            < Self::quality_level(previous_quality);
+        let degraded = Self::quality_level(current_quality) < Self::quality_level(previous_quality);
 
         let mut actions = Vec::new(env);
         if degraded {

@@ -84,10 +84,7 @@ impl BatchManager {
         Ok(result)
     }
 
-    fn execute_sequential(
-        env: &Env,
-        batch: &mut TransactionBatch,
-    ) -> BatchExecutionResult {
+    fn execute_sequential(env: &Env, batch: &mut TransactionBatch) -> BatchExecutionResult {
         let mut successful_ids = Vec::new(env);
         let mut failed_ids = Vec::new(env);
         let mut total_gas = 0u64;

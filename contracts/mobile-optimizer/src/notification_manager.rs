@@ -5,10 +5,7 @@ use crate::types::*;
 pub struct NotificationManager;
 
 impl NotificationManager {
-    pub fn initialize_notifications(
-        env: &Env,
-        user: &Address,
-    ) -> NotificationConfig {
+    pub fn initialize_notifications(env: &Env, user: &Address) -> NotificationConfig {
         let mut channel_prefs = Map::new(env);
         channel_prefs.set(String::from_str(env, "push"), true);
         channel_prefs.set(String::from_str(env, "email"), false);
@@ -97,15 +94,9 @@ impl NotificationManager {
             if reminder.is_active && reminder.scheduled_at <= now {
                 let should_send = match reminder.repeat_interval {
                     RepeatInterval::Once => reminder.last_sent == 0,
-                    RepeatInterval::Daily => {
-                        now.saturating_sub(reminder.last_sent) >= 86400
-                    }
-                    RepeatInterval::Weekly => {
-                        now.saturating_sub(reminder.last_sent) >= 604800
-                    }
-                    RepeatInterval::Custom => {
-                        now.saturating_sub(reminder.last_sent) >= 3600
-                    }
+                    RepeatInterval::Daily => now.saturating_sub(reminder.last_sent) >= 86400,
+                    RepeatInterval::Weekly => now.saturating_sub(reminder.last_sent) >= 604800,
+                    RepeatInterval::Custom => now.saturating_sub(reminder.last_sent) >= 3600,
                     RepeatInterval::OnEvent => true,
                 };
 
@@ -263,10 +254,7 @@ impl NotificationManager {
         )
     }
 
-    pub fn get_notification_history(
-        env: &Env,
-        user: &Address,
-    ) -> Vec<NotificationRecord> {
+    pub fn get_notification_history(env: &Env, user: &Address) -> Vec<NotificationRecord> {
         env.storage()
             .persistent()
             .get(&DataKey::NotifHistory(user.clone()))

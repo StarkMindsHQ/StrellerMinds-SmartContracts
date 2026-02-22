@@ -103,8 +103,7 @@ impl AnalyticsMonitor {
         engagement.courses_accessed += courses_accessed;
         engagement.modules_completed += modules_completed;
         engagement.last_active = now;
-        engagement.engagement_score =
-            Self::calculate_engagement_score(&engagement);
+        engagement.engagement_score = Self::calculate_engagement_score(&engagement);
 
         env.storage()
             .persistent()
@@ -123,10 +122,7 @@ impl AnalyticsMonitor {
             .ok_or(MobileOptimizerError::AnalyticsNotAvailable)
     }
 
-    pub fn get_analytics_events(
-        env: &Env,
-        user: &Address,
-    ) -> Vec<AnalyticsEvent> {
+    pub fn get_analytics_events(env: &Env, user: &Address) -> Vec<AnalyticsEvent> {
         env.storage()
             .persistent()
             .get(&DataKey::AnalyticsEvents(user.clone()))
@@ -187,9 +183,7 @@ impl AnalyticsMonitor {
         Ok(analytics)
     }
 
-    pub fn get_analytics_dashboard(
-        env: &Env,
-    ) -> AnalyticsDashboard {
+    pub fn get_analytics_dashboard(env: &Env) -> AnalyticsDashboard {
         env.storage()
             .persistent()
             .get(&DataKey::AnalyticsDashboard)

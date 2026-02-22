@@ -5,10 +5,7 @@ use crate::types::*;
 pub struct PwaManager;
 
 impl PwaManager {
-    pub fn initialize_pwa_config(
-        env: &Env,
-        user: &Address,
-    ) -> PwaConfig {
+    pub fn initialize_pwa_config(env: &Env, user: &Address) -> PwaConfig {
         let config = PwaConfig {
             user: user.clone(),
             install_status: PwaInstallStatus::NotInstalled,
@@ -27,10 +24,7 @@ impl PwaManager {
         config
     }
 
-    pub fn get_pwa_config(
-        env: &Env,
-        user: &Address,
-    ) -> Result<PwaConfig, MobileOptimizerError> {
+    pub fn get_pwa_config(env: &Env, user: &Address) -> Result<PwaConfig, MobileOptimizerError> {
         env.storage()
             .persistent()
             .get(&DataKey::PwaConfig(user.clone()))
@@ -188,15 +182,11 @@ impl PwaManager {
         if config.storage_quota_bytes == 0 {
             return Ok(0);
         }
-        let percent =
-            ((config.storage_used_bytes * 100) / config.storage_quota_bytes) as u32;
+        let percent = ((config.storage_used_bytes * 100) / config.storage_quota_bytes) as u32;
         Ok(percent)
     }
 
-    pub fn get_offline_capability_report(
-        env: &Env,
-        user: &Address,
-    ) -> OfflineCapabilityReport {
+    pub fn get_offline_capability_report(env: &Env, user: &Address) -> OfflineCapabilityReport {
         let config = Self::get_or_create_config(env, user);
         let sw_status = env
             .storage()

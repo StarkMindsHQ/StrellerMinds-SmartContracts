@@ -23,15 +23,12 @@ impl GasOptimizer {
             / (10000u128 * 10000u128);
         let estimated_gas = estimated_gas as u64;
 
-        let confidence_level =
-            Self::determine_confidence_level(operation, network_quality);
+        let confidence_level = Self::determine_confidence_level(operation, network_quality);
         let factors = Self::identify_gas_factors(env, operation);
-        let suggestions =
-            Self::generate_optimization_suggestions(env, operation);
+        let suggestions = Self::generate_optimization_suggestions(env, operation);
 
         let estimated_cost = Self::calculate_cost_in_stroops(estimated_gas);
-        let estimated_time =
-            Self::estimate_execution_time(estimated_gas, network_quality);
+        let estimated_time = Self::estimate_execution_time(estimated_gas, network_quality);
 
         Ok(GasEstimate {
             operation_id: operation.operation_id.clone(),
@@ -54,8 +51,7 @@ impl GasOptimizer {
         let mut all_suggestions = Vec::new(env);
 
         for operation in operations.iter() {
-            let estimate =
-                Self::estimate_operation_gas(env, &operation, network_quality)?;
+            let estimate = Self::estimate_operation_gas(env, &operation, network_quality)?;
             total_original += estimate.estimated_gas;
             let opt_gas = Self::apply_automatic_optimizations(&estimate);
             total_optimized += opt_gas;
@@ -69,8 +65,7 @@ impl GasOptimizer {
         total_optimized = total_optimized.saturating_sub(batch_savings);
 
         let savings_pct = if total_original > 0 {
-            ((total_original.saturating_sub(total_optimized)) * 100
-                / total_original) as u32
+            ((total_original.saturating_sub(total_optimized)) * 100 / total_original) as u32
         } else {
             0
         };
@@ -81,10 +76,7 @@ impl GasOptimizer {
             potential_savings: total_original.saturating_sub(total_optimized),
             savings_percentage: savings_pct,
             optimization_suggestions: all_suggestions,
-            recommended_execution_strategy: Self::recommend_strategy(
-                operations,
-                network_quality,
-            ),
+            recommended_execution_strategy: Self::recommend_strategy(operations, network_quality),
         })
     }
 
@@ -198,10 +190,7 @@ impl GasOptimizer {
         }
     }
 
-    fn identify_gas_factors(
-        env: &Env,
-        operation: &BatchOperation,
-    ) -> Vec<GasFactor> {
+    fn identify_gas_factors(env: &Env, operation: &BatchOperation) -> Vec<GasFactor> {
         let mut factors = Vec::new(env);
 
         match operation.operation_type {
@@ -244,10 +233,7 @@ impl GasOptimizer {
         if operation.parameters.len() > 5 {
             suggestions.push_back(OptimizationSuggestion {
                 suggestion_type: SuggestionType::OptimizeParameters,
-                description: String::from_str(
-                    env,
-                    "Reduce parameter count for lower gas usage",
-                ),
+                description: String::from_str(env, "Reduce parameter count for lower gas usage"),
                 potential_savings: operation.estimated_gas / 10,
                 implementation_effort: EffortLevel::Medium,
                 applicable: true,
@@ -257,10 +243,7 @@ impl GasOptimizer {
         if Self::is_cacheable(&operation.operation_type) {
             suggestions.push_back(OptimizationSuggestion {
                 suggestion_type: SuggestionType::UseCache,
-                description: String::from_str(
-                    env,
-                    "Cache results to avoid repeated operations",
-                ),
+                description: String::from_str(env, "Cache results to avoid repeated operations"),
                 potential_savings: operation.estimated_gas / 2,
                 implementation_effort: EffortLevel::Low,
                 applicable: true,
@@ -334,9 +317,7 @@ impl GasOptimizer {
                 }
             }
             NetworkQuality::Fair => ExecutionStrategy::Sequential,
-            NetworkQuality::Poor | NetworkQuality::Offline => {
-                ExecutionStrategy::Conservative
-            }
+            NetworkQuality::Poor | NetworkQuality::Offline => ExecutionStrategy::Conservative,
         }
     }
 }

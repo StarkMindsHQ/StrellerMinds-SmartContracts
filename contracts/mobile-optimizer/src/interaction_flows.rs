@@ -42,14 +42,8 @@ impl InteractionFlows {
 
         if *network_quality == NetworkQuality::Offline {
             let mut cache = Map::new(env);
-            cache.set(
-                String::from_str(env, "course_id"),
-                course_id.clone(),
-            );
-            cache.set(
-                String::from_str(env, "module_id"),
-                module_id.clone(),
-            );
+            cache.set(String::from_str(env, "course_id"), course_id.clone());
+            cache.set(String::from_str(env, "module_id"), module_id.clone());
             return Ok(MobileInteractionResult {
                 success: true,
                 operation_id: String::from_str(env, "offline_progress"),
@@ -110,10 +104,7 @@ impl InteractionFlows {
                 operation_id: String::from_str(env, "cached_search"),
                 gas_used: 0,
                 execution_time_ms: 10,
-                user_message: String::from_str(
-                    env,
-                    "Showing cached results (offline)",
-                ),
+                user_message: String::from_str(env, "Showing cached results (offline)"),
                 next_actions: Vec::new(env),
                 cached_data: Map::new(env),
             });
