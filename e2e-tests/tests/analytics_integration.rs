@@ -12,6 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Test learning session tracking end-to-end workflow
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_learning_session_tracking_e2e() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -164,6 +165,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
 
 /// Test progress analytics calculations with real-world scenarios
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_progress_analytics_calculations() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -305,6 +307,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
 
 /// Test leaderboard generation and ranking system
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_leaderboard_generation() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -474,6 +477,7 @@ async fn test_leaderboard_generation() -> Result<()> {
 
 /// Test performance metrics aggregation and reporting
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_performance_metrics_aggregation() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -680,6 +684,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
 
 /// Test data consistency across contract operations
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_data_consistency_validation() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -886,6 +891,7 @@ async fn test_data_consistency_validation() -> Result<()> {
 
 /// Test edge cases and error conditions
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_edge_cases_and_error_conditions() -> Result<()> {
     let harness = setup_test_harness!();
 
@@ -1129,6 +1135,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
 
 /// Test CI/CD pipeline integration
 #[tokio::test]
+#[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_cicd_pipeline_integration() -> Result<()> {
     let harness = setup_test_harness!();
 
