@@ -1,6 +1,9 @@
-use soroban_sdk::{contracttype, Address, BytesN, String, Vec, Map};
+use soroban_sdk::{contracterror, contracttype, Address, BytesN, Map, String, Vec};
 
-/// Mobile-optimized transaction batch for efficient operations
+// ============================================================================
+// Core Transaction & Batch Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TransactionBatch {
@@ -14,9 +17,9 @@ pub struct TransactionBatch {
     pub status: BatchStatus,
     pub execution_strategy: ExecutionStrategy,
     pub retry_config: RetryConfig,
+    pub network_quality: NetworkQuality,
 }
 
-/// Individual operation within a transaction batch
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BatchOperation {
@@ -26,13 +29,11 @@ pub struct BatchOperation {
     pub function_name: String,
     pub parameters: Vec<OperationParameter>,
     pub estimated_gas: u64,
-    pub dependencies: Vec<String>, // IDs of operations this depends on
-    pub optional: bool,            // Can fail without failing entire batch
-    pub retry_count: u32,
-    pub status: OperationStatus,
+    pub priority: OperationPriority,
+    pub retry_config: RetryConfig,
+    pub dependencies: Vec<String>,
 }
 
-/// Operation parameter for flexible function calls
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OperationParameter {
@@ -41,22 +42,20 @@ pub struct OperationParameter {
     pub param_type: ParameterType,
 }
 
-/// Parameter value types for mobile optimization
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParameterValue {
-    Address(Address),
-    String(String),
-    U32(u32),
-    U64(u64),
-    I64(i64),
-    Bool(bool),
-    Bytes(BytesN<32>),
-    Vector(Vec<String>),
-    Map(Map<String, String>),
+    AddressVal(Address),
+    StringVal(String),
+    U32Val(u32),
+    U64Val(u64),
+    I64Val(i64),
+    BoolVal(bool),
+    BytesVal(BytesN<32>),
+    VectorVal(Vec<String>),
+    MapVal(Map<String, String>),
 }
 
-/// Parameter type classification
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParameterType {
@@ -71,7 +70,6 @@ pub enum ParameterType {
     Map,
 }
 
-/// Types of operations supported in batches
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OperationType {
@@ -79,39 +77,52 @@ pub enum OperationType {
     ProgressUpdate,
     CertificateRequest,
     CertificateRenewal,
+    CertificateGeneration,
     SearchQuery,
     PreferenceUpdate,
     TokenTransfer,
     TokenStaking,
     TokenBurning,
-    Custom(String),
+    TokenReward,
+    ContentCache,
+    LearningSync,
+    NotificationConfig,
+    SecurityUpdate,
+    AnalyticsEvent,
+    Custom,
 }
 
-/// Batch execution priority for mobile optimization
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum OperationPriority {
+    Critical,
+    High,
+    Medium,
+    Low,
+}
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BatchPriority {
-    Critical,    // Execute immediately (user-facing actions)
-    High,        // Execute within 1 block
-    Normal,      // Execute within 5 blocks
-    Low,         // Execute when convenient
-    Background,  // Execute during low network activity
+    Critical,
+    High,
+    Normal,
+    Low,
+    Background,
 }
 
-/// Batch execution status
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BatchStatus {
-    Pending,     // Waiting for execution
-    Executing,   // Currently being processed
-    Completed,   // All operations successful
-    PartialSuccess, // Some operations failed
-    Failed,      // Batch execution failed
-    Cancelled,   // User cancelled
-    Expired,     // Batch expired before execution
+    Pending,
+    Executing,
+    Completed,
+    PartialSuccess,
+    Failed,
+    Cancelled,
+    Expired,
 }
 
-/// Individual operation status
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OperationStatus {
@@ -119,34 +130,35 @@ pub enum OperationStatus {
     Executing,
     Completed,
     Failed,
-    Skipped,     // Skipped due to dependency failure
-    Retrying,    // Being retried
+    Skipped,
+    Retrying,
 }
 
-/// Execution strategy for mobile optimization
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExecutionStrategy {
-    Sequential,   // Execute operations in order
-    Parallel,     // Execute independent operations in parallel
-    Optimized,    // Smart execution based on dependencies and gas
-    Conservative, // Safest execution for mobile networks
+    Sequential,
+    Parallel,
+    Optimized,
+    Conservative,
 }
 
-/// Retry configuration for mobile network reliability
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RetryConfig {
     pub max_retries: u32,
     pub retry_delay_ms: u32,
-    pub backoff_multiplier: u32,  // Exponential backoff multiplier
+    pub backoff_multiplier: u32,
     pub max_delay_ms: u32,
     pub retry_on_network_error: bool,
     pub retry_on_gas_error: bool,
     pub retry_on_timeout: bool,
 }
 
-/// Mobile session management for persistent interactions
+// ============================================================================
+// Session Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MobileSession {
@@ -158,23 +170,39 @@ pub struct MobileSession {
     pub expires_at: u64,
     pub network_quality: NetworkQuality,
     pub cached_data: Map<String, String>,
-    pub pending_operations: Vec<String>, // Batch IDs
+    pub pending_operations: Vec<String>,
     pub preferences: MobilePreferences,
     pub session_state: SessionState,
 }
 
-/// Network quality assessment for mobile optimization
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SessionState {
+    Active,
+    Idle,
+    Background,
+    Suspended,
+    Expired,
+}
+
+// ============================================================================
+// Network Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NetworkQuality {
-    Excellent,   // Fast, stable connection
-    Good,        // Reliable connection with occasional delays
-    Fair,        // Unstable connection, frequent retries needed
-    Poor,        // Very slow or unreliable connection
-    Offline,     // No connection available
+    Excellent,
+    Good,
+    Fair,
+    Poor,
+    Offline,
 }
 
-/// Mobile-specific user preferences
+// ============================================================================
+// Preferences & Configuration
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MobilePreferences {
@@ -188,7 +216,6 @@ pub struct MobilePreferences {
     pub battery_optimization: bool,
 }
 
-/// Notification preferences for mobile users
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NotificationPreferences {
@@ -198,30 +225,39 @@ pub struct NotificationPreferences {
     pub network_issues: bool,
     pub gas_price_alerts: bool,
     pub offline_sync_complete: bool,
+    pub learning_reminders: bool,
+    pub streak_alerts: bool,
+    pub course_updates: bool,
 }
 
-/// Data usage optimization modes
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataUsageMode {
-    Unlimited,   // No data restrictions
-    Conservative, // Minimize data usage
-    WifiOnly,    // Only sync on WiFi
-    Emergency,   // Only critical operations
+    Unlimited,
+    Conservative,
+    WifiOnly,
+    Emergency,
 }
 
-/// Session state for mobile applications
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SessionState {
-    Active,
-    Idle,
-    Background,
-    Suspended,
-    Expired,
+pub struct MobileOptimizerConfig {
+    pub admin: Address,
+    pub max_batch_size: u32,
+    pub default_gas_limit: u64,
+    pub session_timeout_seconds: u64,
+    pub offline_queue_limit: u32,
+    pub network_timeout_ms: u32,
+    pub retry_attempts: u32,
+    pub cache_ttl_seconds: u64,
+    pub max_devices_per_user: u32,
+    pub analytics_retention_days: u32,
 }
 
-/// Gas estimation result for mobile optimization
+// ============================================================================
+// Gas Estimation Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GasEstimate {
@@ -234,17 +270,15 @@ pub struct GasEstimate {
     pub estimated_time_ms: u32,
 }
 
-/// Confidence level for gas estimates
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ConfidenceLevel {
-    High,     // 95%+ accuracy
-    Medium,   // 80-95% accuracy
-    Low,      // 60-80% accuracy
-    Unknown,  // Unable to estimate accurately
+    High,
+    Medium,
+    Low,
+    Unknown,
 }
 
-/// Factors affecting gas consumption
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GasFactor {
@@ -256,18 +290,16 @@ pub enum GasFactor {
     ContractInteractions,
 }
 
-/// Optimization suggestions for mobile users
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OptimizationSuggestion {
     pub suggestion_type: SuggestionType,
     pub description: String,
-    pub potential_savings: u64, // Gas savings
+    pub potential_savings: u64,
     pub implementation_effort: EffortLevel,
     pub applicable: bool,
 }
 
-/// Types of optimization suggestions
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SuggestionType {
@@ -279,17 +311,19 @@ pub enum SuggestionType {
     SimplifyOperation,
 }
 
-/// Implementation effort required
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum EffortLevel {
-    None,     // Automatic optimization
-    Low,      // Simple parameter change
-    Medium,   // Moderate code changes
-    High,     // Significant restructuring
+    None,
+    Low,
+    Medium,
+    High,
 }
 
-/// Offline operation queue for mobile devices
+// ============================================================================
+// Offline Queue Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OfflineQueue {
@@ -303,7 +337,6 @@ pub struct OfflineQueue {
     pub conflict_resolution: ConflictResolution,
 }
 
-/// Individual queued operation for offline execution
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QueuedOperation {
@@ -312,12 +345,12 @@ pub struct QueuedOperation {
     pub parameters: Vec<OperationParameter>,
     pub created_at: u64,
     pub priority: BatchPriority,
-    pub local_state_hash: BytesN<32>, // For conflict detection
+    pub local_state_hash: BytesN<32>,
     pub retry_count: u32,
     pub status: QueuedOperationStatus,
+    pub estimated_gas: u64,
 }
 
-/// Status of queued operations
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueuedOperationStatus {
@@ -329,7 +362,6 @@ pub enum QueuedOperationStatus {
     Cancelled,
 }
 
-/// Synchronization status for offline operations
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SyncStatus {
@@ -341,18 +373,482 @@ pub enum SyncStatus {
     Offline,
 }
 
-/// Conflict resolution strategies
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ConflictResolution {
-    ServerWins,    // Server state takes precedence
-    ClientWins,    // Client state takes precedence
-    MergeChanges,  // Attempt to merge changes
-    UserDecision,  // Prompt user to resolve
-    Abort,         // Cancel conflicting operations
+    ServerWins,
+    ClientWins,
+    MergeChanges,
+    UserDecision,
+    Abort,
 }
 
-/// Mobile analytics for optimization insights
+// ============================================================================
+// Content Cache Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CacheEntry {
+    pub cache_key: String,
+    pub content_hash: BytesN<32>,
+    pub content_type: ContentType,
+    pub size_bytes: u64,
+    pub created_at: u64,
+    pub expires_at: u64,
+    pub access_count: u32,
+    pub last_accessed: u64,
+    pub priority: CachePriority,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ContentType {
+    CourseMaterial,
+    VideoLesson,
+    QuizData,
+    Certificate,
+    UserProfile,
+    SearchResults,
+    ProgressData,
+    NotificationData,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CachePriority {
+    Essential,
+    High,
+    Normal,
+    Low,
+    Evictable,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CacheConfig {
+    pub max_cache_size_bytes: u64,
+    pub default_ttl_seconds: u64,
+    pub eviction_policy: EvictionPolicy,
+    pub prefetch_enabled: bool,
+    pub compression_enabled: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum EvictionPolicy {
+    LeastRecentlyUsed,
+    LeastFrequentlyUsed,
+    TimeToLive,
+    PriorityBased,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrefetchRule {
+    pub rule_id: String,
+    pub content_type: ContentType,
+    pub trigger: PrefetchTrigger,
+    pub network_requirement: NetworkQuality,
+    pub max_prefetch_size_bytes: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PrefetchTrigger {
+    OnCourseEnroll,
+    OnModuleComplete,
+    OnWifiConnect,
+    OnSchedule,
+    OnLowActivity,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CacheStats {
+    pub total_entries: u32,
+    pub total_size_bytes: u64,
+    pub hit_count: u64,
+    pub miss_count: u64,
+    pub eviction_count: u32,
+    pub hit_rate_bps: u32,
+    pub avg_access_time_ms: u32,
+}
+
+// ============================================================================
+// Cross-Device Sync Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeviceRegistration {
+    pub device_id: String,
+    pub device_type: DeviceType,
+    pub registered_at: u64,
+    pub last_seen: u64,
+    pub sync_enabled: bool,
+    pub device_name: String,
+    pub capabilities: DeviceCapabilities,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DeviceType {
+    MobilePhone,
+    Tablet,
+    Desktop,
+    Laptop,
+    Wearable,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeviceCapabilities {
+    pub supports_notifications: bool,
+    pub supports_biometric: bool,
+    pub supports_offline: bool,
+    pub max_storage_bytes: u64,
+    pub battery_powered: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LearningState {
+    pub user: Address,
+    pub state_version: u64,
+    pub last_updated: u64,
+    pub active_courses: Vec<String>,
+    pub progress_map: Map<String, u32>,
+    pub bookmarks: Vec<String>,
+    pub preferences_hash: BytesN<32>,
+    pub sync_token: String,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SyncEvent {
+    pub event_id: String,
+    pub source_device: String,
+    pub target_device: String,
+    pub event_type: SyncEventType,
+    pub timestamp: u64,
+    pub data_hash: BytesN<32>,
+    pub status: SyncEventStatus,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SyncEventType {
+    ProgressUpdate,
+    BookmarkSync,
+    PreferenceSync,
+    CacheSync,
+    FullStateSync,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SyncEventStatus {
+    Pending,
+    InProgress,
+    Completed,
+    Failed,
+    Conflicted,
+}
+
+// ============================================================================
+// Battery Optimization Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatteryProfile {
+    pub user: Address,
+    pub device_id: String,
+    pub battery_level: u32,
+    pub is_charging: bool,
+    pub power_mode: PowerMode,
+    pub estimated_runtime_minutes: u32,
+    pub last_updated: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PowerMode {
+    Normal,
+    PowerSaver,
+    UltraSaver,
+    Performance,
+    Adaptive,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatteryOptimizationConfig {
+    pub low_battery_threshold: u32,
+    pub critical_battery_threshold: u32,
+    pub auto_power_saver: bool,
+    pub reduce_sync_frequency: bool,
+    pub disable_prefetch_on_low: bool,
+    pub reduce_animation: bool,
+    pub background_limit_minutes: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatteryImpactReport {
+    pub session_id: String,
+    pub estimated_drain_percent: u32,
+    pub operations_count: u32,
+    pub sync_count: u32,
+    pub cache_operations: u32,
+    pub network_calls: u32,
+    pub recommendations: Vec<String>,
+}
+
+// ============================================================================
+// Notification Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LearningReminder {
+    pub reminder_id: String,
+    pub user: Address,
+    pub reminder_type: ReminderType,
+    pub title: String,
+    pub message: String,
+    pub scheduled_at: u64,
+    pub repeat_interval: RepeatInterval,
+    pub is_active: bool,
+    pub last_sent: u64,
+    pub course_id: String,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ReminderType {
+    DailyStudy,
+    CourseDeadline,
+    StreakMaintenance,
+    QuizAvailable,
+    CertificateReady,
+    InactivityNudge,
+    GoalProgress,
+    PeerActivity,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RepeatInterval {
+    Once,
+    Daily,
+    Weekly,
+    Custom,
+    OnEvent,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NotificationConfig {
+    pub user: Address,
+    pub enabled: bool,
+    pub quiet_hours_start: u32,
+    pub quiet_hours_end: u32,
+    pub max_daily_notifications: u32,
+    pub channel_preferences: Map<String, bool>,
+    pub priority_threshold: NotificationPriorityLevel,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NotificationPriorityLevel {
+    All,
+    Medium,
+    High,
+    CriticalOnly,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NotificationRecord {
+    pub notification_id: String,
+    pub user: Address,
+    pub notification_type: ReminderType,
+    pub sent_at: u64,
+    pub read_at: u64,
+    pub action_taken: bool,
+    pub delivery_status: DeliveryStatus,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DeliveryStatus {
+    Pending,
+    Sent,
+    Delivered,
+    Read,
+    Failed,
+    Expired,
+}
+
+// ============================================================================
+// Security Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SecurityProfile {
+    pub user: Address,
+    pub biometric_enabled: bool,
+    pub biometric_type: BiometricType,
+    pub session_lock_timeout: u64,
+    pub failed_attempts: u32,
+    pub max_failed_attempts: u32,
+    pub lockout_until: u64,
+    pub trusted_devices: Vec<String>,
+    pub last_security_check: u64,
+    pub two_factor_enabled: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BiometricType {
+    None,
+    Fingerprint,
+    FaceId,
+    Iris,
+    VoiceRecognition,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AuthenticationEvent {
+    pub event_id: String,
+    pub user: Address,
+    pub device_id: String,
+    pub auth_method: AuthMethod,
+    pub timestamp: u64,
+    pub success: bool,
+    pub ip_hash: BytesN<32>,
+    pub risk_score: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AuthMethod {
+    Password,
+    Biometric,
+    TwoFactor,
+    DeviceToken,
+    SessionResume,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SecurityAlert {
+    pub alert_id: String,
+    pub user: Address,
+    pub alert_type: SecurityAlertType,
+    pub severity: AlertSeverity,
+    pub message: String,
+    pub timestamp: u64,
+    pub resolved: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SecurityAlertType {
+    UnknownDevice,
+    MultipleFailedAttempts,
+    LocationAnomaly,
+    SessionHijack,
+    DataBreach,
+    SuspiciousActivity,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AlertSeverity {
+    Info,
+    Warning,
+    Critical,
+}
+
+// ============================================================================
+// PWA Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PwaConfig {
+    pub user: Address,
+    pub install_status: PwaInstallStatus,
+    pub service_worker_version: String,
+    pub cached_routes: Vec<String>,
+    pub offline_pages: Vec<String>,
+    pub background_sync_enabled: bool,
+    pub push_subscription_active: bool,
+    pub storage_quota_bytes: u64,
+    pub storage_used_bytes: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PwaInstallStatus {
+    NotInstalled,
+    PromptShown,
+    Installed,
+    Standalone,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PwaManifest {
+    pub app_name: String,
+    pub short_name: String,
+    pub version: String,
+    pub theme_color: String,
+    pub background_color: String,
+    pub display_mode: DisplayMode,
+    pub orientation: String,
+    pub start_url: String,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DisplayMode {
+    Standalone,
+    Fullscreen,
+    MinimalUi,
+    Browser,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ServiceWorkerStatus {
+    pub version: String,
+    pub state: SwState,
+    pub last_updated: u64,
+    pub cached_assets_count: u32,
+    pub cached_api_responses: u32,
+    pub pending_sync_count: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SwState {
+    Installing,
+    Installed,
+    Activating,
+    Activated,
+    Redundant,
+}
+
+// ============================================================================
+// Analytics & Monitoring Types (NEW)
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MobileAnalytics {
@@ -363,37 +859,118 @@ pub struct MobileAnalytics {
     pub successful_operations: u32,
     pub failed_operations: u32,
     pub average_gas_used: u64,
-    pub network_quality_distribution: Map<String, u32>, // NetworkQuality -> count
+    pub network_quality_distribution: Map<String, u32>,
     pub common_operation_types: Vec<OperationTypeStats>,
     pub optimization_impact: OptimizationImpact,
     pub period_start: u64,
     pub period_end: u64,
 }
 
-/// Statistics for operation types
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OperationTypeStats {
     pub operation_type: OperationType,
     pub count: u32,
-    pub success_rate: u32,        // Percentage
+    pub success_rate: u32,
     pub average_gas: u64,
     pub average_duration_ms: u32,
 }
 
-/// Impact of mobile optimizations
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OptimizationImpact {
-    pub gas_savings_percentage: u32,
-    pub operation_success_rate_improvement: u32,
-    pub average_response_time_improvement_ms: i32,
-    pub user_satisfaction_score: u32, // 1-100
-    pub battery_usage_reduction_percentage: u32,
-    pub data_usage_reduction_percentage: u32,
+    pub gas_savings_pct: u32,
+    pub op_success_rate_improvement: u32,
+    pub avg_response_improve_ms: u32,
+    pub battery_reduction_pct: u32,
+    pub data_reduction_pct: u32,
 }
 
-/// Mobile-friendly error information
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PerformanceMetrics {
+    pub session_id: String,
+    pub timestamp: u64,
+    pub page_load_time_ms: u32,
+    pub api_response_time_ms: u32,
+    pub render_time_ms: u32,
+    pub memory_usage_bytes: u64,
+    pub network_latency_ms: u32,
+    pub frame_rate: u32,
+    pub error_count: u32,
+    pub crash_count: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserEngagement {
+    pub user: Address,
+    pub daily_active_time_seconds: u64,
+    pub sessions_today: u32,
+    pub courses_accessed: u32,
+    pub modules_completed: u32,
+    pub streak_days: u32,
+    pub last_active: u64,
+    pub engagement_score: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AnalyticsEvent {
+    pub event_id: String,
+    pub user: Address,
+    pub event_type: AnalyticsEventType,
+    pub timestamp: u64,
+    pub properties: Map<String, String>,
+    pub session_id: String,
+    pub device_type: DeviceType,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AnalyticsEventType {
+    SessionStart,
+    SessionEnd,
+    PageView,
+    ButtonClick,
+    CourseStart,
+    ModuleComplete,
+    QuizAttempt,
+    CertificateClaim,
+    OfflineToggle,
+    SyncComplete,
+    ErrorOccurred,
+    PerformanceWarning,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AnalyticsDashboard {
+    pub total_users: u32,
+    pub active_users_24h: u32,
+    pub active_users_7d: u32,
+    pub total_sessions: u64,
+    pub avg_session_duration_seconds: u64,
+    pub offline_usage_percentage: u32,
+    pub cache_hit_rate_bps: u32,
+    pub avg_sync_time_ms: u32,
+    pub error_rate_bps: u32,
+    pub top_devices: Vec<DeviceUsageStats>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeviceUsageStats {
+    pub device_type: DeviceType,
+    pub user_count: u32,
+    pub avg_session_duration: u64,
+    pub avg_battery_impact: u32,
+}
+
+// ============================================================================
+// Mobile Error Types
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MobileError {
@@ -403,11 +980,9 @@ pub struct MobileError {
     pub technical_details: String,
     pub suggested_actions: Vec<String>,
     pub retry_recommended: bool,
-    pub contact_support: bool,
     pub timestamp: u64,
 }
 
-/// Types of mobile-specific errors
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MobileErrorType {
@@ -421,42 +996,104 @@ pub enum MobileErrorType {
     ServiceUnavailable,
     DataCorruption,
     SyncConflict,
+    CacheFull,
+    SecurityViolation,
+    DeviceNotRegistered,
+    BiometricFailed,
 }
 
-/// Storage keys for mobile optimizer contract
+// ============================================================================
+// Storage Keys
+// ============================================================================
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
-    /// Contract admin
     Admin,
-    /// Contract initialization flag
+    Config,
     Initialized,
-    /// Transaction batches by batch ID
     TransactionBatch(String),
-    /// User's pending batches
     UserBatches(Address),
-    /// Mobile sessions by session ID
     MobileSession(String),
-    /// User's active sessions
     UserSessions(Address),
-    /// Gas estimates cache
-    GasEstimates(String), // Operation hash
-    /// Offline operation queues by user
+    GasEstimates(String),
     OfflineQueue(Address),
-    /// Mobile analytics by user
     MobileAnalytics(Address),
-    /// Global mobile preferences
     GlobalMobileConfig,
-    /// Network quality metrics
-    NetworkMetrics(u64), // Timestamp bucket
-    /// Optimization suggestions cache
+    NetworkMetrics(u64),
     OptimizationCache(String),
-    /// Error logs for debugging
     ErrorLogs(Address),
-    /// Performance metrics
     PerformanceMetrics(u64),
-    /// Batch execution history
     BatchHistory(String),
-    /// Session cleanup queue
     SessionCleanup(u64),
+    // New storage keys for enhanced features
+    ContentCache(String),
+    UserCacheConfig(Address),
+    CacheStats(Address),
+    PrefetchRules(Address),
+    DeviceRegistry(Address),
+    LearningState(Address),
+    SyncEvents(Address),
+    BatteryProfile(String),
+    BatteryConfig(Address),
+    NotifConfig(Address),
+    Reminders(Address),
+    NotifHistory(Address),
+    SecurityProfile(Address),
+    AuthEvents(Address),
+    SecurityAlerts(Address),
+    PwaConfig(Address),
+    PwaManifest,
+    SwStatus(Address),
+    AnalyticsDashboard,
+    UserEngagement(Address),
+    AnalyticsEvents(Address),
+    PerformanceLog(String),
+    TotalSessions,
+    TotalBatches,
+    TotalOfflineOps,
+}
+
+// ============================================================================
+// Contract-Level Error Enum
+// ============================================================================
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum MobileOptimizerError {
+    NotInitialized = 1,
+    AlreadyInitialized = 2,
+    SessionCreationFailed = 3,
+    SessionUpdateFailed = 4,
+    SessionNotFound = 5,
+    SessionExpired = 6,
+    BatchExecutionFailed = 7,
+    BatchNotFound = 8,
+    BatchExpired = 9,
+    GasEstimationFailed = 10,
+    OptimizationFailed = 11,
+    InteractionFailed = 12,
+    OfflineOperationFailed = 13,
+    OfflineSyncFailed = 14,
+    OfflineQueueFull = 15,
+    ConflictResolutionFailed = 16,
+    PreferenceUpdateFailed = 17,
+    AnalyticsNotAvailable = 18,
+    ConfigNotFound = 19,
+    AdminNotSet = 20,
+    UnauthorizedAdmin = 21,
+    Unauthorized = 22,
+    CacheError = 23,
+    CacheFull = 24,
+    DeviceNotRegistered = 25,
+    MaxDevicesReached = 26,
+    SyncFailed = 27,
+    SecurityViolation = 28,
+    BiometricAuthFailed = 29,
+    AccountLocked = 30,
+    NotificationError = 31,
+    PwaError = 32,
+    InvalidInput = 33,
+    InternalError = 34,
 }
