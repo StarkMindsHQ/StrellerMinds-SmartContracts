@@ -68,9 +68,7 @@ impl SorobanClient {
         contract_name: &str,
         deployer_account: &str,
     ) -> Result<String> {
-        let wasm_path = format!(
-            "target/wasm32-unknown-unknown/release/{contract_name}.wasm"
-        );
+        let wasm_path = format!("target/wasm32-unknown-unknown/release/{contract_name}.wasm");
 
         let output = Command::new("soroban")
             .args([
