@@ -2,8 +2,8 @@ use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Address, Env,
 
 use crate::types::{
     Achievement, AchievementCategory, AchievementRequirements, AchievementTier, ActivityRecord,
-    ActivityType, Challenge, ChallengeType, ChallengeDifficulty,
-    LeaderboardCategory, RecognitionType, Season,
+    ActivityType, Challenge, ChallengeDifficulty, ChallengeType, LeaderboardCategory,
+    RecognitionType, Season,
 };
 use crate::{Gamification, GamificationClient};
 
@@ -167,7 +167,10 @@ fn test_assessment_score_scales_xp() {
 
     let ph = client.get_user_profile(&s_high);
     let pl = client.get_user_profile(&s_low);
-    assert!(ph.total_xp > pl.total_xp, "higher score should give more XP");
+    assert!(
+        ph.total_xp > pl.total_xp,
+        "higher score should give more XP"
+    );
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -179,12 +182,18 @@ fn test_consecutive_day_streak_grows() {
 
     // Day 1
     env.ledger().with_mut(|l| l.timestamp = 0);
-    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 0));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::ModuleCompleted, 0),
+    );
 
     // Day 2 (next day)
     let day2 = 86_400u64;
     env.ledger().with_mut(|l| l.timestamp = day2);
-    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, day2));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::ModuleCompleted, day2),
+    );
 
     let profile = client.get_user_profile(&student);
     assert_eq!(profile.current_streak, 2);
@@ -198,16 +207,25 @@ fn test_missed_day_resets_streak() {
 
     // Day 1
     env.ledger().with_mut(|l| l.timestamp = 0);
-    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 0));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::ModuleCompleted, 0),
+    );
 
     // Day 2
     env.ledger().with_mut(|l| l.timestamp = 86_400);
-    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 86_400));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::ModuleCompleted, 86_400),
+    );
 
     // Day 5 (2-day gap → streak broken)
     let day5 = 86_400 * 4;
     env.ledger().with_mut(|l| l.timestamp = day5);
-    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, day5));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::ModuleCompleted, day5),
+    );
 
     let profile = client.get_user_profile(&student);
     assert_eq!(profile.current_streak, 1, "streak should reset after gap");
@@ -260,7 +278,10 @@ fn test_admin_can_create_custom_achievement() {
     };
 
     let id = client.create_achievement(&admin, &ach);
-    assert!(id > 25, "custom achievement ID should be beyond reserved block");
+    assert!(
+        id > 25,
+        "custom achievement ID should be beyond reserved block"
+    );
 }
 
 #[test]
@@ -294,11 +315,20 @@ fn test_leaderboard_populates_after_activity() {
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
 
     // s2 completes a course (more XP); s1 completes a module
-    client.record_activity(&s1, &make_activity(&env, ActivityType::ModuleCompleted, 1_000_000));
-    client.record_activity(&s2, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+    client.record_activity(
+        &s1,
+        &make_activity(&env, ActivityType::ModuleCompleted, 1_000_000),
+    );
+    client.record_activity(
+        &s2,
+        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+    );
 
     let board = client.get_leaderboard(&LeaderboardCategory::TotalXP, &10u32);
-    assert!(board.len() >= 2, "leaderboard should have at least 2 entries");
+    assert!(
+        board.len() >= 2,
+        "leaderboard should have at least 2 entries"
+    );
 
     // Top entry should be s2 (more XP)
     let top = board.get(0).unwrap();
@@ -315,7 +345,10 @@ fn test_leaderboard_limit_respected() {
     // Register 5 students
     for _ in 0..5 {
         let s = Address::generate(&env);
-        client.record_activity(&s, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+        client.record_activity(
+            &s,
+            &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+        );
     }
 
     let board = client.get_leaderboard(&LeaderboardCategory::TotalXP, &3u32);
@@ -406,7 +439,10 @@ fn test_quest_chain_prerequisite_enforced() {
 
     // Should fail: prerequisite not met
     let result = client.try_join_challenge(&student, &child_id);
-    assert!(result.is_err(), "should not join child without completing parent");
+    assert!(
+        result.is_err(),
+        "should not join child without completing parent"
+    );
 
     // Complete parent, then join child
     client.join_challenge(&student, &parent_id);
@@ -480,7 +516,10 @@ fn test_leave_guild() {
     assert_eq!(guild.member_count, 1);
 
     let profile = client.get_user_profile(&joiner);
-    assert_eq!(profile.guild_id, 0, "guild_id should be cleared after leaving");
+    assert_eq!(
+        profile.guild_id, 0,
+        "guild_id should be cleared after leaving"
+    );
 }
 
 #[test]
@@ -497,10 +536,16 @@ fn test_guild_xp_accumulates_from_members() {
     );
 
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
-    client.record_activity(&creator, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+    client.record_activity(
+        &creator,
+        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+    );
 
     let guild = client.get_guild(&guild_id).unwrap();
-    assert!(guild.total_xp > 0, "guild should accumulate XP from member activity");
+    assert!(
+        guild.total_xp > 0,
+        "guild should accumulate XP from member activity"
+    );
 }
 
 #[test]
@@ -559,10 +604,16 @@ fn test_create_season_and_earn_season_xp() {
     assert_eq!(active.unwrap().id, season_id);
 
     let student = Address::generate(&env);
-    client.record_activity(&student, &make_activity(&env, ActivityType::CourseCompleted, now));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::CourseCompleted, now),
+    );
 
     let profile = client.get_user_profile(&student);
-    assert!(profile.season_xp > 0, "should earn season XP during active season");
+    assert!(
+        profile.season_xp > 0,
+        "should earn season XP during active season"
+    );
 
     // Season XP should reflect the 2× multiplier
     let board = client.get_season_leaderboard(&season_id);
@@ -660,7 +711,10 @@ fn test_endorsement_daily_rate_limit() {
     // 6th should fail
     let endorsee6 = Address::generate(&env);
     let result = client.try_endorse_peer(&endorser, &endorsee6, &String::from_str(&env, "Rust"));
-    assert!(result.is_err(), "6th endorsement in same day should be rate limited");
+    assert!(
+        result.is_err(),
+        "6th endorsement in same day should be rate limited"
+    );
 }
 
 #[test]
@@ -714,10 +768,16 @@ fn test_reputation_grows_with_activity() {
     assert_eq!(rep_before.total_score, 0);
 
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
-    client.record_activity(&student, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+    client.record_activity(
+        &student,
+        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+    );
 
     let rep_after = client.get_reputation(&student);
-    assert!(rep_after.total_score > 0, "reputation should grow after activity");
+    assert!(
+        rep_after.total_score > 0,
+        "reputation should grow after activity"
+    );
 }
 
 #[test]
@@ -737,7 +797,10 @@ fn test_high_score_boosts_quality_reputation() {
     client.record_activity(&student, &activity);
 
     let rep = client.get_reputation(&student);
-    assert!(rep.quality_points > 0, "high score should add quality reputation points");
+    assert!(
+        rep.quality_points > 0,
+        "high score should add quality reputation points"
+    );
 }
 
 // ─── Adaptive Difficulty ─────────────────────────────────────────────────────
@@ -801,8 +864,14 @@ fn test_guild_leaderboard_updates() {
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
 
     // c1 earns more XP → g1 should rank above g2
-    client.record_activity(&c1, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
-    client.record_activity(&c1, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+    client.record_activity(
+        &c1,
+        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+    );
+    client.record_activity(
+        &c1,
+        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
+    );
 
     let board = client.get_guild_leaderboard();
     assert!(board.len() >= 2);

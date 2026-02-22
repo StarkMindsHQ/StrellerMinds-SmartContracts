@@ -38,10 +38,8 @@ impl GamificationEvents {
     }
 
     pub fn emit_challenge_created(env: &Env, challenge_id: u64, creator: &Address) {
-        env.events().publish(
-            (symbol_short!("chl_crt"),),
-            (challenge_id, creator.clone()),
-        );
+        env.events()
+            .publish((symbol_short!("chl_crt"),), (challenge_id, creator.clone()));
     }
 
     pub fn emit_challenge_joined(env: &Env, user: &Address, challenge_id: u64) {
@@ -57,10 +55,8 @@ impl GamificationEvents {
     }
 
     pub fn emit_guild_created(env: &Env, guild_id: u64, creator: &Address) {
-        env.events().publish(
-            (symbol_short!("gld_crt"),),
-            (guild_id, creator.clone()),
-        );
+        env.events()
+            .publish((symbol_short!("gld_crt"),), (guild_id, creator.clone()));
     }
 
     pub fn emit_guild_joined(env: &Env, user: &Address, guild_id: u64) {
@@ -96,9 +92,7 @@ impl GamificationEvents {
     }
 
     pub fn emit_reputation_updated(env: &Env, user: &Address, new_score: u32) {
-        env.events().publish(
-            (symbol_short!("rep_upd"),),
-            (user.clone(), new_score),
-        );
+        env.events()
+            .publish((symbol_short!("rep_upd"),), (user.clone(), new_score));
     }
 }

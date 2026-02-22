@@ -26,11 +26,7 @@ impl SocialManager {
         let now = env.ledger().timestamp();
         let day_bucket = now / 86_400;
         let rate_key = GamificationKey::EndorserDailyCount(endorser.clone(), day_bucket);
-        let given_today: u32 = env
-            .storage()
-            .persistent()
-            .get(&rate_key)
-            .unwrap_or(0u32);
+        let given_today: u32 = env.storage().persistent().get(&rate_key).unwrap_or(0u32);
         if given_today >= config.max_endorsements_per_day {
             return Err(Error::EndorsementLimitReached);
         }
@@ -78,11 +74,7 @@ impl SocialManager {
         crate::leaderboard::LeaderboardManager::update_user_score(env, &ep);
 
         // Achievement check for endorsee
-        crate::achievements::AchievementManager::check_and_award_achievements(
-            env,
-            endorsee,
-            &ep,
-        );
+        crate::achievements::AchievementManager::check_and_award_achievements(env, endorsee, &ep);
 
         GamificationEvents::emit_endorsed(env, endorser, endorsee);
         Ok(())

@@ -80,11 +80,7 @@ impl GamificationStorage {
 
     /// Increment the counter stored at `key` and return the new (post-increment) value.
     pub fn next_id(env: &Env, key: &GamificationKey) -> u64 {
-        let current: u64 = env
-            .storage()
-            .persistent()
-            .get(key)
-            .unwrap_or(0u64);
+        let current: u64 = env.storage().persistent().get(key).unwrap_or(0u64);
         let next = current + 1;
         env.storage().persistent().set(key, &next);
         next

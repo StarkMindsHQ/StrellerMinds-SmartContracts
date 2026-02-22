@@ -75,10 +75,8 @@ impl ChallengeManager {
 
         // Prerequisite quest chain check
         if challenge.prerequisite_challenge_id > 0 {
-            let pre_key = GamificationKey::UserChallenge(
-                user.clone(),
-                challenge.prerequisite_challenge_id,
-            );
+            let pre_key =
+                GamificationKey::UserChallenge(user.clone(), challenge.prerequisite_challenge_id);
             let pre: Option<UserChallenge> = env.storage().persistent().get(&pre_key);
             match pre {
                 Some(uc) if uc.completed => {}
@@ -168,11 +166,7 @@ impl ChallengeManager {
 
             // Rank = position among completions + 1
             let count_key = GamificationKey::ChallengeCompletionCount(challenge_id);
-            let count: u32 = env
-                .storage()
-                .persistent()
-                .get(&count_key)
-                .unwrap_or(0u32);
+            let count: u32 = env.storage().persistent().get(&count_key).unwrap_or(0u32);
             let new_count = count + 1;
             uc.rank = new_count;
             env.storage().persistent().set(&count_key, &new_count);
@@ -181,7 +175,8 @@ impl ChallengeManager {
             let mut profile = GamificationStorage::get_profile(env, user);
             profile.total_xp += challenge.xp_reward;
             profile.challenges_completed += 1;
-            let new_level = crate::achievements::AchievementManager::calculate_level(profile.total_xp);
+            let new_level =
+                crate::achievements::AchievementManager::calculate_level(profile.total_xp);
             let leveled_up = new_level > profile.level;
             profile.level = new_level;
             GamificationStorage::set_profile(env, user, &profile);
@@ -206,10 +201,14 @@ impl ChallengeManager {
             crate::leaderboard::LeaderboardManager::update_user_score(env, &updated);
 
             // Achievement check
-            crate::achievements::AchievementManager::check_and_award_achievements(env, user, &updated);
+            crate::achievements::AchievementManager::check_and_award_achievements(
+                env, user, &updated,
+            );
 
             // Adaptive difficulty update (success)
-            crate::achievements::AchievementManager::update_adaptive_difficulty(env, user, true, 100);
+            crate::achievements::AchievementManager::update_adaptive_difficulty(
+                env, user, true, 100,
+            );
 
             GamificationEvents::emit_challenge_completed(env, user, challenge_id, uc.rank);
         }

@@ -16,7 +16,12 @@ impl LeaderboardManager {
     /// Called whenever a user's profile changes to reflect the new score
     /// across all relevant leaderboard categories.
     pub fn update_user_score(env: &Env, profile: &GamificationProfile) {
-        Self::upsert(env, &profile.user, profile.total_xp, &LeaderboardCategory::TotalXP);
+        Self::upsert(
+            env,
+            &profile.user,
+            profile.total_xp,
+            &LeaderboardCategory::TotalXP,
+        );
         Self::upsert(
             env,
             &profile.user,
@@ -141,12 +146,7 @@ impl LeaderboardManager {
 
     // ── Internals – global ─────────────────────────────────────────────────
 
-    fn upsert(
-        env: &Env,
-        user: &soroban_sdk::Address,
-        score: u32,
-        category: &LeaderboardCategory,
-    ) {
+    fn upsert(env: &Env, user: &soroban_sdk::Address, score: u32, category: &LeaderboardCategory) {
         let key = GamificationKey::Leaderboard(category.clone());
         let existing: Vec<LeaderboardEntry> = env
             .storage()
@@ -225,11 +225,7 @@ impl LeaderboardManager {
         *board = trimmed;
     }
 
-    fn assign_ranks(
-        env: &Env,
-        board: &mut Vec<LeaderboardEntry>,
-        category: &LeaderboardCategory,
-    ) {
+    fn assign_ranks(env: &Env, board: &mut Vec<LeaderboardEntry>, category: &LeaderboardCategory) {
         let mut ranked = Vec::new(env);
         let mut rank: u32 = 1;
         for mut e in board.iter() {

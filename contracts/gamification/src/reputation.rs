@@ -1,8 +1,10 @@
-use soroban_sdk::{Env};
+use soroban_sdk::Env;
 
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
-use crate::types::{ActivityType, ActivityRecord, GamificationKey, ReputationScore, ReputationTier};
+use crate::types::{
+    ActivityRecord, ActivityType, GamificationKey, ReputationScore, ReputationTier,
+};
 
 pub struct ReputationManager;
 
@@ -27,11 +29,7 @@ impl ReputationManager {
     }
 
     /// Called after any learning activity to update consistency/quality points.
-    pub fn update_from_activity(
-        env: &Env,
-        user: &soroban_sdk::Address,
-        activity: &ActivityRecord,
-    ) {
+    pub fn update_from_activity(env: &Env, user: &soroban_sdk::Address, activity: &ActivityRecord) {
         let mut rep = Self::get_reputation(env, user);
         let now = env.ledger().timestamp();
 

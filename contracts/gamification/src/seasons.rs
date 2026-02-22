@@ -131,9 +131,7 @@ impl SeasonManager {
         if id == 0 {
             return None;
         }
-        env.storage()
-            .persistent()
-            .get(&GamificationKey::Season(id))
+        env.storage().persistent().get(&GamificationKey::Season(id))
     }
 
     pub fn get_leaderboard(env: &Env, season_id: u64) -> Vec<SeasonLeaderboardEntry> {
@@ -146,10 +144,7 @@ impl SeasonManager {
         if id == 0 {
             return 100;
         }
-        let season: Option<Season> = env
-            .storage()
-            .persistent()
-            .get(&GamificationKey::Season(id));
+        let season: Option<Season> = env.storage().persistent().get(&GamificationKey::Season(id));
         season
             .filter(|s| s.is_active)
             .map(|s| s.xp_multiplier)

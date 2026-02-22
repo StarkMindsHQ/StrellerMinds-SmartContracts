@@ -17,13 +17,13 @@ pub enum AchievementTier {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum AchievementCategory {
-    Learning,    // Course / module completions
-    Social,      // Peer interactions & endorsements
-    Streak,      // Consistency & habit formation
-    Challenge,   // Challenge / quest completions
-    Guild,       // Team achievements
-    Season,      // Seasonal accomplishments
-    Reputation,  // Community contributions
+    Learning,   // Course / module completions
+    Social,     // Peer interactions & endorsements
+    Streak,     // Consistency & habit formation
+    Challenge,  // Challenge / quest completions
+    Guild,      // Team achievements
+    Season,     // Seasonal accomplishments
+    Reputation, // Community contributions
 }
 
 /// A single achievement definition (admin-created or milestone-seeded).
@@ -115,8 +115,8 @@ pub enum ActivityType {
 #[contracttype]
 pub struct ActivityRecord {
     pub activity_type: ActivityType,
-    pub course_id: String,  // empty string = N/A
-    pub module_id: String,  // empty string = N/A
+    pub course_id: String, // empty string = N/A
+    pub module_id: String, // empty string = N/A
     /// 0-100, relevant for AssessmentPassed
     pub score: u32,
     /// time spent in seconds
@@ -436,28 +436,28 @@ pub enum GamificationKey {
 
     // ── Challenges ──────────────────────────────
     Challenge(u64),
-    ActiveChallenges,               // Vec<u64>
+    ActiveChallenges, // Vec<u64>
     UserChallenge(Address, u64),
-    UserActiveChallenges(Address),  // Vec<u64>
-    ChallengeCompletionCount(u64),  // u32 – how many finished this challenge
+    UserActiveChallenges(Address), // Vec<u64>
+    ChallengeCompletionCount(u64), // u32 – how many finished this challenge
 
     // ── Guilds ──────────────────────────────────
     Guild(u64),
-    GuildMember(Address),          // Address → GuildMember
-    GuildMembers(u64),             // guild_id → Vec<Address>
+    GuildMember(Address), // Address → GuildMember
+    GuildMembers(u64),    // guild_id → Vec<Address>
 
     // ── Seasons ─────────────────────────────────
     Season(u64),
     /// 0 = no active season
     ActiveSeasonId,
-    SeasonLeaderboard(u64),            // season_id → Vec<SeasonLeaderboardEntry>
-    UserSeasonXP(Address, u64),        // (user, season_id) → u32
+    SeasonLeaderboard(u64),     // season_id → Vec<SeasonLeaderboardEntry>
+    UserSeasonXP(Address, u64), // (user, season_id) → u32
 
     // ── Reputation ──────────────────────────────
     UserReputation(Address),
 
     // ── Social ──────────────────────────────────
-    UserEndorsements(Address),         // endorsee → Vec<PeerEndorsement>
+    UserEndorsements(Address), // endorsee → Vec<PeerEndorsement>
     /// endorser → day-bucket → count (for rate limiting)
     EndorserDailyCount(Address, u64),
 

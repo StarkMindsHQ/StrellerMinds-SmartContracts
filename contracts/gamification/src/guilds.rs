@@ -3,7 +3,7 @@ use soroban_sdk::{Address, Env, String, Vec};
 use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
-use crate::types::{Guild, GuildMember, GuildRole, GamificationKey};
+use crate::types::{GamificationKey, Guild, GuildMember, GuildRole};
 
 pub struct GuildManager;
 

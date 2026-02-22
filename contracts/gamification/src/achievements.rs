@@ -87,8 +87,7 @@ impl AchievementManager {
         GamificationStorage::set_profile(env, user, &profile);
 
         // ── 7. Season XP ──────────────────────────────────────────────────
-        let new_season_xp =
-            crate::seasons::SeasonManager::add_season_xp(env, user, final_xp);
+        let new_season_xp = crate::seasons::SeasonManager::add_season_xp(env, user, final_xp);
         if new_season_xp > 0 {
             let mut p = GamificationStorage::get_profile(env, user);
             p.season_xp = new_season_xp;
@@ -302,187 +301,387 @@ impl AchievementManager {
 
         // Course completion milestones (IDs 1-5)
         Self::seed_one(
-            env, 1, "First Step",
+            env,
+            1,
+            "First Step",
             "Complete your first course",
-            AchievementTier::Bronze, AchievementCategory::Learning,
-            100, 1_000,
-            AchievementRequirements { courses_completed: 1, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Learning,
+            100,
+            1_000,
+            AchievementRequirements {
+                courses_completed: 1,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 2, "Course Explorer",
+            env,
+            2,
+            "Course Explorer",
             "Complete 5 courses",
-            AchievementTier::Silver, AchievementCategory::Learning,
-            500, 5_000,
-            AchievementRequirements { courses_completed: 5, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Learning,
+            500,
+            5_000,
+            AchievementRequirements {
+                courses_completed: 5,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 3, "Dedicated Learner",
+            env,
+            3,
+            "Dedicated Learner",
             "Complete 10 courses",
-            AchievementTier::Gold, AchievementCategory::Learning,
-            1_000, 10_000,
-            AchievementRequirements { courses_completed: 10, ..Self::zero_req() }, ts,
+            AchievementTier::Gold,
+            AchievementCategory::Learning,
+            1_000,
+            10_000,
+            AchievementRequirements {
+                courses_completed: 10,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 4, "Knowledge Seeker",
+            env,
+            4,
+            "Knowledge Seeker",
             "Complete 25 courses",
-            AchievementTier::Platinum, AchievementCategory::Learning,
-            2_500, 25_000,
-            AchievementRequirements { courses_completed: 25, ..Self::zero_req() }, ts,
+            AchievementTier::Platinum,
+            AchievementCategory::Learning,
+            2_500,
+            25_000,
+            AchievementRequirements {
+                courses_completed: 25,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 5, "Master Student",
+            env,
+            5,
+            "Master Student",
             "Complete 50 courses",
-            AchievementTier::Diamond, AchievementCategory::Learning,
-            5_000, 50_000,
-            AchievementRequirements { courses_completed: 50, ..Self::zero_req() }, ts,
+            AchievementTier::Diamond,
+            AchievementCategory::Learning,
+            5_000,
+            50_000,
+            AchievementRequirements {
+                courses_completed: 50,
+                ..Self::zero_req()
+            },
+            ts,
         );
 
         // Streak milestones (IDs 6-10)
         Self::seed_one(
-            env, 6, "Week Warrior",
+            env,
+            6,
+            "Week Warrior",
             "Maintain a 7-day learning streak",
-            AchievementTier::Bronze, AchievementCategory::Streak,
-            150, 1_500,
-            AchievementRequirements { streak_days: 7, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Streak,
+            150,
+            1_500,
+            AchievementRequirements {
+                streak_days: 7,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 7, "Month Master",
+            env,
+            7,
+            "Month Master",
             "Maintain a 30-day learning streak",
-            AchievementTier::Silver, AchievementCategory::Streak,
-            600, 6_000,
-            AchievementRequirements { streak_days: 30, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Streak,
+            600,
+            6_000,
+            AchievementRequirements {
+                streak_days: 30,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 8, "Century Scholar",
+            env,
+            8,
+            "Century Scholar",
             "Maintain a 100-day learning streak",
-            AchievementTier::Gold, AchievementCategory::Streak,
-            2_000, 20_000,
-            AchievementRequirements { streak_days: 100, ..Self::zero_req() }, ts,
+            AchievementTier::Gold,
+            AchievementCategory::Streak,
+            2_000,
+            20_000,
+            AchievementRequirements {
+                streak_days: 100,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 9, "Relentless",
+            env,
+            9,
+            "Relentless",
             "Maintain a 365-day learning streak",
-            AchievementTier::Diamond, AchievementCategory::Streak,
-            10_000, 100_000,
-            AchievementRequirements { streak_days: 365, ..Self::zero_req() }, ts,
+            AchievementTier::Diamond,
+            AchievementCategory::Streak,
+            10_000,
+            100_000,
+            AchievementRequirements {
+                streak_days: 365,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 10, "Comeback Kid",
+            env,
+            10,
+            "Comeback Kid",
             "Rebuild a streak to 30 days after breaking it",
-            AchievementTier::Silver, AchievementCategory::Streak,
-            600, 6_000,
-            AchievementRequirements { streak_days: 30, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Streak,
+            600,
+            6_000,
+            AchievementRequirements {
+                streak_days: 30,
+                ..Self::zero_req()
+            },
+            ts,
         );
 
         // XP milestones (IDs 11-15)
         Self::seed_one(
-            env, 11, "XP Beginner",
+            env,
+            11,
+            "XP Beginner",
             "Earn 1,000 XP",
-            AchievementTier::Bronze, AchievementCategory::Learning,
-            50, 500,
-            AchievementRequirements { total_xp: 1_000, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Learning,
+            50,
+            500,
+            AchievementRequirements {
+                total_xp: 1_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 12, "XP Enthusiast",
+            env,
+            12,
+            "XP Enthusiast",
             "Earn 5,000 XP",
-            AchievementTier::Silver, AchievementCategory::Learning,
-            250, 2_500,
-            AchievementRequirements { total_xp: 5_000, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Learning,
+            250,
+            2_500,
+            AchievementRequirements {
+                total_xp: 5_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 13, "XP Expert",
+            env,
+            13,
+            "XP Expert",
             "Earn 10,000 XP",
-            AchievementTier::Gold, AchievementCategory::Learning,
-            500, 5_000,
-            AchievementRequirements { total_xp: 10_000, ..Self::zero_req() }, ts,
+            AchievementTier::Gold,
+            AchievementCategory::Learning,
+            500,
+            5_000,
+            AchievementRequirements {
+                total_xp: 10_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 14, "XP Legend",
+            env,
+            14,
+            "XP Legend",
             "Earn 50,000 XP",
-            AchievementTier::Platinum, AchievementCategory::Learning,
-            2_500, 25_000,
-            AchievementRequirements { total_xp: 50_000, ..Self::zero_req() }, ts,
+            AchievementTier::Platinum,
+            AchievementCategory::Learning,
+            2_500,
+            25_000,
+            AchievementRequirements {
+                total_xp: 50_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 15, "XP Grandmaster",
+            env,
+            15,
+            "XP Grandmaster",
             "Earn 100,000 XP",
-            AchievementTier::Diamond, AchievementCategory::Learning,
-            5_000, 50_000,
-            AchievementRequirements { total_xp: 100_000, ..Self::zero_req() }, ts,
+            AchievementTier::Diamond,
+            AchievementCategory::Learning,
+            5_000,
+            50_000,
+            AchievementRequirements {
+                total_xp: 100_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
 
         // Social milestones (IDs 16-20)
         Self::seed_one(
-            env, 16, "First Fan",
+            env,
+            16,
+            "First Fan",
             "Receive your first peer endorsement",
-            AchievementTier::Bronze, AchievementCategory::Social,
-            100, 1_000,
-            AchievementRequirements { endorsements_received: 1, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Social,
+            100,
+            1_000,
+            AchievementRequirements {
+                endorsements_received: 1,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 17, "Well Respected",
+            env,
+            17,
+            "Well Respected",
             "Receive 10 peer endorsements",
-            AchievementTier::Silver, AchievementCategory::Social,
-            500, 5_000,
-            AchievementRequirements { endorsements_received: 10, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Social,
+            500,
+            5_000,
+            AchievementRequirements {
+                endorsements_received: 10,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 18, "Community Pillar",
+            env,
+            18,
+            "Community Pillar",
             "Receive 50 peer endorsements",
-            AchievementTier::Gold, AchievementCategory::Social,
-            2_000, 20_000,
-            AchievementRequirements { endorsements_received: 50, ..Self::zero_req() }, ts,
+            AchievementTier::Gold,
+            AchievementCategory::Social,
+            2_000,
+            20_000,
+            AchievementRequirements {
+                endorsements_received: 50,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 19, "Challenge Accepted",
+            env,
+            19,
+            "Challenge Accepted",
             "Complete your first challenge",
-            AchievementTier::Bronze, AchievementCategory::Challenge,
-            150, 1_500,
-            AchievementRequirements { challenges_completed: 1, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Challenge,
+            150,
+            1_500,
+            AchievementRequirements {
+                challenges_completed: 1,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 20, "Challenge Champion",
+            env,
+            20,
+            "Challenge Champion",
             "Complete 10 challenges",
-            AchievementTier::Gold, AchievementCategory::Challenge,
-            1_500, 15_000,
-            AchievementRequirements { challenges_completed: 10, ..Self::zero_req() }, ts,
+            AchievementTier::Gold,
+            AchievementCategory::Challenge,
+            1_500,
+            15_000,
+            AchievementRequirements {
+                challenges_completed: 10,
+                ..Self::zero_req()
+            },
+            ts,
         );
 
         // Guild milestones (IDs 21-25)
         Self::seed_one(
-            env, 21, "Team Player",
+            env,
+            21,
+            "Team Player",
             "Contribute 1,000 XP to your guild",
-            AchievementTier::Bronze, AchievementCategory::Guild,
-            200, 2_000,
-            AchievementRequirements { guild_contributions: 1_000, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Guild,
+            200,
+            2_000,
+            AchievementRequirements {
+                guild_contributions: 1_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 22, "Guild Pillar",
+            env,
+            22,
+            "Guild Pillar",
             "Contribute 10,000 XP to your guild",
-            AchievementTier::Silver, AchievementCategory::Guild,
-            1_000, 10_000,
-            AchievementRequirements { guild_contributions: 10_000, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Guild,
+            1_000,
+            10_000,
+            AchievementRequirements {
+                guild_contributions: 10_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 23, "Guild Legend",
+            env,
+            23,
+            "Guild Legend",
             "Contribute 50,000 XP to your guild",
-            AchievementTier::Platinum, AchievementCategory::Guild,
-            5_000, 50_000,
-            AchievementRequirements { guild_contributions: 50_000, ..Self::zero_req() }, ts,
+            AchievementTier::Platinum,
+            AchievementCategory::Guild,
+            5_000,
+            50_000,
+            AchievementRequirements {
+                guild_contributions: 50_000,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 24, "Season Warrior",
+            env,
+            24,
+            "Season Warrior",
             "Participate in a season",
-            AchievementTier::Bronze, AchievementCategory::Season,
-            100, 1_000,
-            AchievementRequirements { seasons_completed: 1, ..Self::zero_req() }, ts,
+            AchievementTier::Bronze,
+            AchievementCategory::Season,
+            100,
+            1_000,
+            AchievementRequirements {
+                seasons_completed: 1,
+                ..Self::zero_req()
+            },
+            ts,
         );
         Self::seed_one(
-            env, 25, "Season Veteran",
+            env,
+            25,
+            "Season Veteran",
             "Participate in 3 seasons",
-            AchievementTier::Silver, AchievementCategory::Season,
-            500, 5_000,
-            AchievementRequirements { seasons_completed: 3, ..Self::zero_req() }, ts,
+            AchievementTier::Silver,
+            AchievementCategory::Season,
+            500,
+            5_000,
+            AchievementRequirements {
+                seasons_completed: 3,
+                ..Self::zero_req()
+            },
+            ts,
         );
 
         // Counter starts past the reserved block
@@ -530,7 +729,11 @@ impl AchievementManager {
                 || profile.current_streak == 100
                 || profile.current_streak == 365
             {
-                GamificationEvents::emit_streak_milestone(env, &profile.user, profile.current_streak);
+                GamificationEvents::emit_streak_milestone(
+                    env,
+                    &profile.user,
+                    profile.current_streak,
+                );
             }
         } else {
             // Streak broken
@@ -547,40 +750,86 @@ impl AchievementManager {
         let mut q = Vec::new(env);
 
         // Courses
-        if profile.courses_completed >= 1  { q.push_back(1u64); }
-        if profile.courses_completed >= 5  { q.push_back(2u64); }
-        if profile.courses_completed >= 10 { q.push_back(3u64); }
-        if profile.courses_completed >= 25 { q.push_back(4u64); }
-        if profile.courses_completed >= 50 { q.push_back(5u64); }
+        if profile.courses_completed >= 1 {
+            q.push_back(1u64);
+        }
+        if profile.courses_completed >= 5 {
+            q.push_back(2u64);
+        }
+        if profile.courses_completed >= 10 {
+            q.push_back(3u64);
+        }
+        if profile.courses_completed >= 25 {
+            q.push_back(4u64);
+        }
+        if profile.courses_completed >= 50 {
+            q.push_back(5u64);
+        }
 
         // Streaks (current and max)
-        if profile.current_streak >= 7   { q.push_back(6u64); }
-        if profile.current_streak >= 30  { q.push_back(7u64); }
-        if profile.current_streak >= 100 { q.push_back(8u64); }
-        if profile.current_streak >= 365 { q.push_back(9u64); }
-        if profile.max_streak >= 30      { q.push_back(10u64); }
+        if profile.current_streak >= 7 {
+            q.push_back(6u64);
+        }
+        if profile.current_streak >= 30 {
+            q.push_back(7u64);
+        }
+        if profile.current_streak >= 100 {
+            q.push_back(8u64);
+        }
+        if profile.current_streak >= 365 {
+            q.push_back(9u64);
+        }
+        if profile.max_streak >= 30 {
+            q.push_back(10u64);
+        }
 
         // XP
-        if profile.total_xp >= 1_000   { q.push_back(11u64); }
-        if profile.total_xp >= 5_000   { q.push_back(12u64); }
-        if profile.total_xp >= 10_000  { q.push_back(13u64); }
-        if profile.total_xp >= 50_000  { q.push_back(14u64); }
-        if profile.total_xp >= 100_000 { q.push_back(15u64); }
+        if profile.total_xp >= 1_000 {
+            q.push_back(11u64);
+        }
+        if profile.total_xp >= 5_000 {
+            q.push_back(12u64);
+        }
+        if profile.total_xp >= 10_000 {
+            q.push_back(13u64);
+        }
+        if profile.total_xp >= 50_000 {
+            q.push_back(14u64);
+        }
+        if profile.total_xp >= 100_000 {
+            q.push_back(15u64);
+        }
 
         // Social
-        if profile.endorsements_received >= 1  { q.push_back(16u64); }
-        if profile.endorsements_received >= 10 { q.push_back(17u64); }
-        if profile.endorsements_received >= 50 { q.push_back(18u64); }
+        if profile.endorsements_received >= 1 {
+            q.push_back(16u64);
+        }
+        if profile.endorsements_received >= 10 {
+            q.push_back(17u64);
+        }
+        if profile.endorsements_received >= 50 {
+            q.push_back(18u64);
+        }
 
         // Challenges
-        if profile.challenges_completed >= 1  { q.push_back(19u64); }
-        if profile.challenges_completed >= 10 { q.push_back(20u64); }
+        if profile.challenges_completed >= 1 {
+            q.push_back(19u64);
+        }
+        if profile.challenges_completed >= 10 {
+            q.push_back(20u64);
+        }
 
         // Guild contributions (stored in GuildMember)
         let guild_contrib = Self::guild_contribution(env, &profile.user);
-        if guild_contrib >= 1_000  { q.push_back(21u64); }
-        if guild_contrib >= 10_000 { q.push_back(22u64); }
-        if guild_contrib >= 50_000 { q.push_back(23u64); }
+        if guild_contrib >= 1_000 {
+            q.push_back(21u64);
+        }
+        if guild_contrib >= 10_000 {
+            q.push_back(22u64);
+        }
+        if guild_contrib >= 50_000 {
+            q.push_back(23u64);
+        }
 
         q
     }

@@ -163,11 +163,7 @@ impl Gamification {
     //  Challenge / Quest Functions
     // ══════════════════════════════════════════════════════════════════════
 
-    pub fn create_challenge(
-        env: Env,
-        admin: Address,
-        challenge: Challenge,
-    ) -> Result<u64, Error> {
+    pub fn create_challenge(env: Env, admin: Address, challenge: Challenge) -> Result<u64, Error> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
         ChallengeManager::create(&env, &admin, challenge)
@@ -306,8 +302,6 @@ impl Gamification {
     // ══════════════════════════════════════════════════════════════════════
 
     pub fn get_admin(env: Env) -> Option<Address> {
-        env.storage()
-            .instance()
-            .get(&GamificationKey::Admin)
+        env.storage().instance().get(&GamificationKey::Admin)
     }
 }
