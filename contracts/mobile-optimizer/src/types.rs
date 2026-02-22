@@ -1095,6 +1095,57 @@ pub enum DataKey {
     TotalOfflineOps,
     NotificationTemplate(String),
     NotificationCampaign(String),
+    ContentItem(String),
+    ContentVersionHistory(String),
+}
+
+// ============================================================================
+// Content Management Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentMetadata {
+    pub content_id: String,
+    pub content_type: ContentType,
+    pub title: String,
+    pub uri: String,
+    pub current_version: u32,
+    pub author: Address,
+    pub access_rule: ContentAccessRule,
+    pub delivery_config: ContentDeliveryConfig,
+    pub total_views: u32,
+    pub average_rating: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentVersion {
+    pub content_id: String,
+    pub version: u32,
+    pub content_hash: BytesN<32>,
+    pub uri: String,
+    pub created_at: u64,
+    pub changelog: String,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ContentAccessRule {
+    Public,
+    RegisteredUser,
+    CourseEnrolled(String),
+    PremiumOnly,
+    CreatorOnly,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentDeliveryConfig {
+    pub cdn_enabled: bool,
+    pub region_restrictions: Vec<String>,
+    pub optimization_level: u32,
+    pub drm_enabled: bool,
 }
 
 // ============================================================================
@@ -1139,4 +1190,5 @@ pub enum MobileOptimizerError {
     PwaError = 32,
     InvalidInput = 33,
     InternalError = 34,
+    ContentError = 35,
 }
