@@ -625,6 +625,8 @@ pub struct LearningReminder {
     pub is_active: bool,
     pub last_sent: u64,
     pub course_id: String,
+    pub campaign_id: Option<String>,
+    pub variant_id: Option<String>,
 }
 
 #[contracttype]
@@ -660,6 +662,8 @@ pub struct NotificationConfig {
     pub max_daily_notifications: u32,
     pub channel_preferences: Map<String, bool>,
     pub priority_threshold: NotificationPriorityLevel,
+    pub language_preference: String,
+    pub marketing_consent: bool,
 }
 
 #[contracttype]
@@ -681,6 +685,9 @@ pub struct NotificationRecord {
     pub read_at: u64,
     pub action_taken: bool,
     pub delivery_status: DeliveryStatus,
+    pub campaign_id: Option<String>,
+    pub variant_id: Option<String>,
+    pub clicked_at: u64,
 }
 
 #[contracttype]
@@ -692,6 +699,38 @@ pub enum DeliveryStatus {
     Read,
     Failed,
     Expired,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NotificationTemplate {
+    pub template_id: String,
+    pub category: ReminderType,
+    pub default_content: String,
+    pub localized_content: Map<String, String>,
+    pub supported_channels: Vec<String>,
+    pub version: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NotificationCampaign {
+    pub campaign_id: String,
+    pub name: String,
+    pub variants: Vec<ABTestVariant>,
+    pub start_date: u64,
+    pub end_date: u64,
+    pub is_active: bool,
+    pub total_sent: u32,
+    pub total_engaged: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ABTestVariant {
+    pub variant_id: String,
+    pub template_id: String,
+    pub weight: u32,
 }
 
 // ============================================================================
@@ -1054,6 +1093,8 @@ pub enum DataKey {
     TotalSessions,
     TotalBatches,
     TotalOfflineOps,
+    NotificationTemplate(String),
+    NotificationCampaign(String),
 }
 
 // ============================================================================
