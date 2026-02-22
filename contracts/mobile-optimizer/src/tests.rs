@@ -511,6 +511,71 @@ fn test_content_management() {
 }
 
 // ============================================================================
+// Collaboration Tests
+// ============================================================================
+
+#[test]
+fn test_study_group_creation_and_join() {
+    let (env, client, _, user) = setup_contract();
+    let group_id = String::from_str(&env, "group_rust");
+    
+    let group = client.create_study_group(
+        &user,
+        &group_id,
+        &String::from_str(&env, "Rust Learners"),
+        &String::from_str(&env, "Rust"),
+        &5,
+    );
+    assert_eq!(group.members.len(), 1);
+
+    let user2 = Address::generate(&env);
+    client.join_study_group(&user2, &group_id);
+    
+    // Verify profile update
+    let profile = client.get_collaboration_profile(&user2);
+    assert_eq!(profile.groups_joined, 1);
+}
+
+#[test]
+fn test_peer_review_and_reputation() {
+    let (env, client, _, reviewer) = setup_contract();
+    let target = Address::generate(&env);
+    let review_id = String::from_str(&env, "rev_001");
+
+    client.submit_peer_review(
+        &reviewer,
+        &target,
+        &review_id,
+        &String::from_str(&env, "project_1"),
+        &90,
+        &String::from_str(&env, "Great work!"),
+    );
+
+    let profile = client.get_collaboration_profile(&target);
+    // Initial 50, new score 90. Avg = (50+90)/2 = 70
+    assert_eq!(profile.reputation_score, 70);
+}
+
+#[test]
+fn test_mentorship_flow() {
+    let (env, client, _, mentee) = setup_contract();
+    let mentor = Address::generate(&env);
+    let session_id = String::from_str(&env, "sess_001");
+
+    let session = client.request_mentorship(
+        &mentee,
+        &mentor,
+        &session_id,
+        &String::from_str(&env, "Career Advice"),
+        &1000,
+        &30,
+    );
+    assert_eq!(session.status, MentorshipStatus::Pending);
+
+    client.update_mentorship_status(&mentor, &session_id, &MentorshipStatus::Accepted);
+}
+
+// ============================================================================
 // Security Tests
 // ============================================================================
 

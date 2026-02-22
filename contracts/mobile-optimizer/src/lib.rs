@@ -9,6 +9,7 @@ pub mod gas_optimizer;
 pub mod interaction_flows;
 pub mod network_manager;
 pub mod content_manager;
+pub mod collaboration_manager;
 pub mod notification_manager;
 pub mod offline_manager;
 pub mod pwa_manager;
@@ -29,6 +30,7 @@ use network_manager::{
     BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics,
 };
 use content_manager::ContentManager;
+use collaboration_manager::CollaborationManager;
 use notification_manager::NotificationManager;
 use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
 use pwa_manager::{OfflineCapabilityReport, PwaManager};
@@ -680,6 +682,85 @@ impl MobileOptimizerContract {
         content_id: String,
     ) -> Result<Vec<ContentVersion>, MobileOptimizerError> {
         ContentManager::get_version_history(&env, content_id)
+    }
+
+    // ========================================================================
+    // Collaboration & Social (NEW)
+    // ========================================================================
+
+    pub fn create_study_group(
+        env: Env,
+        creator: Address,
+        group_id: String,
+        name: String,
+        topic: String,
+        max_members: u32,
+    ) -> Result<StudyGroup, MobileOptimizerError> {
+        creator.require_auth();
+        CollaborationManager::create_study_group(&env, &creator, group_id, name, topic, max_members)
+    }
+
+    pub fn join_study_group(
+        env: Env,
+        user: Address,
+        group_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        CollaborationManager::join_study_group(&env, &user, group_id)
+    }
+
+    pub fn create_forum_post(
+        env: Env,
+        author: Address,
+        post_id: String,
+        group_id: String,
+        content: String,
+        parent_id: Option<String>,
+    ) -> Result<ForumPost, MobileOptimizerError> {
+        author.require_auth();
+        CollaborationManager::create_post(&env, &author, post_id, group_id, content, parent_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn submit_peer_review(
+        env: Env,
+        reviewer: Address,
+        target_user: Address,
+        review_id: String,
+        context_id: String,
+        score: u32,
+        comments: String,
+    ) -> Result<PeerReview, MobileOptimizerError> {
+        reviewer.require_auth();
+        CollaborationManager::submit_review(&env, &reviewer, &target_user, review_id, context_id, score, comments)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn request_mentorship(
+        env: Env,
+        mentee: Address,
+        mentor: Address,
+        session_id: String,
+        topic: String,
+        scheduled_at: u64,
+        duration_minutes: u32,
+    ) -> Result<MentorshipSession, MobileOptimizerError> {
+        mentee.require_auth();
+        CollaborationManager::request_mentorship(&env, &mentee, &mentor, session_id, topic, scheduled_at, duration_minutes)
+    }
+
+    pub fn update_mentorship_status(
+        env: Env,
+        caller: Address,
+        session_id: String,
+        new_status: MentorshipStatus,
+    ) -> Result<(), MobileOptimizerError> {
+        caller.require_auth();
+        CollaborationManager::update_mentorship_status(&env, &caller, session_id, new_status)
+    }
+
+    pub fn get_collaboration_profile(env: Env, user: Address) -> CollaborationProfile {
+        CollaborationManager::get_profile(&env, &user)
     }
 
     // ========================================================================
