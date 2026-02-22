@@ -8,6 +8,7 @@ pub mod content_cache;
 pub mod gas_optimizer;
 pub mod interaction_flows;
 pub mod network_manager;
+pub mod content_manager;
 pub mod notification_manager;
 pub mod offline_manager;
 pub mod pwa_manager;
@@ -27,6 +28,7 @@ use interaction_flows::{InteractionFlows, MobileInteractionResult};
 use network_manager::{
     BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics,
 };
+use content_manager::ContentManager;
 use notification_manager::NotificationManager;
 use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
 use pwa_manager::{OfflineCapabilityReport, PwaManager};
@@ -622,6 +624,62 @@ impl MobileOptimizerContract {
     ) -> Result<(), MobileOptimizerError> {
         user.require_auth();
         NotificationManager::track_engagement(&env, &user, notification_id)
+    }
+
+    // ========================================================================
+    // Content Management (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn publish_content(
+        env: Env,
+        author: Address,
+        content_id: String,
+        content_type: ContentType,
+        title: String,
+        uri: String,
+        access_rule: ContentAccessRule,
+        delivery_config: ContentDeliveryConfig,
+        content_hash: BytesN<32>,
+    ) -> Result<ContentMetadata, MobileOptimizerError> {
+        author.require_auth();
+        ContentManager::publish_content(
+            &env,
+            &author,
+            content_id,
+            content_type,
+            title,
+            uri,
+            access_rule,
+            delivery_config,
+            content_hash,
+        )
+    }
+
+    pub fn update_content_version(
+        env: Env,
+        author: Address,
+        content_id: String,
+        new_uri: String,
+        content_hash: BytesN<32>,
+        changelog: String,
+    ) -> Result<ContentVersion, MobileOptimizerError> {
+        author.require_auth();
+        ContentManager::update_content_version(&env, &author, content_id, new_uri, content_hash, changelog)
+    }
+
+    pub fn get_content_metadata(
+        env: Env,
+        content_id: String,
+    ) -> Result<ContentMetadata, MobileOptimizerError> {
+        ContentManager::get_content(&env, content_id)
+    }
+
+    pub fn get_content_history(
+        env: Env,
+        content_id: String,
+    ) -> Result<Vec<ContentVersion>, MobileOptimizerError> {
+        ContentManager::get_version_history(&env, content_id)
     }
 
     // ========================================================================

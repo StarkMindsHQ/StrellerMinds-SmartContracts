@@ -468,6 +468,48 @@ fn test_notification_templates_and_campaigns() {
     assert_eq!(campaign.variants.len(), 1);
 }
 
+#[test]
+fn test_content_management() {
+    let (env, client, _, user) = setup_contract();
+    let content_id = String::from_str(&env, "content_101");
+    let hash = BytesN::from_array(&env, &[1u8; 32]);
+    
+    let delivery_config = ContentDeliveryConfig {
+        cdn_enabled: true,
+        region_restrictions: Vec::new(&env),
+        optimization_level: 1,
+        drm_enabled: false,
+    };
+
+    let metadata = client.publish_content(
+        &user,
+        &content_id,
+        &ContentType::VideoLesson,
+        &String::from_str(&env, "Intro to Rust"),
+        &String::from_str(&env, "https://cdn.example.com/v1"),
+        &ContentAccessRule::Public,
+        &delivery_config,
+        &hash,
+    );
+
+    assert_eq!(metadata.current_version, 1);
+    assert_eq!(metadata.title, String::from_str(&env, "Intro to Rust"));
+
+    let new_hash = BytesN::from_array(&env, &[2u8; 32]);
+    let version = client.update_content_version(
+        &user,
+        &content_id,
+        &String::from_str(&env, "https://cdn.example.com/v2"),
+        &new_hash,
+        &String::from_str(&env, "Fixed audio"),
+    );
+
+    assert_eq!(version.version, 2);
+    
+    let history = client.get_content_history(&content_id);
+    assert_eq!(history.len(), 2);
+}
+
 // ============================================================================
 // Security Tests
 // ============================================================================
