@@ -86,3 +86,4 @@ impl ProgressTracker {
 
 #[cfg(test)]
 mod test;
+pub mod gas_optimized;
