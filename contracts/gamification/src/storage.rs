@@ -30,7 +30,7 @@ impl GamificationStorage {
         env.storage()
             .instance()
             .get(&GamificationKey::Config)
-            .unwrap_or_else(|| GamificationConfig {
+            .unwrap_or(GamificationConfig {
                 base_module_xp: 50,
                 base_course_xp: 500,
                 streak_weekly_bonus: 25,

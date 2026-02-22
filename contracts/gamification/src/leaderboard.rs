@@ -71,7 +71,7 @@ impl LeaderboardManager {
             .get(&GamificationKey::Leaderboard(category.clone()))
             .unwrap_or_else(|| Vec::new(env));
 
-        let cap = limit.min(MAX_ENTRIES).min(all.len()) as u32;
+        let cap = limit.min(MAX_ENTRIES).min(all.len());
         let mut out = Vec::new(env);
         for i in 0..cap {
             if let Some(e) = all.get(i) {

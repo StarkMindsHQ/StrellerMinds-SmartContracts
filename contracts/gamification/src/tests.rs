@@ -245,7 +245,7 @@ fn test_first_course_achievement_awarded() {
 
     // Achievement ID 1 = "First Step" (complete first course)
     assert!(
-        new_achievements.contains(&1u64),
+        new_achievements.contains(1u64),
         "should award 'First Step' achievement on first course"
     );
 }
@@ -617,7 +617,7 @@ fn test_create_season_and_earn_season_xp() {
 
     // Season XP should reflect the 2× multiplier
     let board = client.get_season_leaderboard(&season_id);
-    assert!(board.len() >= 1);
+    assert!(!board.is_empty());
 }
 
 #[test]
