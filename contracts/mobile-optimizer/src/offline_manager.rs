@@ -50,7 +50,7 @@ impl OfflineManager {
         queue.sync_status = SyncStatus::Syncing;
         queue.last_sync_attempt = env.ledger().timestamp();
 
-        let total_ops = queue.queued_operations.len() as u32;
+        let total_ops = queue.queued_operations.len();
         let mut successful = 0u32;
         let mut failed = 0u32;
         let mut conflicts = 0u32;
@@ -124,7 +124,7 @@ impl OfflineManager {
         }
 
         Ok(OfflineQueueStatus {
-            total_operations: queue.queued_operations.len() as u32,
+            total_operations: queue.queued_operations.len(),
             pending_operations: pending_count,
             sync_status: queue.sync_status,
             last_sync_attempt: queue.last_sync_attempt,

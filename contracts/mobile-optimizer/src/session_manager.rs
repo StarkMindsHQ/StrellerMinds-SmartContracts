@@ -210,7 +210,7 @@ impl SessionManager {
             .unwrap_or_else(|| Vec::new(env));
 
         let mut active = 0u32;
-        let total = sessions.len() as u32;
+        let total = sessions.len();
 
         for sid in sessions.iter() {
             if let Some(session) = env

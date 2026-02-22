@@ -103,8 +103,8 @@ impl BatchManager {
             }
         }
 
-        let sc = successful_ids.len() as u32;
-        let fc = failed_ids.len() as u32;
+        let sc = successful_ids.len();
+        let fc = failed_ids.len();
 
         BatchExecutionResult {
             batch_id: batch.batch_id.clone(),

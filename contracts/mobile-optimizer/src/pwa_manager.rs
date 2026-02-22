@@ -210,8 +210,8 @@ impl PwaManager {
                 PwaInstallStatus::Installed | PwaInstallStatus::Standalone
             ),
             service_worker_active: sw_active,
-            cached_routes_count: config.cached_routes.len() as u32,
-            offline_pages_count: config.offline_pages.len() as u32,
+            cached_routes_count: config.cached_routes.len(),
+            offline_pages_count: config.offline_pages.len(),
             background_sync_enabled: config.background_sync_enabled,
             storage_usage_percent: storage_pct,
             push_enabled: config.push_subscription_active,

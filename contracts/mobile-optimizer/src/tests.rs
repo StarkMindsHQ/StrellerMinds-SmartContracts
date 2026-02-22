@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::types::*;
 use crate::{MobileOptimizerContract, MobileOptimizerContractClient};
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Map, String, Vec};
@@ -129,7 +127,7 @@ fn test_update_preferences() {
 
     let session = client.get_session(&user, &session_id);
     assert_eq!(session.preferences.max_batch_size, 5);
-    assert_eq!(session.preferences.battery_optimization, false);
+    assert!(!session.preferences.battery_optimization);
 }
 
 #[test]
@@ -228,7 +226,7 @@ fn test_offline_cleanup() {
 fn test_offline_capabilities() {
     let (_, client, _, _) = setup_contract();
     let caps = client.get_offline_capabilities();
-    assert!(caps.supported_operations.len() > 0);
+    assert!(!caps.supported_operations.is_empty());
     assert_eq!(caps.max_queue_size, 100);
     assert_eq!(caps.max_offline_duration_hours, 168);
 }
@@ -321,7 +319,7 @@ fn test_battery_profile_update() {
 
     let profile = client.update_battery_profile(&user, &device_id, &75, &false);
     assert_eq!(profile.battery_level, 75);
-    assert_eq!(profile.is_charging, false);
+    assert!(!profile.is_charging);
 }
 
 #[test]
@@ -331,8 +329,8 @@ fn test_battery_low_power_mode() {
 
     let _ = client.update_battery_profile(&user, &device_id, &10, &false);
     let settings = client.get_battery_optimized_settings(&user, &device_id);
-    assert_eq!(settings.prefetch_enabled, false);
-    assert_eq!(settings.animation_enabled, false);
+    assert!(!settings.prefetch_enabled);
+    assert!(!settings.animation_enabled);
 }
 
 #[test]
@@ -351,7 +349,7 @@ fn test_battery_impact_report() {
 
     let report = client.estimate_battery_impact(&sid, &30, &15, &60);
     assert!(report.estimated_drain_percent > 0);
-    assert!(report.recommendations.len() > 0);
+    assert!(!report.recommendations.is_empty());
 }
 
 // ============================================================================
@@ -373,7 +371,7 @@ fn test_create_learning_reminder() {
     );
 
     assert_eq!(reminder.reminder_type, ReminderType::DailyStudy);
-    assert_eq!(reminder.is_active, true);
+    assert!(reminder.is_active);
 }
 
 #[test]
@@ -398,7 +396,7 @@ fn test_streak_reminder() {
     let (_env, client, _, user) = setup_contract();
     let reminder = client.create_streak_reminder(&user, &7);
     assert_eq!(reminder.reminder_type, ReminderType::StreakMaintenance);
-    assert_eq!(reminder.is_active, true);
+    assert!(reminder.is_active);
 }
 
 #[test]
@@ -436,7 +434,7 @@ fn test_biometric_auth_enable() {
     client.enable_biometric_auth(&user, &BiometricType::Fingerprint);
 
     let profile = client.get_security_profile(&user);
-    assert_eq!(profile.biometric_enabled, true);
+    assert!(profile.biometric_enabled);
     assert_eq!(profile.biometric_type, BiometricType::Fingerprint);
 }
 
@@ -462,7 +460,7 @@ fn test_authentication_success() {
 
     client.register_trusted_device(&user, &device);
     let event = client.authenticate(&user, &device, &AuthMethod::DeviceToken, &ip);
-    assert_eq!(event.success, true);
+    assert!(event.success);
 }
 
 #[test]
@@ -470,7 +468,7 @@ fn test_two_factor_enable() {
     let (_env, client, _, user) = setup_contract();
     client.enable_two_factor(&user);
     let profile = client.get_security_profile(&user);
-    assert_eq!(profile.two_factor_enabled, true);
+    assert!(profile.two_factor_enabled);
 }
 
 #[test]
@@ -490,7 +488,7 @@ fn test_pwa_config_initialization() {
     client.update_pwa_install_status(&user, &PwaInstallStatus::NotInstalled);
     let config = client.get_pwa_config(&user);
     assert_eq!(config.install_status, PwaInstallStatus::NotInstalled);
-    assert!(config.cached_routes.len() > 0);
+    assert!(!config.cached_routes.is_empty());
 }
 
 #[test]
@@ -526,7 +524,7 @@ fn test_cached_route_registration() {
 fn test_offline_capability_report() {
     let (_env, client, _, user) = setup_contract();
     let report = client.get_offline_capability_report(&user);
-    assert_eq!(report.is_installed, false);
+    assert!(!report.is_installed);
     assert!(report.cached_routes_count > 0);
 }
 
@@ -656,7 +654,7 @@ fn test_connection_settings() {
     let settings = client.get_connection_settings(&NetworkQuality::Poor);
     assert_eq!(settings.timeout_ms, 30000);
     assert_eq!(settings.max_concurrent_operations, 1);
-    assert_eq!(settings.compression_enabled, true);
+    assert!(settings.compression_enabled);
 }
 
 #[test]
@@ -665,15 +663,15 @@ fn test_bandwidth_optimization() {
     let opt =
         client.get_bandwidth_optimization(&NetworkQuality::Fair, &DataUsageMode::Conservative);
     assert_eq!(opt.image_quality_percent, 60);
-    assert_eq!(opt.prefetch_enabled, false);
+    assert!(!opt.prefetch_enabled);
 }
 
 #[test]
 fn test_network_adaptation() {
     let (_, client, _, _) = setup_contract();
     let adaptation = client.adapt_network(&NetworkQuality::Good, &NetworkQuality::Poor);
-    assert_eq!(adaptation.degraded, true);
-    assert!(adaptation.actions.len() > 0);
+    assert!(adaptation.degraded);
+    assert!(!adaptation.actions.is_empty());
 }
 
 // ============================================================================
@@ -688,7 +686,7 @@ fn test_quick_enroll() {
     let course = String::from_str(&env, "course_001");
 
     let result = client.quick_enroll_course(&user, &course, &session_id);
-    assert_eq!(result.success, true);
+    assert!(result.success);
 }
 
 #[test]
@@ -704,7 +702,7 @@ fn test_quick_progress_update() {
         &75,
         &session_id,
     );
-    assert_eq!(result.success, true);
+    assert!(result.success);
 }
 
 // ============================================================================
@@ -741,7 +739,7 @@ fn test_complete_mobile_workflow() {
     // 3. Authenticate
     let ip = BytesN::from_array(&env, &[10u8; 32]);
     let auth = client.authenticate(&user, &device_id, &AuthMethod::DeviceToken, &ip);
-    assert_eq!(auth.success, true);
+    assert!(auth.success);
 
     // 4. Cache content
     let hash = BytesN::from_array(&env, &[20u8; 32]);
@@ -757,7 +755,7 @@ fn test_complete_mobile_workflow() {
     // 5. Quick enroll
     let enroll =
         client.quick_enroll_course(&user, &String::from_str(&env, "course_001"), &session_id);
-    assert_eq!(enroll.success, true);
+    assert!(enroll.success);
 
     // 6. Update progress
     let progress = client.quick_update_progress(
@@ -767,7 +765,7 @@ fn test_complete_mobile_workflow() {
         &50,
         &session_id,
     );
-    assert_eq!(progress.success, true);
+    assert!(progress.success);
 
     // 7. Track analytics
     let props = Map::new(&env);
@@ -793,7 +791,7 @@ fn test_complete_mobile_workflow() {
         &RepeatInterval::Daily,
         &String::from_str(&env, "course_001"),
     );
-    assert_eq!(reminder.is_active, true);
+    assert!(reminder.is_active);
 
     // 10. Update battery
     let battery = client.update_battery_profile(&user, &device_id, &85, &false);

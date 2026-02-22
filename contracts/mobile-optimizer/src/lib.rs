@@ -38,6 +38,7 @@ use types::*;
 pub struct MobileOptimizerContract;
 
 #[contractimpl]
+#[allow(clippy::too_many_arguments)]
 impl MobileOptimizerContract {
     // ========================================================================
     // Initialization & Admin
@@ -512,6 +513,7 @@ impl MobileOptimizerContract {
     // Push Notifications & Reminders (NEW)
     // ========================================================================
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_learning_reminder(
         env: Env,
         user: Address,

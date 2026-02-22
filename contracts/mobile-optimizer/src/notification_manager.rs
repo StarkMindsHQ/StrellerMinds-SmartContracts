@@ -27,6 +27,7 @@ impl NotificationManager {
         config
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_learning_reminder(
         env: &Env,
         user: &Address,

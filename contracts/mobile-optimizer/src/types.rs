@@ -1,3 +1,5 @@
+#![allow(clippy::enum_variant_names)]
+
 use soroban_sdk::{contracterror, contracttype, Address, BytesN, Map, String, Vec};
 
 // ============================================================================
