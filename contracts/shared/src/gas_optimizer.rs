@@ -1,6 +1,4 @@
-
-
-use soroban_sdk::{Env, Symbol, Val, symbol_short, IntoVal, TryFromVal};
+use soroban_sdk::{symbol_short, Env, IntoVal, Symbol, TryFromVal, Val};
 
 pub const TTL_PERSISTENT_YEAR: u32 = 535_680;
 pub const TTL_PERSISTENT_MONTH: u32 = 44_640;
@@ -57,13 +55,13 @@ pub fn set_if_changed<
     true
 }
 
-pub const SYM_ADMIN:    Symbol = symbol_short!("ADMIN");
-pub const SYM_PAUSED:   Symbol = symbol_short!("PAUSED");
-pub const SYM_SUPPLY:   Symbol = symbol_short!("SUPPLY");
-pub const SYM_BALANCE:  Symbol = symbol_short!("BAL");
+pub const SYM_ADMIN: Symbol = symbol_short!("ADMIN");
+pub const SYM_PAUSED: Symbol = symbol_short!("PAUSED");
+pub const SYM_SUPPLY: Symbol = symbol_short!("SUPPLY");
+pub const SYM_BALANCE: Symbol = symbol_short!("BAL");
 pub const SYM_PROGRESS: Symbol = symbol_short!("PROG");
-pub const SYM_METRICS:  Symbol = symbol_short!("METRICS");
-pub const SYM_CONFIG:   Symbol = symbol_short!("CFG");
+pub const SYM_METRICS: Symbol = symbol_short!("METRICS");
+pub const SYM_CONFIG: Symbol = symbol_short!("CFG");
 
 use soroban_sdk::contracttype;
 
@@ -71,13 +69,22 @@ use soroban_sdk::contracttype;
 #[derive(Clone, Debug)]
 pub struct BatchResult {
     pub processed: u32,
-    pub skipped:   u32,
-    pub failed:    u32,
+    pub skipped: u32,
+    pub failed: u32,
+}
+
+impl Default for BatchResult {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl BatchResult {
     pub fn new() -> Self {
-        BatchResult { processed: 0, skipped: 0, failed: 0 }
+        BatchResult {
+            processed: 0,
+            skipped: 0,
+            failed: 0,
+        }
     }
 }
-

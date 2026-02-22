@@ -1,21 +1,25 @@
-use soroban_sdk::{contracttype, symbol_short, Address, Env, Symbol, Vec};
 use shared::gas_optimizer::{
-    pack_bool_u32, unpack_bool_u32, extend_instance_if_needed,
-    BatchResult, TTL_PERSISTENT_YEAR, TTL_BUMP_THRESHOLD,
+    extend_instance_if_needed, pack_bool_u32, unpack_bool_u32, BatchResult, TTL_BUMP_THRESHOLD,
+    TTL_PERSISTENT_YEAR,
 };
+use soroban_sdk::{contracttype, symbol_short, Address, Env, Symbol, Vec};
 
 const KEY_SUPPLY: Symbol = symbol_short!("SUPPLY");
 
 #[contracttype]
 #[derive(Clone, PartialEq, Default)]
 pub struct PackedAccount {
-    pub balance:      u64,
+    pub balance: u64,
     pub stake_packed: u64,
 }
 
 impl PackedAccount {
-    pub fn staked_amount(&self) -> u32  { unpack_bool_u32(self.stake_packed).1 }
-    pub fn is_locked(&self) -> bool     { unpack_bool_u32(self.stake_packed).0 }
+    pub fn staked_amount(&self) -> u32 {
+        unpack_bool_u32(self.stake_packed).1
+    }
+    pub fn is_locked(&self) -> bool {
+        unpack_bool_u32(self.stake_packed).0
+    }
     pub fn set_stake(&mut self, locked: bool, amount: u32) {
         self.stake_packed = pack_bool_u32(locked, amount);
     }
@@ -26,13 +30,18 @@ fn account_key(owner: &Address) -> (Symbol, Address) {
 }
 
 fn load_account(env: &Env, owner: &Address) -> PackedAccount {
-    env.storage().persistent().get(&account_key(owner)).unwrap_or_default()
+    env.storage()
+        .persistent()
+        .get(&account_key(owner))
+        .unwrap_or_default()
 }
 
 fn save_account(env: &Env, owner: &Address, acc: &PackedAccount) {
     let key = account_key(owner);
     env.storage().persistent().set(&key, acc);
-    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage()
+        .persistent()
+        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 fn load_supply(env: &Env) -> u64 {
@@ -48,7 +57,7 @@ pub fn transfer_optimized(env: &Env, from: &Address, to: &Address, amount: u64) 
     let mut sender = load_account(env, from);
     assert!(sender.balance >= amount, "insufficient balance");
     let mut recipient = load_account(env, to);
-    sender.balance    -= amount;
+    sender.balance -= amount;
     recipient.balance += amount;
     save_account(env, from, &sender);
     save_account(env, to, &recipient);
@@ -67,9 +76,12 @@ pub fn batch_transfer(env: &Env, from: &Address, recipients: &Vec<(Address, u64)
     assert!(sender.balance >= total, "insufficient balance for batch");
     for i in 0..recipients.len() {
         if let Some((addr, amount)) = recipients.get(i) {
-            if amount == 0 { result.skipped += 1; continue; }
+            if amount == 0 {
+                result.skipped += 1;
+                continue;
+            }
             let mut recipient = load_account(env, &addr);
-            sender.balance    -= amount;
+            sender.balance -= amount;
             recipient.balance += amount;
             save_account(env, &addr, &recipient);
             result.processed += 1;
@@ -118,7 +130,7 @@ pub fn burn_optimized(env: &Env, from: &Address, amount: u64) {
     let mut acc = load_account(env, from);
     assert!(acc.balance >= amount, "insufficient balance");
     acc.balance -= amount;
-    supply      -= amount;
+    supply -= amount;
     save_account(env, from, &acc);
     save_supply(env, supply);
     extend_instance_if_needed(env);
