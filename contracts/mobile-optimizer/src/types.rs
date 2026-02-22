@@ -1097,6 +1097,11 @@ pub enum DataKey {
     NotificationCampaign(String),
     ContentItem(String),
     ContentVersionHistory(String),
+    StudyGroup(String),
+    ForumPost(String),
+    PeerReview(String),
+    MentorshipSession(String),
+    CollabProfile(Address),
 }
 
 // ============================================================================
@@ -1149,6 +1154,80 @@ pub struct ContentDeliveryConfig {
 }
 
 // ============================================================================
+// Collaboration Types (NEW)
+// ============================================================================
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StudyGroup {
+    pub group_id: String,
+    pub name: String,
+    pub creator: Address,
+    pub members: Vec<Address>,
+    pub topic: String,
+    pub created_at: u64,
+    pub is_active: bool,
+    pub max_members: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ForumPost {
+    pub post_id: String,
+    pub group_id: String,
+    pub author: Address,
+    pub content: String,
+    pub timestamp: u64,
+    pub upvotes: u32,
+    pub parent_id: Option<String>,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PeerReview {
+    pub review_id: String,
+    pub reviewer: Address,
+    pub target_user: Address,
+    pub context_id: String,
+    pub score: u32,
+    pub comments: String,
+    pub timestamp: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MentorshipSession {
+    pub session_id: String,
+    pub mentor: Address,
+    pub mentee: Address,
+    pub topic: String,
+    pub status: MentorshipStatus,
+    pub scheduled_at: u64,
+    pub duration_minutes: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MentorshipStatus {
+    Pending,
+    Accepted,
+    Completed,
+    Cancelled,
+    Rejected,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CollaborationProfile {
+    pub user: Address,
+    pub reputation_score: u32,
+    pub groups_joined: u32,
+    pub reviews_given: u32,
+    pub mentorships_completed: u32,
+    pub badges: Vec<String>,
+}
+
+// ============================================================================
 // Contract-Level Error Enum
 // ============================================================================
 
@@ -1191,4 +1270,5 @@ pub enum MobileOptimizerError {
     InvalidInput = 33,
     InternalError = 34,
     ContentError = 35,
+    CollaborationError = 36,
 }
