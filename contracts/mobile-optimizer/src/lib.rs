@@ -10,6 +10,7 @@ pub mod interaction_flows;
 pub mod network_manager;
 pub mod content_manager;
 pub mod collaboration_manager;
+pub mod user_experience_manager;
 pub mod notification_manager;
 pub mod offline_manager;
 pub mod pwa_manager;
@@ -31,6 +32,7 @@ use network_manager::{
 };
 use content_manager::ContentManager;
 use collaboration_manager::CollaborationManager;
+use user_experience_manager::UserExperienceManager;
 use notification_manager::NotificationManager;
 use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
 use pwa_manager::{OfflineCapabilityReport, PwaManager};
@@ -761,6 +763,55 @@ impl MobileOptimizerContract {
 
     pub fn get_collaboration_profile(env: Env, user: Address) -> CollaborationProfile {
         CollaborationManager::get_profile(&env, &user)
+    }
+
+    // ========================================================================
+    // User Experience & UI (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_ui_preferences(
+        env: Env,
+        user: Address,
+        theme_id: String,
+        language: String,
+        font_scale: u32,
+        high_contrast: bool,
+        reduce_motion: bool,
+        layout_mode: LayoutMode,
+        accessibility_settings: Map<String, bool>,
+    ) -> Result<UiPreferences, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::set_ui_preferences(
+            &env, &user, theme_id, language, font_scale, high_contrast, reduce_motion, layout_mode, accessibility_settings
+        )
+    }
+
+    pub fn get_ui_preferences(env: Env, user: Address) -> Result<UiPreferences, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::get_ui_preferences(&env, &user)
+    }
+
+    pub fn update_onboarding_progress(
+        env: Env,
+        user: Address,
+        step_id: String,
+        is_skipped: bool,
+    ) -> Result<OnboardingState, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::update_onboarding_progress(&env, &user, step_id, is_skipped)
+    }
+
+    pub fn submit_user_feedback(
+        env: Env,
+        user: Address,
+        category: String,
+        rating: u32,
+        comment: String,
+        context_data: Map<String, String>,
+    ) -> Result<UserFeedback, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::submit_feedback(&env, &user, category, rating, comment, context_data)
     }
 
     // ========================================================================
