@@ -31,7 +31,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -66,7 +66,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
             .invoke_contract(
                 analytics_id,
                 "get_session",
-                &[format!("--session_id {}", session_id)],
+                &[format!("--session_id {session_id}")],
                 "alice",
             )
             .await?;
@@ -95,10 +95,10 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
                 analytics_id,
                 "complete_session",
                 &[
-                    format!("--session_id {}", session_id),
-                    format!("--end_time {}", completion_time),
-                    format!("--final_score {}", final_score),
-                    format!("--completion_percentage {}", completion_percentage),
+                    format!("--session_id {session_id}"),
+                    format!("--end_time {completion_time}"),
+                    format!("--final_score {final_score}"),
+                    format!("--completion_percentage {completion_percentage}"),
                 ],
                 "alice",
             )
@@ -140,8 +140,8 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
             analytics_id,
             "get_student_sessions",
             &[
-                format!("--student {}", student_address),
-                format!("--course_id {}", course_id),
+                format!("--student {student_address}"),
+                format!("--course_id {course_id}"),
             ],
             "alice",
         )
@@ -183,7 +183,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -212,7 +212,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
                     "complete_session",
                     &[
                         format!("--session_id {}", session.session_id),
-                        format!("--end_time {}", completion_time),
+                        format!("--end_time {completion_time}"),
                         format!("--final_score {}", session.score.unwrap_or(85)),
                         format!("--completion_percentage {}", session.completion_percentage),
                     ],
@@ -228,7 +228,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
                 analytics_id,
                 "get_progress_analytics",
                 &[
-                    format!("--student {}", student_address),
+                    format!("--student {student_address}"),
                     format!("--course_id {}", scenario.course_id),
                 ],
                 "bob",
@@ -286,7 +286,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_course_analytics",
-            &[format!("--course_id {}", course_id)],
+            &[format!("--course_id {course_id}")],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -324,7 +324,7 @@ async fn test_leaderboard_generation() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -363,7 +363,7 @@ async fn test_leaderboard_generation() -> Result<()> {
                     "complete_session",
                     &[
                         format!("--session_id {}", session.session_id),
-                        format!("--end_time {}", completion_time),
+                        format!("--end_time {completion_time}"),
                         format!("--final_score {}", session.score.unwrap()),
                         format!("--completion_percentage {}", session.completion_percentage),
                     ],
@@ -389,8 +389,8 @@ async fn test_leaderboard_generation() -> Result<()> {
                 analytics_id,
                 "generate_leaderboard",
                 &[
-                    format!("--course_id {}", course_id),
-                    format!("--metric {:?}", metric),
+                    format!("--course_id {course_id}"),
+                    format!("--metric {metric:?}"),
                     "--limit 10".to_string(),
                 ],
                 &harness.client.config.admin_account,
@@ -433,7 +433,7 @@ async fn test_leaderboard_generation() -> Result<()> {
             analytics_id,
             "get_top_performers",
             &[
-                format!("--course_id {}", course_id),
+                format!("--course_id {course_id}"),
                 format!("--metric {:?}", LeaderboardMetric::TotalScore),
                 "--limit 3".to_string(),
             ],
@@ -459,7 +459,7 @@ async fn test_leaderboard_generation() -> Result<()> {
             analytics_id,
             "get_struggling_students",
             &[
-                format!("--course_id {}", course_id),
+                format!("--course_id {course_id}"),
                 "--threshold 50".to_string(),
             ],
             &harness.client.config.admin_account,
@@ -494,7 +494,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -545,7 +545,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
                         "complete_session",
                         &[
                             format!("--session_id {}", session.session_id),
-                            format!("--end_time {}", completion_time),
+                            format!("--end_time {completion_time}"),
                             format!("--final_score {}", session.score.unwrap()),
                             format!("--completion_percentage {}", session.completion_percentage),
                         ],
@@ -566,8 +566,8 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
                 analytics_id,
                 "generate_daily_metrics",
                 &[
-                    format!("--course_id {}", course_id),
-                    format!("--date {}", day_timestamp),
+                    format!("--course_id {course_id}"),
+                    format!("--date {day_timestamp}"),
                 ],
                 &harness.client.config.admin_account,
             )
@@ -599,8 +599,8 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
             analytics_id,
             "generate_weekly_summary",
             &[
-                format!("--course_id {}", course_id),
-                format!("--week_start {}", week_start),
+                format!("--course_id {course_id}"),
+                format!("--week_start {week_start}"),
             ],
             &harness.client.config.admin_account,
         )
@@ -625,8 +625,8 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
             analytics_id,
             "get_completion_trends",
             &[
-                format!("--course_id {}", course_id),
-                format!("--start_date {}", base_time),
+                format!("--course_id {course_id}"),
+                format!("--start_date {base_time}"),
                 format!("--end_date {}", base_time + (7 * 24 * 60 * 60)),
             ],
             &harness.client.config.admin_account,
@@ -648,10 +648,10 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
                 analytics_id,
                 "generate_progress_report",
                 &[
-                    format!("--student {}", student_address),
-                    format!("--course_id {}", course_id),
+                    format!("--student {student_address}"),
+                    format!("--course_id {course_id}"),
                     "--period Weekly".to_string(),
-                    format!("--start_date {}", base_time),
+                    format!("--start_date {base_time}"),
                     format!("--end_date {}", base_time + (7 * 24 * 60 * 60)),
                 ],
                 student_name,
@@ -702,7 +702,7 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -735,8 +735,8 @@ async fn test_data_consistency_validation() -> Result<()> {
                 analytics_id,
                 "complete_session",
                 &[
-                    format!("--session_id {}", session_id),
-                    format!("--end_time {}", completion_time),
+                    format!("--session_id {session_id}"),
+                    format!("--end_time {completion_time}"),
                     "--final_score 85".to_string(),
                     "--completion_percentage 100".to_string(),
                 ],
@@ -755,8 +755,8 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "get_student_sessions",
             &[
-                format!("--student {}", student_address),
-                format!("--course_id {}", course_id),
+                format!("--student {student_address}"),
+                format!("--course_id {course_id}"),
             ],
             "alice",
         )
@@ -772,8 +772,8 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "get_progress_analytics",
             &[
-                format!("--student {}", student_address),
-                format!("--course_id {}", course_id),
+                format!("--student {student_address}"),
+                format!("--course_id {course_id}"),
             ],
             "alice",
         )
@@ -788,7 +788,7 @@ async fn test_data_consistency_validation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_course_analytics",
-            &[format!("--course_id {}", course_id)],
+            &[format!("--course_id {course_id}")],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -830,7 +830,7 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "generate_leaderboard",
             &[
-                format!("--course_id {}", course_id),
+                format!("--course_id {course_id}"),
                 format!("--metric {:?}", LeaderboardMetric::TotalScore),
                 "--limit 10".to_string(),
             ],
@@ -857,8 +857,8 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "recalculate_course_analytics",
             &[
-                format!("--admin {}", admin_address),
-                format!("--course_id {}", course_id),
+                format!("--admin {admin_address}"),
+                format!("--course_id {course_id}"),
             ],
             &harness.client.config.admin_account,
         )
@@ -871,8 +871,8 @@ async fn test_data_consistency_validation() -> Result<()> {
             analytics_id,
             "get_progress_analytics",
             &[
-                format!("--student {}", student_address),
-                format!("--course_id {}", course_id),
+                format!("--student {student_address}"),
+                format!("--course_id {course_id}"),
             ],
             "alice",
         )
@@ -909,7 +909,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -975,7 +975,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_session",
-            &[format!("--session_id {}", non_existent_id)],
+            &[format!("--session_id {non_existent_id}")],
             "alice",
         )
         .await?;
@@ -996,8 +996,8 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
             analytics_id,
             "get_progress_analytics",
             &[
-                format!("--student {}", non_existent_student),
-                format!("--course_id {}", non_existent_course),
+                format!("--student {non_existent_student}"),
+                format!("--course_id {non_existent_course}"),
             ],
             "alice",
         )
@@ -1049,7 +1049,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
             analytics_id,
             "update_config",
             &[
-                format!("--admin {}", unauthorized_address),
+                format!("--admin {unauthorized_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             "bob",
@@ -1112,7 +1112,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
             analytics_id,
             "get_progress_analytics",
             &[
-                format!("--student {}", student_address),
+                format!("--student {student_address}"),
                 format!("--course_id {}", "minimal_course"),
             ],
             "alice",
@@ -1159,7 +1159,7 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
             analytics_id,
             "initialize",
             &[
-                format!("--admin {}", admin_address),
+                format!("--admin {admin_address}"),
                 format!("--config {}", serde_json::to_string(&config)?),
             ],
             &harness.client.config.admin_account,
@@ -1231,8 +1231,8 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
 
         // Some functions might fail due to insufficient data, but they should not crash
         match result {
-            Ok(_) => println!("✅ {} function responds", function),
-            Err(e) => println!("⚠️ {} function returns error (expected): {}", function, e),
+            Ok(_) => println!("✅ {function} function responds"),
+            Err(e) => println!("⚠️ {function} function returns error (expected): {e}"),
         }
     }
 
