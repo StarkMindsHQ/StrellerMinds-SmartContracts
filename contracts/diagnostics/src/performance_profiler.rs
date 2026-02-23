@@ -246,10 +246,8 @@ impl PerformanceProfiler {
     // Helper functions
 
     fn generate_metric_id(env: &Env, operation: &Symbol) -> Symbol {
-        Symbol::new(
-            env,
-            &format!("metric_{}_{}", operation.to_string(), env.ledger().timestamp()),
-        )
+        // Create simple metric ID without format! macro
+        Symbol::new(env, "metric")
     }
 
     fn is_performance_bottleneck(
@@ -425,7 +423,7 @@ mod tests {
         // Add some slow metrics
         for i in 0..5 {
             let metric = PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("metric_{}", i)),
+                metric_id: Symbol::new(&env, "metric"),
                 contract_id: contract_id.clone(),
                 operation: Symbol::new(&env, "slow_op"),
                 timestamp: env.ledger().timestamp(),
@@ -458,7 +456,7 @@ mod tests {
         // Add efficient metrics
         for i in 0..5 {
             let metric = PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("metric_{}", i)),
+                metric_id: Symbol::new(&env, "metric"),
                 contract_id: contract_id.clone(),
                 operation: Symbol::new(&env, "efficient_op"),
                 timestamp: env.ledger().timestamp(),

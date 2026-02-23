@@ -1,6 +1,6 @@
 use crate::types::*;
 use soroban_sdk::{
-    contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec,
+    contract, contractimpl, Address, Bytes, BytesN, Env, Map, String, Symbol, Vec,
 };
 
 /// State tracker for real-time contract state visualization
@@ -173,10 +173,9 @@ impl StateTracker {
         timestamp: u64,
     ) -> BytesN<32> {
         // In production, hash the actual state data
-        // For now, use a simple hash of contract_id + timestamp
-        env.crypto().sha256(
-            &format!("{}{}", contract_id.to_string(), timestamp).as_bytes()
-        )
+        // For now, use a simple hash based on timestamp
+        let timestamp_bytes = timestamp.to_be_bytes();
+        env.crypto().sha256(&Bytes::from_slice(env, &timestamp_bytes))
     }
 
     fn capture_storage_state(env: &Env) -> Map<Symbol, String> {
