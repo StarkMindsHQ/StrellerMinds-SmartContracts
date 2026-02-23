@@ -127,6 +127,7 @@ impl NotificationManager {
 
         let now = env.ledger().timestamp();
         let mut updated = Vec::new(env);
+        let mut sent_reminder: Option<LearningReminder> = None;
 
         for reminder in reminders.iter() {
             let mut r = reminder.clone();
@@ -135,6 +136,7 @@ impl NotificationManager {
                 if r.repeat_interval == RepeatInterval::Once {
                     r.is_active = false;
                 }
+                sent_reminder = Some(r.clone());
             }
             updated.push_back(r);
         }
@@ -143,6 +145,7 @@ impl NotificationManager {
             .persistent()
             .set(&DataKey::Reminders(user.clone()), &updated);
 
+        let sent = sent_reminder.ok_or(MobileOptimizerError::NotificationError)?;
         let record = NotificationRecord {
             notification_id: reminder_id,
             user: user.clone(),
@@ -151,8 +154,8 @@ impl NotificationManager {
             read_at: 0,
             action_taken: false,
             delivery_status: DeliveryStatus::Sent,
-            campaign_id: reminder.campaign_id.clone(),
-            variant_id: reminder.variant_id.clone(),
+            campaign_id: sent.campaign_id.clone(),
+            variant_id: sent.variant_id.clone(),
             clicked_at: 0,
         };
 
