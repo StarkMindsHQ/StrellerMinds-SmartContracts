@@ -809,7 +809,6 @@ impl MobileOptimizerContract {
     // ========================================================================
 
     #[allow(clippy::too_many_arguments)]
-    #[allow(clippy::too_many_arguments)]
     pub fn set_ui_preferences(
         env: Env,
         user: Address,
