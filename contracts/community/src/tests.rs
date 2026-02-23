@@ -1,5 +1,3 @@
-
-
 use soroban_sdk::{testutils::Address as _, Address, Env, String, Vec};
 
 use crate::types::*;
