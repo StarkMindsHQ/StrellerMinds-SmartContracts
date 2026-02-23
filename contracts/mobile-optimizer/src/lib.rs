@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(clippy::too_many_arguments)]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
 
 pub mod analytics_monitor;
@@ -43,8 +44,8 @@ use user_experience_manager::UserExperienceManager;
 #[contract]
 pub struct MobileOptimizerContract;
 
-#[contractimpl]
 #[allow(clippy::too_many_arguments)]
+#[contractimpl]
 impl MobileOptimizerContract {
     // ========================================================================
     // Initialization & Admin
@@ -403,6 +404,7 @@ impl MobileOptimizerContract {
     // Content Caching & Prefetching (NEW)
     // ========================================================================
 
+    #[allow(clippy::too_many_arguments)]
     pub fn cache_content(
         env: Env,
         user: Address,
@@ -806,6 +808,7 @@ impl MobileOptimizerContract {
     // User Experience & UI (NEW)
     // ========================================================================
 
+    #[allow(clippy::too_many_arguments)]
     #[allow(clippy::too_many_arguments)]
     pub fn set_ui_preferences(
         env: Env,

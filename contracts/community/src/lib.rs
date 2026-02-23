@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 pub mod analytics;
 pub mod community_events;
 pub mod errors;
@@ -81,6 +82,7 @@ impl Community {
     //  Forum Functions
     // ══════════════════════════════════════════════════════════════════════
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_post(
         env: Env,
         author: Address,
@@ -136,6 +138,7 @@ impl Community {
     //  Mentorship Functions
     // ══════════════════════════════════════════════════════════════════════
 
+    #[allow(clippy::too_many_arguments)]
     pub fn register_mentor(
         env: Env,
         mentor: Address,
@@ -253,6 +256,7 @@ impl Community {
     //  Event Functions
     // ══════════════════════════════════════════════════════════════════════
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_event(
         env: Env,
         organizer: Address,

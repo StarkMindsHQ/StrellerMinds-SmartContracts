@@ -8,6 +8,7 @@ use crate::types::*;
 pub struct EventManager;
 
 impl EventManager {
+    #[allow(clippy::too_many_arguments)]
     pub fn create_event(
         env: &Env,
         organizer: &Address,

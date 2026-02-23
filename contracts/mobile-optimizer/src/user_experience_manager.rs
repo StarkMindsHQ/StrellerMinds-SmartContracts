@@ -101,7 +101,7 @@ impl UserExperienceManager {
     ) -> Result<UserFeedback, MobileOptimizerError> {
         // Generate a simple ID based on timestamp and user (in production, use a better ID generation strategy)
         let timestamp = env.ledger().timestamp();
-        let mut feedback_id = String::from_str(env, "fb_");
+        let feedback_id = String::from_str(env, "fb_");
         // Note: Soroban String concatenation is limited, this is a simplified representation
 
         let feedback = UserFeedback {

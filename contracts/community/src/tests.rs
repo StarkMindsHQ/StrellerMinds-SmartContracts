@@ -1,4 +1,4 @@
-#![cfg(test)]
+
 
 use soroban_sdk::{testutils::Address as _, Address, Env, String, Vec};
 
@@ -18,7 +18,7 @@ fn create_test_env() -> (Env, Address, Address, Address, Address) {
 }
 
 fn setup_community<'a>(env: &Env, admin: &Address) -> CommunityClient<'a> {
-    let contract_id = env.register_contract(None, Community);
+    let contract_id = env.register(Community, ());
     let client = CommunityClient::new(env, &contract_id);
     client.initialize(admin);
     client
@@ -317,7 +317,7 @@ fn test_create_proposal() {
 
     // Build reputation through activity
     // Create posts to build reputation
-    for i in 0..10 {
+    for _i in 0..10 {
         client.create_post(
             &user1,
             &ForumCategory::General,
