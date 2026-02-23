@@ -49,12 +49,10 @@ impl KnowledgeManager {
             .get(&CommunityKey::UserContributions(contributor.clone()))
             .unwrap_or_else(|| Vec::new(env));
         user_contribs.push_back(contribution_id);
-        env.storage()
-            .persistent()
-            .set(
-                &CommunityKey::UserContributions(contributor.clone()),
-                &user_contribs,
-            );
+        env.storage().persistent().set(
+            &CommunityKey::UserContributions(contributor.clone()),
+            &user_contribs,
+        );
 
         CommunityEvents::emit_contribution_submitted(env, contributor, contribution_id);
         Ok(contribution_id)
@@ -85,7 +83,7 @@ impl KnowledgeManager {
         if approve {
             contribution.status = ContributionStatus::Approved;
             contribution.published_at = env.ledger().timestamp();
-            
+
             // Calculate rewards based on contribution type
             let (xp, tokens) = Self::calculate_rewards(&contribution.contribution_type, &config);
             contribution.xp_reward = xp;
@@ -100,12 +98,10 @@ impl KnowledgeManager {
                 ))
                 .unwrap_or_else(|| Vec::new(env));
             category_contribs.push_back(contribution_id);
-            env.storage()
-                .persistent()
-                .set(
-                    &CommunityKey::CategoryContributions(contribution.category.clone()),
-                    &category_contribs,
-                );
+            env.storage().persistent().set(
+                &CommunityKey::CategoryContributions(contribution.category.clone()),
+                &category_contribs,
+            );
 
             // Update user stats
             Self::update_contributor_stats(env, &contribution.contributor);
@@ -146,7 +142,7 @@ impl KnowledgeManager {
 
         if upvote {
             contribution.upvotes += 1;
-            
+
             // Update contributor's helpful votes
             let contributor_addr = contribution.contributor.clone();
             let mut stats: UserCommunityStats = env

@@ -47,11 +47,7 @@ impl EventManager {
         Ok(event_id)
     }
 
-    pub fn register_for_event(
-        env: &Env,
-        user: &Address,
-        event_id: u64,
-    ) -> Result<(), Error> {
+    pub fn register_for_event(env: &Env, user: &Address, event_id: u64) -> Result<(), Error> {
         let mut event: CommunityEvent = env
             .storage()
             .persistent()
@@ -149,11 +145,7 @@ impl EventManager {
         Ok(())
     }
 
-    pub fn complete_event(
-        env: &Env,
-        organizer: &Address,
-        event_id: u64,
-    ) -> Result<(), Error> {
+    pub fn complete_event(env: &Env, organizer: &Address, event_id: u64) -> Result<(), Error> {
         let mut event: CommunityEvent = env
             .storage()
             .persistent()

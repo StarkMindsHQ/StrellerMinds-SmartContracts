@@ -133,10 +133,7 @@ impl GovernanceManager {
         Ok(())
     }
 
-    pub fn finalize_proposal(
-        env: &Env,
-        proposal_id: u64,
-    ) -> Result<ProposalStatus, Error> {
+    pub fn finalize_proposal(env: &Env, proposal_id: u64) -> Result<ProposalStatus, Error> {
         let mut proposal: CommunityProposal = env
             .storage()
             .persistent()
@@ -153,7 +150,7 @@ impl GovernanceManager {
         }
 
         let total_votes = proposal.votes_for + proposal.votes_against;
-        
+
         if total_votes < proposal.min_votes_required {
             proposal.status = ProposalStatus::Rejected;
         } else if proposal.votes_for > proposal.votes_against {
@@ -172,7 +169,7 @@ impl GovernanceManager {
             .persistent()
             .get(&CommunityKey::ActiveProposals)
             .unwrap_or_else(|| Vec::new(env));
-        
+
         let mut new_active = Vec::new(env);
         for id in active.iter() {
             if id != proposal_id {

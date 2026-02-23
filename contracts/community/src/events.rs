@@ -25,7 +25,12 @@ impl CommunityEvents {
             .publish((symbol_short!("mntr_reg"),), (mentor,));
     }
 
-    pub fn emit_mentorship_requested(env: &Env, mentee: &Address, mentor: &Address, request_id: u64) {
+    pub fn emit_mentorship_requested(
+        env: &Env,
+        mentee: &Address,
+        mentor: &Address,
+        request_id: u64,
+    ) {
         env.events()
             .publish((symbol_short!("mntr_req"),), (mentee, mentor, request_id));
     }
@@ -91,7 +96,6 @@ impl CommunityEvents {
 
     // System Events
     pub fn emit_initialized(env: &Env, admin: &Address) {
-        env.events()
-            .publish((symbol_short!("init"),), (admin,));
+        env.events().publish((symbol_short!("init"),), (admin,));
     }
 }

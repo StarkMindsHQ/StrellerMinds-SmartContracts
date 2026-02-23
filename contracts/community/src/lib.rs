@@ -43,9 +43,7 @@ impl Community {
             return Err(Error::AlreadyInitialized);
         }
 
-        env.storage()
-            .instance()
-            .set(&CommunityKey::Admin, &admin);
+        env.storage().instance().set(&CommunityKey::Admin, &admin);
 
         let config = CommunityConfig {
             post_xp_reward: 10,
@@ -130,11 +128,7 @@ impl Community {
         ForumManager::get_post_replies(&env, post_id)
     }
 
-    pub fn get_category_posts(
-        env: Env,
-        category: ForumCategory,
-        limit: u32,
-    ) -> Vec<ForumPost> {
+    pub fn get_category_posts(env: Env, category: ForumCategory, limit: u32) -> Vec<ForumPost> {
         ForumManager::get_category_posts(&env, category, limit)
     }
 
@@ -172,11 +166,7 @@ impl Community {
         MentorshipManager::request_mentorship(&env, &mentee, &mentor, topic, message)
     }
 
-    pub fn accept_mentorship(
-        env: Env,
-        mentor: Address,
-        request_id: u64,
-    ) -> Result<(), Error> {
+    pub fn accept_mentorship(env: Env, mentor: Address, request_id: u64) -> Result<(), Error> {
         mentor.require_auth();
         MentorshipManager::accept_mentorship(&env, &mentor, request_id)
     }
@@ -347,7 +337,14 @@ impl Community {
         description: String,
     ) -> Result<u64, Error> {
         reporter.require_auth();
-        ModerationManager::report_content(&env, &reporter, content_type, content_id, reason, description)
+        ModerationManager::report_content(
+            &env,
+            &reporter,
+            content_type,
+            content_id,
+            reason,
+            description,
+        )
     }
 
     pub fn resolve_report(

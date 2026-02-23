@@ -289,7 +289,7 @@ impl NotificationManager {
         env.storage()
             .persistent()
             .set(&DataKey::NotificationTemplate(template_id), &template);
-        
+
         Ok(template)
     }
 

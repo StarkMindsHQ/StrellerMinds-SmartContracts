@@ -27,7 +27,7 @@ impl CommunityStorage {
             .storage()
             .persistent()
             .get(&CommunityKey::Moderator(addr.clone()));
-        
+
         if role.is_none() {
             Self::require_admin(env, addr)?;
         }

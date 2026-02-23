@@ -100,11 +100,7 @@ impl MentorshipManager {
         Ok(request_id)
     }
 
-    pub fn accept_mentorship(
-        env: &Env,
-        mentor: &Address,
-        request_id: u64,
-    ) -> Result<(), Error> {
+    pub fn accept_mentorship(env: &Env, mentor: &Address, request_id: u64) -> Result<(), Error> {
         let mut request: MentorshipRequest = env
             .storage()
             .persistent()
@@ -194,7 +190,7 @@ impl MentorshipManager {
 
         // Update user stats
         Self::update_mentee_stats(env, &request.mentee);
-        
+
         // Award XP
         let config = CommunityStorage::get_config(env);
         Self::award_xp(env, mentor, config.mentor_session_xp);
@@ -256,7 +252,7 @@ impl MentorshipManager {
             .persistent()
             .get(&CommunityKey::MentorProfile(mentor.clone()))
             .unwrap();
-        
+
         // In production, iterate through sessions and calculate average
         // For now, keeping current rating
         env.storage()
@@ -281,7 +277,7 @@ impl MentorshipManager {
                 reputation_score: 0,
                 joined_at: env.ledger().timestamp(),
             });
-        
+
         stats.mentorship_sessions += 1;
         env.storage()
             .persistent()

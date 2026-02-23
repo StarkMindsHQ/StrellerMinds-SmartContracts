@@ -385,7 +385,7 @@ pub struct CommunityConfig {
 pub enum CommunityKey {
     Admin,
     Config,
-    
+
     // Counters
     PostCounter,
     ReplyCounter,
@@ -395,46 +395,46 @@ pub enum CommunityKey {
     ProposalCounter,
     MentorshipCounter,
     SessionCounter,
-    
+
     // Forum
     Post(u64),
     Reply(u64),
-    PostReplies(u64),        // Vec<u64>
+    PostReplies(u64),             // Vec<u64>
     CategoryPosts(ForumCategory), // Vec<u64>
-    UserPosts(Address),      // Vec<u64>
-    PostVote(Address, u64),  // user vote on post
-    ReplyVote(Address, u64), // user vote on reply
-    
+    UserPosts(Address),           // Vec<u64>
+    PostVote(Address, u64),       // user vote on post
+    ReplyVote(Address, u64),      // user vote on reply
+
     // Mentorship
     MentorProfile(Address),
     MentorshipRequest(u64),
     UserMentorships(Address), // Vec<u64>
     MentorshipSession(u64),
-    
+
     // Knowledge Base
     Contribution(u64),
-    UserContributions(Address), // Vec<u64>
+    UserContributions(Address),           // Vec<u64>
     CategoryContributions(ForumCategory), // Vec<u64>
-    
+
     // Events
     Event(u64),
-    EventParticipants(u64),  // Vec<Address>
-    UserEvents(Address),     // Vec<u64>
+    EventParticipants(u64), // Vec<Address>
+    UserEvents(Address),    // Vec<u64>
     EventParticipant(Address, u64),
-    
+
     // Moderation
     Moderator(Address),
     Report(u64),
-    PendingReports,          // Vec<u64>
+    PendingReports, // Vec<u64>
     ModeratorAction(u64),
-    UserActions(Address),    // Vec<u64>
-    
+    UserActions(Address), // Vec<u64>
+
     // Analytics
     CommunityMetrics,
     UserStats(Address),
-    
+
     // Governance
     Proposal(u64),
-    ActiveProposals,         // Vec<u64>
+    ActiveProposals, // Vec<u64>
     ProposalVote(Address, u64),
 }

@@ -35,9 +35,9 @@ impl ModerationManager {
         let now = env.ledger().timestamp();
         let _day_bucket = now / 86_400;
         let _config = CommunityStorage::get_config(env);
-        
+
         // Rate limiting would be implemented here
-        
+
         let report_id = CommunityStorage::increment_counter(env, CommunityKey::ReportCounter);
 
         let report = ContentReport {
@@ -86,9 +86,7 @@ impl ModerationManager {
             .get(&CommunityKey::Report(report_id))
             .ok_or(Error::ReportNotFound)?;
 
-        if report.status != ReportStatus::Pending
-            && report.status != ReportStatus::UnderReview
-        {
+        if report.status != ReportStatus::Pending && report.status != ReportStatus::UnderReview {
             return Err(Error::InvalidInput);
         }
 
@@ -106,7 +104,7 @@ impl ModerationManager {
             .persistent()
             .get(&CommunityKey::PendingReports)
             .unwrap_or_else(|| Vec::new(env));
-        
+
         // Filter out the resolved report
         let mut new_pending = Vec::new(env);
         for id in pending.iter() {

@@ -226,16 +226,16 @@ impl ForumManager {
     }
 
     pub fn get_post(env: &Env, post_id: u64) -> Option<ForumPost> {
-        let mut post: Option<ForumPost> = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::Post(post_id));
-        
+        let mut post: Option<ForumPost> =
+            env.storage().persistent().get(&CommunityKey::Post(post_id));
+
         if let Some(ref mut p) = post {
             p.views += 1;
-            env.storage().persistent().set(&CommunityKey::Post(post_id), p);
+            env.storage()
+                .persistent()
+                .set(&CommunityKey::Post(post_id), p);
         }
-        
+
         post
     }
 
