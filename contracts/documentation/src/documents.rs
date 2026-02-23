@@ -16,7 +16,11 @@ impl DocumentManager {
         tags: Vec<String>,
         language: String,
     ) -> Result<Document, Error> {
-        if env.storage().persistent().has(&DataKey::Document(doc_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Document(doc_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 
@@ -39,7 +43,9 @@ impl DocumentManager {
             helpful_count: 0,
         };
 
-        env.storage().persistent().set(&DataKey::Document(doc_id.clone()), &document);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Document(doc_id.clone()), &document);
         Storage::add_to_category(env, &category, &doc_id);
         Storage::add_to_author_docs(env, author, &doc_id);
         Storage::increment_counter(env, &DataKey::TotalDocuments);
@@ -76,7 +82,9 @@ impl DocumentManager {
         }
 
         doc.updated_at = env.ledger().timestamp();
-        env.storage().persistent().set(&DataKey::Document(doc_id), &doc);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Document(doc_id), &doc);
 
         Ok(doc)
     }
@@ -90,13 +98,17 @@ impl DocumentManager {
 
         doc.status = DocumentStatus::Published;
         doc.updated_at = env.ledger().timestamp();
-        env.storage().persistent().set(&DataKey::Document(doc_id), &doc);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Document(doc_id), &doc);
 
         Ok(())
     }
 
     pub fn get_document(env: &Env, doc_id: &String) -> Option<Document> {
-        env.storage().persistent().get(&DataKey::Document(doc_id.clone()))
+        env.storage()
+            .persistent()
+            .get(&DataKey::Document(doc_id.clone()))
     }
 
     pub fn increment_view_count(env: &Env, doc_id: String) -> Result<(), Error> {
@@ -107,7 +119,9 @@ impl DocumentManager {
             .ok_or(Error::DocumentNotFound)?;
 
         doc.view_count += 1;
-        env.storage().persistent().set(&DataKey::Document(doc_id), &doc);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Document(doc_id), &doc);
         Storage::increment_counter(env, &DataKey::TotalViews);
 
         Ok(())
@@ -121,7 +135,9 @@ impl DocumentManager {
             .ok_or(Error::DocumentNotFound)?;
 
         doc.helpful_count += 1;
-        env.storage().persistent().set(&DataKey::Document(doc_id), &doc);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Document(doc_id), &doc);
 
         Ok(())
     }

@@ -29,7 +29,7 @@ impl VersionManager {
         };
         let _ = &suffix; // ensure used
         let version_id = doc_id.clone();
-        
+
         let version = DocumentVersion {
             version_id: version_id.clone(),
             doc_id: doc_id.clone(),

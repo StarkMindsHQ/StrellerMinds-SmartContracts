@@ -57,9 +57,13 @@ impl DocumentationContract {
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Config, &config);
         env.storage().persistent().set(&DataKey::Initialized, &true);
-        env.storage().persistent().set(&DataKey::TotalDocuments, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalDocuments, &0u64);
         env.storage().persistent().set(&DataKey::TotalViews, &0u64);
-        env.storage().persistent().set(&DataKey::TotalContributions, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalContributions, &0u64);
 
         Ok(())
     }
@@ -182,7 +186,15 @@ impl DocumentationContract {
         order_index: u32,
     ) -> Result<FAQ, Error> {
         author.require_auth();
-        KnowledgeManager::create_faq(&env, faq_id, question, answer, category, &author, order_index)
+        KnowledgeManager::create_faq(
+            &env,
+            faq_id,
+            question,
+            answer,
+            category,
+            &author,
+            order_index,
+        )
     }
 
     pub fn vote_article(
@@ -276,11 +288,7 @@ impl DocumentationContract {
         )
     }
 
-    pub fn complete_tutorial(
-        env: Env,
-        user: Address,
-        tutorial_id: String,
-    ) -> Result<(), Error> {
+    pub fn complete_tutorial(env: Env, user: Address, tutorial_id: String) -> Result<(), Error> {
         user.require_auth();
         TutorialManager::complete_tutorial(&env, tutorial_id)
     }

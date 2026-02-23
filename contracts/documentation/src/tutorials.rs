@@ -15,7 +15,11 @@ impl TutorialManager {
         steps: Vec<TutorialStep>,
         prerequisites: Vec<String>,
     ) -> Result<Tutorial, Error> {
-        if env.storage().persistent().has(&DataKey::Tutorial(tutorial_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Tutorial(tutorial_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 

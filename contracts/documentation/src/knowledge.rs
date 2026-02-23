@@ -13,7 +13,11 @@ impl KnowledgeManager {
         author: &Address,
         tags: Vec<String>,
     ) -> Result<KnowledgeArticle, Error> {
-        if env.storage().persistent().has(&DataKey::KnowledgeArticle(article_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::KnowledgeArticle(article_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 
@@ -48,7 +52,11 @@ impl KnowledgeManager {
         author: &Address,
         order_index: u32,
     ) -> Result<FAQ, Error> {
-        if env.storage().persistent().has(&DataKey::FAQ(faq_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::FAQ(faq_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 
@@ -96,6 +104,8 @@ impl KnowledgeManager {
     }
 
     pub fn get_faq(env: &Env, faq_id: &String) -> Option<FAQ> {
-        env.storage().persistent().get(&DataKey::FAQ(faq_id.clone()))
+        env.storage()
+            .persistent()
+            .get(&DataKey::FAQ(faq_id.clone()))
     }
 }

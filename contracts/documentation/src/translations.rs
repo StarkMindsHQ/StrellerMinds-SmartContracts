@@ -13,7 +13,11 @@ impl TranslationManager {
         content: String,
         translator: &Address,
     ) -> Result<Translation, Error> {
-        if env.storage().persistent().has(&DataKey::Translation(translation_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Translation(translation_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 

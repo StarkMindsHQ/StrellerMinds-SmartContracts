@@ -15,7 +15,11 @@ impl ApiDocManager {
         response_schema: String,
         version: String,
     ) -> Result<ApiEndpoint, Error> {
-        if env.storage().persistent().has(&DataKey::ApiEndpoint(endpoint_id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::ApiEndpoint(endpoint_id.clone()))
+        {
             return Err(Error::AlreadyExists);
         }
 
