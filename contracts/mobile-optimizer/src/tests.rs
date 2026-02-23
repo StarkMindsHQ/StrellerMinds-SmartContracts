@@ -434,7 +434,7 @@ fn test_notification_templates_and_campaigns() {
     // Create Template
     let mut localized = Map::new(&env);
     localized.set(String::from_str(&env, "es"), String::from_str(&env, "Hola"));
-    
+
     let mut channels = Vec::new(&env);
     channels.push_back(String::from_str(&env, "push"));
 
@@ -473,7 +473,7 @@ fn test_content_management() {
     let (env, client, _, user) = setup_contract();
     let content_id = String::from_str(&env, "content_101");
     let hash = BytesN::from_array(&env, &[1u8; 32]);
-    
+
     let delivery_config = ContentDeliveryConfig {
         cdn_enabled: true,
         region_restrictions: Vec::new(&env),
@@ -505,7 +505,7 @@ fn test_content_management() {
     );
 
     assert_eq!(version.version, 2);
-    
+
     let history = client.get_content_history(&content_id);
     assert_eq!(history.len(), 2);
 }
@@ -518,7 +518,7 @@ fn test_content_management() {
 fn test_study_group_creation_and_join() {
     let (env, client, _, user) = setup_contract();
     let group_id = String::from_str(&env, "group_rust");
-    
+
     let group = client.create_study_group(
         &user,
         &group_id,
@@ -530,7 +530,7 @@ fn test_study_group_creation_and_join() {
 
     let user2 = Address::generate(&env);
     client.join_study_group(&user2, &group_id);
-    
+
     // Verify profile update
     let profile = client.get_collaboration_profile(&user2);
     assert_eq!(profile.groups_joined, 1);
@@ -585,7 +585,7 @@ fn test_ui_preferences() {
     let theme = String::from_str(&env, "dark_mode");
     let lang = String::from_str(&env, "en");
     let access = Map::new(&env);
-    
+
     let prefs = client.set_ui_preferences(
         &user,
         &theme,
@@ -594,9 +594,9 @@ fn test_ui_preferences() {
         &true,
         &false,
         &LayoutMode::MobileOptimized,
-        &access
+        &access,
     );
-    
+
     assert_eq!(prefs.theme_id, theme);
     assert!(prefs.high_contrast);
     assert_eq!(prefs.layout_mode, LayoutMode::MobileOptimized);
@@ -606,11 +606,11 @@ fn test_ui_preferences() {
 fn test_onboarding_flow() {
     let (env, client, _, user) = setup_contract();
     let step = String::from_str(&env, "welcome");
-    
+
     let state = client.update_onboarding_progress(&user, &step, &false);
     assert_eq!(state.current_step, 1);
     assert_eq!(state.completed_steps.len(), 1);
-    
+
     let step2 = String::from_str(&env, "profile_setup");
     let state2 = client.update_onboarding_progress(&user, &step2, &true);
     assert_eq!(state2.current_step, 2);

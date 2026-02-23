@@ -1,22 +1,23 @@
 #![no_std]
+#![allow(clippy::too_many_arguments)]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
 
 pub mod analytics_monitor;
 pub mod batch_manager;
 pub mod battery_optimizer;
+pub mod collaboration_manager;
 pub mod content_cache;
+pub mod content_manager;
 pub mod gas_optimizer;
 pub mod interaction_flows;
 pub mod network_manager;
-pub mod content_manager;
-pub mod collaboration_manager;
-pub mod user_experience_manager;
 pub mod notification_manager;
 pub mod offline_manager;
 pub mod pwa_manager;
 pub mod security_manager;
 pub mod session_manager;
 pub mod types;
+pub mod user_experience_manager;
 
 #[cfg(test)]
 mod tests;
@@ -24,27 +25,27 @@ mod tests;
 use analytics_monitor::AnalyticsMonitor;
 use batch_manager::{BatchExecutionResult, BatchManager};
 use battery_optimizer::{BatteryOptimizedSettings, BatteryOptimizer};
+use collaboration_manager::CollaborationManager;
 use content_cache::ContentCacheManager;
+use content_manager::ContentManager;
 use gas_optimizer::GasOptimizer;
 use interaction_flows::{InteractionFlows, MobileInteractionResult};
 use network_manager::{
     BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics,
 };
-use content_manager::ContentManager;
-use collaboration_manager::CollaborationManager;
-use user_experience_manager::UserExperienceManager;
 use notification_manager::NotificationManager;
 use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
 use pwa_manager::{OfflineCapabilityReport, PwaManager};
 use security_manager::SecurityManager;
 use session_manager::{SessionManager, SessionOptimization, SessionStats};
 use types::*;
+use user_experience_manager::UserExperienceManager;
 
 #[contract]
 pub struct MobileOptimizerContract;
 
-#[contractimpl]
 #[allow(clippy::too_many_arguments)]
+#[contractimpl]
 impl MobileOptimizerContract {
     // ========================================================================
     // Initialization & Admin
@@ -403,6 +404,7 @@ impl MobileOptimizerContract {
     // Content Caching & Prefetching (NEW)
     // ========================================================================
 
+    #[allow(clippy::too_many_arguments)]
     pub fn cache_content(
         env: Env,
         user: Address,
@@ -605,7 +607,14 @@ impl MobileOptimizerContract {
         supported_channels: Vec<String>,
     ) -> Result<NotificationTemplate, MobileOptimizerError> {
         Self::require_admin(&env, &admin)?;
-        NotificationManager::create_notification_template(&env, template_id, category, default_content, localized_content, supported_channels)
+        NotificationManager::create_notification_template(
+            &env,
+            template_id,
+            category,
+            default_content,
+            localized_content,
+            supported_channels,
+        )
     }
 
     pub fn create_notification_campaign(
@@ -618,7 +627,14 @@ impl MobileOptimizerContract {
         end_date: u64,
     ) -> Result<NotificationCampaign, MobileOptimizerError> {
         Self::require_admin(&env, &admin)?;
-        NotificationManager::create_campaign(&env, campaign_id, name, variants, start_date, end_date)
+        NotificationManager::create_campaign(
+            &env,
+            campaign_id,
+            name,
+            variants,
+            start_date,
+            end_date,
+        )
     }
 
     pub fn track_notification_engagement(
@@ -669,7 +685,14 @@ impl MobileOptimizerContract {
         changelog: String,
     ) -> Result<ContentVersion, MobileOptimizerError> {
         author.require_auth();
-        ContentManager::update_content_version(&env, &author, content_id, new_uri, content_hash, changelog)
+        ContentManager::update_content_version(
+            &env,
+            &author,
+            content_id,
+            new_uri,
+            content_hash,
+            changelog,
+        )
     }
 
     pub fn get_content_metadata(
@@ -734,7 +757,15 @@ impl MobileOptimizerContract {
         comments: String,
     ) -> Result<PeerReview, MobileOptimizerError> {
         reviewer.require_auth();
-        CollaborationManager::submit_review(&env, &reviewer, &target_user, review_id, context_id, score, comments)
+        CollaborationManager::submit_review(
+            &env,
+            &reviewer,
+            &target_user,
+            review_id,
+            context_id,
+            score,
+            comments,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -748,7 +779,15 @@ impl MobileOptimizerContract {
         duration_minutes: u32,
     ) -> Result<MentorshipSession, MobileOptimizerError> {
         mentee.require_auth();
-        CollaborationManager::request_mentorship(&env, &mentee, &mentor, session_id, topic, scheduled_at, duration_minutes)
+        CollaborationManager::request_mentorship(
+            &env,
+            &mentee,
+            &mentor,
+            session_id,
+            topic,
+            scheduled_at,
+            duration_minutes,
+        )
     }
 
     pub fn update_mentorship_status(
@@ -783,11 +822,22 @@ impl MobileOptimizerContract {
     ) -> Result<UiPreferences, MobileOptimizerError> {
         user.require_auth();
         UserExperienceManager::set_ui_preferences(
-            &env, &user, theme_id, language, font_scale, high_contrast, reduce_motion, layout_mode, accessibility_settings
+            &env,
+            &user,
+            theme_id,
+            language,
+            font_scale,
+            high_contrast,
+            reduce_motion,
+            layout_mode,
+            accessibility_settings,
         )
     }
 
-    pub fn get_ui_preferences(env: Env, user: Address) -> Result<UiPreferences, MobileOptimizerError> {
+    pub fn get_ui_preferences(
+        env: Env,
+        user: Address,
+    ) -> Result<UiPreferences, MobileOptimizerError> {
         user.require_auth();
         UserExperienceManager::get_ui_preferences(&env, &user)
     }

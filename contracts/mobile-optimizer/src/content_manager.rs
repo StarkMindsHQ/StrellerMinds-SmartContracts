@@ -107,7 +107,10 @@ impl ContentManager {
         Ok(version)
     }
 
-    pub fn get_content(env: &Env, content_id: String) -> Result<ContentMetadata, MobileOptimizerError> {
+    pub fn get_content(
+        env: &Env,
+        content_id: String,
+    ) -> Result<ContentMetadata, MobileOptimizerError> {
         env.storage()
             .persistent()
             .get(&DataKey::ContentItem(content_id))
