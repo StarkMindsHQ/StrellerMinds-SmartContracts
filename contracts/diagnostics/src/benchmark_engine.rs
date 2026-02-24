@@ -1,8 +1,5 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
@@ -45,13 +42,23 @@ impl BenchmarkEngine {
         let overall_score = Self::calculate_overall_score(&scenario_results);
 
         // Compare with baseline if available
-        let (has_comparison, comparison_baseline_time, comparison_improvement_pct, performance_comparison) = 
-            if config.has_baseline {
-                let comp = Self::compare_with_baseline(env, &config.benchmark_name, &config.baseline_version)?;
-                (true, comp.baseline_duration, comp.improvement_percentage, String::from_str(env, "Comparison completed"))
-            } else {
-                (false, 0, 0, String::from_str(env, "No baseline"))
-            };
+        let (
+            has_comparison,
+            comparison_baseline_time,
+            comparison_improvement_pct,
+            performance_comparison,
+        ) = if config.has_baseline {
+            let comp =
+                Self::compare_with_baseline(env, &config.benchmark_name, &config.baseline_version)?;
+            (
+                true,
+                comp.baseline_duration,
+                comp.improvement_percentage,
+                String::from_str(env, "Comparison completed"),
+            )
+        } else {
+            (false, 0, 0, String::from_str(env, "No baseline"))
+        };
 
         let result = BenchmarkResult {
             benchmark_id: benchmark_id.clone(),
@@ -96,7 +103,10 @@ impl BenchmarkEngine {
             average_improvement: 15,
             best_performance_date: env.ledger().timestamp() - 86400,
             worst_performance_date: env.ledger().timestamp() - 604800,
-            trend_analysis: String::from_str(env, "Performance has improved consistently over the past week"),
+            trend_analysis: String::from_str(
+                env,
+                "Performance has improved consistently over the past week",
+            ),
         })
     }
 
@@ -127,7 +137,7 @@ impl BenchmarkEngine {
         scenario: &TestScenario,
     ) -> Result<ScenarioResult, DiagnosticsError> {
         let start_time = env.ledger().timestamp();
-        
+
         // Simulate scenario execution
         let mut total_gas_used = 0u64;
         let mut error_count = 0u32;
@@ -137,7 +147,7 @@ impl BenchmarkEngine {
             // Simulate function execution
             total_gas_used += function_call.expected_duration * 1000; // Simplified gas calculation
             peak_memory = peak_memory.max(100_000); // Simplified memory usage
-            
+
             // Simulate some errors
             if env.ledger().sequence() % 10 == 0 {
                 error_count += 1;
@@ -147,7 +157,8 @@ impl BenchmarkEngine {
         let end_time = env.ledger().timestamp();
         let execution_time = end_time - start_time;
         let success_rate = if scenario.function_calls.len() > 0 {
-            ((scenario.function_calls.len() as u32 - error_count) * 100) / scenario.function_calls.len() as u32
+            ((scenario.function_calls.len() as u32 - error_count) * 100)
+                / scenario.function_calls.len() as u32
         } else {
             100
         };
@@ -159,13 +170,20 @@ impl BenchmarkEngine {
             total_gas_used,
             peak_memory_usage: peak_memory,
             error_count,
-            performance_score: Self::calculate_scenario_score(success_rate, execution_time, total_gas_used),
+            performance_score: Self::calculate_scenario_score(
+                success_rate,
+                execution_time,
+                total_gas_used,
+            ),
         })
     }
 
-    fn identify_performance_bottlenecks(env: &Env, results: &Vec<ScenarioResult>) -> Vec<PerformanceBottleneck> {
+    fn identify_performance_bottlenecks(
+        env: &Env,
+        results: &Vec<ScenarioResult>,
+    ) -> Vec<PerformanceBottleneck> {
         let mut bottlenecks = Vec::new(env);
-        
+
         for (i, result) in results.iter().enumerate() {
             if result.average_execution_time > 1000 {
                 bottlenecks.push_back(PerformanceBottleneck {
@@ -178,22 +196,29 @@ impl BenchmarkEngine {
                 });
             }
         }
-        
+
         bottlenecks
     }
 
     fn generate_benchmark_recommendations(env: &Env, results: &Vec<ScenarioResult>) -> Vec<String> {
         let mut recommendations = Vec::new(env);
-        
-        let avg_score: u32 = results.iter().map(|r| r.performance_score).sum::<u32>() / results.len() as u32;
-        
+
+        let avg_score: u32 =
+            results.iter().map(|r| r.performance_score).sum::<u32>() / results.len() as u32;
+
         if avg_score < 70 {
-            recommendations.push_back(String::from_str(env, "Consider optimizing critical performance paths"));
+            recommendations.push_back(String::from_str(
+                env,
+                "Consider optimizing critical performance paths",
+            ));
         }
-        
+
         let total_errors: u32 = results.iter().map(|r| r.error_count).sum();
         if total_errors > 0 {
-            recommendations.push_back(String::from_str(env, "Implement better error handling and recovery"));
+            recommendations.push_back(String::from_str(
+                env,
+                "Implement better error handling and recovery",
+            ));
         }
 
         recommendations
@@ -203,7 +228,7 @@ impl BenchmarkEngine {
         if results.is_empty() {
             return 0;
         }
-        
+
         results.iter().map(|r| r.performance_score).sum::<u32>() / results.len() as u32
     }
 
@@ -217,9 +242,9 @@ impl BenchmarkEngine {
             baseline_version: baseline_version.clone(),
             current_version: String::from_str(env, "current"),
             performance_delta: 15, // 15% improvement
-            gas_delta: -10, // 10% reduction
-            memory_delta: 5, // 5% increase
-            throughput_delta: 20, // 20% improvement
+            gas_delta: -10,        // 10% reduction
+            memory_delta: 5,       // 5% increase
+            throughput_delta: 20,  // 20% improvement
             regression_detected: false,
             baseline_duration: 1000,
             improvement_percentage: 15,
@@ -228,17 +253,17 @@ impl BenchmarkEngine {
 
     fn calculate_scenario_score(success_rate: u32, execution_time: u64, gas_used: u64) -> u32 {
         let mut score = success_rate;
-        
+
         // Penalize slow execution
         if execution_time > 1000 {
             score = score.saturating_sub(10);
         }
-        
+
         // Penalize high gas usage
         if gas_used > 1_000_000 {
             score = score.saturating_sub(5);
         }
-        
+
         score.min(100)
     }
 }

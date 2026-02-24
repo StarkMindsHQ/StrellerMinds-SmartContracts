@@ -1,8 +1,5 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
@@ -16,21 +13,24 @@ impl OptimizationEngine {
         contract_address: &Address,
     ) -> Result<Vec<OptimizationRecommendation>, DiagnosticsError> {
         // Get current performance metrics
-        let performance_metrics = DiagnosticsStorage::get_latest_performance_metrics(env, contract_address)
-            .ok_or(DiagnosticsError::MetricsNotFound)?;
+        let performance_metrics =
+            DiagnosticsStorage::get_latest_performance_metrics(env, contract_address)
+                .ok_or(DiagnosticsError::MetricsNotFound)?;
 
         let mut recommendations = Vec::new(env);
         let mut total_potential_savings = 0u64;
 
         // Gas optimization recommendations
-        let gas_recommendations = Self::analyze_gas_optimization(env, contract_address, &performance_metrics);
+        let gas_recommendations =
+            Self::analyze_gas_optimization(env, contract_address, &performance_metrics);
         for rec in gas_recommendations.iter() {
             total_potential_savings += rec.estimated_savings.daily_cost_savings;
             recommendations.push_back(rec.clone());
         }
 
         // Storage optimization recommendations
-        let storage_recommendations = Self::analyze_storage_optimization(env, contract_address, &performance_metrics);
+        let storage_recommendations =
+            Self::analyze_storage_optimization(env, contract_address, &performance_metrics);
         for rec in storage_recommendations.iter() {
             total_potential_savings += rec.estimated_savings.daily_cost_savings;
             recommendations.push_back(rec.clone());
@@ -51,21 +51,27 @@ impl OptimizationEngine {
         }
 
         // Algorithm optimization recommendations
-        let algorithm_recommendations = Self::analyze_algorithm_optimization(env, &performance_metrics);
+        let algorithm_recommendations =
+            Self::analyze_algorithm_optimization(env, &performance_metrics);
         for rec in algorithm_recommendations.iter() {
             total_potential_savings += rec.estimated_savings.daily_cost_savings;
             recommendations.push_back(rec.clone());
         }
 
         // Architecture optimization recommendations
-        let architecture_recommendations = Self::analyze_architecture_optimization(env, &performance_metrics);
+        let architecture_recommendations =
+            Self::analyze_architecture_optimization(env, &performance_metrics);
         for rec in architecture_recommendations.iter() {
             total_potential_savings += rec.estimated_savings.daily_cost_savings;
             recommendations.push_back(rec.clone());
         }
 
         // Store recommendations
-        DiagnosticsStorage::store_optimization_recommendations(env, contract_address, &recommendations);
+        DiagnosticsStorage::store_optimization_recommendations(
+            env,
+            contract_address,
+            &recommendations,
+        );
 
         // Emit event
         DiagnosticsEvents::emit_optimization_recommendations_generated(
@@ -85,7 +91,7 @@ impl OptimizationEngine {
         target_improvement: u32, // percentage improvement target
     ) -> Result<ImprovementPlan, DiagnosticsError> {
         let recommendations = Self::generate_recommendations(env, contract_address)?;
-        
+
         // Sort recommendations by impact and priority
         let mut sorted_recommendations = recommendations.clone();
         Self::sort_recommendations_by_priority(&mut sorted_recommendations);
@@ -98,7 +104,8 @@ impl OptimizationEngine {
         );
 
         // Estimate total impact and timeline
-        let (total_impact, implementation_timeline) = Self::calculate_plan_impact(&selected_recommendations);
+        let (total_impact, implementation_timeline) =
+            Self::calculate_plan_impact(&selected_recommendations);
 
         Ok(ImprovementPlan {
             contract_address: contract_address.clone(),
@@ -107,7 +114,10 @@ impl OptimizationEngine {
             estimated_total_impact: total_impact,
             implementation_timeline,
             estimated_cost_savings: Self::calculate_total_savings(&selected_recommendations),
-            implementation_phases: Self::create_implementation_phases(env, &selected_recommendations),
+            implementation_phases: Self::create_implementation_phases(
+                env,
+                &selected_recommendations,
+            ),
         })
     }
 
@@ -116,15 +126,17 @@ impl OptimizationEngine {
         env: &Env,
         contract_address: &Address,
     ) -> Result<CostOptimizationAnalysis, DiagnosticsError> {
-        let performance_metrics = DiagnosticsStorage::get_latest_performance_metrics(env, contract_address)
-            .ok_or(DiagnosticsError::MetricsNotFound)?;
+        let performance_metrics =
+            DiagnosticsStorage::get_latest_performance_metrics(env, contract_address)
+                .ok_or(DiagnosticsError::MetricsNotFound)?;
 
         // Analyze current cost structure
         let current_costs = Self::analyze_current_costs(env, &performance_metrics);
-        
+
         // Identify cost optimization opportunities
-        let optimization_opportunities = Self::identify_cost_opportunities(env, &performance_metrics);
-        
+        let optimization_opportunities =
+            Self::identify_cost_opportunities(env, &performance_metrics);
+
         // Calculate potential savings
         let potential_savings = Self::calculate_potential_cost_savings(&optimization_opportunities);
 
@@ -135,7 +147,10 @@ impl OptimizationEngine {
             optimization_opportunities: optimization_opportunities.clone(),
             potential_daily_savings: potential_savings,
             roi_analysis: Self::calculate_roi_analysis(&current_costs, potential_savings),
-            implementation_priority: Self::prioritize_cost_optimizations(env, &optimization_opportunities),
+            implementation_priority: Self::prioritize_cost_optimizations(
+                env,
+                &optimization_opportunities,
+            ),
         })
     }
 
@@ -148,14 +163,20 @@ impl OptimizationEngine {
         let mut alerts = Vec::new(env);
 
         // Check for gas usage spikes
-        if metrics.gas_used > 1_000_000 { // Above 1M gas threshold
+        if metrics.gas_used > 1_000_000 {
+            // Above 1M gas threshold
             let mut immediate_actions = Vec::new(env);
             immediate_actions.push_back(String::from_str(env, "Review gas-intensive operations"));
-            immediate_actions.push_back(String::from_str(env, "Implement gas optimization patterns"));
-            
+            immediate_actions
+                .push_back(String::from_str(env, "Implement gas optimization patterns"));
+
             alerts.push_back(OptimizationAlert {
                 alert_type: AlertType::GasUsageHigh,
-                severity: if metrics.gas_used > 5_000_000 { RiskLevel::Critical } else { RiskLevel::High },
+                severity: if metrics.gas_used > 5_000_000 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
                 description: String::from_str(env, "Gas usage is high, consider optimization"),
                 immediate_actions,
                 expected_savings: (metrics.gas_used / 10) as u64, // Estimate 10% savings
@@ -163,14 +184,19 @@ impl OptimizationEngine {
         }
 
         // Check for memory usage alerts
-        if metrics.memory_usage > 100_000_000 { // Above 100MB threshold
+        if metrics.memory_usage > 100_000_000 {
+            // Above 100MB threshold
             let mut immediate_actions = Vec::new(env);
             immediate_actions.push_back(String::from_str(env, "Optimize data structures"));
             immediate_actions.push_back(String::from_str(env, "Implement memory pooling"));
-            
+
             alerts.push_back(OptimizationAlert {
                 alert_type: AlertType::MemoryUsageHigh,
-                severity: if metrics.memory_usage > 500_000_000 { RiskLevel::Critical } else { RiskLevel::High },
+                severity: if metrics.memory_usage > 500_000_000 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
                 description: String::from_str(env, "Memory usage is high, optimization needed"),
                 immediate_actions,
                 expected_savings: (metrics.memory_usage / 20) as u64, // Estimate 5% reduction
@@ -178,15 +204,23 @@ impl OptimizationEngine {
         }
 
         // Check for execution time alerts
-        if metrics.execution_time > 1000 { // Above 1 second threshold
+        if metrics.execution_time > 1000 {
+            // Above 1 second threshold
             let mut immediate_actions = Vec::new(env);
             immediate_actions.push_back(String::from_str(env, "Profile slow operations"));
             immediate_actions.push_back(String::from_str(env, "Optimize algorithms"));
-            
+
             alerts.push_back(OptimizationAlert {
                 alert_type: AlertType::ExecutionTimeSlow,
-                severity: if metrics.execution_time > 5000 { RiskLevel::High } else { RiskLevel::Medium },
-                description: String::from_str(env, "Execution time is slow, performance optimization needed"),
+                severity: if metrics.execution_time > 5000 {
+                    RiskLevel::High
+                } else {
+                    RiskLevel::Medium
+                },
+                description: String::from_str(
+                    env,
+                    "Execution time is slow, performance optimization needed",
+                ),
                 immediate_actions,
                 expected_savings: (metrics.execution_time / 4) as u64, // Estimate 25% improvement
             });
@@ -197,11 +231,14 @@ impl OptimizationEngine {
             let mut immediate_actions = Vec::new(env);
             immediate_actions.push_back(String::from_str(env, "Implement storage batching"));
             immediate_actions.push_back(String::from_str(env, "Optimize storage access patterns"));
-            
+
             alerts.push_back(OptimizationAlert {
                 alert_type: AlertType::StorageInefficient,
                 severity: RiskLevel::Medium,
-                description: String::from_str(env, "High write-to-read ratio indicates storage inefficiency"),
+                description: String::from_str(
+                    env,
+                    "High write-to-read ratio indicates storage inefficiency",
+                ),
                 immediate_actions,
                 expected_savings: (metrics.storage_writes * 50) as u64, // Estimate based on write cost
             });
@@ -211,15 +248,27 @@ impl OptimizationEngine {
     }
 
     /// Analyze gas optimization opportunities
-    fn analyze_gas_optimization(env: &Env, contract_address: &Address, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_gas_optimization(
+        env: &Env,
+        contract_address: &Address,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
-        if metrics.gas_used > 500_000 { // Above 500K gas
+        if metrics.gas_used > 500_000 {
+            // Above 500K gas
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("gas_opt_1"),
                 category: OptimizationCategory::GasOptimization,
-                priority: if metrics.gas_used > 2_000_000 { Priority::High } else { Priority::Medium },
-                description: String::from_str(env, "Optimize gas usage through efficient algorithms and data structures"),
+                priority: if metrics.gas_used > 2_000_000 {
+                    Priority::High
+                } else {
+                    Priority::Medium
+                },
+                description: String::from_str(
+                    env,
+                    "Optimize gas usage through efficient algorithms and data structures",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 20,
                     cost_reduction: 25,
@@ -258,7 +307,10 @@ impl OptimizationEngine {
                 recommendation_id: Self::generate_recommendation_id("gas_storage_1"),
                 category: OptimizationCategory::GasOptimization,
                 priority: Priority::Medium,
-                description: String::from_str(env, "Optimize storage operations to reduce gas costs"),
+                description: String::from_str(
+                    env,
+                    "Optimize storage operations to reduce gas costs",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 15,
                     cost_reduction: 30,
@@ -294,7 +346,11 @@ impl OptimizationEngine {
     }
 
     /// Analyze storage optimization opportunities
-    fn analyze_storage_optimization(env: &Env, contract_address: &Address, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_storage_optimization(
+        env: &Env,
+        contract_address: &Address,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
         let read_write_ratio = if metrics.storage_writes > 0 {
@@ -303,12 +359,16 @@ impl OptimizationEngine {
             metrics.storage_reads
         };
 
-        if read_write_ratio < 5 && metrics.storage_writes > 5 { // Low read efficiency
+        if read_write_ratio < 5 && metrics.storage_writes > 5 {
+            // Low read efficiency
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("storage_opt_1"),
                 category: OptimizationCategory::StorageOptimization,
                 priority: Priority::Medium,
-                description: String::from_str(env, "Implement storage caching to improve read efficiency"),
+                description: String::from_str(
+                    env,
+                    "Implement storage caching to improve read efficiency",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 25,
                     cost_reduction: 20,
@@ -345,15 +405,26 @@ impl OptimizationEngine {
     }
 
     /// Analyze memory optimization opportunities
-    fn analyze_memory_optimization(env: &Env, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_memory_optimization(
+        env: &Env,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
-        if metrics.memory_usage > 50_000_000 { // Above 50MB
+        if metrics.memory_usage > 50_000_000 {
+            // Above 50MB
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("memory_opt_1"),
                 category: OptimizationCategory::MemoryOptimization,
-                priority: if metrics.memory_usage > 200_000_000 { Priority::High } else { Priority::Medium },
-                description: String::from_str(env, "Optimize memory usage through efficient data structures and memory management"),
+                priority: if metrics.memory_usage > 200_000_000 {
+                    Priority::High
+                } else {
+                    Priority::Medium
+                },
+                description: String::from_str(
+                    env,
+                    "Optimize memory usage through efficient data structures and memory management",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 30,
                     cost_reduction: 15,
@@ -375,7 +446,10 @@ impl OptimizationEngine {
                     steps.push_back(String::from_str(env, "Use efficient serialization"));
                     steps
                 },
-                contract_address: Address::from_string(&String::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
+                contract_address: Address::from_string(&String::from_str(
+                    env,
+                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                )),
                 optimization_type: OptimizationType::MemoryEfficiency,
                 title: String::from_str(env, "Memory Optimization"),
                 expected_improvement: 30,
@@ -390,14 +464,22 @@ impl OptimizationEngine {
     }
 
     /// Analyze network optimization opportunities
-    fn analyze_network_optimization(env: &Env, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_network_optimization(
+        env: &Env,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
-        if metrics.network_latency > 100 { // Above 100ms
+        if metrics.network_latency > 100 {
+            // Above 100ms
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("network_opt_1"),
                 category: OptimizationCategory::NetworkOptimization,
-                priority: if metrics.network_latency > 500 { Priority::High } else { Priority::Medium },
+                priority: if metrics.network_latency > 500 {
+                    Priority::High
+                } else {
+                    Priority::Medium
+                },
                 description: String::from_str(env, "Optimize network operations to reduce latency"),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 35,
@@ -420,7 +502,10 @@ impl OptimizationEngine {
                     steps.push_back(String::from_str(env, "Implement caching strategies"));
                     steps
                 },
-                contract_address: Address::from_string(&String::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
+                contract_address: Address::from_string(&String::from_str(
+                    env,
+                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                )),
                 optimization_type: OptimizationType::NetworkEfficiency,
                 title: String::from_str(env, "Network Optimization"),
                 expected_improvement: 35,
@@ -435,15 +520,26 @@ impl OptimizationEngine {
     }
 
     /// Analyze algorithm optimization opportunities
-    fn analyze_algorithm_optimization(env: &Env, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_algorithm_optimization(
+        env: &Env,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
-        if metrics.average_execution_time > 500 { // Above 500ms
+        if metrics.average_execution_time > 500 {
+            // Above 500ms
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("algo_opt_1"),
                 category: OptimizationCategory::AlgorithmOptimization,
-                priority: if metrics.average_execution_time > 2000 { Priority::Critical } else { Priority::High },
-                description: String::from_str(env, "Optimize algorithms for better time complexity"),
+                priority: if metrics.average_execution_time > 2000 {
+                    Priority::Critical
+                } else {
+                    Priority::High
+                },
+                description: String::from_str(
+                    env,
+                    "Optimize algorithms for better time complexity",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 50,
                     cost_reduction: 20,
@@ -465,7 +561,10 @@ impl OptimizationEngine {
                     steps.push_back(String::from_str(env, "Use appropriate data structures"));
                     steps
                 },
-                contract_address: Address::from_string(&String::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
+                contract_address: Address::from_string(&String::from_str(
+                    env,
+                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                )),
                 optimization_type: OptimizationType::AlgorithmEfficiency,
                 title: String::from_str(env, "Algorithm Optimization"),
                 expected_improvement: 50,
@@ -480,15 +579,26 @@ impl OptimizationEngine {
     }
 
     /// Analyze architecture optimization opportunities
-    fn analyze_architecture_optimization(env: &Env, metrics: &PerformanceMetrics) -> Vec<OptimizationRecommendation> {
+    fn analyze_architecture_optimization(
+        env: &Env,
+        metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
 
-        if metrics.error_rate > 5 { // Above 5% error rate
+        if metrics.error_rate > 5 {
+            // Above 5% error rate
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("arch_opt_1"),
                 category: OptimizationCategory::ArchitectureOptimization,
-                priority: if metrics.error_rate > 15 { Priority::Critical } else { Priority::High },
-                description: String::from_str(env, "Improve architecture resilience and error handling"),
+                priority: if metrics.error_rate > 15 {
+                    Priority::Critical
+                } else {
+                    Priority::High
+                },
+                description: String::from_str(
+                    env,
+                    "Improve architecture resilience and error handling",
+                ),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 15,
                     cost_reduction: 10,
@@ -510,7 +620,10 @@ impl OptimizationEngine {
                     steps.push_back(String::from_str(env, "Add comprehensive logging"));
                     steps
                 },
-                contract_address: Address::from_string(&String::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
+                contract_address: Address::from_string(&String::from_str(
+                    env,
+                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                )),
                 optimization_type: OptimizationType::ArchitectureImprovement,
                 title: String::from_str(env, "Architecture Optimization"),
                 expected_improvement: 15,
@@ -529,18 +642,18 @@ impl OptimizationEngine {
         let mut data = [0u8; 32];
         let prefix_bytes = prefix.as_bytes();
         let prefix_len = prefix_bytes.len().min(16);
-        
+
         for i in 0..prefix_len {
             data[i] = prefix_bytes[i];
         }
-        
+
         // Add timestamp for uniqueness
         let timestamp = 1708524000u64; // Placeholder timestamp
         let ts_bytes = timestamp.to_be_bytes();
         for i in 0..8 {
             data[16 + i] = ts_bytes[i];
         }
-        
+
         BytesN::from_array(&soroban_sdk::Env::default(), &data)
     }
 
@@ -557,83 +670,91 @@ impl OptimizationEngine {
     ) -> Vec<OptimizationRecommendation> {
         let mut selected = Vec::new(env);
         let mut accumulated_improvement = 0u32;
-        
+
         for rec in recommendations.iter() {
             if accumulated_improvement < target_improvement {
                 selected.push_back(rec.clone());
                 accumulated_improvement += rec.expected_impact.performance_improvement;
             }
         }
-        
+
         selected
     }
 
-    fn calculate_plan_impact(recommendations: &Vec<OptimizationRecommendation>) -> (ImpactEstimate, u64) {
+    fn calculate_plan_impact(
+        recommendations: &Vec<OptimizationRecommendation>,
+    ) -> (ImpactEstimate, u64) {
         let mut total_impact = ImpactEstimate {
             performance_improvement: 0,
             cost_reduction: 0,
             user_experience_improvement: 0,
             reliability_improvement: 0,
         };
-        
+
         let mut max_timeline = 0u64;
-        
+
         for rec in recommendations.iter() {
             total_impact.performance_improvement += rec.expected_impact.performance_improvement;
             total_impact.cost_reduction += rec.expected_impact.cost_reduction;
-            total_impact.user_experience_improvement += rec.expected_impact.user_experience_improvement;
+            total_impact.user_experience_improvement +=
+                rec.expected_impact.user_experience_improvement;
             total_impact.reliability_improvement += rec.expected_impact.reliability_improvement;
-            
+
             // Estimate timeline based on complexity
             let timeline = match rec.implementation_complexity {
-                Complexity::Low => 3,         // 3 days
-                Complexity::Simple => 7,      // 1 week
-                Complexity::Medium => 14,     // 2 weeks
-                Complexity::Moderate => 21,   // 3 weeks
-                Complexity::High => 35,       // 5 weeks
-                Complexity::Complex => 42,    // 6 weeks
+                Complexity::Low => 3,          // 3 days
+                Complexity::Simple => 7,       // 1 week
+                Complexity::Medium => 14,      // 2 weeks
+                Complexity::Moderate => 21,    // 3 weeks
+                Complexity::High => 35,        // 5 weeks
+                Complexity::Complex => 42,     // 6 weeks
                 Complexity::VeryComplex => 84, // 12 weeks
             };
             max_timeline = max_timeline.max(timeline);
         }
-        
+
         // Cap improvements at reasonable maximums
         total_impact.performance_improvement = total_impact.performance_improvement.min(90);
         total_impact.cost_reduction = total_impact.cost_reduction.min(80);
         total_impact.user_experience_improvement = total_impact.user_experience_improvement.min(85);
         total_impact.reliability_improvement = total_impact.reliability_improvement.min(95);
-        
+
         (total_impact, max_timeline)
     }
 
-    fn calculate_total_savings(recommendations: &Vec<OptimizationRecommendation>) -> SavingsEstimate {
+    fn calculate_total_savings(
+        recommendations: &Vec<OptimizationRecommendation>,
+    ) -> SavingsEstimate {
         let mut total_savings = SavingsEstimate {
             daily_cost_savings: 0,
             monthly_cost_savings: 0,
             annual_cost_savings: 0,
             performance_gains: 0,
         };
-        
+
         for rec in recommendations.iter() {
             total_savings.daily_cost_savings += rec.estimated_savings.daily_cost_savings;
             total_savings.monthly_cost_savings += rec.estimated_savings.monthly_cost_savings;
             total_savings.annual_cost_savings += rec.estimated_savings.annual_cost_savings;
             total_savings.performance_gains += rec.estimated_savings.performance_gains;
         }
-        
+
         total_savings.performance_gains = total_savings.performance_gains.min(100);
-        
+
         total_savings
     }
 
-    fn create_implementation_phases(env: &Env, recommendations: &Vec<OptimizationRecommendation>) -> Vec<ImplementationPhase> {
+    fn create_implementation_phases(
+        env: &Env,
+        recommendations: &Vec<OptimizationRecommendation>,
+    ) -> Vec<ImplementationPhase> {
         let mut phases = Vec::new(env);
-        
+
         // Group by priority and complexity
         let mut high_priority = Vec::new(env);
         let mut medium_priority = Vec::new(env);
         let mut low_priority = Vec::new(env);
-        
+
         for i in 0..recommendations.len() {
             let r = recommendations.get(i).unwrap();
             match r.priority {
@@ -677,7 +798,7 @@ impl OptimizationEngine {
                 dependencies: deps,
             });
         }
-        
+
         phases
     }
 
@@ -687,9 +808,9 @@ impl OptimizationEngine {
         let storage_cost = (metrics.storage_reads + metrics.storage_writes) as u64 * 5;
         let compute_cost = metrics.execution_time / 100;
         let network_cost = metrics.network_latency as u64 * 2;
-        
+
         let total_daily_cost = gas_cost + storage_cost + compute_cost + network_cost;
-        
+
         let mut cost_breakdown = Vec::new(env);
         cost_breakdown.push_back(CostComponent {
             component_name: String::from_str(env, "Gas"),
@@ -711,14 +832,17 @@ impl OptimizationEngine {
             cost: network_cost,
             percentage_of_total: ((network_cost * 100) / total_daily_cost.max(1)) as u32,
         });
-        
+
         CurrentCostStructure {
             total_daily_cost,
             cost_breakdown,
         }
     }
 
-    fn identify_cost_opportunities(env: &Env, _metrics: &PerformanceMetrics) -> Vec<OptimizationOpportunity> {
+    fn identify_cost_opportunities(
+        env: &Env,
+        _metrics: &PerformanceMetrics,
+    ) -> Vec<OptimizationOpportunity> {
         // Placeholder implementation
         Vec::new(env)
     }
@@ -728,7 +852,10 @@ impl OptimizationEngine {
         1000 // Sample savings
     }
 
-    fn calculate_roi_analysis(_current_costs: &CurrentCostStructure, _potential_savings: u64) -> ROIAnalysis {
+    fn calculate_roi_analysis(
+        _current_costs: &CurrentCostStructure,
+        _potential_savings: u64,
+    ) -> ROIAnalysis {
         ROIAnalysis {
             implementation_cost: 5000,
             monthly_savings: 1000,
@@ -737,7 +864,10 @@ impl OptimizationEngine {
         }
     }
 
-    fn prioritize_cost_optimizations(env: &Env, _opportunities: &Vec<OptimizationOpportunity>) -> Vec<String> {
+    fn prioritize_cost_optimizations(
+        env: &Env,
+        _opportunities: &Vec<OptimizationOpportunity>,
+    ) -> Vec<String> {
         let mut priorities = Vec::new(env);
         priorities.push_back(String::from_str(env, "Gas optimization"));
         priorities.push_back(String::from_str(env, "Storage efficiency"));

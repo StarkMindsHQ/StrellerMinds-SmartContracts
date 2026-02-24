@@ -1,5 +1,5 @@
-use soroban_sdk::{Env, String, Vec, Address, Map};
 use crate::types::*;
+use soroban_sdk::{Address, Env, Map, String, Vec};
 
 /// Semantic Search Engine
 /// Implements natural language understanding capabilities using pre-processed data from off-chain NLP services
@@ -14,64 +14,50 @@ impl SemanticSearch {
         user: Option<Address>,
     ) -> Vec<SearchResultItem> {
         let mut results = Vec::new(env);
-        
+
         // Get all content with semantic metadata
         let content_ids = Self::get_indexed_content(env);
-        
+
         for i in 0..content_ids.len() {
             if let Some(content_id) = content_ids.get(i) {
                 // Get semantic metadata for this content
                 if let Some(metadata) = Self::get_semantic_metadata(env, &content_id) {
                     // Calculate semantic match score
-                    let score = Self::calculate_semantic_score(
-                        env,
-                        &processed_query,
-                        &metadata,
-                        &user,
-                    );
-                    
+                    let score =
+                        Self::calculate_semantic_score(env, &processed_query, &metadata, &user);
+
                     // Apply threshold
-                    if score > 100 {  // Minimum relevance threshold
+                    if score > 100 {
+                        // Minimum relevance threshold
                         // Apply filters
                         if Self::passes_filters(&metadata, &filters) {
-                            let result = Self::create_search_result(
-                                env,
-                                &content_id,
-                                &metadata,
-                                score,
-                            );
+                            let result =
+                                Self::create_search_result(env, &content_id, &metadata, score);
                             results.push_back(result);
                         }
                     }
                 }
             }
         }
-        
+
         // Sort by score (descending)
         Self::sort_by_score(env, &mut results);
-        
+
         results
     }
-    
+
     /// Store semantic metadata from oracle
-    pub fn store_semantic_metadata(
-        env: &Env,
-        content_id: String,
-        metadata: SemanticMetadata,
-    ) {
+    pub fn store_semantic_metadata(env: &Env, content_id: String, metadata: SemanticMetadata) {
         let key = DataKey::SemanticMetadata(content_id);
         env.storage().persistent().set(&key, &metadata);
     }
-    
+
     /// Retrieve semantic metadata for content
-    pub fn get_semantic_metadata(
-        env: &Env,
-        content_id: &String,
-    ) -> Option<SemanticMetadata> {
+    pub fn get_semantic_metadata(env: &Env, content_id: &String) -> Option<SemanticMetadata> {
         let key = DataKey::SemanticMetadata(content_id.clone());
         env.storage().persistent().get(&key)
     }
-    
+
     /// Calculate semantic relevance score using integer arithmetic
     fn calculate_semantic_score(
         env: &Env,
@@ -80,39 +66,35 @@ impl SemanticSearch {
         user: &Option<Address>,
     ) -> u32 {
         let mut score = 0u32;
-        
+
         // Topic matching (0-400 points)
         let topic_score = Self::calculate_topic_score(env, query, metadata);
         score += topic_score;
-        
+
         // Intent matching (0-300 points)
         let intent_score = Self::calculate_intent_score(env, query, metadata);
         score += intent_score;
-        
+
         // Entity matching (0-200 points)
         let entity_score = Self::calculate_entity_score(env, query, metadata);
         score += entity_score;
-        
+
         // Semantic tag overlap (0-100 points)
         let tag_score = Self::calculate_tag_overlap(env, query, metadata);
         score += tag_score;
-        
+
         // Personalization boost (0-200 points)
         if let Some(user_addr) = user {
-            let personalization = Self::calculate_personalization_boost(
-                env,
-                user_addr,
-                metadata,
-            );
+            let personalization = Self::calculate_personalization_boost(env, user_addr, metadata);
             score += personalization;
         }
-        
+
         // Confidence adjustment
         score = (score * query.confidence) / 1000;
-        
+
         score
     }
-    
+
     /// Calculate topic matching score
     fn calculate_topic_score(
         env: &Env,
@@ -121,7 +103,7 @@ impl SemanticSearch {
     ) -> u32 {
         let mut score = 0u32;
         let mut matches = 0u32;
-        
+
         // Check each query topic against content topics
         for i in 0..query.semantic_tags.len() {
             if let Some(query_topic) = query.semantic_tags.get(i) {
@@ -129,21 +111,21 @@ impl SemanticSearch {
                     if let Some(content_topic) = metadata.topics.get(j) {
                         if Self::topics_match(&query_topic, &content_topic) {
                             matches += 1;
-                            score += 100;  // Base score per match
+                            score += 100; // Base score per match
                         }
                     }
                 }
             }
         }
-        
+
         // Boost if multiple matches (indicates strong relevance)
         if matches > 2 {
             score += 100;
         }
-        
-        score.min(400)  // Cap at 400
+
+        score.min(400) // Cap at 400
     }
-    
+
     /// Calculate intent matching score
     fn calculate_intent_score(
         env: &Env,
@@ -155,10 +137,10 @@ impl SemanticSearch {
             // Scale to 0-300 range
             (intent_score * 300) / 1000
         } else {
-            50  // Default minimal score
+            50 // Default minimal score
         }
     }
-    
+
     /// Calculate entity matching score
     fn calculate_entity_score(
         env: &Env,
@@ -166,7 +148,7 @@ impl SemanticSearch {
         metadata: &SemanticMetadata,
     ) -> u32 {
         let mut score = 0u32;
-        
+
         for i in 0..query.entities.len() {
             if let Some(entity) = query.entities.get(i) {
                 for j in 0..metadata.entity_types.len() {
@@ -179,10 +161,10 @@ impl SemanticSearch {
                 }
             }
         }
-        
-        score.min(200)  // Cap at 200
+
+        score.min(200) // Cap at 200
     }
-    
+
     /// Calculate semantic tag overlap
     fn calculate_tag_overlap(
         env: &Env,
@@ -190,7 +172,7 @@ impl SemanticSearch {
         metadata: &SemanticMetadata,
     ) -> u32 {
         let mut overlap = 0u32;
-        
+
         for i in 0..query.semantic_tags.len() {
             if let Some(query_tag) = query.semantic_tags.get(i) {
                 for j in 0..metadata.semantic_tags.len() {
@@ -202,11 +184,11 @@ impl SemanticSearch {
                 }
             }
         }
-        
+
         // Score based on overlap count
-        overlap * 25  // 25 points per matching tag, max 100
+        overlap * 25 // 25 points per matching tag, max 100
     }
-    
+
     /// Calculate personalization boost based on user profile
     fn calculate_personalization_boost(
         env: &Env,
@@ -215,32 +197,36 @@ impl SemanticSearch {
     ) -> u32 {
         // Get user profile if exists
         let profile_key = DataKey::UserProfile(user.clone());
-        if let Some(profile) = env.storage().persistent().get::<DataKey, UserProfile>(&profile_key) {
+        if let Some(profile) = env
+            .storage()
+            .persistent()
+            .get::<DataKey, UserProfile>(&profile_key)
+        {
             let mut boost = 0u32;
-            
+
             // Check if topics align with user's interests
             for i in 0..metadata.topics.len() {
                 if let Some(topic) = metadata.topics.get(i) {
                     if let Some(interest_count) = profile.interaction_counts.get(topic.clone()) {
                         // Higher interaction count = more boost
-                        boost += interest_count.min(50);  // Cap per topic
+                        boost += interest_count.min(50); // Cap per topic
                     }
                 }
             }
-            
-            boost.min(200)  // Cap total boost
+
+            boost.min(200) // Cap total boost
         } else {
             0
         }
     }
-    
+
     /// Check if two topics match (exact or similar)
     fn topics_match(topic_a: &String, topic_b: &String) -> bool {
         // For now, exact match
         // In production, this would use similarity threshold
         topic_a == topic_b
     }
-    
+
     /// Apply search filters to metadata
     fn passes_filters(metadata: &SemanticMetadata, filters: &SearchFilters) -> bool {
         // Check complexity filter if difficulty levels specified
@@ -248,24 +234,30 @@ impl SemanticSearch {
             let complexity = metadata.complexity_score;
             // Map complexity to difficulty (simplified)
             let matches_difficulty = if complexity < 30 {
-                filters.difficulty_levels.contains(&DifficultyLevel::Beginner)
+                filters
+                    .difficulty_levels
+                    .contains(&DifficultyLevel::Beginner)
             } else if complexity < 60 {
-                filters.difficulty_levels.contains(&DifficultyLevel::Intermediate)
+                filters
+                    .difficulty_levels
+                    .contains(&DifficultyLevel::Intermediate)
             } else if complexity < 85 {
-                filters.difficulty_levels.contains(&DifficultyLevel::Advanced)
+                filters
+                    .difficulty_levels
+                    .contains(&DifficultyLevel::Advanced)
             } else {
                 filters.difficulty_levels.contains(&DifficultyLevel::Expert)
             };
-            
+
             if !matches_difficulty {
                 return false;
             }
         }
-        
+
         // More filter checks would go here
         true
     }
-    
+
     /// Create search result from metadata
     fn create_search_result(
         env: &Env,
@@ -283,7 +275,10 @@ impl SemanticSearch {
             relevance_score: score,
             metadata: SearchResultMetadata::Course(CourseMetadata {
                 course_id: content_id.clone(),
-                instructor_id: Address::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"),
+                instructor_id: Address::from_str(
+                    env,
+                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                ),
                 instructor_name: String::from_str(env, "Instructor"),
                 category: String::from_str(env, "Category"),
                 difficulty: DifficultyLevel::Intermediate,
@@ -305,7 +300,7 @@ impl SemanticSearch {
             thumbnail_url: None,
         }
     }
-    
+
     /// Sort results by score (descending)
     fn sort_by_score(env: &Env, results: &mut Vec<SearchResultItem>) {
         // Bubble sort (simple for blockchain)
@@ -314,7 +309,7 @@ impl SemanticSearch {
             for j in 0..(len - i - 1) {
                 let score_j = results.get(j).unwrap().relevance_score;
                 let score_j_plus_1 = results.get(j + 1).unwrap().relevance_score;
-                
+
                 if score_j < score_j_plus_1 {
                     // Swap
                     let temp_j = results.get(j).unwrap();
@@ -325,21 +320,18 @@ impl SemanticSearch {
             }
         }
     }
-    
+
     /// Get list of indexed content IDs
     fn get_indexed_content(env: &Env) -> Vec<String> {
         // In production, this would query an index
         // For now, return empty vector
         Vec::new(env)
     }
-    
+
     /// Expand query with synonyms (using pre-computed synonym data)
-    pub fn expand_query_with_synonyms(
-        env: &Env,
-        query_terms: Vec<String>,
-    ) -> Vec<String> {
+    pub fn expand_query_with_synonyms(env: &Env, query_terms: Vec<String>) -> Vec<String> {
         let mut expanded = query_terms.clone();
-        
+
         // Add synonyms from pre-computed synonym index
         for i in 0..query_terms.len() {
             if let Some(term) = query_terms.get(i) {
@@ -347,7 +339,7 @@ impl SemanticSearch {
                 // Add to expanded terms
             }
         }
-        
+
         expanded
     }
 }

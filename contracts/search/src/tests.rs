@@ -7,7 +7,7 @@ fn create_test_env() -> (Env, Address, SearchContract) {
     let env = Env::default();
     let admin = Address::generate(&env);
     let contract = SearchContract::new(&env, contract_id);
-    
+
     (env, admin, contract)
 }
 
@@ -52,10 +52,10 @@ fn create_test_search_query(env: &Env) -> SearchQuery {
 #[test]
 fn test_initialize() {
     let (env, admin, contract) = create_test_env();
-    
+
     let result = contract.initialize(admin.clone());
     assert!(result.is_ok());
-    
+
     // Test double initialization fails
     let result2 = contract.initialize(admin);
     assert_eq!(result2, Err(Error::AlreadyInitialized));
@@ -65,13 +65,13 @@ fn test_initialize() {
 fn test_search_basic_functionality() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let query = create_test_search_query(&env);
-    
+
     let result = contract.search(query, Some(user));
     assert!(result.is_ok());
-    
+
     let search_results = result.unwrap();
     assert_eq!(search_results.page, 1);
     assert_eq!(search_results.page_size, 10);
@@ -81,26 +81,26 @@ fn test_search_basic_functionality() {
 fn test_course_filtering() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let mut query = create_test_search_query(&env);
-    
+
     // Add category filter
     let mut categories = Vec::new(&env);
     categories.push_back(String::from_str(&env, "Programming"));
     query.filters.categories = categories;
-    
+
     // Add difficulty filter
     let mut difficulties = Vec::new(&env);
     difficulties.push_back(DifficultyLevel::Intermediate);
     query.filters.difficulty_levels = difficulties;
-    
+
     // Add duration filter
     query.filters.duration_range = Some(DurationRange {
         min_hours: Some(5),
         max_hours: Some(20),
     });
-    
+
     let result = contract.search(query, Some(user));
     assert!(result.is_ok());
 }
@@ -109,21 +109,21 @@ fn test_course_filtering() {
 fn test_certificate_filtering() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let mut query = create_test_search_query(&env);
     query.search_scope = SearchScope::Certificates;
-    
+
     // Add certificate status filter
     let mut statuses = Vec::new(&env);
     statuses.push_back(CertificateStatus::Active);
     query.filters.certificate_status = statuses;
-    
+
     // Add certificate type filter
     let mut types = Vec::new(&env);
     types.push_back(CertificateType::Professional);
     query.filters.certificate_types = types;
-    
+
     let result = contract.search(query, Some(user));
     assert!(result.is_ok());
 }
@@ -132,17 +132,17 @@ fn test_certificate_filtering() {
 fn test_progress_filtering() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let mut query = create_test_search_query(&env);
     query.search_scope = SearchScope::UserProgress;
-    
+
     // Add completion range filter
     query.filters.completion_range = Some(CompletionRange {
         min_percentage: 50,
         max_percentage: 100,
     });
-    
+
     let result = contract.search(query, Some(user));
     assert!(result.is_ok());
 }
@@ -151,22 +151,22 @@ fn test_progress_filtering() {
 fn test_sorting_options() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
-    
+
     // Test sorting by title
     let mut query = create_test_search_query(&env);
     query.sort_options.primary_sort = SortField::Title;
     query.sort_options.sort_order = SortOrder::Ascending;
-    
+
     let result = contract.search(query, Some(user.clone()));
     assert!(result.is_ok());
-    
+
     // Test sorting by date
     let mut query2 = create_test_search_query(&env);
     query2.sort_options.primary_sort = SortField::CreatedDate;
     query2.sort_options.sort_order = SortOrder::Descending;
-    
+
     let result2 = contract.search(query2, Some(user));
     assert!(result2.is_ok());
 }
@@ -175,20 +175,20 @@ fn test_sorting_options() {
 fn test_pagination() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let mut query = create_test_search_query(&env);
-    
+
     // Test first page
     query.pagination.page = 1;
     query.pagination.page_size = 5;
-    
+
     let result = contract.search(query.clone(), Some(user.clone()));
     assert!(result.is_ok());
     let page1 = result.unwrap();
     assert_eq!(page1.page, 1);
     assert_eq!(page1.page_size, 5);
-    
+
     // Test second page
     query.pagination.page = 2;
     let result2 = contract.search(query, Some(user));
@@ -201,35 +201,29 @@ fn test_pagination() {
 fn test_saved_searches() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let query = create_test_search_query(&env);
-    
+
     // Save a search
     let search_name = String::from_str(&env, "My Rust Search");
     let search_desc = String::from_str(&env, "Search for Rust programming courses");
-    
-    let result = contract.save_search(
-        user.clone(),
-        search_name.clone(),
-        search_desc,
-        query,
-        true,
-    );
+
+    let result = contract.save_search(user.clone(), search_name.clone(), search_desc, query, true);
     assert!(result.is_ok());
     let search_id = result.unwrap();
-    
+
     // Get saved searches
     let saved_searches = contract.get_saved_searches(user.clone());
     assert!(saved_searches.is_ok());
     let searches = saved_searches.unwrap();
     assert_eq!(searches.len(), 1);
     assert_eq!(searches.get(0).unwrap().name, search_name);
-    
+
     // Execute saved search
     let exec_result = contract.execute_saved_search(user.clone(), search_id.clone());
     assert!(exec_result.is_ok());
-    
+
     // Delete saved search
     let delete_result = contract.delete_saved_search(user, search_id);
     assert!(delete_result.is_ok());
@@ -239,9 +233,9 @@ fn test_saved_searches() {
 fn test_search_preferences() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
-    
+
     let preferences = SearchPreferences {
         user_id: user.clone(),
         default_page_size: 20,
@@ -270,11 +264,11 @@ fn test_search_preferences() {
         created_at: env.ledger().timestamp(),
         updated_at: env.ledger().timestamp(),
     };
-    
+
     // Set preferences
     let result = contract.set_search_preferences(user.clone(), preferences.clone());
     assert!(result.is_ok());
-    
+
     // Get preferences
     let get_result = contract.get_search_preferences(user);
     assert!(get_result.is_ok());
@@ -287,17 +281,17 @@ fn test_search_preferences() {
 fn test_search_history() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let query = create_test_search_query(&env);
-    
+
     // Perform a search (this should add to history)
     let _result = contract.search(query, Some(user.clone()));
-    
+
     // Get search history
     let history_result = contract.get_search_history(user.clone(), Some(10));
     assert!(history_result.is_ok());
-    
+
     // Clear search history
     let clear_result = contract.clear_search_history(user);
     assert!(clear_result.is_ok());
@@ -307,7 +301,7 @@ fn test_search_history() {
 fn test_search_suggestions() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let query_prefix = String::from_str(&env, "rust");
     let suggestions = contract.get_search_suggestions(query_prefix, Some(5));
     assert!(suggestions.is_ok());
@@ -317,7 +311,7 @@ fn test_search_suggestions() {
 fn test_popular_queries() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let popular = contract.get_popular_queries(Some(10), None);
     assert!(popular.is_ok());
 }
@@ -326,24 +320,26 @@ fn test_popular_queries() {
 fn test_favorite_searches() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let query = create_test_search_query(&env);
-    
+
     // Save a search
-    let search_id = contract.save_search(
-        user.clone(),
-        String::from_str(&env, "Test Search"),
-        String::from_str(&env, "Description"),
-        query,
-        false,
-    ).unwrap();
-    
+    let search_id = contract
+        .save_search(
+            user.clone(),
+            String::from_str(&env, "Test Search"),
+            String::from_str(&env, "Description"),
+            query,
+            false,
+        )
+        .unwrap();
+
     // Toggle favorite
     let toggle_result = contract.toggle_favorite_search(user.clone(), search_id.clone());
     assert!(toggle_result.is_ok());
     assert_eq!(toggle_result.unwrap(), true);
-    
+
     // Toggle again
     let toggle_result2 = contract.toggle_favorite_search(user, search_id);
     assert!(toggle_result2.is_ok());
@@ -354,7 +350,7 @@ fn test_favorite_searches() {
 fn test_admin_functions() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     // Test update search weights
     let weights = SearchWeights {
         title_weight: 15,
@@ -365,10 +361,10 @@ fn test_admin_functions() {
         instructor_weight: 6,
         metadata_weight: 3,
     };
-    
+
     let result = contract.update_search_weights(admin.clone(), weights);
     assert!(result.is_ok());
-    
+
     // Test add search suggestions
     let category = String::from_str(&env, "programming");
     let mut suggestions = Vec::new(&env);
@@ -379,7 +375,7 @@ fn test_admin_functions() {
         category: Some(category.clone()),
         metadata: None,
     });
-    
+
     let sugg_result = contract.add_search_suggestions(admin, category, suggestions);
     assert!(sugg_result.is_ok());
 }
@@ -388,7 +384,7 @@ fn test_admin_functions() {
 fn test_unauthorized_access() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let unauthorized_user = Address::generate(&env);
     let weights = SearchWeights {
         title_weight: 10,
@@ -399,7 +395,7 @@ fn test_unauthorized_access() {
         instructor_weight: 4,
         metadata_weight: 2,
     };
-    
+
     // Should fail for non-admin
     let result = contract.update_search_weights(unauthorized_user, weights);
     assert_eq!(result, Err(Error::Unauthorized));
@@ -409,43 +405,43 @@ fn test_unauthorized_access() {
 fn test_complex_search_scenario() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let mut query = create_test_search_query(&env);
-    
+
     // Complex filtering scenario
     let mut categories = Vec::new(&env);
     categories.push_back(String::from_str(&env, "Programming"));
     categories.push_back(String::from_str(&env, "Web Development"));
     query.filters.categories = categories;
-    
+
     let mut difficulties = Vec::new(&env);
     difficulties.push_back(DifficultyLevel::Intermediate);
     difficulties.push_back(DifficultyLevel::Advanced);
     query.filters.difficulty_levels = difficulties;
-    
+
     query.filters.duration_range = Some(DurationRange {
         min_hours: Some(10),
         max_hours: Some(50),
     });
-    
+
     query.filters.price_range = Some(PriceRange {
         min_price: Some(0),
         max_price: Some(10000000), // 100 XLM in stroops
     });
-    
+
     query.filters.rating_range = Some(RatingRange {
         min_rating: 40, // 4.0 stars
         max_rating: 50, // 5.0 stars
     });
-    
+
     query.filters.is_premium = Some(false);
     query.filters.has_certificate = Some(true);
-    
+
     // Execute complex search
     let result = contract.search(query, Some(user));
     assert!(result.is_ok());
-    
+
     let search_results = result.unwrap();
     assert!(search_results.execution_time_ms > 0);
 }
@@ -454,10 +450,10 @@ fn test_complex_search_scenario() {
 fn test_search_scope_variations() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
     let base_query = create_test_search_query(&env);
-    
+
     // Test different search scopes
     let scopes = vec![
         SearchScope::Courses,
@@ -471,11 +467,11 @@ fn test_search_scope_variations() {
             targets
         }),
     ];
-    
+
     for scope in scopes {
         let mut query = base_query.clone();
         query.search_scope = scope;
-        
+
         let result = contract.search(query, Some(user.clone()));
         assert!(result.is_ok());
     }
@@ -485,27 +481,27 @@ fn test_search_scope_variations() {
 fn test_edge_cases() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
-    
+
     // Test empty query
     let mut empty_query = create_test_search_query(&env);
     empty_query.query_text = String::from_str(&env, "");
-    
+
     let result = contract.search(empty_query, Some(user.clone()));
     assert!(result.is_ok());
-    
+
     // Test invalid pagination
     let mut invalid_pagination_query = create_test_search_query(&env);
     invalid_pagination_query.pagination.page = 0;
-    
+
     let result2 = contract.search(invalid_pagination_query, Some(user.clone()));
     // Should handle gracefully or return error
-    
+
     // Test very large page size
     let mut large_page_query = create_test_search_query(&env);
     large_page_query.pagination.page_size = 1000;
-    
+
     let result3 = contract.search(large_page_query, Some(user));
     assert!(result3.is_ok());
 }
@@ -515,9 +511,9 @@ fn test_edge_cases() {
 fn test_end_to_end_search_workflow() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user = Address::generate(&env);
-    
+
     // 1. Set user preferences
     let preferences = SearchPreferences {
         user_id: user.clone(),
@@ -539,44 +535,53 @@ fn test_end_to_end_search_workflow() {
         created_at: env.ledger().timestamp(),
         updated_at: env.ledger().timestamp(),
     };
-    
-    contract.set_search_preferences(user.clone(), preferences).unwrap();
-    
+
+    contract
+        .set_search_preferences(user.clone(), preferences)
+        .unwrap();
+
     // 2. Perform initial search
     let query = create_test_search_query(&env);
     let search_result = contract.search(query.clone(), Some(user.clone())).unwrap();
     assert!(search_result.results.len() <= 15); // Should use user's preferred page size
-    
+
     // 3. Save the search
-    let search_id = contract.save_search(
-        user.clone(),
-        String::from_str(&env, "My Technology Search"),
-        String::from_str(&env, "Searching for technology courses"),
-        query,
-        true,
-    ).unwrap();
-    
+    let search_id = contract
+        .save_search(
+            user.clone(),
+            String::from_str(&env, "My Technology Search"),
+            String::from_str(&env, "Searching for technology courses"),
+            query,
+            true,
+        )
+        .unwrap();
+
     // 4. Mark as favorite
-    let is_favorite = contract.toggle_favorite_search(user.clone(), search_id.clone()).unwrap();
+    let is_favorite = contract
+        .toggle_favorite_search(user.clone(), search_id.clone())
+        .unwrap();
     assert!(is_favorite);
-    
+
     // 5. Execute saved search
-    let saved_result = contract.execute_saved_search(user.clone(), search_id.clone()).unwrap();
+    let saved_result = contract
+        .execute_saved_search(user.clone(), search_id.clone())
+        .unwrap();
     assert_eq!(saved_result.page_size, search_result.page_size);
-    
+
     // 6. Check search history
     let history = contract.get_search_history(user.clone(), Some(5)).unwrap();
     assert!(history.len() > 0);
-    
+
     // 7. Get search suggestions
-    let suggestions = contract.get_search_suggestions(
-        String::from_str(&env, "tech"),
-        Some(3)
-    ).unwrap();
-    
+    let suggestions = contract
+        .get_search_suggestions(String::from_str(&env, "tech"), Some(3))
+        .unwrap();
+
     // 8. Clean up - delete saved search
-    contract.delete_saved_search(user.clone(), search_id).unwrap();
-    
+    contract
+        .delete_saved_search(user.clone(), search_id)
+        .unwrap();
+
     // 9. Clear history
     contract.clear_search_history(user).unwrap();
 }
@@ -585,10 +590,10 @@ fn test_end_to_end_search_workflow() {
 fn test_multi_user_search_scenario() {
     let (env, admin, contract) = create_test_env();
     contract.initialize(admin.clone()).unwrap();
-    
+
     let user1 = Address::generate(&env);
     let user2 = Address::generate(&env);
-    
+
     // Both users perform searches
     let query1 = create_test_search_query(&env);
     let query2 = {
@@ -596,34 +601,38 @@ fn test_multi_user_search_scenario() {
         q.query_text = String::from_str(&env, "javascript web development");
         q
     };
-    
+
     let result1 = contract.search(query1.clone(), Some(user1.clone()));
     let result2 = contract.search(query2.clone(), Some(user2.clone()));
-    
+
     assert!(result1.is_ok());
     assert!(result2.is_ok());
-    
+
     // Both users save searches
-    let search_id1 = contract.save_search(
-        user1.clone(),
-        String::from_str(&env, "User1 Search"),
-        String::from_str(&env, "Description 1"),
-        query1,
-        false,
-    ).unwrap();
-    
-    let search_id2 = contract.save_search(
-        user2.clone(),
-        String::from_str(&env, "User2 Search"),
-        String::from_str(&env, "Description 2"),
-        query2,
-        false,
-    ).unwrap();
-    
+    let search_id1 = contract
+        .save_search(
+            user1.clone(),
+            String::from_str(&env, "User1 Search"),
+            String::from_str(&env, "Description 1"),
+            query1,
+            false,
+        )
+        .unwrap();
+
+    let search_id2 = contract
+        .save_search(
+            user2.clone(),
+            String::from_str(&env, "User2 Search"),
+            String::from_str(&env, "Description 2"),
+            query2,
+            false,
+        )
+        .unwrap();
+
     // Verify users can only access their own saved searches
     let user1_searches = contract.get_saved_searches(user1.clone()).unwrap();
     let user2_searches = contract.get_saved_searches(user2.clone()).unwrap();
-    
+
     assert_eq!(user1_searches.len(), 1);
     assert_eq!(user2_searches.len(), 1);
     assert_eq!(user1_searches.get(0).unwrap().search_id, search_id1);

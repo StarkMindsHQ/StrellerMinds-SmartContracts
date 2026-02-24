@@ -1,34 +1,27 @@
-pub mod types;
-pub mod storage;
-pub mod events;
+pub mod anomaly_detector;
+pub mod behavior_analyzer;
+pub mod benchmark_engine;
+pub mod distributed_tracer;
 pub mod errors;
+pub mod events;
+pub mod optimization_engine;
 pub mod performance_monitor;
 pub mod predictive_engine;
-pub mod behavior_analyzer;
-pub mod optimization_engine;
-pub mod distributed_tracer;
-pub mod benchmark_engine;
-pub mod anomaly_detector;
-pub mod resource_optimizer;
 pub mod regression_tester;
+pub mod resource_optimizer;
+pub mod storage;
+pub mod types;
 
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
-    performance_monitor::PerformanceMonitor,
-    predictive_engine::PredictiveEngine,
-    behavior_analyzer::BehaviorAnalyzer,
-    optimization_engine::OptimizationEngine,
-    distributed_tracer::DistributedTracer,
-    benchmark_engine::BenchmarkEngine,
-    anomaly_detector::AnomalyDetector,
-    resource_optimizer::ResourceOptimizer,
-    regression_tester::RegressionTester,
+    anomaly_detector::AnomalyDetector, behavior_analyzer::BehaviorAnalyzer,
+    benchmark_engine::BenchmarkEngine, distributed_tracer::DistributedTracer,
+    errors::DiagnosticsError, events::DiagnosticsEvents, optimization_engine::OptimizationEngine,
+    performance_monitor::PerformanceMonitor, predictive_engine::PredictiveEngine,
+    regression_tester::RegressionTester, resource_optimizer::ResourceOptimizer,
+    storage::DiagnosticsStorage, types::*,
 };
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, Vec, BytesN, String};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec};
 
 #[contract]
 pub struct Diagnostics;
@@ -36,13 +29,17 @@ pub struct Diagnostics;
 #[contractimpl]
 impl Diagnostics {
     /// Initialize the comprehensive diagnostics platform
-    pub fn initialize(env: Env, admin: Address, config: DiagnosticsConfig) -> Result<(), DiagnosticsError> {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        config: DiagnosticsConfig,
+    ) -> Result<(), DiagnosticsError> {
         admin.require_auth();
-        
+
         DiagnosticsStorage::set_admin(&env, &admin);
         DiagnosticsStorage::set_config(&env, &config);
         DiagnosticsEvents::emit_initialized(&env, &admin);
-        
+
         Ok(())
     }
 
@@ -173,7 +170,11 @@ impl Diagnostics {
         contract_address: Address,
         resource_data: ResourceUtilization,
     ) -> Result<Vec<OptimizationRecommendation>, DiagnosticsError> {
-        ResourceOptimizer::generate_optimization_recommendations(&env, &contract_address, &resource_data)
+        ResourceOptimizer::generate_optimization_recommendations(
+            &env,
+            &contract_address,
+            &resource_data,
+        )
     }
 
     /// Monitor optimization implementation progress
@@ -183,7 +184,12 @@ impl Diagnostics {
         recommendation_id: BytesN<32>,
         baseline_metrics: ResourceUtilization,
     ) -> Result<OptimizationProgress, DiagnosticsError> {
-        ResourceOptimizer::monitor_optimization_progress(&env, &contract_address, &recommendation_id, &baseline_metrics)
+        ResourceOptimizer::monitor_optimization_progress(
+            &env,
+            &contract_address,
+            &recommendation_id,
+            &baseline_metrics,
+        )
     }
 
     /// Run comprehensive regression tests
@@ -217,7 +223,12 @@ impl Diagnostics {
         session_id: BytesN<32>,
         current_metrics: PerformanceMetrics,
     ) -> Result<Vec<PerformanceAlert>, DiagnosticsError> {
-        RegressionTester::check_real_time_performance(&env, &contract_address, &session_id, &current_metrics)
+        RegressionTester::check_real_time_performance(
+            &env,
+            &contract_address,
+            &session_id,
+            &current_metrics,
+        )
     }
 
     /// Generate comprehensive regression report
@@ -268,9 +279,7 @@ impl Diagnostics {
     }
 
     /// Get comprehensive system health report
-    pub fn get_system_health_report(
-        env: Env,
-    ) -> Result<SystemHealthReport, DiagnosticsError> {
+    pub fn get_system_health_report(env: Env) -> Result<SystemHealthReport, DiagnosticsError> {
         let contracts = DiagnosticsStorage::get_monitored_contracts(&env);
         let mut health_report = SystemHealthReport {
             timestamp: env.ledger().timestamp(),
@@ -292,8 +301,9 @@ impl Diagnostics {
         for contract in contracts.iter() {
             if let Ok(metrics) = PerformanceMonitor::get_current_metrics(&env, &contract) {
                 health_report.system_metrics.total_transactions += metrics.transaction_count;
-                health_report.system_metrics.average_response_time += metrics.average_execution_time;
-                
+                health_report.system_metrics.average_response_time +=
+                    metrics.average_execution_time;
+
                 if metrics.error_rate < 5 && metrics.average_execution_time < 1000 {
                     health_report.system_metrics.active_contracts += 1;
                 }
@@ -301,18 +311,23 @@ impl Diagnostics {
         }
 
         if health_report.system_metrics.active_contracts > 0 {
-            health_report.system_metrics.average_response_time /= health_report.system_metrics.active_contracts as u64;
+            health_report.system_metrics.average_response_time /=
+                health_report.system_metrics.active_contracts as u64;
         }
 
         Ok(health_report)
     }
 
     /// Legacy diagnostic function - now enhanced
-    pub fn run_diagnostic(env: Env, contract_address: Address) -> Result<DiagnosticReport, DiagnosticsError> {
+    pub fn run_diagnostic(
+        env: Env,
+        contract_address: Address,
+    ) -> Result<DiagnosticReport, DiagnosticsError> {
         let performance = PerformanceMonitor::get_current_metrics(&env, &contract_address)?;
         let anomalies = AnomalyDetector::detect_anomalies(&env, &contract_address, 3600)?; // Last hour
-        let recommendations = OptimizationEngine::generate_recommendations(&env, &contract_address)?;
-        
+        let recommendations =
+            OptimizationEngine::generate_recommendations(&env, &contract_address)?;
+
         Ok(DiagnosticReport {
             contract_address: contract_address.clone(),
             timestamp: env.ledger().timestamp(),

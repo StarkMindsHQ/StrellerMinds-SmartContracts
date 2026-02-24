@@ -1,7 +1,4 @@
-use crate::{
-    errors::DiagnosticsError,
-    types::*,
-};
+use crate::{errors::DiagnosticsError, types::*};
 use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
 
 /// Storage keys for the diagnostics platform
@@ -13,11 +10,11 @@ pub enum DataKey {
     CapacityPrediction(Address, u64), // (contract, prediction_time)
     BehaviorAnalysis(Address, u64),   // (user, analysis_time)
     OptimizationRecommendations(Address),
-    TraceData(BytesN<32>),           // trace_id
-    BenchmarkResults(String),         // benchmark_name
-    AnomalyEvents(Address, u64),     // (contract, timestamp)
+    TraceData(BytesN<32>),             // trace_id
+    BenchmarkResults(String),          // benchmark_name
+    AnomalyEvents(Address, u64),       // (contract, timestamp)
     ResourceUtilization(Address, u64), // (contract, analysis_time)
-    RegressionReports(String),        // test_name
+    RegressionReports(String),         // test_name
     SystemHealth,
     MonitoredContracts,
 }
@@ -27,36 +24,16 @@ impl DataKey {
         match self {
             DataKey::Admin => Symbol::new(env, "admin"),
             DataKey::Config => Symbol::new(env, "config"),
-            DataKey::PerformanceMetrics(_addr, _ts) => {
-                Symbol::new(env, "perf")
-            }
-            DataKey::MonitoringConfig(_addr) => {
-                Symbol::new(env, "mon_cfg")
-            }
-            DataKey::CapacityPrediction(_addr, _ts) => {
-                Symbol::new(env, "cap_pred")
-            }
-            DataKey::BehaviorAnalysis(_addr, _ts) => {
-                Symbol::new(env, "behav")
-            }
-            DataKey::OptimizationRecommendations(_addr) => {
-                Symbol::new(env, "opt_rec")
-            }
-            DataKey::TraceData(_trace_id) => {
-                Symbol::new(env, "trace")
-            }
-            DataKey::BenchmarkResults(_name) => {
-                Symbol::new(env, "bench")
-            }
-            DataKey::AnomalyEvents(_addr, _ts) => {
-                Symbol::new(env, "anom")
-            }
-            DataKey::ResourceUtilization(_addr, _ts) => {
-                Symbol::new(env, "res_util")
-            }
-            DataKey::RegressionReports(_name) => {
-                Symbol::new(env, "reg_rep")
-            }
+            DataKey::PerformanceMetrics(_addr, _ts) => Symbol::new(env, "perf"),
+            DataKey::MonitoringConfig(_addr) => Symbol::new(env, "mon_cfg"),
+            DataKey::CapacityPrediction(_addr, _ts) => Symbol::new(env, "cap_pred"),
+            DataKey::BehaviorAnalysis(_addr, _ts) => Symbol::new(env, "behav"),
+            DataKey::OptimizationRecommendations(_addr) => Symbol::new(env, "opt_rec"),
+            DataKey::TraceData(_trace_id) => Symbol::new(env, "trace"),
+            DataKey::BenchmarkResults(_name) => Symbol::new(env, "bench"),
+            DataKey::AnomalyEvents(_addr, _ts) => Symbol::new(env, "anom"),
+            DataKey::ResourceUtilization(_addr, _ts) => Symbol::new(env, "res_util"),
+            DataKey::RegressionReports(_name) => Symbol::new(env, "reg_rep"),
             DataKey::SystemHealth => Symbol::new(env, "sys_health"),
             DataKey::MonitoredContracts => Symbol::new(env, "monitored"),
         }
@@ -104,9 +81,7 @@ impl DiagnosticsStorage {
         metrics: &PerformanceMetrics,
     ) {
         let key = DataKey::PerformanceMetrics(contract_address.clone(), metrics.timestamp);
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), metrics);
+        env.storage().persistent().set(&key.to_symbol(env), metrics);
     }
 
     /// Get performance metrics for a contract at a specific time
@@ -116,9 +91,7 @@ impl DiagnosticsStorage {
         timestamp: u64,
     ) -> Option<PerformanceMetrics> {
         let key = DataKey::PerformanceMetrics(contract_address.clone(), timestamp);
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Get latest performance metrics for a contract
@@ -140,15 +113,9 @@ impl DiagnosticsStorage {
     }
 
     /// Set monitoring configuration for a contract
-    pub fn set_monitoring_config(
-        env: &Env,
-        contract_address: &Address,
-        config: &MonitoringConfig,
-    ) {
+    pub fn set_monitoring_config(env: &Env, contract_address: &Address, config: &MonitoringConfig) {
         let key = DataKey::MonitoringConfig(contract_address.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), config);
+        env.storage().persistent().set(&key.to_symbol(env), config);
     }
 
     /// Get monitoring configuration for a contract
@@ -157,9 +124,7 @@ impl DiagnosticsStorage {
         contract_address: &Address,
     ) -> Option<MonitoringConfig> {
         let key = DataKey::MonitoringConfig(contract_address.clone());
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store capacity prediction
@@ -181,17 +146,11 @@ impl DiagnosticsStorage {
         timestamp: u64,
     ) -> Option<CapacityPrediction> {
         let key = DataKey::CapacityPrediction(contract_address.clone(), timestamp);
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store behavior analysis
-    pub fn store_behavior_analysis(
-        env: &Env,
-        user: &Address,
-        analysis: &BehaviorAnalysis,
-    ) {
+    pub fn store_behavior_analysis(env: &Env, user: &Address, analysis: &BehaviorAnalysis) {
         let key = DataKey::BehaviorAnalysis(user.clone(), analysis.analysis_period);
         env.storage()
             .persistent()
@@ -205,9 +164,7 @@ impl DiagnosticsStorage {
         analysis_time: u64,
     ) -> Option<BehaviorAnalysis> {
         let key = DataKey::BehaviorAnalysis(user.clone(), analysis_time);
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store optimization recommendations
@@ -228,9 +185,7 @@ impl DiagnosticsStorage {
         contract_address: &Address,
     ) -> Option<Vec<OptimizationRecommendation>> {
         let key = DataKey::OptimizationRecommendations(contract_address.clone());
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store trace data
@@ -244,38 +199,26 @@ impl DiagnosticsStorage {
     /// Get trace data
     pub fn get_trace_data(env: &Env, trace_id: &BytesN<32>) -> Option<TraceAnalysis> {
         let key = DataKey::TraceData(trace_id.clone());
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store benchmark results
     pub fn store_benchmark_results(env: &Env, benchmark_name: &String, results: &BenchmarkResult) {
         let key = DataKey::BenchmarkResults(benchmark_name.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), results);
+        env.storage().persistent().set(&key.to_symbol(env), results);
     }
 
     /// Get benchmark results
     pub fn get_benchmark_results(env: &Env, benchmark_name: &String) -> Option<BenchmarkResult> {
         let key = DataKey::BenchmarkResults(benchmark_name.clone());
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store anomaly events
-    pub fn store_anomaly_events(
-        env: &Env,
-        contract_address: &Address,
-        events: &Vec<AnomalyEvent>,
-    ) {
+    pub fn store_anomaly_events(env: &Env, contract_address: &Address, events: &Vec<AnomalyEvent>) {
         let timestamp = env.ledger().timestamp();
         let key = DataKey::AnomalyEvents(contract_address.clone(), timestamp);
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), events);
+        env.storage().persistent().set(&key.to_symbol(env), events);
     }
 
     /// Get anomaly events
@@ -285,9 +228,7 @@ impl DiagnosticsStorage {
         timestamp: u64,
     ) -> Option<Vec<AnomalyEvent>> {
         let key = DataKey::AnomalyEvents(contract_address.clone(), timestamp);
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store resource utilization analysis
@@ -296,7 +237,8 @@ impl DiagnosticsStorage {
         contract_address: &Address,
         utilization: &ResourceUtilization,
     ) {
-        let key = DataKey::ResourceUtilization(contract_address.clone(), utilization.analysis_period);
+        let key =
+            DataKey::ResourceUtilization(contract_address.clone(), utilization.analysis_period);
         env.storage()
             .persistent()
             .set(&key.to_symbol(env), utilization);
@@ -309,25 +251,19 @@ impl DiagnosticsStorage {
         analysis_time: u64,
     ) -> Option<ResourceUtilization> {
         let key = DataKey::ResourceUtilization(contract_address.clone(), analysis_time);
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store regression test report
     pub fn store_regression_report(env: &Env, test_name: &String, report: &RegressionReport) {
         let key = DataKey::RegressionReports(test_name.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), report);
+        env.storage().persistent().set(&key.to_symbol(env), report);
     }
 
     /// Get regression test report
     pub fn get_regression_report(env: &Env, test_name: &String) -> Option<RegressionReport> {
         let key = DataKey::RegressionReports(test_name.clone());
-        env.storage()
-            .persistent()
-            .get(&key.to_symbol(env))
+        env.storage().persistent().get(&key.to_symbol(env))
     }
 
     /// Store system health report
@@ -383,9 +319,7 @@ impl DiagnosticsStorage {
         result: &RegressionTestResult,
     ) {
         let key = DataKey::RegressionReports(result.regression_report.test_name.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), result);
+        env.storage().persistent().set(&key.to_symbol(env), result);
     }
 
     /// Store monitoring session
@@ -395,9 +329,7 @@ impl DiagnosticsStorage {
         session: &MonitoringSession,
     ) {
         let key = Symbol::new(env, "mon_session");
-        env.storage()
-            .persistent()
-            .set(&key, session);
+        env.storage().persistent().set(&key, session);
     }
 
     /// Get monitoring session
@@ -420,9 +352,7 @@ impl DiagnosticsStorage {
         alert: &PerformanceAlert,
     ) {
         let key = Symbol::new(env, "perf_alert");
-        env.storage()
-            .persistent()
-            .set(&key, alert);
+        env.storage().persistent().set(&key, alert);
     }
 
     /// Get regression test results in period

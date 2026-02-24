@@ -1,8 +1,5 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
@@ -22,7 +19,7 @@ impl ResourceOptimizer {
 
         let current_time = env.ledger().timestamp();
         let start_time = current_time - analysis_period;
-        
+
         // Collect resource usage data
         let mut metrics_data = Vec::new(env);
         let mut total_gas = 0u64;
@@ -30,10 +27,13 @@ impl ResourceOptimizer {
         let mut total_storage_reads = 0u32;
         let mut total_storage_writes = 0u32;
         let mut total_cpu_instructions = 0u64;
-        
-        for i in 0..analysis_period/3600 { // hourly samples
+
+        for i in 0..analysis_period / 3600 {
+            // hourly samples
             let timestamp = start_time + (i * 3600);
-            if let Some(metrics) = DiagnosticsStorage::get_performance_metrics(env, contract_address, timestamp) {
+            if let Some(metrics) =
+                DiagnosticsStorage::get_performance_metrics(env, contract_address, timestamp)
+            {
                 metrics_data.push_back(metrics.clone());
                 total_gas += metrics.gas_used;
                 total_memory += metrics.memory_usage as u64;
@@ -48,12 +48,12 @@ impl ResourceOptimizer {
         }
 
         let sample_count = metrics_data.len() as u64;
-        
+
         let avg_gas = (total_gas / sample_count) as u32;
         let avg_mem = (total_memory / sample_count) as u32;
         let avg_storage = 0_u32;
         let avg_cpu = 0_u32;
-        
+
         // Calculate resource utilization metrics
         let resource_utilization = ResourceUtilization {
             analysis_id: Self::generate_resource_id(env),
@@ -70,7 +70,9 @@ impl ResourceOptimizer {
                 storage_cost_per_operation: 0,
                 cpu_efficiency_score: 0,
                 optimization_opportunities: Vec::new(env),
-                gas_optimization_potential: Self::calculate_gas_optimization_potential(&metrics_data),
+                gas_optimization_potential: Self::calculate_gas_optimization_potential(
+                    &metrics_data,
+                ),
                 memory_leak_risk: RiskLevel::Low,
                 memory_opt_recommendations: Vec::new(env),
                 storage_efficiency_score: 80,
@@ -99,7 +101,10 @@ impl ResourceOptimizer {
                 efficiency_score: Self::calculate_storage_efficiency(&metrics_data) as u32,
                 storage_cost_per_operation: Self::calculate_storage_costs(&metrics_data),
                 cpu_efficiency_score: 0,
-                optimization_opportunities: Self::generate_storage_optimizations(env, &metrics_data),
+                optimization_opportunities: Self::generate_storage_optimizations(
+                    env,
+                    &metrics_data,
+                ),
                 gas_optimization_potential: 0,
                 memory_leak_risk: RiskLevel::Low,
                 memory_opt_recommendations: Vec::new(env),
@@ -143,8 +148,12 @@ impl ResourceOptimizer {
         };
 
         // Store resource utilization analysis
-        DiagnosticsStorage::store_resource_utilization(env, contract_address, &resource_utilization);
-        
+        DiagnosticsStorage::store_resource_utilization(
+            env,
+            contract_address,
+            &resource_utilization,
+        );
+
         // Emit resource analysis event
         DiagnosticsEvents::emit_resource_analysis_complete(env, contract_address);
 
@@ -166,14 +175,17 @@ impl ResourceOptimizer {
                 contract_address: contract_address.clone(),
                 category: OptimizationCategory::GasOptimization,
                 optimization_type: OptimizationType::GasOptimization,
-                priority: if resource_data.gas_utilization.gas_optimization_potential > 50 { 
-                    Priority::High 
-                } else { 
-                    Priority::Medium 
+                priority: if resource_data.gas_utilization.gas_optimization_potential > 50 {
+                    Priority::High
+                } else {
+                    Priority::Medium
                 },
                 title: String::from_str(env, "Gas Usage Optimization"),
                 description: String::from_str(env, "Gas usage can be optimized significantly"),
-                implementation_steps: Self::generate_gas_optimization_steps(env, &resource_data.gas_utilization),
+                implementation_steps: Self::generate_gas_optimization_steps(
+                    env,
+                    &resource_data.gas_utilization,
+                ),
                 expected_improvement: resource_data.gas_utilization.gas_optimization_potential,
                 expected_impact: ImpactEstimate {
                     performance_improvement: 20,
@@ -181,15 +193,27 @@ impl ResourceOptimizer {
                     user_experience_improvement: 15,
                     reliability_improvement: 10,
                 },
-                estimated_effort: Self::estimate_gas_optimization_effort(&resource_data.gas_utilization),
+                estimated_effort: Self::estimate_gas_optimization_effort(
+                    &resource_data.gas_utilization,
+                ),
                 estimated_savings: SavingsEstimate {
-                    daily_cost_savings: Self::calculate_gas_cost_savings(&resource_data.gas_utilization),
-                    monthly_cost_savings: Self::calculate_gas_cost_savings(&resource_data.gas_utilization) * 30,
-                    annual_cost_savings: Self::calculate_gas_cost_savings(&resource_data.gas_utilization) * 365,
+                    daily_cost_savings: Self::calculate_gas_cost_savings(
+                        &resource_data.gas_utilization,
+                    ),
+                    monthly_cost_savings: Self::calculate_gas_cost_savings(
+                        &resource_data.gas_utilization,
+                    ) * 30,
+                    annual_cost_savings: Self::calculate_gas_cost_savings(
+                        &resource_data.gas_utilization,
+                    ) * 365,
                     performance_gains: 20,
                 },
                 cost_savings: Self::calculate_gas_cost_savings(&resource_data.gas_utilization),
-                implementation_complexity: if resource_data.gas_utilization.gas_optimization_potential > 40 {
+                implementation_complexity: if resource_data
+                    .gas_utilization
+                    .gas_optimization_potential
+                    > 40
+                {
                     Complexity::High
                 } else {
                     Complexity::Medium
@@ -212,8 +236,14 @@ impl ResourceOptimizer {
                     _ => Priority::Medium,
                 },
                 title: String::from_str(env, "Memory Usage Optimization"),
-                description: String::from_str(env, "Memory usage patterns indicate potential for optimization"),
-                implementation_steps: resource_data.memory_utilization.memory_opt_recommendations.clone(),
+                description: String::from_str(
+                    env,
+                    "Memory usage patterns indicate potential for optimization",
+                ),
+                implementation_steps: resource_data
+                    .memory_utilization
+                    .memory_opt_recommendations
+                    .clone(),
                 expected_improvement: 25, // Estimated memory improvement
                 expected_impact: ImpactEstimate {
                     performance_improvement: 25,
@@ -223,12 +253,20 @@ impl ResourceOptimizer {
                 },
                 estimated_effort: ImplementationEffort::High,
                 estimated_savings: SavingsEstimate {
-                    daily_cost_savings: Self::calculate_memory_cost_savings(&resource_data.memory_utilization),
-                    monthly_cost_savings: Self::calculate_memory_cost_savings(&resource_data.memory_utilization) * 30,
-                    annual_cost_savings: Self::calculate_memory_cost_savings(&resource_data.memory_utilization) * 365,
+                    daily_cost_savings: Self::calculate_memory_cost_savings(
+                        &resource_data.memory_utilization,
+                    ),
+                    monthly_cost_savings: Self::calculate_memory_cost_savings(
+                        &resource_data.memory_utilization,
+                    ) * 30,
+                    annual_cost_savings: Self::calculate_memory_cost_savings(
+                        &resource_data.memory_utilization,
+                    ) * 365,
                     performance_gains: 25,
                 },
-                cost_savings: Self::calculate_memory_cost_savings(&resource_data.memory_utilization),
+                cost_savings: Self::calculate_memory_cost_savings(
+                    &resource_data.memory_utilization,
+                ),
                 implementation_complexity: Complexity::High,
                 automated_fix_available: false,
                 monitoring_metrics: Self::generate_memory_monitoring_metrics(env),
@@ -245,8 +283,13 @@ impl ResourceOptimizer {
                 priority: Priority::Medium,
                 title: String::from_str(env, "Storage Access Optimization"),
                 description: String::from_str(env, "Storage efficiency can be improved"),
-                implementation_steps: resource_data.storage_utilization.storage_opt_suggestions.clone(),
-                expected_improvement: (100 - resource_data.storage_utilization.storage_efficiency_score) as u64,
+                implementation_steps: resource_data
+                    .storage_utilization
+                    .storage_opt_suggestions
+                    .clone(),
+                expected_improvement: (100
+                    - resource_data.storage_utilization.storage_efficiency_score)
+                    as u64,
                 expected_impact: ImpactEstimate {
                     performance_improvement: 20,
                     cost_reduction: 25,
@@ -255,12 +298,26 @@ impl ResourceOptimizer {
                 },
                 estimated_effort: ImplementationEffort::Medium,
                 estimated_savings: SavingsEstimate {
-                    daily_cost_savings: (resource_data.storage_utilization.storage_cost_per_operation as f64 * 0.3) as u64,
-                    monthly_cost_savings: ((resource_data.storage_utilization.storage_cost_per_operation as f64 * 0.3) * 30.0) as u64,
-                    annual_cost_savings: ((resource_data.storage_utilization.storage_cost_per_operation as f64 * 0.3) * 365.0) as u64,
+                    daily_cost_savings: (resource_data
+                        .storage_utilization
+                        .storage_cost_per_operation as f64
+                        * 0.3) as u64,
+                    monthly_cost_savings: ((resource_data
+                        .storage_utilization
+                        .storage_cost_per_operation
+                        as f64
+                        * 0.3)
+                        * 30.0) as u64,
+                    annual_cost_savings: ((resource_data
+                        .storage_utilization
+                        .storage_cost_per_operation
+                        as f64
+                        * 0.3)
+                        * 365.0) as u64,
                     performance_gains: 20,
                 },
-                cost_savings: (resource_data.storage_utilization.storage_cost_per_operation as f64 * 0.3) as u64,
+                cost_savings: (resource_data.storage_utilization.storage_cost_per_operation as f64
+                    * 0.3) as u64,
                 implementation_complexity: Complexity::Medium,
                 automated_fix_available: true,
                 monitoring_metrics: Self::generate_storage_monitoring_metrics(env),
@@ -276,9 +333,16 @@ impl ResourceOptimizer {
                 optimization_type: OptimizationType::ComputeOptimization,
                 priority: Priority::Medium,
                 title: String::from_str(env, "Computational Efficiency Optimization"),
-                description: String::from_str(env, "CPU utilization patterns show optimization opportunities"),
-                implementation_steps: resource_data.cpu_utilization.optimization_opportunities.clone(),
-                expected_improvement: (100 - resource_data.cpu_utilization.cpu_efficiency_score) as u64,
+                description: String::from_str(
+                    env,
+                    "CPU utilization patterns show optimization opportunities",
+                ),
+                implementation_steps: resource_data
+                    .cpu_utilization
+                    .optimization_opportunities
+                    .clone(),
+                expected_improvement: (100 - resource_data.cpu_utilization.cpu_efficiency_score)
+                    as u64,
                 expected_impact: ImpactEstimate {
                     performance_improvement: 30,
                     cost_reduction: 20,
@@ -287,9 +351,15 @@ impl ResourceOptimizer {
                 },
                 estimated_effort: ImplementationEffort::Medium,
                 estimated_savings: SavingsEstimate {
-                    daily_cost_savings: Self::calculate_cpu_cost_savings(&resource_data.cpu_utilization),
-                    monthly_cost_savings: Self::calculate_cpu_cost_savings(&resource_data.cpu_utilization) * 30,
-                    annual_cost_savings: Self::calculate_cpu_cost_savings(&resource_data.cpu_utilization) * 365,
+                    daily_cost_savings: Self::calculate_cpu_cost_savings(
+                        &resource_data.cpu_utilization,
+                    ),
+                    monthly_cost_savings: Self::calculate_cpu_cost_savings(
+                        &resource_data.cpu_utilization,
+                    ) * 30,
+                    annual_cost_savings: Self::calculate_cpu_cost_savings(
+                        &resource_data.cpu_utilization,
+                    ) * 365,
                     performance_gains: 30,
                 },
                 cost_savings: Self::calculate_cpu_cost_savings(&resource_data.cpu_utilization),
@@ -322,7 +392,8 @@ impl ResourceOptimizer {
         };
 
         let roi = if implementation_cost > 0.0 {
-            ((annual_savings * 3.0) - implementation_cost) / implementation_cost * 100.0 // 3-year ROI
+            ((annual_savings * 3.0) - implementation_cost) / implementation_cost * 100.0
+        // 3-year ROI
         } else {
             0.0
         };
@@ -337,8 +408,14 @@ impl ResourceOptimizer {
             payback_period_months: (payback_period * 12.0) as u32,
             roi_percentage: roi as u32,
             three_year_roi: roi as u32,
-            risk_assessment: Self::risk_level_to_string(env, &Self::assess_implementation_risk(recommendation)),
-            business_impact: Self::business_impact_to_string(env, &Self::assess_business_impact(recommendation)),
+            risk_assessment: Self::risk_level_to_string(
+                env,
+                &Self::assess_implementation_risk(recommendation),
+            ),
+            business_impact: Self::business_impact_to_string(
+                env,
+                &Self::assess_business_impact(recommendation),
+            ),
             technical_debt_reduction: Self::assess_technical_debt_impact(recommendation) as u32,
             performance_impact: recommendation.expected_improvement as i32,
             scalability_benefit: Self::assess_scalability_benefit(recommendation) as u32,
@@ -371,21 +448,38 @@ impl ResourceOptimizer {
     ) -> Result<OptimizationProgress, DiagnosticsError> {
         // Get current resource utilization
         let current_utilization = Self::analyze_resource_utilization(env, contract_address, 86400)?; // Last 24 hours
-        
+
         // Calculate improvement metrics
-        let gas_improvement = Self::calculate_gas_improvement(&baseline_metrics.gas_utilization, &current_utilization.gas_utilization);
-        let memory_improvement = Self::calculate_memory_improvement(&baseline_metrics.memory_utilization, &current_utilization.memory_utilization);
-        let storage_improvement = Self::calculate_storage_improvement(&baseline_metrics.storage_utilization, &current_utilization.storage_utilization);
-        let cpu_improvement = Self::calculate_cpu_improvement(&baseline_metrics.cpu_utilization, &current_utilization.cpu_utilization);
-        
-        let overall_improvement = (gas_improvement + memory_improvement + storage_improvement + cpu_improvement) / 4.0;
-        
+        let gas_improvement = Self::calculate_gas_improvement(
+            &baseline_metrics.gas_utilization,
+            &current_utilization.gas_utilization,
+        );
+        let memory_improvement = Self::calculate_memory_improvement(
+            &baseline_metrics.memory_utilization,
+            &current_utilization.memory_utilization,
+        );
+        let storage_improvement = Self::calculate_storage_improvement(
+            &baseline_metrics.storage_utilization,
+            &current_utilization.storage_utilization,
+        );
+        let cpu_improvement = Self::calculate_cpu_improvement(
+            &baseline_metrics.cpu_utilization,
+            &current_utilization.cpu_utilization,
+        );
+
+        let overall_improvement =
+            (gas_improvement + memory_improvement + storage_improvement + cpu_improvement) / 4.0;
+
         Ok(OptimizationProgress {
             recommendation_id: recommendation_id.clone(),
             contract_address: contract_address.clone(),
             total_optimizations: 1,
             completed: if overall_improvement > 80.0 { 1 } else { 0 },
-            in_progress: if overall_improvement > 40.0 && overall_improvement <= 80.0 { 1 } else { 0 },
+            in_progress: if overall_improvement > 40.0 && overall_improvement <= 80.0 {
+                1
+            } else {
+                0
+            },
             pending: if overall_improvement <= 40.0 { 1 } else { 0 },
             success_rate: overall_improvement.min(100.0).max(0.0) as u32,
             progress_percentage: overall_improvement.min(100.0).max(0.0) as u32,
@@ -393,8 +487,14 @@ impl ResourceOptimizer {
             memory_efficiency_change: memory_improvement as i32,
             storage_efficiency_change: storage_improvement as i32,
             cpu_efficiency_change: cpu_improvement as i32,
-            cost_savings_achieved: Self::calculate_realized_cost_savings(&baseline_metrics, &current_utilization) as u64,
-            performance_impact: Self::calculate_performance_impact(&baseline_metrics, &current_utilization) as i32,
+            cost_savings_achieved: Self::calculate_realized_cost_savings(
+                &baseline_metrics,
+                &current_utilization,
+            ) as u64,
+            performance_impact: Self::calculate_performance_impact(
+                &baseline_metrics,
+                &current_utilization,
+            ) as i32,
             implementation_status: if overall_improvement > 80.0 {
                 ImplementationStatus::Completed
             } else if overall_improvement > 40.0 {
@@ -408,10 +508,10 @@ impl ResourceOptimizer {
     }
 
     // Helper methods for resource analysis
-    
+
     fn generate_resource_id(env: &Env) -> BytesN<32> {
         let mut data = [0u8; 32];
-        data[0] = 0x52; // Resource identifier (R)  
+        data[0] = 0x52; // Resource identifier (R)
         let timestamp = env.ledger().timestamp();
         data[1..9].copy_from_slice(&timestamp.to_be_bytes());
         BytesN::from_array(env, &data)
@@ -457,7 +557,8 @@ impl ResourceOptimizer {
             let m = metrics.get(i).unwrap();
             // Efficiency based on gas per transaction and execution time
             let efficiency = if m.execution_time > 0 {
-                (m.transaction_count as f64 * 1000.0) / (m.gas_used as f64 + m.execution_time as f64)
+                (m.transaction_count as f64 * 1000.0)
+                    / (m.gas_used as f64 + m.execution_time as f64)
             } else {
                 0.0
             };
@@ -516,7 +617,7 @@ impl ResourceOptimizer {
         for i in 1..metrics.len() {
             let prev = metrics.get(i - 1).unwrap().memory_usage;
             let current = metrics.get(i).unwrap().memory_usage;
-            
+
             if current > prev {
                 consecutive_increases += 1;
             } else {
@@ -537,7 +638,7 @@ impl ResourceOptimizer {
 
     fn generate_memory_optimizations(env: &Env, metrics: &Vec<PerformanceMetrics>) -> Vec<String> {
         let mut optimizations = Vec::new(env);
-        
+
         let peak_memory = Self::find_peak_memory_usage(metrics);
         let avg_memory = if !metrics.is_empty() {
             let mut total = 0u64;
@@ -550,18 +651,31 @@ impl ResourceOptimizer {
         };
 
         if peak_memory > avg_memory * 2 {
-            optimizations.push_back(String::from_str(env, "Implement memory pooling to reduce peak usage"));
+            optimizations.push_back(String::from_str(
+                env,
+                "Implement memory pooling to reduce peak usage",
+            ));
         }
 
-        if peak_memory > 100_000_000 { // > 100MB
-            optimizations.push_back(String::from_str(env, "Review data structures for memory efficiency"));
+        if peak_memory > 100_000_000 {
+            // > 100MB
+            optimizations.push_back(String::from_str(
+                env,
+                "Review data structures for memory efficiency",
+            ));
         }
 
         if Self::assess_memory_leak_risk(metrics) > RiskLevel::Medium {
-            optimizations.push_back(String::from_str(env, "Implement proper memory cleanup and lifecycle management"));
+            optimizations.push_back(String::from_str(
+                env,
+                "Implement proper memory cleanup and lifecycle management",
+            ));
         }
 
-        optimizations.push_back(String::from_str(env, "Consider lazy loading for large data structures"));
+        optimizations.push_back(String::from_str(
+            env,
+            "Consider lazy loading for large data structures",
+        ));
         optimizations
     }
 
@@ -574,7 +688,7 @@ impl ResourceOptimizer {
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
             let total_storage_ops = m.storage_reads + m.storage_writes;
-            
+
             // Efficiency based on transactions per storage operation
             let efficiency = if total_storage_ops > 0 {
                 (m.transaction_count as f64 / total_storage_ops as f64) * 100.0
@@ -604,20 +718,35 @@ impl ResourceOptimizer {
 
     fn generate_storage_optimizations(env: &Env, metrics: &Vec<PerformanceMetrics>) -> Vec<String> {
         let mut optimizations = Vec::new(env);
-        
+
         let efficiency = Self::calculate_storage_efficiency(metrics);
-        
+
         if efficiency < 50.0 {
-            optimizations.push_back(String::from_str(env, "Implement storage caching to reduce reads"));
-            optimizations.push_back(String::from_str(env, "Batch storage operations where possible"));
+            optimizations.push_back(String::from_str(
+                env,
+                "Implement storage caching to reduce reads",
+            ));
+            optimizations.push_back(String::from_str(
+                env,
+                "Batch storage operations where possible",
+            ));
         }
 
         if efficiency < 70.0 {
-            optimizations.push_back(String::from_str(env, "Review data access patterns for optimization"));
-            optimizations.push_back(String::from_str(env, "Consider storage denormalization for frequently accessed data"));
+            optimizations.push_back(String::from_str(
+                env,
+                "Review data access patterns for optimization",
+            ));
+            optimizations.push_back(String::from_str(
+                env,
+                "Consider storage denormalization for frequently accessed data",
+            ));
         }
 
-        optimizations.push_back(String::from_str(env, "Implement storage operation monitoring"));
+        optimizations.push_back(String::from_str(
+            env,
+            "Implement storage operation monitoring",
+        ));
         optimizations
     }
 
@@ -631,7 +760,8 @@ impl ResourceOptimizer {
             let m = metrics.get(i).unwrap();
             // CPU efficiency based on transactions per instruction
             let efficiency = if m.cpu_instructions > 0 {
-                (m.transaction_count as f64 / m.cpu_instructions as f64) * 100_000.0 // Scale for readability
+                (m.transaction_count as f64 / m.cpu_instructions as f64) * 100_000.0
+            // Scale for readability
             } else {
                 0.0
             };
@@ -643,20 +773,27 @@ impl ResourceOptimizer {
 
     fn identify_cpu_bottlenecks(env: &Env, metrics: &Vec<PerformanceMetrics>) -> Vec<String> {
         let mut bottlenecks = Vec::new(env);
-        
+
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-            if m.cpu_instructions > 20_000_000 { // > 20M instructions
-                bottlenecks.push_back(String::from_str(env, "High computational complexity detected"));
+            if m.cpu_instructions > 20_000_000 {
+                // > 20M instructions
+                bottlenecks.push_back(String::from_str(
+                    env,
+                    "High computational complexity detected",
+                ));
             }
-            
+
             if m.execution_time > 1000 && m.cpu_instructions > 10_000_000 {
                 bottlenecks.push_back(String::from_str(env, "CPU-bound operations causing delays"));
             }
         }
 
         if bottlenecks.is_empty() {
-            bottlenecks.push_back(String::from_str(env, "No significant CPU bottlenecks identified"));
+            bottlenecks.push_back(String::from_str(
+                env,
+                "No significant CPU bottlenecks identified",
+            ));
         }
 
         bottlenecks
@@ -664,11 +801,23 @@ impl ResourceOptimizer {
 
     fn identify_cpu_optimizations(env: &Env, _metrics: &Vec<PerformanceMetrics>) -> Vec<String> {
         let mut optimizations = Vec::new(env);
-        
-        optimizations.push_back(String::from_str(env, "Review algorithm complexity and optimization opportunities"));
-        optimizations.push_back(String::from_str(env, "Consider computational result caching"));
-        optimizations.push_back(String::from_str(env, "Implement lazy evaluation where appropriate"));
-        optimizations.push_back(String::from_str(env, "Profile critical code paths for optimization"));
+
+        optimizations.push_back(String::from_str(
+            env,
+            "Review algorithm complexity and optimization opportunities",
+        ));
+        optimizations.push_back(String::from_str(
+            env,
+            "Consider computational result caching",
+        ));
+        optimizations.push_back(String::from_str(
+            env,
+            "Implement lazy evaluation where appropriate",
+        ));
+        optimizations.push_back(String::from_str(
+            env,
+            "Profile critical code paths for optimization",
+        ));
 
         optimizations
     }
@@ -722,7 +871,7 @@ impl ResourceOptimizer {
 
     fn determine_optimization_priority(metrics: &Vec<PerformanceMetrics>) -> OptimizationPriority {
         let overall_efficiency = Self::calculate_overall_efficiency(metrics);
-        
+
         if overall_efficiency < 50.0 {
             OptimizationPriority::Critical
         } else if overall_efficiency < 70.0 {
@@ -735,19 +884,25 @@ impl ResourceOptimizer {
     }
 
     // Additional helper methods for optimization recommendations
-    
+
     fn generate_gas_optimization_steps(env: &Env, gas_util: &ResourceMetrics) -> Vec<String> {
         let mut steps = Vec::new(env);
-        
+
         if gas_util.gas_optimization_potential > 30 {
-            steps.push_back(String::from_str(env, "Conduct comprehensive gas usage audit"));
-            steps.push_back(String::from_str(env, "Optimize storage operations and data structures"));
+            steps.push_back(String::from_str(
+                env,
+                "Conduct comprehensive gas usage audit",
+            ));
+            steps.push_back(String::from_str(
+                env,
+                "Optimize storage operations and data structures",
+            ));
             steps.push_back(String::from_str(env, "Review and optimize contract logic"));
         }
-        
+
         steps.push_back(String::from_str(env, "Implement gas usage monitoring"));
         steps.push_back(String::from_str(env, "Set gas usage budgets and alerts"));
-        
+
         steps
     }
 
@@ -762,7 +917,8 @@ impl ResourceOptimizer {
     }
 
     fn calculate_gas_cost_savings(gas_util: &ResourceMetrics) -> u64 {
-        ((gas_util.storage_cost_per_operation as f64) * ((gas_util.gas_optimization_potential as f64) / 100.0)) as u64
+        ((gas_util.storage_cost_per_operation as f64)
+            * ((gas_util.gas_optimization_potential as f64) / 100.0)) as u64
     }
 
     fn calculate_memory_cost_savings(memory_util: &ResourceMetrics) -> u64 {
@@ -777,9 +933,12 @@ impl ResourceOptimizer {
         (cpu_util.average_usage as u64 * efficiency_gap as u64) / 1000
     }
 
-    fn generate_network_optimizations(env: &Env, _contract_address: &Address) -> Vec<OptimizationRecommendation> {
+    fn generate_network_optimizations(
+        env: &Env,
+        _contract_address: &Address,
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new(env);
-        
+
         recommendations.push_back(OptimizationRecommendation {
             recommendation_id: Self::generate_recommendation_id(env),
             contract_address: _contract_address.clone(),
@@ -792,7 +951,10 @@ impl ResourceOptimizer {
                 let mut steps = Vec::new(env);
                 steps.push_back(String::from_str(env, "Implement request batching"));
                 steps.push_back(String::from_str(env, "Add connection pooling"));
-                steps.push_back(String::from_str(env, "Optimize serialization/deserialization"));
+                steps.push_back(String::from_str(
+                    env,
+                    "Optimize serialization/deserialization",
+                ));
                 steps
             },
             expected_improvement: 15,
@@ -918,9 +1080,10 @@ impl ResourceOptimizer {
     fn calculate_gas_improvement(baseline: &ResourceMetrics, current: &ResourceMetrics) -> f64 {
         let baseline_efficiency = baseline.efficiency_score;
         let current_efficiency = current.efficiency_score;
-        
+
         if baseline_efficiency > 0 {
-            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64) * 100.0
+            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -929,9 +1092,10 @@ impl ResourceOptimizer {
     fn calculate_memory_improvement(baseline: &ResourceMetrics, current: &ResourceMetrics) -> f64 {
         let baseline_efficiency = baseline.efficiency_score;
         let current_efficiency = current.efficiency_score;
-        
+
         if baseline_efficiency > 0 {
-            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64) * 100.0
+            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -940,9 +1104,10 @@ impl ResourceOptimizer {
     fn calculate_storage_improvement(baseline: &ResourceMetrics, current: &ResourceMetrics) -> f64 {
         let baseline_efficiency = baseline.storage_efficiency_score;
         let current_efficiency = current.storage_efficiency_score;
-        
+
         if baseline_efficiency > 0 {
-            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64) * 100.0
+            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -951,51 +1116,80 @@ impl ResourceOptimizer {
     fn calculate_cpu_improvement(baseline: &ResourceMetrics, current: &ResourceMetrics) -> f64 {
         let baseline_efficiency = baseline.cpu_efficiency_score;
         let current_efficiency = current.cpu_efficiency_score;
-        
+
         if baseline_efficiency > 0 {
-            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64) * 100.0
+            ((current_efficiency as f64 - baseline_efficiency as f64) / baseline_efficiency as f64)
+                * 100.0
         } else {
             0.0
         }
     }
 
-    fn calculate_realized_cost_savings(baseline: &ResourceUtilization, current: &ResourceUtilization) -> f64 {
+    fn calculate_realized_cost_savings(
+        baseline: &ResourceUtilization,
+        current: &ResourceUtilization,
+    ) -> f64 {
         let baseline_cost = baseline.cost_analysis.total_cost_per_transaction as f64;
         let current_cost = current.cost_analysis.total_cost_per_transaction as f64;
-        
+
         (baseline_cost - current_cost).max(0.0)
     }
 
-    fn calculate_performance_impact(baseline: &ResourceUtilization, current: &ResourceUtilization) -> f64 {
+    fn calculate_performance_impact(
+        baseline: &ResourceUtilization,
+        current: &ResourceUtilization,
+    ) -> f64 {
         let baseline_score = baseline.overall_efficiency_score as f64;
         let current_score = current.overall_efficiency_score as f64;
-        
+
         current_score - baseline_score
     }
 
-    fn generate_next_optimization_steps(env: &Env, current_utilization: &ResourceUtilization) -> Vec<String> {
+    fn generate_next_optimization_steps(
+        env: &Env,
+        current_utilization: &ResourceUtilization,
+    ) -> Vec<String> {
         let mut steps = Vec::new(env);
-        
+
         if current_utilization.overall_efficiency_score < 90 {
-            steps.push_back(String::from_str(env, "Continue monitoring resource utilization patterns"));
-            steps.push_back(String::from_str(env, "Identify additional optimization opportunities"));
-        }
-        
-        if current_utilization.gas_utilization.gas_optimization_potential > 10 {
-            steps.push_back(String::from_str(env, "Focus on remaining gas optimization opportunities"));
+            steps.push_back(String::from_str(
+                env,
+                "Continue monitoring resource utilization patterns",
+            ));
+            steps.push_back(String::from_str(
+                env,
+                "Identify additional optimization opportunities",
+            ));
         }
 
-        steps.push_back(String::from_str(env, "Implement continuous performance monitoring"));
+        if current_utilization
+            .gas_utilization
+            .gas_optimization_potential
+            > 10
+        {
+            steps.push_back(String::from_str(
+                env,
+                "Focus on remaining gas optimization opportunities",
+            ));
+        }
+
+        steps.push_back(String::from_str(
+            env,
+            "Implement continuous performance monitoring",
+        ));
         steps
     }
 
     fn generate_monitoring_recommendations(env: &Env) -> Vec<String> {
         let mut recommendations = Vec::new(env);
-        
+
         recommendations.push_back(String::from_str(env, "Set up automated performance alerts"));
         recommendations.push_back(String::from_str(env, "Implement resource usage dashboards"));
-        recommendations.push_back(String::from_str(env, "Schedule regular optimization reviews"));
-        
+        recommendations.push_back(String::from_str(
+            env,
+            "Schedule regular optimization reviews",
+        ));
+
         recommendations
     }
 
@@ -1035,7 +1229,8 @@ impl ResourceOptimizer {
 
     fn calculate_single_metric_cost(metric: &PerformanceMetrics) -> f64 {
         let gas_cost = metric.gas_used as f64 * 0.00001;
-        let storage_cost = (metric.storage_reads as f64 * 0.001) + (metric.storage_writes as f64 * 0.01);
+        let storage_cost =
+            (metric.storage_reads as f64 * 0.001) + (metric.storage_writes as f64 * 0.01);
         gas_cost + storage_cost
     }
 
@@ -1048,14 +1243,14 @@ impl ResourceOptimizer {
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
             let cost = Self::calculate_single_metric_cost(&m);
-            
+
             // Efficiency = transactions processed per unit cost
             let efficiency = if cost > 0.0 {
                 m.transaction_count as f64 / cost
             } else {
                 100.0 // Free transactions are very efficient
             };
-            
+
             efficiency_sum += efficiency;
         }
 

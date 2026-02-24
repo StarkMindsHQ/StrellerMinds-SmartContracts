@@ -1,5 +1,5 @@
-use soroban_sdk::{Address, Env, String, Vec};
 use crate::types::*;
+use soroban_sdk::{Address, Env, String, Vec};
 
 /// Ranking Engine
 /// Multi-signal ranking system for search results
@@ -15,15 +15,15 @@ impl RankingEngine {
         config: RankingConfig,
     ) -> Vec<RankedResult> {
         let mut ranked = Vec::new(env);
-        
+
         for i in 0..results.len() {
             if let Some(content_id) = results.get(i) {
                 // Calculate ranking signals
                 let signals = Self::calculate_signals(env, content_id.clone(), user.clone());
-                
+
                 // Calculate final score
                 let final_score = Self::calculate_final_score(&signals, &config);
-                
+
                 // Create ranked result
                 let ranked_result = RankedResult {
                     content_id: content_id.clone(),
@@ -35,7 +35,10 @@ impl RankingEngine {
                         relevance_score: final_score,
                         metadata: SearchResultMetadata::Course(CourseMetadata {
                             course_id: content_id.clone(),
-                            instructor_id: Address::from_str(env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"),
+                            instructor_id: Address::from_str(
+                                env,
+                                "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+                            ),
                             instructor_name: String::from_str(env, ""),
                             category: String::from_str(env, ""),
                             difficulty: DifficultyLevel::Beginner,
@@ -61,92 +64,92 @@ impl RankingEngine {
                     signals: signals.clone(),
                     rank_position: ranked.len() + 1,
                 };
-                
+
                 ranked.push_back(ranked_result);
             }
         }
-        
+
         // Sort by score (descending)
         Self::sort_results(env, &mut ranked);
-        
+
         // Update rank positions
         Self::update_positions(&mut ranked);
-        
+
         ranked
     }
-    
+
     /// Calculate all ranking signals for content
-    fn calculate_signals(
-        env: &Env,
-        content_id: String,
-        user: Option<Address>,
-    ) -> RankingSignals {
+    fn calculate_signals(env: &Env, content_id: String, user: Option<Address>) -> RankingSignals {
         RankingSignals {
             relevance_score: Self::get_relevance_score(env, content_id.clone()),
             quality_score: Self::get_quality_score(env, content_id.clone()),
             engagement_score: Self::get_engagement_score(env, content_id.clone()),
             recency_score: Self::get_recency_score(env, content_id.clone()),
-            personalization_score: Self::get_personalization_score(env, content_id.clone(), user.clone()),
+            personalization_score: Self::get_personalization_score(
+                env,
+                content_id.clone(),
+                user.clone(),
+            ),
             authority_score: Self::get_authority_score(env, content_id.clone()),
             completion_rate: Self::get_completion_rate(env, content_id.clone()),
             user_rating: Self::get_user_rating(env, content_id.clone()),
         }
     }
-    
+
     /// Calculate final weighted score
-    fn calculate_final_score(
-        signals: &RankingSignals,
-        config: &RankingConfig,
-    ) -> u32 {
+    fn calculate_final_score(signals: &RankingSignals, config: &RankingConfig) -> u32 {
         let mut score = 0u32;
-        
+
         // Relevance (highest weight)
         score += (signals.relevance_score * config.relevance_weight) / 100;
-        
+
         // Quality
         score += (signals.quality_score * config.quality_weight) / 100;
-        
+
         // Engagement
         score += (signals.engagement_score * config.engagement_weight) / 100;
-        
+
         // Recency
         score += (signals.recency_score * config.recency_weight) / 100;
-        
+
         // Personalization
         score += (signals.personalization_score * config.personalization_weight) / 100;
-        
+
         // Authority
         score += (signals.authority_score * config.authority_weight) / 100;
-        
+
         score
     }
-    
+
     /// Get relevance score (from semantic search)
     fn get_relevance_score(env: &Env, content_id: String) -> u32 {
         // This would come from semantic search score
         // Default to medium relevance
         500
     }
-    
+
     /// Get quality score (from content analysis)
     fn get_quality_score(env: &Env, content_id: String) -> u32 {
         // Get from stored content analysis
         let key = DataKey::ContentAnalysis(content_id);
-        if let Some(analysis) = env.storage().persistent()
-            .get::<DataKey, ContentAnalysis>(&key) {
+        if let Some(analysis) = env
+            .storage()
+            .persistent()
+            .get::<DataKey, ContentAnalysis>(&key)
+        {
             analysis.quality_score
         } else {
-            500  // Default medium quality
+            500 // Default medium quality
         }
     }
-    
+
     /// Get engagement score (views, clicks, completions)
     fn get_engagement_score(env: &Env, content_id: String) -> u32 {
         // Get from analytics
         // For now, return default
         500
     }
-    
+
     /// Get recency score (newer content scores higher)
     fn get_recency_score(env: &Env, content_id: String) -> u32 {
         // Calculate based on publication/update date
@@ -154,37 +157,33 @@ impl RankingEngine {
         // Return medium for now
         500
     }
-    
+
     /// Get personalization score for user
-    fn get_personalization_score(
-        env: &Env,
-        content_id: String,
-        user: Option<Address>,
-    ) -> u32 {
+    fn get_personalization_score(env: &Env, content_id: String, user: Option<Address>) -> u32 {
         if let Some(addr) = user {
             // Check user's interests, history, skill level
             // Return higher score for relevant content
             // Default for now
             500
         } else {
-            0  // No personalization without user
+            0 // No personalization without user
         }
     }
-    
+
     /// Get authority score (instructor reputation, institutional credibility)
     fn get_authority_score(env: &Env, content_id: String) -> u32 {
         // Based on creator's reputation
         // Default to medium
         500
     }
-    
+
     /// Get completion rate (% of users who completed)
     fn get_completion_rate(env: &Env, content_id: String) -> u32 {
         // Track from user interactions
         // Default to medium
         500
     }
-    
+
     /// Get average user rating
     fn get_user_rating(env: &Env, content_id: String) -> u32 {
         // Get from reviews/ratings
@@ -192,21 +191,19 @@ impl RankingEngine {
         // Default to 3.5 stars = 700
         700
     }
-    
+
     /// Store ranking configuration
-    pub fn store_ranking_config(
-        env: &Env,
-        config: RankingConfig,
-    ) {
+    pub fn store_ranking_config(env: &Env, config: RankingConfig) {
         let key = DataKey::RankingSignals(String::from_str(env, "default_config"));
         env.storage().persistent().set(&key, &config);
     }
-    
+
     /// Get ranking configuration
     pub fn get_ranking_config(env: &Env) -> RankingConfig {
         let key = DataKey::RankingSignals(String::from_str(env, "default_config"));
-        
-        env.storage().persistent()
+
+        env.storage()
+            .persistent()
             .get::<DataKey, RankingConfig>(&key)
             .unwrap_or(RankingConfig {
                 relevance_weight: 30,
@@ -217,45 +214,32 @@ impl RankingEngine {
                 authority_weight: 10,
             })
     }
-    
+
     /// Apply learning-to-rank model (from oracle)
-    pub fn apply_ml_ranking(
-        env: &Env,
-        results: Vec<RankedResult>,
-    ) -> Vec<RankedResult> {
+    pub fn apply_ml_ranking(env: &Env, results: Vec<RankedResult>) -> Vec<RankedResult> {
         // ML model would be applied off-chain
         // Oracle submits re-ranked results
         // For now, return as-is
         results
     }
-    
+
     /// Store ML ranking model scores from oracle
-    pub fn store_ml_scores(
-        env: &Env,
-        content_id: String,
-        ml_score: u32,
-    ) {
+    pub fn store_ml_scores(env: &Env, content_id: String, ml_score: u32) {
         let key = Self::ml_score_key(env, &content_id);
         env.storage().persistent().set(&key, &ml_score);
     }
-    
+
     /// Get ML ranking score
-    pub fn get_ml_score(
-        env: &Env,
-        content_id: String,
-    ) -> u32 {
+    pub fn get_ml_score(env: &Env, content_id: String) -> u32 {
         let key = Self::ml_score_key(env, &content_id);
-        env.storage().persistent()
+        env.storage()
+            .persistent()
             .get::<String, u32>(&key)
             .unwrap_or(500)
     }
-    
+
     /// Boost results based on trending status
-    pub fn apply_trending_boost(
-        env: &Env,
-        results: &mut Vec<RankedResult>,
-        boost_percentage: u32,
-    ) {
+    pub fn apply_trending_boost(env: &Env, results: &mut Vec<RankedResult>, boost_percentage: u32) {
         for i in 0..results.len() {
             if let Some(mut result) = results.get(i) {
                 // Check if trending
@@ -266,42 +250,38 @@ impl RankingEngine {
                 }
             }
         }
-        
+
         // Re-sort after boosting
         Self::sort_results(env, results);
         Self::update_positions(results);
     }
-    
+
     /// Check if content is trending
     fn is_trending(env: &Env, content_id: String) -> bool {
         // Would check recent engagement spikes
         // For now, return false
         false
     }
-    
+
     /// Diversify results to avoid filter bubble
-    pub fn diversify_results(
-        env: &Env,
-        results: &mut Vec<RankedResult>,
-        diversity_threshold: u32,
-    ) {
+    pub fn diversify_results(env: &Env, results: &mut Vec<RankedResult>, diversity_threshold: u32) {
         // Apply diversity by penalizing very similar consecutive results
         // This would use similarity scores between items
         // Complex algorithm - would be computed off-chain
     }
-    
+
     /// Sort results by score (bubble sort for simplicity)
     fn sort_results(env: &Env, results: &mut Vec<RankedResult>) {
         let len = results.len();
         if len <= 1 {
             return;
         }
-        
+
         for i in 0..len {
             for j in 0..len - 1 - i {
                 let score_j = results.get(j).map(|r| r.score).unwrap_or(0);
                 let score_j1 = results.get(j + 1).map(|r| r.score).unwrap_or(0);
-                
+
                 if score_j < score_j1 {
                     // Swap
                     let temp = results.get(j).unwrap();
@@ -312,7 +292,7 @@ impl RankingEngine {
             }
         }
     }
-    
+
     /// Update rank positions after sorting
     fn update_positions(results: &mut Vec<RankedResult>) {
         for i in 0..results.len() {
@@ -322,7 +302,7 @@ impl RankingEngine {
             }
         }
     }
-    
+
     /// Generate ML score storage key
     fn ml_score_key(env: &Env, content_id: &String) -> String {
         String::from_str(env, "ml_score")
