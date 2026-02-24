@@ -313,12 +313,12 @@ impl DiagnosticsEvents {
         optimization_type: &OptimizationCategory,
     ) {
         let type_str = match optimization_type {
-            OptimizationCategory::GasOptimization => "GAS",
-            OptimizationCategory::StorageOptimization => "STORAGE",
-            OptimizationCategory::MemoryOptimization => "MEMORY",
-            OptimizationCategory::NetworkOptimization => "NETWORK",
-            OptimizationCategory::AlgorithmOptimization => "ALGORITHM",
-            OptimizationCategory::ArchitectureOptimization => "ARCHITECTURE",
+            OptimizationCategory::Gas => "GAS",
+            OptimizationCategory::Storage => "STORAGE",
+            OptimizationCategory::Memory => "MEMORY",
+            OptimizationCategory::Network => "NETWORK",
+            OptimizationCategory::Algorithm => "ALGORITHM",
+            OptimizationCategory::Architecture => "ARCHITECTURE",
         };
 
         env.events().publish(

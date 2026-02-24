@@ -167,8 +167,8 @@ impl ResourceOptimizer {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id(env),
                 contract_address: contract_address.clone(),
-                category: OptimizationCategory::GasOptimization,
-                optimization_type: OptimizationType::GasOptimization,
+                category: OptimizationCategory::Gas,
+                optimization_type: OptimizationType::Gas,
                 priority: if resource_data.gas_utilization.gas_optimization_potential > 50 {
                     Priority::High
                 } else {
@@ -222,8 +222,8 @@ impl ResourceOptimizer {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id(env),
                 contract_address: contract_address.clone(),
-                category: OptimizationCategory::MemoryOptimization,
-                optimization_type: OptimizationType::MemoryOptimization,
+                category: OptimizationCategory::Memory,
+                optimization_type: OptimizationType::Memory,
                 priority: match resource_data.memory_utilization.memory_leak_risk {
                     RiskLevel::Critical => Priority::Critical,
                     RiskLevel::High => Priority::High,
@@ -272,8 +272,8 @@ impl ResourceOptimizer {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id(env),
                 contract_address: contract_address.clone(),
-                category: OptimizationCategory::StorageOptimization,
-                optimization_type: OptimizationType::StorageOptimization,
+                category: OptimizationCategory::Storage,
+                optimization_type: OptimizationType::Storage,
                 priority: Priority::Medium,
                 title: String::from_str(env, "Storage Access Optimization"),
                 description: String::from_str(env, "Storage efficiency can be improved"),
@@ -323,8 +323,8 @@ impl ResourceOptimizer {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id(env),
                 contract_address: contract_address.clone(),
-                category: OptimizationCategory::AlgorithmOptimization,
-                optimization_type: OptimizationType::ComputeOptimization,
+                category: OptimizationCategory::Algorithm,
+                optimization_type: OptimizationType::Compute,
                 priority: Priority::Medium,
                 title: String::from_str(env, "Computational Efficiency Optimization"),
                 description: String::from_str(
@@ -935,8 +935,8 @@ impl ResourceOptimizer {
         recommendations.push_back(OptimizationRecommendation {
             recommendation_id: Self::generate_recommendation_id(env),
             contract_address: _contract_address.clone(),
-            optimization_type: OptimizationType::NetworkOptimization,
-            category: OptimizationCategory::NetworkOptimization,
+            optimization_type: OptimizationType::Network,
+            category: OptimizationCategory::Network,
             priority: Priority::Medium,
             title: String::from_str(env, "Network Communication Optimization"),
             description: String::from_str(env, "Optimize network requests and response handling"),
@@ -1055,13 +1055,13 @@ impl ResourceOptimizer {
     fn assess_technical_debt_impact(recommendation: &OptimizationRecommendation) -> f64 {
         // Estimate technical debt reduction based on optimization type
         match recommendation.optimization_type {
-            OptimizationType::GasOptimization | OptimizationType::GasEfficiency => 20.0,
-            OptimizationType::MemoryOptimization | OptimizationType::MemoryEfficiency => 30.0,
-            OptimizationType::StorageOptimization | OptimizationType::StorageEfficiency => 25.0,
-            OptimizationType::NetworkOptimization | OptimizationType::NetworkEfficiency => 15.0,
+            OptimizationType::Gas | OptimizationType::GasEfficiency => 20.0,
+            OptimizationType::Memory | OptimizationType::MemoryEfficiency => 30.0,
+            OptimizationType::Storage | OptimizationType::StorageEfficiency => 25.0,
+            OptimizationType::Network | OptimizationType::NetworkEfficiency => 15.0,
             OptimizationType::AlgorithmEfficiency => 35.0,
             OptimizationType::ArchitectureImprovement => 40.0,
-            OptimizationType::ComputeOptimization => 35.0,
+            OptimizationType::Compute => 35.0,
         }
     }
 

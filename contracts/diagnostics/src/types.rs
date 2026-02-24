@@ -257,26 +257,24 @@ pub struct OptimizationRecommendation {
 /// Categories of optimizations
 #[derive(Clone, Debug)]
 #[contracttype]
-#[allow(clippy::enum_variant_names)]
 pub enum OptimizationCategory {
-    GasOptimization,
-    StorageOptimization,
-    MemoryOptimization,
-    NetworkOptimization,
-    AlgorithmOptimization,
-    ArchitectureOptimization,
+    Gas,
+    Storage,
+    Memory,
+    Network,
+    Algorithm,
+    Architecture,
 }
 
 /// Optimization types for recommendations
 #[derive(Clone, Debug)]
 #[contracttype]
-#[allow(clippy::enum_variant_names)]
 pub enum OptimizationType {
-    StorageOptimization,
-    ComputeOptimization,
-    NetworkOptimization,
-    MemoryOptimization,
-    GasOptimization,
+    Storage,
+    Compute,
+    Network,
+    Memory,
+    Gas,
     GasEfficiency,
     StorageEfficiency,
     MemoryEfficiency,

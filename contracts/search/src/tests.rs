@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use super::*;
 use soroban_sdk::{testutils::Address as _, Address, Env};
 
@@ -8,7 +6,7 @@ fn create_test_env() -> (Env, Address, Address) {
     env.mock_all_auths();
 
     let admin = Address::generate(&env);
-    let contract_id = env.register_contract(None, AdvancedSearchContract);
+    let contract_id = env.register(AdvancedSearchContract, ());
 
     (env, admin, contract_id)
 }

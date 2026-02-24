@@ -4,6 +4,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::match_like_matches_macro)]
 #![allow(clippy::manual_clamp)]
+#![allow(clippy::enum_variant_names)]
 
 pub mod anomaly_detector;
 pub mod behavior_analyzer;

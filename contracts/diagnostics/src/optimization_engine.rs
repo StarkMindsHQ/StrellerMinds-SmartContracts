@@ -259,7 +259,7 @@ impl OptimizationEngine {
             // Above 500K gas
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("gas_opt_1"),
-                category: OptimizationCategory::GasOptimization,
+                category: OptimizationCategory::Gas,
                 priority: if metrics.gas_used > 2_000_000 {
                     Priority::High
                 } else {
@@ -305,7 +305,7 @@ impl OptimizationEngine {
         if metrics.storage_writes > 10 {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("gas_storage_1"),
-                category: OptimizationCategory::GasOptimization,
+                category: OptimizationCategory::Gas,
                 priority: Priority::Medium,
                 description: String::from_str(
                     env,
@@ -363,7 +363,7 @@ impl OptimizationEngine {
             // Low read efficiency
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("storage_opt_1"),
-                category: OptimizationCategory::StorageOptimization,
+                category: OptimizationCategory::Storage,
                 priority: Priority::Medium,
                 description: String::from_str(
                     env,
@@ -415,7 +415,7 @@ impl OptimizationEngine {
             // Above 50MB
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("memory_opt_1"),
-                category: OptimizationCategory::MemoryOptimization,
+                category: OptimizationCategory::Memory,
                 priority: if metrics.memory_usage > 200_000_000 {
                     Priority::High
                 } else {
@@ -474,7 +474,7 @@ impl OptimizationEngine {
             // Above 100ms
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("network_opt_1"),
-                category: OptimizationCategory::NetworkOptimization,
+                category: OptimizationCategory::Network,
                 priority: if metrics.network_latency > 500 {
                     Priority::High
                 } else {
@@ -530,7 +530,7 @@ impl OptimizationEngine {
             // Above 500ms
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("algo_opt_1"),
-                category: OptimizationCategory::AlgorithmOptimization,
+                category: OptimizationCategory::Algorithm,
                 priority: if metrics.average_execution_time > 2000 {
                     Priority::Critical
                 } else {
@@ -589,7 +589,7 @@ impl OptimizationEngine {
             // Above 5% error rate
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("arch_opt_1"),
-                category: OptimizationCategory::ArchitectureOptimization,
+                category: OptimizationCategory::Architecture,
                 priority: if metrics.error_rate > 15 {
                     Priority::Critical
                 } else {
