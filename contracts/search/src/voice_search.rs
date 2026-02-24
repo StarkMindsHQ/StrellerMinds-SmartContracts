@@ -6,6 +6,7 @@ use soroban_sdk::{Address, Env, String, Vec};
 /// Handles conversational search and context maintenance
 pub struct VoiceSearch;
 
+#[allow(dead_code)]
 impl VoiceSearch {
     /// Store processed voice query from oracle
     pub fn store_voice_query(env: &Env, user: Address, processed_query: ProcessedVoiceQuery) {
@@ -172,7 +173,7 @@ impl VoiceSearch {
         let session_data = session.unwrap();
 
         // Get last query for context
-        let last_query = if session_data.queries.len() > 0 {
+        let _last_query = if !session_data.queries.is_empty() {
             session_data.queries.get(session_data.queries.len() - 1)
         } else {
             None
@@ -315,7 +316,7 @@ impl VoiceSearch {
     }
 
     /// Suggest voice command shortcuts
-    pub fn suggest_voice_commands(env: &Env, user: Address) -> Vec<String> {
+    pub fn suggest_voice_commands(env: &Env, _user: Address) -> Vec<String> {
         // Based on user's search history and preferences
         // Would be computed off-chain
         let mut suggestions = Vec::new(env);
@@ -348,22 +349,23 @@ impl VoiceSearch {
     }
 
     /// Storage key generators
-    fn voice_query_key(env: &Env, timestamp: u64) -> String {
+    fn voice_query_key(env: &Env, _timestamp: u64) -> String {
         String::from_str(env, "voice_qry")
     }
 
-    fn user_session_key(env: &Env, user: &Address) -> String {
+    fn user_session_key(env: &Env, _user: &Address) -> String {
         String::from_str(env, "usr_sess")
     }
 
-    fn generate_session_id(env: &Env, user: &Address) -> String {
-        let timestamp = env.ledger().timestamp();
+    fn generate_session_id(env: &Env, _user: &Address) -> String {
+        let _timestamp = env.ledger().timestamp();
         String::from_str(env, "sess_id")
     }
 }
 
 /// Voice quality metrics
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct VoiceQualityMetrics {
     pub confidence: u32,
     pub clarity: u32,

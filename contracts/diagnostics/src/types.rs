@@ -543,7 +543,7 @@ pub struct AnomalyEvent {
 }
 
 /// Types of anomalies
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[contracttype]
 pub enum AnomalyType {
     PerformanceDegradation,

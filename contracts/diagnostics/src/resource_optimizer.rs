@@ -24,9 +24,6 @@ impl ResourceOptimizer {
         let mut metrics_data = Vec::new(env);
         let mut total_gas = 0u64;
         let mut total_memory = 0u64;
-        let mut total_storage_reads = 0u32;
-        let mut total_storage_writes = 0u32;
-        let mut total_cpu_instructions = 0u64;
 
         for i in 0..analysis_period / 3600 {
             // hourly samples
@@ -37,9 +34,6 @@ impl ResourceOptimizer {
                 metrics_data.push_back(metrics.clone());
                 total_gas += metrics.gas_used;
                 total_memory += metrics.memory_usage as u64;
-                total_storage_reads += metrics.storage_reads;
-                total_storage_writes += metrics.storage_writes;
-                total_cpu_instructions += metrics.cpu_instructions;
             }
         }
 
@@ -488,11 +482,11 @@ impl ResourceOptimizer {
             storage_efficiency_change: storage_improvement as i32,
             cpu_efficiency_change: cpu_improvement as i32,
             cost_savings_achieved: Self::calculate_realized_cost_savings(
-                &baseline_metrics,
+                baseline_metrics,
                 &current_utilization,
             ) as u64,
             performance_impact: Self::calculate_performance_impact(
-                &baseline_metrics,
+                baseline_metrics,
                 &current_utilization,
             ) as i32,
             implementation_status: if overall_improvement > 80.0 {
@@ -710,7 +704,7 @@ impl ResourceOptimizer {
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
             // Simplified cost: reads + writes (writes cost more)
-            total_cost += (m.storage_reads as u64 * 1) + (m.storage_writes as u64 * 10);
+            total_cost += (m.storage_reads as u64) + (m.storage_writes as u64 * 10);
         }
 
         total_cost / metrics.len() as u64
@@ -845,12 +839,12 @@ impl ResourceOptimizer {
         };
 
         let gas_pct = if gas_costs + storage_costs > 0 {
-            (gas_costs * 100 / (gas_costs + storage_costs))
+            gas_costs * 100 / (gas_costs + storage_costs)
         } else {
             0
         };
         let storage_pct = if gas_costs + storage_costs > 0 {
-            (storage_costs * 100 / (gas_costs + storage_costs))
+            storage_costs * 100 / (gas_costs + storage_costs)
         } else {
             0
         };

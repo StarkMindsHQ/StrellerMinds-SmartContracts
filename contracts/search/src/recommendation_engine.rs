@@ -8,7 +8,7 @@ pub struct RecommendationEngine;
 impl RecommendationEngine {
     /// Generate personalized recommendations for a user
     pub fn generate_recommendations(env: &Env, user: Address, limit: u32) -> Vec<Recommendation> {
-        let mut recommendations = Vec::new(env);
+        let recommendations = Vec::new(env);
 
         // Check for cached recommendations first
         if let Some(cached) = Self::get_cached_recommendations(env, &user) {
@@ -111,10 +111,10 @@ impl RecommendationEngine {
     }
 
     /// Calculate boost based on completed courses
-    fn calculate_completion_boost(profile: &UserProfile, content_id: &String) -> u32 {
+    fn calculate_completion_boost(profile: &UserProfile, _content_id: &String) -> u32 {
         // Check if this is a natural progression
         // Simple heuristic: return fixed boost if user has completions
-        if profile.completed_courses.len() > 0 {
+        if !profile.completed_courses.is_empty() {
             100
         } else {
             50 // Beginner boost
@@ -122,34 +122,34 @@ impl RecommendationEngine {
     }
 
     /// Calculate boost based on skill gaps
-    fn calculate_skill_gap_boost(profile: &UserProfile, content_id: &String) -> u32 {
+    fn calculate_skill_gap_boost(_profile: &UserProfile, _content_id: &String) -> u32 {
         // Analyze which skills user needs
         // Return boost if content fills gap
         150 // Simplified for now
     }
 
     /// Calculate boost based on category preferences
-    fn calculate_category_boost(profile: &UserProfile, content_id: &String) -> u32 {
+    fn calculate_category_boost(_profile: &UserProfile, _content_id: &String) -> u32 {
         // Check interaction history with categories
         100 // Simplified for now
     }
 
     /// Find users with similar learning patterns (for collaborative filtering)
-    pub fn find_similar_users(env: &Env, user: Address, limit: u32) -> Vec<Address> {
+    pub fn find_similar_users(env: &Env, _user: Address, _limit: u32) -> Vec<Address> {
         // This would be computed off-chain and stored
         // Return empty for now - oracle will provide
         Vec::new(env)
     }
 
     /// Predict course completion likelihood
-    pub fn predict_completion_likelihood(env: &Env, user: Address, course_id: String) -> u32 {
+    pub fn predict_completion_likelihood(env: &Env, user: Address, _course_id: String) -> u32 {
         // Get user profile
         if let Some(profile) = Self::get_user_profile(env, user) {
             // Calculate likelihood based on profile
             let base_likelihood = 50u32; // 50%
 
             // Boost if user has high completion rate
-            let completion_rate = if profile.completed_courses.len() > 0 {
+            let completion_rate = if !profile.completed_courses.is_empty() {
                 // Would calculate actual rate
                 70
             } else {
@@ -170,8 +170,8 @@ impl RecommendationEngine {
     /// Get trending recommendations (popular among similar users)
     pub fn get_trending_recommendations(
         env: &Env,
-        user: Option<Address>,
-        limit: u32,
+        _user: Option<Address>,
+        _limit: u32,
     ) -> Vec<Recommendation> {
         // Would return trending courses based on community activity
         // This data comes from off-chain analytics
@@ -179,7 +179,7 @@ impl RecommendationEngine {
     }
 
     /// Get "continue learning" recommendations (incomplete courses)
-    pub fn get_continue_learning_recommendations(env: &Env, user: Address) -> Vec<Recommendation> {
+    pub fn get_continue_learning_recommendations(env: &Env, _user: Address) -> Vec<Recommendation> {
         // Find courses user started but didn't complete
         // Return as recommendations
         Vec::new(env)

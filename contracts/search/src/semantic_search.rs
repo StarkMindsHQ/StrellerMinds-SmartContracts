@@ -1,5 +1,5 @@
 use crate::types::*;
-use soroban_sdk::{Address, Env, Map, String, Vec};
+use soroban_sdk::{Address, Env, String, Vec};
 
 /// Semantic Search Engine
 /// Implements natural language understanding capabilities using pre-processed data from off-chain NLP services
@@ -97,7 +97,7 @@ impl SemanticSearch {
 
     /// Calculate topic matching score
     fn calculate_topic_score(
-        env: &Env,
+        _env: &Env,
         query: &ProcessedQuery,
         metadata: &SemanticMetadata,
     ) -> u32 {
@@ -128,7 +128,7 @@ impl SemanticSearch {
 
     /// Calculate intent matching score
     fn calculate_intent_score(
-        env: &Env,
+        _env: &Env,
         query: &ProcessedQuery,
         metadata: &SemanticMetadata,
     ) -> u32 {
@@ -143,7 +143,7 @@ impl SemanticSearch {
 
     /// Calculate entity matching score
     fn calculate_entity_score(
-        env: &Env,
+        _env: &Env,
         query: &ProcessedQuery,
         metadata: &SemanticMetadata,
     ) -> u32 {
@@ -167,7 +167,7 @@ impl SemanticSearch {
 
     /// Calculate semantic tag overlap
     fn calculate_tag_overlap(
-        env: &Env,
+        _env: &Env,
         query: &ProcessedQuery,
         metadata: &SemanticMetadata,
     ) -> u32 {
@@ -262,7 +262,7 @@ impl SemanticSearch {
     fn create_search_result(
         env: &Env,
         content_id: &String,
-        metadata: &SemanticMetadata,
+        _metadata: &SemanticMetadata,
         score: u32,
     ) -> SearchResultItem {
         // This would fetch full item data in production
@@ -302,7 +302,7 @@ impl SemanticSearch {
     }
 
     /// Sort results by score (descending)
-    fn sort_by_score(env: &Env, results: &mut Vec<SearchResultItem>) {
+    fn sort_by_score(_env: &Env, results: &mut Vec<SearchResultItem>) {
         // Bubble sort (simple for blockchain)
         let len = results.len();
         for i in 0..len {
@@ -329,12 +329,12 @@ impl SemanticSearch {
     }
 
     /// Expand query with synonyms (using pre-computed synonym data)
-    pub fn expand_query_with_synonyms(env: &Env, query_terms: Vec<String>) -> Vec<String> {
-        let mut expanded = query_terms.clone();
+    pub fn expand_query_with_synonyms(_env: &Env, query_terms: Vec<String>) -> Vec<String> {
+        let expanded = query_terms.clone();
 
         // Add synonyms from pre-computed synonym index
         for i in 0..query_terms.len() {
-            if let Some(term) = query_terms.get(i) {
+            if let Some(_term) = query_terms.get(i) {
                 // Look up synonyms (would be stored by oracle)
                 // Add to expanded terms
             }

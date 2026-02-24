@@ -1,7 +1,7 @@
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
-use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use soroban_sdk::{BytesN, Env, String, Vec};
 
 /// Performance benchmarking and comparison engine
 pub struct BenchmarkEngine;
@@ -234,7 +234,7 @@ impl BenchmarkEngine {
 
     fn compare_with_baseline(
         env: &Env,
-        benchmark_name: &String,
+        _benchmark_name: &String,
         baseline_version: &String,
     ) -> Result<PerformanceComparison, DiagnosticsError> {
         // In a real implementation, this would load baseline data

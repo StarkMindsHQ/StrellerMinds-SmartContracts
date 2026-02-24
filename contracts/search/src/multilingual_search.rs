@@ -55,17 +55,13 @@ impl MultilingualSearch {
     }
 
     /// Search content in specific language
-    pub fn search_by_language(env: &Env, language: Language, query: String) -> Vec<String> {
+    pub fn search_by_language(env: &Env, language: Language, _query: String) -> Vec<String> {
         let lang_key = Self::language_index_key(env, &language);
 
-        let content_ids = env
-            .storage()
+        env.storage()
             .persistent()
             .get::<String, Vec<String>>(&lang_key)
-            .unwrap_or_else(|| Vec::new(env));
-
-        // Further filtering by query would happen in semantic search
-        content_ids
+            .unwrap_or_else(|| Vec::new(env))
     }
 
     /// Find content available in user's preferred language
@@ -184,7 +180,7 @@ impl MultilingualSearch {
 
     /// Calculate cross-language similarity score
     pub fn calculate_cross_language_score(
-        env: &Env,
+        _env: &Env,
         query_language: Language,
         content_language: Language,
         base_score: u32,
@@ -320,7 +316,7 @@ impl MultilingualSearch {
     }
 
     /// Generate translation cache key
-    fn translation_cache_key(env: &Env, query: &String, language: &Language) -> String {
+    fn translation_cache_key(env: &Env, _query: &String, _language: &Language) -> String {
         String::from_str(env, "trans_cache")
     }
 }

@@ -133,21 +133,21 @@ impl SearchAnalytics {
     }
 
     /// Get popular queries
-    pub fn get_popular_queries(env: &Env, limit: u32) -> Vec<String> {
+    pub fn get_popular_queries(env: &Env, _limit: u32) -> Vec<String> {
         // This would be maintained as a sorted list
         // For now, return empty - would be computed off-chain
         Vec::new(env)
     }
 
     /// Get trending searches (recent spike in frequency)
-    pub fn get_trending_searches(env: &Env, limit: u32) -> Vec<String> {
+    pub fn get_trending_searches(env: &Env, _limit: u32) -> Vec<String> {
         // Would analyze recent vs historical frequency
         // Computed off-chain
         Vec::new(env)
     }
 
     /// Calculate conversion rate (search -> enrollment/completion)
-    pub fn calculate_conversion_rate(env: &Env, query: String) -> u32 {
+    pub fn calculate_conversion_rate(_env: &Env, _query: String) -> u32 {
         // Track full funnel: search -> click -> enroll -> complete
         // Would be computed off-chain from event data
         // Return default for now
@@ -174,7 +174,7 @@ impl SearchAnalytics {
     }
 
     /// Get zero-result queries (no results found)
-    pub fn get_zero_result_queries(env: &Env, limit: u32) -> Vec<String> {
+    pub fn get_zero_result_queries(env: &Env, _limit: u32) -> Vec<String> {
         // Track queries with no results for content improvement
         // Would be maintained as separate index
         Vec::new(env)
@@ -197,7 +197,7 @@ impl SearchAnalytics {
     }
 
     /// Get search abandonment rate
-    pub fn get_abandonment_rate(env: &Env, query: String) -> u32 {
+    pub fn get_abandonment_rate(_env: &Env, _query: String) -> u32 {
         // Percentage of searches with no clicks
         // Would track: searches without follow-up clicks
         // Default to 30% abandonment
@@ -234,7 +234,7 @@ impl SearchAnalytics {
     }
 
     /// Calculate dwell time (time spent on content after click)
-    pub fn record_dwell_time(env: &Env, user: Address, content_id: String, duration_seconds: u64) {
+    pub fn record_dwell_time(env: &Env, _user: Address, content_id: String, duration_seconds: u64) {
         let key = Self::dwell_time_key(env, &content_id);
 
         // Update average dwell time
@@ -286,39 +286,39 @@ impl SearchAnalytics {
     }
 
     /// Storage key generators
-    fn search_event_key(env: &Env, timestamp: u64) -> String {
+    fn search_event_key(env: &Env, _timestamp: u64) -> String {
         String::from_str(env, "search_evt")
     }
 
-    fn click_event_key(env: &Env, timestamp: u64) -> String {
+    fn click_event_key(env: &Env, _timestamp: u64) -> String {
         String::from_str(env, "click_evt")
     }
 
-    fn ctr_key(env: &Env, query: &String, content_id: &String) -> String {
+    fn ctr_key(env: &Env, _query: &String, _content_id: &String) -> String {
         String::from_str(env, "ctr")
     }
 
-    fn query_count_key(env: &Env, query: &String) -> String {
+    fn query_count_key(env: &Env, _query: &String) -> String {
         String::from_str(env, "qcount")
     }
 
-    fn avg_position_key(env: &Env, query: &String) -> String {
+    fn avg_position_key(env: &Env, _query: &String) -> String {
         String::from_str(env, "avgpos")
     }
 
-    fn zero_result_key(env: &Env, query: &String) -> String {
+    fn zero_result_key(env: &Env, _query: &String) -> String {
         String::from_str(env, "zero")
     }
 
-    fn user_search_count_key(env: &Env, user: &Address) -> String {
+    fn user_search_count_key(env: &Env, _user: &Address) -> String {
         String::from_str(env, "usearch")
     }
 
-    fn user_click_count_key(env: &Env, user: &Address) -> String {
+    fn user_click_count_key(env: &Env, _user: &Address) -> String {
         String::from_str(env, "uclick")
     }
 
-    fn dwell_time_key(env: &Env, content_id: &String) -> String {
+    fn dwell_time_key(env: &Env, _content_id: &String) -> String {
         String::from_str(env, "dwell")
     }
 }

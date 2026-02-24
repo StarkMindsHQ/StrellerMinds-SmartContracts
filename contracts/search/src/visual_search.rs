@@ -60,8 +60,8 @@ impl VisualSearch {
     pub fn find_visually_similar(
         env: &Env,
         content_id: String,
-        min_score: u32,
-        limit: u32,
+        _min_score: u32,
+        _limit: u32,
     ) -> Vec<String> {
         // Get cached similar content from oracle
         let cache_key = Self::similar_cache_key(env, &content_id);
@@ -81,7 +81,7 @@ impl VisualSearch {
     pub fn find_by_color(
         env: &Env,
         color_hex: String,
-        tolerance: u32, // Color distance tolerance
+        _tolerance: u32, // Color distance tolerance
     ) -> Vec<String> {
         let color_key = Self::color_index_key(env, &color_hex);
         env.storage()
@@ -256,22 +256,22 @@ impl VisualSearch {
     }
 
     /// Generate visual similarity key
-    fn visual_similarity_key(env: &Env, content_a: &String, content_b: &String) -> DataKey {
+    fn visual_similarity_key(_env: &Env, content_a: &String, _content_b: &String) -> DataKey {
         DataKey::VisualMetadata(content_a.clone())
     }
 
     /// Generate similar content cache key
-    fn similar_cache_key(env: &Env, content_id: &String) -> DataKey {
+    fn similar_cache_key(_env: &Env, content_id: &String) -> DataKey {
         DataKey::VisualMetadata(content_id.clone())
     }
 
     /// Generate color index key
-    fn color_index_key(env: &Env, color: &String) -> String {
+    fn color_index_key(env: &Env, _color: &String) -> String {
         String::from_str(env, "color_idx")
     }
 
     /// Generate object index key
-    fn object_index_key(env: &Env, object: &String) -> String {
+    fn object_index_key(env: &Env, _object: &String) -> String {
         String::from_str(env, "obj_idx")
     }
 }

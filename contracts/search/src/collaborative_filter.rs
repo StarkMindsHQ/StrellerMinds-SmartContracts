@@ -26,9 +26,9 @@ impl CollaborativeFilter {
     /// Find similar users based on pre-computed scores
     pub fn find_similar_users(
         env: &Env,
-        user: Address,
-        min_score: u32,
-        limit: u32,
+        _user: Address,
+        _min_score: u32,
+        _limit: u32,
     ) -> Vec<Address> {
         // In practice, this would query an indexed structure
         // For now, return empty - would be populated by oracle
@@ -39,7 +39,7 @@ impl CollaborativeFilter {
     pub fn get_collaborative_recommendations(
         env: &Env,
         user: Address,
-        limit: u32,
+        _limit: u32,
     ) -> Vec<Recommendation> {
         // Check cache first
         let cache_key = Self::collab_rec_cache_key(env, &user);
@@ -186,11 +186,11 @@ impl CollaborativeFilter {
     }
 
     /// Find content popular among similar users
-    pub fn find_trending_among_similar(env: &Env, user: Address, limit: u32) -> Vec<String> {
-        let mut trending = Vec::new(env);
+    pub fn find_trending_among_similar(env: &Env, user: Address, _limit: u32) -> Vec<String> {
+        let trending = Vec::new(env);
 
         // Get similar users
-        let similar_users = Self::find_similar_users(env, user.clone(), 60, 20);
+        let _similar_users = Self::find_similar_users(env, user.clone(), 60, 20);
 
         // This would aggregate interactions from similar users
         // For now, return empty - would be computed off-chain
@@ -244,17 +244,17 @@ impl CollaborativeFilter {
     }
 
     /// Generate similarity storage key
-    fn similarity_key(env: &Env, user_a: &Address, user_b: &Address) -> DataKey {
+    fn similarity_key(env: &Env, _user_a: &Address, _user_b: &Address) -> DataKey {
         DataKey::SimilarityScores(String::from_str(env, "sim"))
     }
 
     /// Generate collaborative rec cache key
-    fn collab_rec_cache_key(env: &Env, user: &Address) -> DataKey {
+    fn collab_rec_cache_key(_env: &Env, user: &Address) -> DataKey {
         DataKey::RecommendationScores(user.clone())
     }
 
     /// Generate collaborative rec expiry key
-    fn collab_rec_expiry_key(env: &Env, user: &Address) -> DataKey {
+    fn collab_rec_expiry_key(_env: &Env, user: &Address) -> DataKey {
         DataKey::RecommendationScores(user.clone())
     }
 }

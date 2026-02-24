@@ -315,7 +315,7 @@ impl DiagnosticsStorage {
     /// Store regression test result
     pub fn store_regression_test_result(
         env: &Env,
-        contract_address: &Address,
+        _contract_address: &Address,
         result: &RegressionTestResult,
     ) {
         let key = DataKey::RegressionReports(result.regression_report.test_name.clone());
@@ -325,7 +325,7 @@ impl DiagnosticsStorage {
     /// Store monitoring session
     pub fn store_monitoring_session(
         env: &Env,
-        contract_address: &Address,
+        _contract_address: &Address,
         session: &MonitoringSession,
     ) {
         let key = Symbol::new(env, "mon_session");
@@ -335,8 +335,8 @@ impl DiagnosticsStorage {
     /// Get monitoring session
     pub fn get_monitoring_session(
         env: &Env,
-        contract_address: &Address,
-        session_id: &BytesN<32>,
+        _contract_address: &Address,
+        _session_id: &BytesN<32>,
     ) -> Result<MonitoringSession, DiagnosticsError> {
         let key = Symbol::new(env, "mon_session");
         env.storage()
@@ -348,7 +348,7 @@ impl DiagnosticsStorage {
     /// Store performance alert
     pub fn store_performance_alert(
         env: &Env,
-        contract_address: &Address,
+        _contract_address: &Address,
         alert: &PerformanceAlert,
     ) {
         let key = Symbol::new(env, "perf_alert");
@@ -358,11 +358,11 @@ impl DiagnosticsStorage {
     /// Get regression test results in period
     pub fn get_regression_test_results_in_period(
         env: &Env,
-        contract_address: &Address,
-        start_time: u64,
-        end_time: u64,
+        _contract_address: &Address,
+        _start_time: u64,
+        _end_time: u64,
     ) -> Result<Vec<RegressionTestResult>, DiagnosticsError> {
-        let mut results = Vec::new(env);
+        let results = Vec::new(env);
         // In a real implementation, this would query based on timestamps
         // For now, return empty vector as placeholder
         Ok(results)
@@ -371,11 +371,11 @@ impl DiagnosticsStorage {
     /// Get performance alerts in period
     pub fn get_performance_alerts_in_period(
         env: &Env,
-        contract_address: &Address,
-        start_time: u64,
-        end_time: u64,
+        _contract_address: &Address,
+        _start_time: u64,
+        _end_time: u64,
     ) -> Result<Vec<PerformanceAlert>, DiagnosticsError> {
-        let mut alerts = Vec::new(env);
+        let alerts = Vec::new(env);
         // In a real implementation, this would query based on timestamps
         // For now, return empty vector as placeholder
         Ok(alerts)
@@ -384,10 +384,10 @@ impl DiagnosticsStorage {
     /// Get historical regression results
     pub fn get_historical_regression_results(
         env: &Env,
-        contract_address: &Address,
-        days: u32,
+        _contract_address: &Address,
+        _days: u32,
     ) -> Result<Vec<RegressionTestResult>, DiagnosticsError> {
-        let mut results = Vec::new(env);
+        let results = Vec::new(env);
         // In a real implementation, this would query historical data
         // For now, return empty vector as placeholder
         Ok(results)
@@ -396,10 +396,10 @@ impl DiagnosticsStorage {
     /// Get recent performance metrics
     pub fn get_recent_performance_metrics(
         env: &Env,
-        contract_address: &Address,
-        hours: u32,
+        _contract_address: &Address,
+        _hours: u32,
     ) -> Result<Vec<PerformanceMetrics>, DiagnosticsError> {
-        let mut metrics = Vec::new(env);
+        let metrics = Vec::new(env);
         // In a real implementation, this would query recent metrics
         // For now, return empty vector as placeholder
         Ok(metrics)
@@ -408,10 +408,10 @@ impl DiagnosticsStorage {
     /// Get anomaly events in period
     pub fn get_anomaly_events_in_period(
         env: &Env,
-        contract_address: &Address,
-        period: u64,
+        _contract_address: &Address,
+        _period: u64,
     ) -> Result<Vec<AnomalyEvent>, DiagnosticsError> {
-        let mut anomalies = Vec::new(env);
+        let anomalies = Vec::new(env);
         // In a real implementation, this would query based on timestamps
         // For now, return empty vector as placeholder
         Ok(anomalies)

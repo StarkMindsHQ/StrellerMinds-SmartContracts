@@ -1,7 +1,7 @@
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
-use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 /// Advanced anomaly detection for system degradation
 pub struct AnomalyDetector;

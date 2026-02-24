@@ -157,7 +157,7 @@ impl OptimizationEngine {
     /// Generate real-time optimization alerts
     pub fn generate_real_time_alerts(
         env: &Env,
-        contract_address: &Address,
+        _contract_address: &Address,
         metrics: &PerformanceMetrics,
     ) -> Result<Vec<OptimizationAlert>, DiagnosticsError> {
         let mut alerts = Vec::new(env);
@@ -765,7 +765,7 @@ impl OptimizationEngine {
         }
 
         if !high_priority.is_empty() {
-            let mut deps = Vec::new(env);
+            let deps = Vec::new(env);
             phases.push_back(ImplementationPhase {
                 phase_number: 1,
                 phase_name: String::from_str(env, "Critical and High Priority Optimizations"),

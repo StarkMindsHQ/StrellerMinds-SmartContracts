@@ -26,8 +26,8 @@ impl PredictiveEngine {
         }
 
         // Analyze trends
-        let load_trend = Self::analyze_load_trend(&historical_data);
-        let resource_trend = Self::analyze_resource_trend(&historical_data);
+        let _load_trend = Self::analyze_load_trend(&historical_data);
+        let _resource_trend = Self::analyze_resource_trend(&historical_data);
 
         // Generate predictions
         let predicted_load = Self::predict_load(env, &historical_data, prediction_horizon);

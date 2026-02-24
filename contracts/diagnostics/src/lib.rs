@@ -1,3 +1,6 @@
+#![no_std]
+#![allow(dead_code)]
+
 pub mod anomaly_detector;
 pub mod behavior_analyzer;
 pub mod benchmark_engine;
@@ -21,7 +24,7 @@ use crate::{
     storage::DiagnosticsStorage, types::*,
 };
 
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 
 #[contract]
 pub struct Diagnostics;

@@ -168,7 +168,7 @@ impl LearningPathOptimizer {
     }
 
     /// Get required skills for content (from skill graph)
-    fn get_content_required_skills(env: &Env, content_id: String) -> Vec<String> {
+    fn get_content_required_skills(env: &Env, _content_id: String) -> Vec<String> {
         // This would be populated by oracle based on skill graph
         // Return empty for now
         Vec::new(env)
@@ -262,7 +262,7 @@ impl LearningPathOptimizer {
                 }
             }
 
-            if path.steps.len() > 0 {
+            if !path.steps.is_empty() {
                 total_difficulty / path.steps.len()
             } else {
                 50 // Default medium
@@ -273,7 +273,7 @@ impl LearningPathOptimizer {
     }
 
     /// Get adaptive difficulty recommendation
-    pub fn get_adaptive_difficulty(env: &Env, user: Address, current_step: String) -> u32 {
+    pub fn get_adaptive_difficulty(_env: &Env, _user: Address, _current_step: String) -> u32 {
         // Get user's recent completion scores
         // This would be tracked by oracle and adjusted dynamically
         // Return medium difficulty for now
@@ -283,8 +283,8 @@ impl LearningPathOptimizer {
     /// Find alternative paths to same goal
     pub fn find_alternative_paths(
         env: &Env,
-        target_skill: String,
-        user_level: u32,
+        _target_skill: String,
+        _user_level: u32,
     ) -> Vec<LearningPath> {
         // This would be computed off-chain by AI
         // Return empty for now - oracle would populate

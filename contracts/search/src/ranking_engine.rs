@@ -122,7 +122,7 @@ impl RankingEngine {
     }
 
     /// Get relevance score (from semantic search)
-    fn get_relevance_score(env: &Env, content_id: String) -> u32 {
+    fn get_relevance_score(_env: &Env, _content_id: String) -> u32 {
         // This would come from semantic search score
         // Default to medium relevance
         500
@@ -144,14 +144,14 @@ impl RankingEngine {
     }
 
     /// Get engagement score (views, clicks, completions)
-    fn get_engagement_score(env: &Env, content_id: String) -> u32 {
+    fn get_engagement_score(_env: &Env, _content_id: String) -> u32 {
         // Get from analytics
         // For now, return default
         500
     }
 
     /// Get recency score (newer content scores higher)
-    fn get_recency_score(env: &Env, content_id: String) -> u32 {
+    fn get_recency_score(_env: &Env, _content_id: String) -> u32 {
         // Calculate based on publication/update date
         // This would be stored with content metadata
         // Return medium for now
@@ -159,8 +159,8 @@ impl RankingEngine {
     }
 
     /// Get personalization score for user
-    fn get_personalization_score(env: &Env, content_id: String, user: Option<Address>) -> u32 {
-        if let Some(addr) = user {
+    fn get_personalization_score(_env: &Env, _content_id: String, user: Option<Address>) -> u32 {
+        if let Some(_addr) = user {
             // Check user's interests, history, skill level
             // Return higher score for relevant content
             // Default for now
@@ -171,21 +171,21 @@ impl RankingEngine {
     }
 
     /// Get authority score (instructor reputation, institutional credibility)
-    fn get_authority_score(env: &Env, content_id: String) -> u32 {
+    fn get_authority_score(_env: &Env, _content_id: String) -> u32 {
         // Based on creator's reputation
         // Default to medium
         500
     }
 
     /// Get completion rate (% of users who completed)
-    fn get_completion_rate(env: &Env, content_id: String) -> u32 {
+    fn get_completion_rate(_env: &Env, _content_id: String) -> u32 {
         // Track from user interactions
         // Default to medium
         500
     }
 
     /// Get average user rating
-    fn get_user_rating(env: &Env, content_id: String) -> u32 {
+    fn get_user_rating(_env: &Env, _content_id: String) -> u32 {
         // Get from reviews/ratings
         // Scale 0-1000 (represents 0.0-5.0 stars * 200)
         // Default to 3.5 stars = 700
@@ -216,7 +216,7 @@ impl RankingEngine {
     }
 
     /// Apply learning-to-rank model (from oracle)
-    pub fn apply_ml_ranking(env: &Env, results: Vec<RankedResult>) -> Vec<RankedResult> {
+    pub fn apply_ml_ranking(_env: &Env, results: Vec<RankedResult>) -> Vec<RankedResult> {
         // ML model would be applied off-chain
         // Oracle submits re-ranked results
         // For now, return as-is
@@ -257,21 +257,25 @@ impl RankingEngine {
     }
 
     /// Check if content is trending
-    fn is_trending(env: &Env, content_id: String) -> bool {
+    fn is_trending(_env: &Env, _content_id: String) -> bool {
         // Would check recent engagement spikes
         // For now, return false
         false
     }
 
     /// Diversify results to avoid filter bubble
-    pub fn diversify_results(env: &Env, results: &mut Vec<RankedResult>, diversity_threshold: u32) {
+    pub fn diversify_results(
+        _env: &Env,
+        _results: &mut Vec<RankedResult>,
+        _diversity_threshold: u32,
+    ) {
         // Apply diversity by penalizing very similar consecutive results
         // This would use similarity scores between items
         // Complex algorithm - would be computed off-chain
     }
 
     /// Sort results by score (bubble sort for simplicity)
-    fn sort_results(env: &Env, results: &mut Vec<RankedResult>) {
+    fn sort_results(_env: &Env, results: &mut Vec<RankedResult>) {
         let len = results.len();
         if len <= 1 {
             return;
@@ -304,7 +308,7 @@ impl RankingEngine {
     }
 
     /// Generate ML score storage key
-    fn ml_score_key(env: &Env, content_id: &String) -> String {
+    fn ml_score_key(env: &Env, _content_id: &String) -> String {
         String::from_str(env, "ml_score")
     }
 }

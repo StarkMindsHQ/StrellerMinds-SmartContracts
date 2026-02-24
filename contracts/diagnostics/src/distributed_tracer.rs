@@ -17,7 +17,7 @@ impl DistributedTracer {
         let timestamp = env.ledger().timestamp();
 
         // Initialize trace with root span
-        let root_span = TraceSpan {
+        let _root_span = TraceSpan {
             span_id: Self::generate_span_id(env),
             has_parent: false,
             parent_span_id: BytesN::from_array(env, &[0; 32]),

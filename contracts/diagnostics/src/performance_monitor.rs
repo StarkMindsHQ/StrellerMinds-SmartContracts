@@ -182,7 +182,7 @@ impl PerformanceMonitor {
     }
 
     /// Generate monitoring ID
-    fn generate_monitoring_id(env: &Env, contract_address: &Address) -> BytesN<32> {
+    fn generate_monitoring_id(env: &Env, _contract_address: &Address) -> BytesN<32> {
         let timestamp = env.ledger().timestamp();
         let sequence = env.ledger().sequence();
         let mut data = [0u8; 32];

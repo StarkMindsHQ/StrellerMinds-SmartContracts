@@ -1,7 +1,7 @@
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
-use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 /// Advanced performance regression testing and alerting system
 pub struct RegressionTester;
@@ -37,7 +37,7 @@ impl RegressionTester {
 
                     test_results.push_back(result);
                 }
-                Err(e) => {
+                Err(_e) => {
                     // Create failed test result
                     let failed_result = TestScenarioResult {
                         scenario_id: scenario.scenario_id.clone(),
@@ -415,7 +415,7 @@ impl RegressionTester {
         let performance_trend = Self::calculate_performance_trend(&test_results);
         let stability_score = Self::calculate_stability_score(&test_results);
         let risk_assessment_result = Self::assess_regression_risk(&test_results, &alerts);
-        let coverage_analysis = Self::analyze_testing_coverage(env, &test_results);
+        let _coverage_analysis = Self::analyze_testing_coverage(env, &test_results);
 
         Ok(RegressionReport {
             report_id: Self::generate_report_id(env),
@@ -703,19 +703,9 @@ impl RegressionTester {
         average_score: f64,
     ) -> String {
         if regressions.is_empty() {
-            String::from_str(
-                env,
-                &format!(
-                    "All tests passed successfully. Average performance score: {:.1}",
-                    average_score
-                ),
-            )
+            String::from_str(env, "All tests passed successfully")
         } else {
-            String::from_str(env, &format!(
-                "{} regressions detected. Average performance score: {:.1}. Immediate attention required.",
-                regressions.len(),
-                average_score
-            ))
+            String::from_str(env, "Regressions detected. Immediate attention required")
         }
     }
 
@@ -1033,26 +1023,17 @@ impl RegressionTester {
 
         alerts.push_back(String::from_str(
             env,
-            &format!(
-                "Monitor execution time: alert if > {}ms",
-                scenario.expected_execution_time * 12 / 10
-            ),
+            "Monitor execution time: alert if exceeded",
         ));
 
         alerts.push_back(String::from_str(
             env,
-            &format!(
-                "Monitor gas usage: alert if > {} gas",
-                scenario.expected_gas_usage * 12 / 10
-            ),
+            "Monitor gas usage: alert if exceeded",
         ));
 
         alerts.push_back(String::from_str(
             env,
-            &format!(
-                "Monitor memory usage: alert if > {}MB",
-                scenario.expected_memory_usage / 1_000_000 * 12 / 10
-            ),
+            "Monitor memory usage: alert if exceeded",
         ));
 
         alerts
@@ -1332,14 +1313,13 @@ impl RegressionTester {
         test_results: &Vec<RegressionTestResult>,
     ) -> TestingCoverageAnalysis {
         let mut total_scenarios = 0u32;
-        let mut unique_test_types = 0u32;
 
         for i in 0..test_results.len() {
             total_scenarios += test_results.get(i).unwrap().scenario_results.len() as u32;
         }
 
         // Simplified coverage analysis
-        unique_test_types = if total_scenarios > 20 {
+        let unique_test_types = if total_scenarios > 20 {
             5
         } else if total_scenarios > 10 {
             3
@@ -1585,7 +1565,7 @@ impl RegressionTester {
         }
     }
 
-    fn create_test_parameters(env: &Env, config: &RegressionTestConfig) -> TestParameters {
+    fn create_test_parameters(_env: &Env, config: &RegressionTestConfig) -> TestParameters {
         TestParameters {
             test_name: config.test_name.clone(),
             iterations: 10,

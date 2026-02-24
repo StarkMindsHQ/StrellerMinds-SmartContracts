@@ -1,6 +1,7 @@
 #![no_std]
+#![allow(dead_code)]
 
-use soroban_sdk::{contract, contracterror, contractimpl, Address, Bytes, Env, String, Vec};
+use soroban_sdk::{contract, contracterror, contractimpl, Address, Env, String, Vec};
 
 mod collaborative_filter;
 mod content_analyzer;
@@ -23,11 +24,12 @@ use learning_path_optimizer::LearningPathOptimizer;
 use multilingual_search::MultilingualSearch;
 use ranking_engine::RankingEngine;
 use recommendation_engine::RecommendationEngine;
-use search_analytics::SearchAnalytics;
 use semantic_search::SemanticSearch;
-pub use types::*;
 use visual_search::VisualSearch;
 use voice_search::VoiceSearch;
+// Import SearchAnalytics from module, not from types to avoid shadow warning
+use search_analytics::SearchAnalytics as AnalyticsModule;
+pub use types::*;
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -398,7 +400,7 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
 
-        SearchAnalytics::record_search(&env, user, query, results_count);
+        AnalyticsModule::record_search(&env, user, query, results_count);
         Ok(())
     }
 
@@ -412,7 +414,7 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
 
-        SearchAnalytics::record_click(&env, user, query, content_id, rank_position);
+        AnalyticsModule::record_click(&env, user, query, content_id, rank_position);
         Ok(())
     }
 
@@ -420,14 +422,14 @@ impl AdvancedSearchContract {
     pub fn get_ctr(env: Env, query: String, content_id: String) -> Result<u32, Error> {
         Self::require_initialized(&env)?;
 
-        Ok(SearchAnalytics::get_ctr(&env, query, content_id))
+        Ok(AnalyticsModule::get_ctr(&env, query, content_id))
     }
 
     /// Get search quality score
     pub fn get_search_quality_score(env: Env, query: String) -> Result<u32, Error> {
         Self::require_initialized(&env)?;
 
-        Ok(SearchAnalytics::calculate_search_quality_score(&env, query))
+        Ok(AnalyticsModule::calculate_search_quality_score(&env, query))
     }
 
     // ==================== Voice Search Functions ====================

@@ -145,22 +145,18 @@ impl ContentAnalyzer {
         let content_difficulty = Self::get_difficulty_score(env, content_id);
 
         // Allow some range (±20 points)
-        let lower_bound = if user_skill_level >= 20 {
-            user_skill_level - 20
-        } else {
-            0
-        };
+        let lower_bound = user_skill_level.saturating_sub(20);
         let upper_bound = (user_skill_level + 20).min(100);
 
         content_difficulty >= lower_bound && content_difficulty <= upper_bound
     }
 
     /// Find content with similar topics
-    pub fn find_similar_by_topics(env: &Env, content_id: String, limit: u32) -> Vec<String> {
-        let mut similar = Vec::new(env);
+    pub fn find_similar_by_topics(env: &Env, content_id: String, _limit: u32) -> Vec<String> {
+        let similar = Vec::new(env);
 
         // Get topics for this content
-        let topics = Self::get_topics(env, content_id.clone());
+        let _topics = Self::get_topics(env, content_id.clone());
 
         // Find other content with overlapping topics
         // This would be more efficient with proper indexing
@@ -195,11 +191,7 @@ impl ContentAnalyzer {
         similarity += topic_similarity;
 
         // Compare difficulty
-        let difficulty_diff = if a.difficulty_score > b.difficulty_score {
-            a.difficulty_score - b.difficulty_score
-        } else {
-            b.difficulty_score - a.difficulty_score
-        };
+        let difficulty_diff = a.difficulty_score.abs_diff(b.difficulty_score);
         let difficulty_similarity = 100 - difficulty_diff;
         similarity += difficulty_similarity;
 
@@ -251,12 +243,12 @@ impl ContentAnalyzer {
     }
 
     /// Generate tag index storage key
-    fn tag_index_key(env: &Env, tag: &String) -> String {
+    fn tag_index_key(env: &Env, _tag: &String) -> String {
         String::from_str(env, "tag_idx")
     }
 
     /// Generate skill index storage key
-    fn skill_index_key(env: &Env, skill: &String) -> String {
+    fn skill_index_key(env: &Env, _skill: &String) -> String {
         String::from_str(env, "skill_idx")
     }
 }
