@@ -1,8 +1,5 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String};
 
@@ -23,7 +20,7 @@ impl PerformanceMonitor {
 
         // Store monitoring configuration
         DiagnosticsStorage::set_monitoring_config(env, contract_address, &config);
-        
+
         // Add to monitored contracts list
         DiagnosticsStorage::add_monitored_contract(env, contract_address);
 
@@ -37,10 +34,7 @@ impl PerformanceMonitor {
     }
 
     /// Stop monitoring performance for a contract
-    pub fn stop_monitoring(
-        env: &Env,
-        contract_address: &Address,
-    ) -> Result<(), DiagnosticsError> {
+    pub fn stop_monitoring(env: &Env, contract_address: &Address) -> Result<(), DiagnosticsError> {
         // Remove from monitored contracts
         DiagnosticsStorage::remove_monitored_contract(env, contract_address);
 
@@ -103,11 +97,9 @@ impl PerformanceMonitor {
 
         // Collect metrics for the time period
         for timestamp in start_time..=end_time {
-            if let Some(metrics) = DiagnosticsStorage::get_performance_metrics(
-                env,
-                contract_address,
-                timestamp,
-            ) {
+            if let Some(metrics) =
+                DiagnosticsStorage::get_performance_metrics(env, contract_address, timestamp)
+            {
                 total_transactions += metrics.transaction_count;
                 total_execution_time += metrics.average_execution_time;
                 total_gas_used += metrics.gas_used;
@@ -140,7 +132,11 @@ impl PerformanceMonitor {
             end_time,
             total_transactions,
             average_execution_time,
-            min_execution_time: if min_execution_time == u64::MAX { 0 } else { min_execution_time },
+            min_execution_time: if min_execution_time == u64::MAX {
+                0
+            } else {
+                min_execution_time
+            },
             max_execution_time,
             total_gas_used,
             peak_memory_usage: peak_memory,
@@ -175,27 +171,31 @@ impl PerformanceMonitor {
             gas_used,
             memory_used,
             success,
-            efficiency_score: Self::calculate_efficiency_score(execution_time, gas_used, memory_used),
+            efficiency_score: Self::calculate_efficiency_score(
+                execution_time,
+                gas_used,
+                memory_used,
+            ),
         };
 
         Ok(profile)
     }
 
     /// Generate monitoring ID
-    fn generate_monitoring_id(env: &Env, contract_address: &Address) -> BytesN<32> {
+    fn generate_monitoring_id(env: &Env, _contract_address: &Address) -> BytesN<32> {
         let timestamp = env.ledger().timestamp();
         let sequence = env.ledger().sequence();
         let mut data = [0u8; 32];
-        
+
         // Use timestamp and sequence to create unique ID
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        
+
         for i in 0..8 {
             data[i] = ts_bytes[i];
             data[i + 8] = seq_bytes[i];
         }
-        
+
         BytesN::from_array(env, &data)
     }
 
@@ -272,11 +272,7 @@ impl PerformanceMonitor {
     }
 
     /// Calculate performance score (0-100)
-    fn calculate_performance_score(
-        avg_execution_time: u64,
-        error_rate: u32,
-        gas_used: u64,
-    ) -> u32 {
+    fn calculate_performance_score(avg_execution_time: u64, error_rate: u32, gas_used: u64) -> u32 {
         let mut score = 100u32;
 
         // Penalize high execution times (above 1000ms)
@@ -292,7 +288,7 @@ impl PerformanceMonitor {
             score = score.saturating_sub((gas_used / 100_000) as u32);
         }
 
-        score.max(0).min(100)
+        score.min(100)
     }
 
     /// Calculate efficiency score for operations
@@ -312,7 +308,7 @@ impl PerformanceMonitor {
             score = score.saturating_sub(memory_used / 100);
         }
 
-        score.max(0).min(100)
+        score.min(100)
     }
 }
 

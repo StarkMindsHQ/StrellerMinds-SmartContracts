@@ -1,8 +1,5 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
@@ -17,26 +14,26 @@ impl BehaviorAnalyzer {
         analysis_period: u64,
     ) -> Result<BehaviorAnalysis, DiagnosticsError> {
         // Validate analysis period (must be between 1 day and 1 year)
-        if analysis_period < 86400 || analysis_period > 31_536_000 {
+        if !(86400..=31_536_000).contains(&analysis_period) {
             return Err(DiagnosticsError::InvalidAnalysisPeriod);
         }
 
         // Gather user interaction data
         let interaction_data = Self::gather_user_interaction_data(env, user, analysis_period)?;
-        
+
         if interaction_data.is_empty() {
             return Err(DiagnosticsError::InsufficientBehaviorData);
         }
 
         // Analyze behavior patterns
         let behavior_patterns = Self::identify_behavior_patterns(env, &interaction_data);
-        
+
         // Assess learning effectiveness
         let learning_effectiveness = Self::assess_learning_effectiveness(env, &interaction_data);
-        
+
         // Calculate engagement metrics
         let engagement_metrics = Self::calculate_engagement_metrics(env, &interaction_data);
-        
+
         // Generate optimization suggestions
         let optimization_suggestions = Self::generate_optimization_suggestions(
             env,
@@ -44,9 +41,10 @@ impl BehaviorAnalyzer {
             &learning_effectiveness,
             &engagement_metrics,
         );
-        
+
         // Identify risk indicators
-        let risk_indicators = Self::identify_risk_indicators(env, &interaction_data, &engagement_metrics);
+        let risk_indicators =
+            Self::identify_risk_indicators(env, &interaction_data, &engagement_metrics);
 
         let analysis_id = Self::generate_analysis_id(env);
 
@@ -82,13 +80,14 @@ impl BehaviorAnalyzer {
         course_path: &Vec<String>,
     ) -> Result<LearningPathEffectiveness, DiagnosticsError> {
         let interaction_data = Self::gather_user_interaction_data(env, user, 30 * 86400)?; // 30 days
-        
+
         // Analyze completion rates for each step
-        let step_completion_rates = Self::calculate_step_completion_rates(env, &interaction_data, course_path);
-        
+        let step_completion_rates =
+            Self::calculate_step_completion_rates(env, &interaction_data, course_path);
+
         // Identify optimal path adjustments
         let path_optimizations = Self::identify_path_optimizations(env, &step_completion_rates);
-        
+
         // Calculate overall path effectiveness
         let overall_effectiveness = Self::calculate_path_effectiveness(&step_completion_rates);
 
@@ -108,7 +107,7 @@ impl BehaviorAnalyzer {
         user: &Address,
     ) -> Result<DropoutRiskAssessment, DiagnosticsError> {
         let interaction_data = Self::gather_user_interaction_data(env, user, 14 * 86400)?; // 14 days
-        
+
         if interaction_data.is_empty() {
             return Err(DiagnosticsError::InsufficientBehaviorData);
         }
@@ -157,20 +156,30 @@ impl BehaviorAnalyzer {
 
         // Find users with similar learning patterns
         let similar_learners = Self::find_similar_learners(env, user, &user_data)?;
-        
+
         for similar_learner in similar_learners.iter() {
             let mut activities = Vec::new(env);
             activities.push_back(String::from_str(env, "Joint problem-solving sessions"));
             activities.push_back(String::from_str(env, "Peer review exercises"));
-            
+
             let mut benefits = Vec::new(env);
-            benefits.push_back(String::from_str(env, "Improved understanding through discussion"));
-            benefits.push_back(String::from_str(env, "Enhanced motivation through collaboration"));
-            
+            benefits.push_back(String::from_str(
+                env,
+                "Improved understanding through discussion",
+            ));
+            benefits.push_back(String::from_str(
+                env,
+                "Enhanced motivation through collaboration",
+            ));
+
             opportunities.push_back(CollaborativeOpportunity {
                 opportunity_type: CollaborationType::PeerStudy,
                 partner_user: similar_learner.clone(),
-                compatibility_score: Self::calculate_compatibility_score(&user_data, env, &similar_learner)?,
+                compatibility_score: Self::calculate_compatibility_score(
+                    &user_data,
+                    env,
+                    &similar_learner,
+                )?,
                 recommended_activities: activities,
                 expected_benefits: benefits,
             });
@@ -178,16 +187,19 @@ impl BehaviorAnalyzer {
 
         // Find mentoring opportunities
         let potential_mentors = Self::find_potential_mentors(env, user)?;
-        
+
         for mentor in potential_mentors.iter() {
             let mut activities = Vec::new(env);
             activities.push_back(String::from_str(env, "One-on-one guidance sessions"));
             activities.push_back(String::from_str(env, "Code review and feedback"));
-            
+
             let mut benefits = Vec::new(env);
-            benefits.push_back(String::from_str(env, "Accelerated learning through expert guidance"));
+            benefits.push_back(String::from_str(
+                env,
+                "Accelerated learning through expert guidance",
+            ));
             benefits.push_back(String::from_str(env, "Personalized feedback and direction"));
-            
+
             opportunities.push_back(CollaborativeOpportunity {
                 opportunity_type: CollaborationType::Mentoring,
                 partner_user: mentor.clone(),
@@ -217,13 +229,21 @@ impl BehaviorAnalyzer {
             interactions.push_back(UserInteraction {
                 user: user.clone(),
                 timestamp,
-                interaction_type: if i % 3 == 0 { InteractionType::Login } 
-                    else if i % 3 == 1 { InteractionType::ContentView } 
-                    else { InteractionType::Assessment },
+                interaction_type: if i % 3 == 0 {
+                    InteractionType::Login
+                } else if i % 3 == 1 {
+                    InteractionType::ContentView
+                } else {
+                    InteractionType::Assessment
+                },
                 duration: 300 + (i * 100), // Varying durations
-                success: i % 4 != 0, // 75% success rate
+                success: i % 4 != 0,       // 75% success rate
                 content_id: String::from_str(env, "content"),
-                score: if i % 3 == 2 { Some(75 + ((i * 5) % 25) as u32) } else { None },
+                score: if i % 3 == 2 {
+                    Some(75 + ((i * 5) % 25) as u32)
+                } else {
+                    None
+                },
             });
         }
 
@@ -235,7 +255,10 @@ impl BehaviorAnalyzer {
     }
 
     /// Identify behavior patterns from interaction data
-    fn identify_behavior_patterns(env: &Env, interactions: &Vec<UserInteraction>) -> Vec<BehaviorPattern> {
+    fn identify_behavior_patterns(
+        env: &Env,
+        interactions: &Vec<UserInteraction>,
+    ) -> Vec<BehaviorPattern> {
         let mut patterns = Vec::new(env);
 
         // Login timing pattern
@@ -258,7 +281,10 @@ impl BehaviorAnalyzer {
     }
 
     /// Assess learning effectiveness from interaction data
-    fn assess_learning_effectiveness(env: &Env, interactions: &Vec<UserInteraction>) -> LearningEffectiveness {
+    fn assess_learning_effectiveness(
+        env: &Env,
+        interactions: &Vec<UserInteraction>,
+    ) -> LearningEffectiveness {
         let completion_rate = Self::calculate_completion_rate(interactions);
         let knowledge_retention = Self::estimate_knowledge_retention(env, interactions);
         let skill_acquisition = Self::assess_skill_acquisition(env, interactions);
@@ -275,11 +301,15 @@ impl BehaviorAnalyzer {
     }
 
     /// Calculate engagement metrics
-    fn calculate_engagement_metrics(env: &Env, interactions: &Vec<UserInteraction>) -> EngagementMetrics {
+    fn calculate_engagement_metrics(
+        env: &Env,
+        interactions: &Vec<UserInteraction>,
+    ) -> EngagementMetrics {
         let daily_active_time = Self::calculate_daily_active_time(interactions);
         let session_frequency = Self::calculate_session_frequency(interactions);
         let content_interaction_rate = Self::calculate_content_interaction_rate(interactions);
-        let completion_velocity = Self::calculate_completion_velocity_from_interactions(interactions);
+        let completion_velocity =
+            Self::calculate_completion_velocity_from_interactions(interactions);
         let return_rate = Self::calculate_return_rate(env, interactions);
 
         EngagementMetrics {
@@ -301,21 +331,35 @@ impl BehaviorAnalyzer {
         let mut suggestions = Vec::new(env);
 
         // Engagement-based suggestions
-        if engagement.daily_active_time < 30 { // Less than 30 minutes
-            suggestions.push_back(String::from_str(env, "Consider shorter, more frequent learning sessions"));
+        if engagement.daily_active_time < 30 {
+            // Less than 30 minutes
+            suggestions.push_back(String::from_str(
+                env,
+                "Consider shorter, more frequent learning sessions",
+            ));
         }
 
-        if engagement.session_frequency < 3 { // Less than 3 sessions per week
-            suggestions.push_back(String::from_str(env, "Increase learning session frequency for better retention"));
+        if engagement.session_frequency < 3 {
+            // Less than 3 sessions per week
+            suggestions.push_back(String::from_str(
+                env,
+                "Increase learning session frequency for better retention",
+            ));
         }
 
         // Effectiveness-based suggestions
         if effectiveness.completion_rate < 60 {
-            suggestions.push_back(String::from_str(env, "Focus on completing current modules before starting new ones"));
+            suggestions.push_back(String::from_str(
+                env,
+                "Focus on completing current modules before starting new ones",
+            ));
         }
 
         if effectiveness.knowledge_retention < 70 {
-            suggestions.push_back(String::from_str(env, "Implement spaced repetition for better retention"));
+            suggestions.push_back(String::from_str(
+                env,
+                "Implement spaced repetition for better retention",
+            ));
         }
 
         // Pattern-based suggestions
@@ -323,12 +367,18 @@ impl BehaviorAnalyzer {
             match pattern.pattern_type {
                 PatternType::SessionDuration => {
                     if pattern.impact_on_learning == ImpactLevel::Negative {
-                        suggestions.push_back(String::from_str(env, "Optimize session duration for better learning outcomes"));
+                        suggestions.push_back(String::from_str(
+                            env,
+                            "Optimize session duration for better learning outcomes",
+                        ));
                     }
                 }
                 PatternType::LoginTiming => {
                     if pattern.confidence > 80 {
-                        suggestions.push_back(String::from_str(env, "Maintain consistent learning schedule"));
+                        suggestions.push_back(String::from_str(
+                            env,
+                            "Maintain consistent learning schedule",
+                        ));
                     }
                 }
                 _ => {}
@@ -351,7 +401,7 @@ impl BehaviorAnalyzer {
             let mut suggestions = Vec::new(env);
             suggestions.push_back(String::from_str(env, "Implement re-engagement campaigns"));
             suggestions.push_back(String::from_str(env, "Provide personalized motivation"));
-            
+
             risks.push_back(RiskIndicator {
                 risk_type: RiskType::Dropout,
                 severity: RiskLevel::High,
@@ -367,12 +417,15 @@ impl BehaviorAnalyzer {
             let mut suggestions = Vec::new(env);
             suggestions.push_back(String::from_str(env, "Introduce new learning methods"));
             suggestions.push_back(String::from_str(env, "Provide additional challenges"));
-            
+
             risks.push_back(RiskIndicator {
                 risk_type: RiskType::LearningPlateau,
                 severity: RiskLevel::Medium,
                 probability: 60,
-                description: String::from_str(env, "Stagnant performance indicates learning plateau"),
+                description: String::from_str(
+                    env,
+                    "Stagnant performance indicates learning plateau",
+                ),
                 mitigation_suggestions: suggestions,
             });
         }
@@ -390,13 +443,17 @@ impl BehaviorAnalyzer {
         }
 
         let consistency = Self::calculate_timing_consistency(&login_times);
-        let frequency = login_times.len() as u32;
+        let frequency = login_times.len();
 
         BehaviorPattern {
             pattern_type: PatternType::LoginTiming,
             frequency,
             confidence: if consistency > 0.7 { 85 } else { 45 },
-            impact_on_learning: if consistency > 0.7 { ImpactLevel::Positive } else { ImpactLevel::Neutral },
+            impact_on_learning: if consistency > 0.7 {
+                ImpactLevel::Positive
+            } else {
+                ImpactLevel::Neutral
+            },
             description: String::from_str(env, "User logs in with regular timing patterns"),
         }
     }
@@ -411,38 +468,41 @@ impl BehaviorAnalyzer {
 
         BehaviorPattern {
             pattern_type: PatternType::SessionDuration,
-            frequency: durations.len() as u32,
+            frequency: durations.len(),
             confidence: if variance < 0.3 { 80 } else { 50 },
-            impact_on_learning: if avg_duration > 600 && avg_duration < 3600 { 
-                ImpactLevel::Positive 
-            } else { 
-                ImpactLevel::Negative 
+            impact_on_learning: if avg_duration > 600 && avg_duration < 3600 {
+                ImpactLevel::Positive
+            } else {
+                ImpactLevel::Negative
             },
             description: String::from_str(env, "User has consistent session duration patterns"),
         }
     }
 
-    fn analyze_content_consumption(env: &Env, interactions: &Vec<UserInteraction>) -> BehaviorPattern {
+    fn analyze_content_consumption(
+        env: &Env,
+        interactions: &Vec<UserInteraction>,
+    ) -> BehaviorPattern {
         let content_views = interactions
             .iter()
             .filter(|i| matches!(i.interaction_type, InteractionType::ContentView))
             .count() as u32;
 
-        let total_interactions = interactions.len() as u32;
-        let consumption_rate = if total_interactions > 0 { 
-            (content_views * 100) / total_interactions 
-        } else { 
-            0 
+        let total_interactions = interactions.len();
+        let consumption_rate = if total_interactions > 0 {
+            (content_views * 100) / total_interactions
+        } else {
+            0
         };
 
         BehaviorPattern {
             pattern_type: PatternType::ContentConsumption,
             frequency: content_views,
             confidence: 75,
-            impact_on_learning: if consumption_rate > 60 { 
-                ImpactLevel::Positive 
-            } else { 
-                ImpactLevel::Negative 
+            impact_on_learning: if consumption_rate > 60 {
+                ImpactLevel::Positive
+            } else {
+                ImpactLevel::Negative
             },
             description: String::from_str(env, "Content consumption analysis"),
         }
@@ -460,16 +520,20 @@ impl BehaviorAnalyzer {
             1
         };
 
-        let pacing_rate = if time_span > 0 { assessments * 86400 / time_span as u32 } else { 0 };
+        let pacing_rate = if time_span > 0 {
+            assessments * 86400 / time_span as u32
+        } else {
+            0
+        };
 
         BehaviorPattern {
             pattern_type: PatternType::ProgressPacing,
             frequency: pacing_rate,
             confidence: 70,
-            impact_on_learning: if pacing_rate > 0 && pacing_rate < 3 { 
-                ImpactLevel::Positive 
-            } else { 
-                ImpactLevel::Neutral 
+            impact_on_learning: if pacing_rate > 0 && pacing_rate < 3 {
+                ImpactLevel::Positive
+            } else {
+                ImpactLevel::Neutral
             },
             description: String::from_str(env, "Progress pacing analysis"),
         }
@@ -478,8 +542,12 @@ impl BehaviorAnalyzer {
     // Helper calculation methods
     fn calculate_completion_rate(interactions: &Vec<UserInteraction>) -> u32 {
         let successful = interactions.iter().filter(|i| i.success).count() as u32;
-        let total = interactions.len() as u32;
-        if total > 0 { (successful * 100) / total } else { 0 }
+        let total = interactions.len();
+        if total > 0 {
+            (successful * 100) / total
+        } else {
+            0
+        }
     }
 
     fn estimate_knowledge_retention(env: &Env, interactions: &Vec<UserInteraction>) -> u32 {
@@ -494,7 +562,7 @@ impl BehaviorAnalyzer {
             return 50; // Default estimate
         }
 
-        let avg_score = assessment_scores.iter().sum::<u32>() / assessment_scores.len() as u32;
+        let avg_score = assessment_scores.iter().sum::<u32>() / assessment_scores.len();
         avg_score.min(100)
     }
 
@@ -513,7 +581,7 @@ impl BehaviorAnalyzer {
         let mid = scores.len() / 2;
         let mut first_sum = 0u32;
         let mut second_sum = 0u32;
-        
+
         for i in 0..mid {
             first_sum += scores.get(i).unwrap();
         }
@@ -544,8 +612,8 @@ impl BehaviorAnalyzer {
     }
 
     fn determine_effectiveness_trend(interactions: &Vec<UserInteraction>) -> EffectivenessTrend {
-        let mut scores = Vec::new(&interactions.env());
-        
+        let mut scores = Vec::new(interactions.env());
+
         for i in 0..interactions.len() {
             let interaction = interactions.get(i).unwrap();
             if let Some(score) = interaction.score {
@@ -559,12 +627,12 @@ impl BehaviorAnalyzer {
 
         let first_third_end = scores.len() / 3;
         let last_third_start = (scores.len() * 2) / 3;
-        
+
         let mut first_sum = 0u32;
         let mut last_sum = 0u32;
         let mut first_count = 0u32;
         let mut last_count = 0u32;
-        
+
         for i in 0..first_third_end {
             first_sum += scores.get(i).unwrap();
             first_count += 1;
@@ -574,8 +642,16 @@ impl BehaviorAnalyzer {
             last_count += 1;
         }
 
-        let first_avg = if first_count > 0 { first_sum / first_count } else { 0 };
-        let last_avg = if last_count > 0 { last_sum / last_count } else { 0 };
+        let first_avg = if first_count > 0 {
+            first_sum / first_count
+        } else {
+            0
+        };
+        let last_avg = if last_count > 0 {
+            last_sum / last_count
+        } else {
+            0
+        };
 
         if last_avg > first_avg + 5 {
             EffectivenessTrend::Improving
@@ -592,8 +668,9 @@ impl BehaviorAnalyzer {
         }
 
         let total_time: u64 = interactions.iter().map(|i| i.duration).sum();
-        let days = if interactions.len() > 0 {
-            let time_span = interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
+        let days = if !interactions.is_empty() {
+            let time_span =
+                interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
             (time_span / 86400).max(1)
         } else {
             1
@@ -612,9 +689,10 @@ impl BehaviorAnalyzer {
             return 0;
         }
 
-        let time_span = interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
+        let time_span =
+            interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
         let weeks = (time_span / (7 * 86400)).max(1);
-        
+
         login_count / weeks as u32
     }
 
@@ -624,8 +702,12 @@ impl BehaviorAnalyzer {
             .filter(|i| matches!(i.interaction_type, InteractionType::ContentView))
             .count() as u32;
 
-        let total = interactions.len() as u32;
-        if total > 0 { (content_interactions * 100) / total } else { 0 }
+        let total = interactions.len();
+        if total > 0 {
+            (content_interactions * 100) / total
+        } else {
+            0
+        }
     }
 
     fn calculate_completion_velocity_from_interactions(interactions: &Vec<UserInteraction>) -> u32 {
@@ -635,7 +717,7 @@ impl BehaviorAnalyzer {
                 completions += 1;
             }
         }
-        
+
         if interactions.is_empty() {
             return 0;
         }
@@ -644,7 +726,7 @@ impl BehaviorAnalyzer {
         let last_ts = interactions.get(interactions.len() - 1).unwrap().timestamp;
         let time_span = last_ts - first_ts;
         let days = (time_span / 86400).max(1);
-        
+
         completions * 7 / days as u32 // Completions per week
     }
 
@@ -670,13 +752,19 @@ impl BehaviorAnalyzer {
         }
 
         let avg_gap = gaps.iter().sum::<u64>() / gaps.len() as u64;
-        
+
         // Convert to return rate (higher frequency = higher return rate)
-        if avg_gap <= 1 { 100 }
-        else if avg_gap <= 3 { 80 }
-        else if avg_gap <= 7 { 60 }
-        else if avg_gap <= 14 { 40 }
-        else { 20 }
+        if avg_gap <= 1 {
+            100
+        } else if avg_gap <= 3 {
+            80
+        } else if avg_gap <= 7 {
+            60
+        } else if avg_gap <= 14 {
+            40
+        } else {
+            20
+        }
     }
 
     // Additional helper methods
@@ -690,14 +778,14 @@ impl BehaviorAnalyzer {
             sum += times.get(i).unwrap();
         }
         let mean = sum as f64 / times.len() as f64;
-        
+
         let mut variance_sum = 0.0f64;
         for i in 0..times.len() {
             let diff = times.get(i).unwrap() as f64 - mean;
             variance_sum += diff * diff;
         }
         let variance = variance_sum / times.len() as f64;
-        
+
         1.0 / (1.0 + variance.sqrt() / 3600.0) // Normalize by hour
     }
 
@@ -711,7 +799,7 @@ impl BehaviorAnalyzer {
             let d = durations.get(i).unwrap();
             variance_sum += (d as f64 - mean as f64).powi(2);
         }
-        
+
         let variance = variance_sum / durations.len() as f64;
         variance.sqrt() / mean as f64
     }
@@ -734,14 +822,14 @@ impl BehaviorAnalyzer {
             gap_sum += gaps.get(i).unwrap();
         }
         let mean_gap = gap_sum as f64 / gaps.len() as f64;
-        
+
         let mut variance_sum = 0.0;
         for i in 0..gaps.len() {
             let g = gaps.get(i).unwrap();
             variance_sum += (g as f64 - mean_gap).powi(2);
         }
         let variance = variance_sum / gaps.len() as f64;
-        
+
         1.0 / (1.0 + variance.sqrt() / 86400.0) // Normalize by day
     }
 
@@ -764,13 +852,17 @@ impl BehaviorAnalyzer {
 
         // Get the last 3 scores manually
         let start_idx = scores.len().saturating_sub(3);
-        let mut recent = vec![];
+        let mut recent = [0u32; 3];
+        let mut count = 0;
         for i in start_idx..scores.len() {
-            recent.push(scores.get(i).unwrap());
+            if count < 3 {
+                recent[count] = scores.get(i).unwrap();
+                count += 1;
+            }
         }
-        
-        let variance = Self::calculate_score_variance(&recent);
-        
+
+        let variance = Self::calculate_score_variance(&recent[..count]);
+
         variance < 5.0 // Low variance indicates plateau
     }
 
@@ -780,9 +872,11 @@ impl BehaviorAnalyzer {
         }
 
         let mean = scores.iter().sum::<u32>() as f64 / scores.len() as f64;
-        scores.iter()
+        scores
+            .iter()
             .map(|s| (*s as f64 - mean).powi(2))
-            .sum::<f64>() / scores.len() as f64
+            .sum::<f64>()
+            / scores.len() as f64
     }
 
     fn generate_analysis_id(env: &Env) -> BytesN<32> {
@@ -843,7 +937,7 @@ impl BehaviorAnalyzer {
         progress: u32,
     ) -> RiskLevel {
         let combined_score = (engagement + velocity + consistency + progress) / 4;
-        
+
         if combined_score < 40 {
             RiskLevel::Critical
         } else if combined_score < 60 {
@@ -885,7 +979,10 @@ impl BehaviorAnalyzer {
         Ok(75) // Placeholder
     }
 
-    fn find_potential_mentors(_env: &Env, _user: &Address) -> Result<Vec<Address>, DiagnosticsError> {
+    fn find_potential_mentors(
+        _env: &Env,
+        _user: &Address,
+    ) -> Result<Vec<Address>, DiagnosticsError> {
         Ok(Vec::new(_env)) // Placeholder
     }
 }

@@ -1,10 +1,7 @@
 use crate::{
-    errors::DiagnosticsError,
-    events::DiagnosticsEvents,
-    storage::DiagnosticsStorage,
-    types::*,
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
-use soroban_sdk::{Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 /// Advanced performance regression testing and alerting system
 pub struct RegressionTester;
@@ -28,27 +25,36 @@ impl RegressionTester {
         // Execute each test scenario
         for i in 0..test_configuration.test_scenarios.len() {
             let scenario = test_configuration.test_scenarios.get(i).unwrap();
-            
+
             match Self::execute_test_scenario(env, contract_address, &scenario) {
                 Ok(result) => {
                     total_test_score += result.performance_score;
-                    
+
                     // Check for regressions
                     if let Some(regression) = Self::detect_regression(env, &scenario, &result) {
                         regressions_detected.push_back(regression);
                     }
-                    
+
                     test_results.push_back(result);
                 }
-                Err(e) => {
+                Err(_e) => {
                     // Create failed test result
                     let failed_result = TestScenarioResult {
                         scenario_id: scenario.scenario_id.clone(),
                         scenario_name: scenario.test_name.clone(),
                         test_name: scenario.test_name.clone(),
-                        current_metrics: Self::create_empty_performance_metrics(env, contract_address),
-                        baseline_metrics: Self::create_empty_performance_metrics(env, contract_address),
-                        performance_metrics: Self::create_empty_performance_metrics(env, contract_address),
+                        current_metrics: Self::create_empty_performance_metrics(
+                            env,
+                            contract_address,
+                        ),
+                        baseline_metrics: Self::create_empty_performance_metrics(
+                            env,
+                            contract_address,
+                        ),
+                        performance_metrics: Self::create_empty_performance_metrics(
+                            env,
+                            contract_address,
+                        ),
                         deviation_percentage: -100,
                         status: TestStatus::Failed,
                         execution_status: TestStatus::Failed,
@@ -59,7 +65,7 @@ impl RegressionTester {
                         baseline_comparison: BaselineComparison {
                             baseline_duration: 0,
                             current_duration: 0,
-                            baseline_score: scenario.expected_performance_score as u64,
+                            baseline_score: scenario.expected_performance_score,
                             current_score: 0,
                             performance_delta: -(scenario.expected_performance_score as i64) as i32,
                             regression_detected: true,
@@ -133,10 +139,18 @@ impl RegressionTester {
             test_timestamp: env.ledger().timestamp(),
             test_scenarios: test_configuration.test_scenarios.clone(),
             scenario_results: test_results.clone(),
-            overall_status: if !regressions_detected.is_empty() { TestStatus::Failed } else { TestStatus::Passed },
-            regression_report: Self::create_regression_report(env, contract_address, &regressions_detected),
+            overall_status: if !regressions_detected.is_empty() {
+                TestStatus::Failed
+            } else {
+                TestStatus::Passed
+            },
+            regression_report: Self::create_regression_report(
+                env,
+                contract_address,
+                &regressions_detected,
+            ),
             test_summary: Self::generate_test_summary(env, &regressions_detected, average_score),
-            test_configuration: Self::create_test_parameters(env, &test_configuration),
+            test_configuration: Self::create_test_parameters(env, test_configuration),
             regressions_detected: regressions_detected.clone(),
             overall_performance_score: average_score as u32,
             performance_trends: Self::analyze_performance_trends(env, contract_address)?,
@@ -154,9 +168,9 @@ impl RegressionTester {
 
         // Emit regression test completion event
         DiagnosticsEvents::emit_regression_test_complete(
-            env, 
-            contract_address, 
-            regressions_detected.len() as u32
+            env,
+            contract_address,
+            regressions_detected.len(),
         );
 
         Ok(test_result)
@@ -180,16 +194,24 @@ impl RegressionTester {
         Self::prepare_test_environment(env, &dummy_params)?;
 
         // Execute performance measurements
-        let performance_metrics = Self::measure_scenario_performance(env, contract_address, scenario)?;
-        
+        let performance_metrics =
+            Self::measure_scenario_performance(env, contract_address, scenario)?;
+
         // Calculate performance score
-        let performance_score = Self::calculate_performance_score(&performance_metrics, &scenario.performance_thresholds);
+        let performance_score = Self::calculate_performance_score(
+            &performance_metrics,
+            &scenario.performance_thresholds,
+        );
 
         // Compare against baseline
         let baseline_comparison = Self::compare_with_baseline(env, scenario, performance_score)?;
 
         // Generate scenario-specific recommendations
-        let recommendations = Self::generate_scenario_recommendations(env, &performance_metrics, &baseline_comparison);
+        let recommendations = Self::generate_scenario_recommendations(
+            env,
+            &performance_metrics,
+            &baseline_comparison,
+        );
 
         let execution_time = env.ledger().timestamp() - start_time;
 
@@ -198,7 +220,10 @@ impl RegressionTester {
             scenario_name: scenario.test_name.clone(),
             test_name: scenario.test_name.clone(),
             current_metrics: performance_metrics.clone(),
-            baseline_metrics: Self::create_empty_performance_metrics(env, &scenario.target_contract),
+            baseline_metrics: Self::create_empty_performance_metrics(
+                env,
+                &scenario.target_contract,
+            ),
             performance_metrics,
             deviation_percentage: baseline_comparison.performance_delta,
             status: TestStatus::Passed,
@@ -227,17 +252,37 @@ impl RegressionTester {
                 scenario_id: scenario.scenario_id.clone(),
                 test_name: scenario.test_name.clone(),
                 metric_name: String::from_str(env, "performance_score"),
-                baseline_value: comparison.baseline_score as u64,
-                current_value: comparison.current_score as u64,
+                baseline_value: comparison.baseline_score,
+                current_value: comparison.current_score,
                 regression_percentage: comparison.performance_delta,
                 severity: RiskLevel::High,
-                regression_type: Self::regression_type_to_string(env, Self::classify_regression_type(&result.performance_metrics, scenario)),
+                regression_type: Self::regression_type_to_string(
+                    env,
+                    Self::classify_regression_type(&result.performance_metrics, scenario),
+                ),
                 detected_at: env.ledger().timestamp(),
-                performance_impact: comparison.performance_delta.abs() as u32,
-                affected_operations: Self::identify_affected_operations(env, &result.performance_metrics),
-                root_cause_analysis: Self::analyze_regression_root_cause(env, &result.performance_metrics, scenario),
-                mitigation_steps: Self::generate_regression_mitigation_steps(env, &result.performance_metrics),
-                rollback_recommendation: String::from_str(env, if Self::assess_rollback_need(&comparison) { "Recommended" } else { "Not Required" }),
+                performance_impact: comparison.performance_delta.unsigned_abs(),
+                affected_operations: Self::identify_affected_operations(
+                    env,
+                    &result.performance_metrics,
+                ),
+                root_cause_analysis: Self::analyze_regression_root_cause(
+                    env,
+                    &result.performance_metrics,
+                    scenario,
+                ),
+                mitigation_steps: Self::generate_regression_mitigation_steps(
+                    env,
+                    &result.performance_metrics,
+                ),
+                rollback_recommendation: String::from_str(
+                    env,
+                    if Self::assess_rollback_need(comparison) {
+                        "Recommended"
+                    } else {
+                        "Not Required"
+                    },
+                ),
                 monitoring_alerts: Self::setup_regression_monitoring(env, scenario),
             })
         } else {
@@ -292,14 +337,20 @@ impl RegressionTester {
         session_id: &BytesN<32>,
         current_metrics: &PerformanceMetrics,
     ) -> Result<Vec<PerformanceAlert>, DiagnosticsError> {
-        let monitoring_session = DiagnosticsStorage::get_monitoring_session(env, contract_address, session_id)?;
+        let monitoring_session =
+            DiagnosticsStorage::get_monitoring_session(env, contract_address, session_id)?;
         let mut alerts = Vec::new(env);
 
         // Check each alert threshold
         for i in 0..monitoring_session.alert_thresholds.len() {
             let threshold = monitoring_session.alert_thresholds.get(i).unwrap();
-            
-            if let Some(alert) = Self::evaluate_alert_threshold(env, current_metrics, &threshold, &monitoring_session.baseline_metrics) {
+
+            if let Some(alert) = Self::evaluate_alert_threshold(
+                env,
+                current_metrics,
+                &threshold,
+                &monitoring_session.baseline_metrics,
+            ) {
                 alerts.push_back(alert);
             }
         }
@@ -307,7 +358,11 @@ impl RegressionTester {
         // Store any new alerts
         if !alerts.is_empty() {
             for j in 0..alerts.len() {
-                DiagnosticsStorage::store_performance_alert(env, contract_address, &alerts.get(j).unwrap());
+                DiagnosticsStorage::store_performance_alert(
+                    env,
+                    contract_address,
+                    &alerts.get(j).unwrap(),
+                );
             }
         }
 
@@ -324,8 +379,18 @@ impl RegressionTester {
         let start_time = end_time - time_period;
 
         // Gather regression data
-        let test_results = DiagnosticsStorage::get_regression_test_results_in_period(env, contract_address, start_time, end_time)?;
-        let alerts = DiagnosticsStorage::get_performance_alerts_in_period(env, contract_address, start_time, end_time)?;
+        let test_results = DiagnosticsStorage::get_regression_test_results_in_period(
+            env,
+            contract_address,
+            start_time,
+            end_time,
+        )?;
+        let alerts = DiagnosticsStorage::get_performance_alerts_in_period(
+            env,
+            contract_address,
+            start_time,
+            end_time,
+        )?;
 
         let mut critical_regressions = 0u32;
         let mut high_severity_regressions = 0u32;
@@ -337,7 +402,7 @@ impl RegressionTester {
             for j in 0..result.regressions_detected.len() {
                 let regression = result.regressions_detected.get(j).unwrap();
                 total_regressions += 1;
-                
+
                 match regression.severity {
                     RiskLevel::Critical => critical_regressions += 1,
                     RiskLevel::High => high_severity_regressions += 1,
@@ -350,7 +415,7 @@ impl RegressionTester {
         let performance_trend = Self::calculate_performance_trend(&test_results);
         let stability_score = Self::calculate_stability_score(&test_results);
         let risk_assessment_result = Self::assess_regression_risk(&test_results, &alerts);
-        let coverage_analysis = Self::analyze_testing_coverage(env, &test_results);
+        let _coverage_analysis = Self::analyze_testing_coverage(env, &test_results);
 
         Ok(RegressionReport {
             report_id: Self::generate_report_id(env),
@@ -360,18 +425,25 @@ impl RegressionTester {
             performance_changes: Vec::new(env),
             failed_thresholds: Vec::new(env),
             recommendations: Self::generate_improvement_recommendations(env, &test_results),
-            overall_verdict: if total_regressions == 0 { TestVerdict::Pass } else { TestVerdict::Fail },
+            overall_verdict: if total_regressions == 0 {
+                TestVerdict::Pass
+            } else {
+                TestVerdict::Fail
+            },
             contract_address: contract_address.clone(),
             report_period_start: start_time,
             report_period_end: end_time,
-            total_tests_executed: test_results.len() as u32,
+            total_tests_executed: test_results.len(),
             total_regressions_detected: total_regressions,
             critical_regressions,
             high_severity_regressions,
             performance_trend,
             stability_score: (stability_score * 100.0) as u64,
             most_problematic_areas: Self::identify_problematic_areas(env, &test_results),
-            improvement_recommendations: Self::generate_improvement_recommendations(env, &test_results),
+            improvement_recommendations: Self::generate_improvement_recommendations(
+                env,
+                &test_results,
+            ),
             testing_coverage_analysis: String::from_str(env, "Coverage analysis complete"),
             risk_assessment: risk_assessment_result.overall_risk,
         })
@@ -383,7 +455,8 @@ impl RegressionTester {
         contract_address: &Address,
     ) -> Result<PerformanceTrends, DiagnosticsError> {
         // Get historical test results for trend analysis
-        let historical_results = DiagnosticsStorage::get_historical_regression_results(env, contract_address, 30)?; // Last 30 days
+        let historical_results =
+            DiagnosticsStorage::get_historical_regression_results(env, contract_address, 30)?; // Last 30 days
 
         if historical_results.len() < 2 {
             return Ok(PerformanceTrends {
@@ -410,7 +483,7 @@ impl RegressionTester {
         } else {
             TrendDirection::Stable
         };
-        
+
         let score_direction = if score_trend > 5.0 {
             TrendDirection::Increasing
         } else if score_trend < -5.0 {
@@ -418,7 +491,7 @@ impl RegressionTester {
         } else {
             TrendDirection::Stable
         };
-        
+
         let regression_direction = if regression_trend > 0.0 {
             TrendDirection::Increasing
         } else if regression_trend < 0.0 {
@@ -426,7 +499,7 @@ impl RegressionTester {
         } else {
             TrendDirection::Stable
         };
-        
+
         let stability_direction = if stability_trend_val > 0.0 {
             TrendDirection::Increasing
         } else if stability_trend_val < 0.0 {
@@ -560,7 +633,8 @@ impl RegressionTester {
         current_score: f64,
     ) -> Result<BaselineComparison, DiagnosticsError> {
         let baseline_score = scenario.expected_performance_score;
-        let performance_delta = ((current_score - baseline_score as f64) * 100.0 / baseline_score as f64) as i32;
+        let performance_delta =
+            ((current_score - baseline_score as f64) * 100.0 / baseline_score as f64) as i32;
         let regression_threshold = -10; // 10% degradation threshold
 
         let regression_detected = performance_delta < regression_threshold;
@@ -573,9 +647,11 @@ impl RegressionTester {
         } else {
             0 // Low
         };
-        
-        let baseline_metrics = Self::create_empty_performance_metrics(env, &scenario.target_contract);
-        let current_metrics = Self::create_empty_performance_metrics(env, &scenario.target_contract);
+
+        let baseline_metrics =
+            Self::create_empty_performance_metrics(env, &scenario.target_contract);
+        let current_metrics =
+            Self::create_empty_performance_metrics(env, &scenario.target_contract);
 
         Ok(BaselineComparison {
             baseline_metrics,
@@ -594,7 +670,10 @@ impl RegressionTester {
         })
     }
 
-    fn create_empty_performance_metrics(env: &Env, contract_address: &Address) -> PerformanceMetrics {
+    fn create_empty_performance_metrics(
+        env: &Env,
+        contract_address: &Address,
+    ) -> PerformanceMetrics {
         PerformanceMetrics {
             contract_address: contract_address.clone(),
             timestamp: env.ledger().timestamp(),
@@ -621,19 +700,12 @@ impl RegressionTester {
     fn generate_test_summary(
         env: &Env,
         regressions: &Vec<PerformanceRegression>,
-        average_score: f64,
+        _average_score: f64,
     ) -> String {
         if regressions.is_empty() {
-            String::from_str(env, &format!(
-                "All tests passed successfully. Average performance score: {:.1}",
-                average_score
-            ))
+            String::from_str(env, "All tests passed successfully")
         } else {
-            String::from_str(env, &format!(
-                "{} regressions detected. Average performance score: {:.1}. Immediate attention required.",
-                regressions.len(),
-                average_score
-            ))
+            String::from_str(env, "Regressions detected. Immediate attention required")
         }
     }
 
@@ -662,27 +734,39 @@ impl RegressionTester {
         }
 
         if critical_count > 0 {
-            recommendations.push_back(String::from_str(env, "URGENT: Address critical performance regressions immediately"));
-            recommendations.push_back(String::from_str(env, "Consider rollback if fixes cannot be implemented quickly"));
+            recommendations.push_back(String::from_str(
+                env,
+                "URGENT: Address critical performance regressions immediately",
+            ));
+            recommendations.push_back(String::from_str(
+                env,
+                "Consider rollback if fixes cannot be implemented quickly",
+            ));
         }
 
         if high_count > 0 {
-            recommendations.push_back(String::from_str(env, "Prioritize high-severity regression fixes"));
+            recommendations.push_back(String::from_str(
+                env,
+                "Prioritize high-severity regression fixes",
+            ));
             recommendations.push_back(String::from_str(env, "Increase monitoring frequency"));
         }
 
-        recommendations.push_back(String::from_str(env, "Review recent code changes for performance impact"));
-        recommendations.push_back(String::from_str(env, "Enhance test coverage in affected areas"));
+        recommendations.push_back(String::from_str(
+            env,
+            "Review recent code changes for performance impact",
+        ));
+        recommendations.push_back(String::from_str(
+            env,
+            "Enhance test coverage in affected areas",
+        ));
 
         recommendations
     }
 
-    fn calculate_next_test_schedule(
-        env: &Env,
-        regressions: &Vec<PerformanceRegression>,
-    ) -> u64 {
+    fn calculate_next_test_schedule(env: &Env, regressions: &Vec<PerformanceRegression>) -> u64 {
         let current_time = env.ledger().timestamp();
-        
+
         // Schedule more frequent tests if regressions were detected
         if regressions.is_empty() {
             current_time + 86400 // 24 hours for normal schedule
@@ -707,17 +791,29 @@ impl RegressionTester {
     ) {
         for i in 0..regressions.len() {
             let regression = regressions.get(i).unwrap();
-            
+
             // Emit alert event based on severity
             match regression.severity {
                 RiskLevel::Critical => {
-                    DiagnosticsEvents::emit_critical_regression_alert(env, contract_address, &regression.regression_id);
+                    DiagnosticsEvents::emit_critical_regression_alert(
+                        env,
+                        contract_address,
+                        &regression.regression_id,
+                    );
                 }
                 RiskLevel::High => {
-                    DiagnosticsEvents::emit_high_severity_regression_alert(env, contract_address, &regression.regression_id);
+                    DiagnosticsEvents::emit_high_severity_regression_alert(
+                        env,
+                        contract_address,
+                        &regression.regression_id,
+                    );
                 }
                 _ => {
-                    DiagnosticsEvents::emit_regression_alert(env, contract_address, &regression.regression_id);
+                    DiagnosticsEvents::emit_regression_alert(
+                        env,
+                        contract_address,
+                        &regression.regression_id,
+                    );
                 }
             }
         }
@@ -732,22 +828,32 @@ impl RegressionTester {
 
         if comparison.regression_detected {
             if metrics.execution_time > 1000 {
-                recommendations.push_back(String::from_str(env, "Optimize execution time - current performance is slow"));
+                recommendations.push_back(String::from_str(
+                    env,
+                    "Optimize execution time - current performance is slow",
+                ));
             }
 
             if metrics.gas_used > 5_000_000 {
-                recommendations.push_back(String::from_str(env, "Review gas optimization opportunities"));
+                recommendations.push_back(String::from_str(
+                    env,
+                    "Review gas optimization opportunities",
+                ));
             }
 
             if metrics.memory_usage > 100_000_000 {
-                recommendations.push_back(String::from_str(env, "Investigate memory usage patterns"));
+                recommendations
+                    .push_back(String::from_str(env, "Investigate memory usage patterns"));
             }
 
             if metrics.error_rate > 5 {
                 recommendations.push_back(String::from_str(env, "Address error rate increases"));
             }
         } else {
-            recommendations.push_back(String::from_str(env, "Performance within acceptable thresholds"));
+            recommendations.push_back(String::from_str(
+                env,
+                "Performance within acceptable thresholds",
+            ));
         }
 
         recommendations
@@ -777,7 +883,9 @@ impl RegressionTester {
         scenario: &RegressionTestScenario,
     ) -> f64 {
         if scenario.expected_execution_time > 0 {
-            ((metrics.execution_time as f64 - scenario.expected_execution_time as f64) / scenario.expected_execution_time as f64) * 100.0
+            ((metrics.execution_time as f64 - scenario.expected_execution_time as f64)
+                / scenario.expected_execution_time as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -788,7 +896,9 @@ impl RegressionTester {
         scenario: &RegressionTestScenario,
     ) -> f64 {
         if scenario.expected_memory_usage > 0 {
-            ((metrics.memory_usage as f64 - scenario.expected_memory_usage as f64) / scenario.expected_memory_usage as f64) * 100.0
+            ((metrics.memory_usage as f64 - scenario.expected_memory_usage as f64)
+                / scenario.expected_memory_usage as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -799,7 +909,9 @@ impl RegressionTester {
         scenario: &RegressionTestScenario,
     ) -> f64 {
         if scenario.expected_gas_usage > 0 {
-            ((metrics.gas_used as f64 - scenario.expected_gas_usage as f64) / scenario.expected_gas_usage as f64) * 100.0
+            ((metrics.gas_used as f64 - scenario.expected_gas_usage as f64)
+                / scenario.expected_gas_usage as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -810,7 +922,9 @@ impl RegressionTester {
         scenario: &RegressionTestScenario,
     ) -> f64 {
         if scenario.expected_transaction_count > 0 {
-            ((metrics.transaction_count as f64 - scenario.expected_transaction_count as f64) / scenario.expected_transaction_count as f64) * 100.0
+            ((metrics.transaction_count as f64 - scenario.expected_transaction_count as f64)
+                / scenario.expected_transaction_count as f64)
+                * 100.0
         } else {
             0.0
         }
@@ -834,19 +948,31 @@ impl RegressionTester {
         let gas_change = Self::calculate_gas_consumption_change(metrics, scenario);
 
         if execution_change.abs() > 20.0 {
-            String::from_str(env, "Execution time regression likely caused by algorithm or I/O changes")
+            String::from_str(
+                env,
+                "Execution time regression likely caused by algorithm or I/O changes",
+            )
         } else if memory_change > 30.0 {
-            String::from_str(env, "Memory usage increase suggests new memory allocations or leaks")
+            String::from_str(
+                env,
+                "Memory usage increase suggests new memory allocations or leaks",
+            )
         } else if gas_change > 25.0 {
-            String::from_str(env, "Gas consumption increase indicates computational complexity changes")
+            String::from_str(
+                env,
+                "Gas consumption increase indicates computational complexity changes",
+            )
         } else {
-            String::from_str(env, "Multiple factors contributing to performance regression")
+            String::from_str(
+                env,
+                "Multiple factors contributing to performance regression",
+            )
         }
     }
 
     fn identify_affected_operations(env: &Env, _metrics: &PerformanceMetrics) -> Vec<String> {
         let mut operations = Vec::new(env);
-        
+
         // In a real implementation, this would analyze which specific operations are affected
         operations.push_back(String::from_str(env, "Contract execution"));
         operations.push_back(String::from_str(env, "Storage operations"));
@@ -859,10 +985,8 @@ impl RegressionTester {
         // significance_level is u32 where higher values indicate more critical issues
         if comparison.significance_level >= 90 {
             true
-        } else if comparison.significance_level >= 70 && comparison.performance_delta < -40 {
-            true
         } else {
-            false
+            comparison.significance_level >= 70 && comparison.performance_delta < -40
         }
     }
 
@@ -872,34 +996,43 @@ impl RegressionTester {
     ) -> Vec<String> {
         let mut steps = Vec::new(env);
 
-        steps.push_back(String::from_str(env, "Identify specific code changes causing regression"));
-        steps.push_back(String::from_str(env, "Implement targeted performance fixes"));
-        steps.push_back(String::from_str(env, "Add specific regression tests for affected areas"));
-        steps.push_back(String::from_str(env, "Increase monitoring frequency during fix deployment"));
+        steps.push_back(String::from_str(
+            env,
+            "Identify specific code changes causing regression",
+        ));
+        steps.push_back(String::from_str(
+            env,
+            "Implement targeted performance fixes",
+        ));
+        steps.push_back(String::from_str(
+            env,
+            "Add specific regression tests for affected areas",
+        ));
+        steps.push_back(String::from_str(
+            env,
+            "Increase monitoring frequency during fix deployment",
+        ));
 
         steps
     }
 
-    fn setup_regression_monitoring(
-        env: &Env,
-        scenario: &RegressionTestScenario,
-    ) -> Vec<String> {
+    fn setup_regression_monitoring(env: &Env, _scenario: &RegressionTestScenario) -> Vec<String> {
         let mut alerts = Vec::new(env);
 
-        alerts.push_back(String::from_str(env, &format!(
-            "Monitor execution time: alert if > {}ms",
-            scenario.expected_execution_time * 12 / 10
-        )));
-        
-        alerts.push_back(String::from_str(env, &format!(
-            "Monitor gas usage: alert if > {} gas",
-            scenario.expected_gas_usage * 12 / 10
-        )));
+        alerts.push_back(String::from_str(
+            env,
+            "Monitor execution time: alert if exceeded",
+        ));
 
-        alerts.push_back(String::from_str(env, &format!(
-            "Monitor memory usage: alert if > {}MB",
-            scenario.expected_memory_usage / 1_000_000 * 12 / 10
-        )));
+        alerts.push_back(String::from_str(
+            env,
+            "Monitor gas usage: alert if exceeded",
+        ));
+
+        alerts.push_back(String::from_str(
+            env,
+            "Monitor memory usage: alert if exceeded",
+        ));
 
         alerts
     }
@@ -909,7 +1042,8 @@ impl RegressionTester {
         contract_address: &Address,
     ) -> Result<PerformanceMetrics, DiagnosticsError> {
         // Get recent performance data to establish baseline
-        let recent_metrics = DiagnosticsStorage::get_recent_performance_metrics(env, contract_address, 24)?; // Last 24 hours
+        let recent_metrics =
+            DiagnosticsStorage::get_recent_performance_metrics(env, contract_address, 24)?; // Last 24 hours
 
         if recent_metrics.is_empty() {
             return Err(DiagnosticsError::InsufficientDataForPrediction);
@@ -982,28 +1116,32 @@ impl RegressionTester {
         let memory_usage_str = String::from_str(env, "memory_usage");
         let error_rate_str = String::from_str(env, "error_rate");
         let network_latency_str = String::from_str(env, "network_latency");
-        
+
         let exceeded = if metric_name == execution_time_str {
             current_metrics.execution_time > baseline.execution_time + threshold.warning_threshold
         } else if metric_name == gas_used_str {
             current_metrics.gas_used > baseline.gas_used + threshold.warning_threshold
         } else if metric_name == memory_usage_str {
-            current_metrics.memory_usage > baseline.memory_usage + threshold.warning_threshold as u32
+            current_metrics.memory_usage
+                > baseline.memory_usage + threshold.warning_threshold as u32
         } else if metric_name == error_rate_str {
             current_metrics.error_rate > baseline.error_rate + threshold.warning_threshold as u32
         } else if metric_name == network_latency_str {
-            current_metrics.network_latency > baseline.network_latency + threshold.warning_threshold as u32
+            current_metrics.network_latency
+                > baseline.network_latency + threshold.warning_threshold as u32
         } else {
             false
         };
 
         if exceeded {
-            let severity = if current_metrics.execution_time > baseline.execution_time + threshold.critical_threshold {
+            let severity = if current_metrics.execution_time
+                > baseline.execution_time + threshold.critical_threshold
+            {
                 RiskLevel::Critical
             } else {
                 RiskLevel::Medium
             };
-            
+
             Some(PerformanceAlert {
                 alert_id: Self::generate_alert_id(env),
                 contract_address: current_metrics.contract_address.clone(),
@@ -1085,8 +1223,8 @@ impl RegressionTester {
 
         for i in 0..test_results.len() {
             let result = test_results.get(i).unwrap();
-            total_tests += result.scenario_results.len() as u32;
-            total_regressions += result.regressions_detected.len() as u32;
+            total_tests += result.scenario_results.len();
+            total_regressions += result.regressions_detected.len();
         }
 
         if total_tests == 0 {
@@ -1102,7 +1240,7 @@ impl RegressionTester {
         test_results: &Vec<RegressionTestResult>,
     ) -> Vec<String> {
         let mut areas = Vec::new(env);
-        
+
         // Count regression types
         let mut performance_issues = 0u32;
         let mut memory_issues = 0u32;
@@ -1133,7 +1271,10 @@ impl RegressionTester {
         }
 
         if areas.is_empty() {
-            areas.push_back(String::from_str(env, "No significant problem areas identified"));
+            areas.push_back(String::from_str(
+                env,
+                "No significant problem areas identified",
+            ));
         }
 
         areas
@@ -1145,10 +1286,22 @@ impl RegressionTester {
     ) -> Vec<String> {
         let mut recommendations = Vec::new(env);
 
-        recommendations.push_back(String::from_str(env, "Implement automated performance testing in CI/CD pipeline"));
-        recommendations.push_back(String::from_str(env, "Establish performance budgets for critical operations"));
-        recommendations.push_back(String::from_str(env, "Enhance monitoring and alerting coverage"));
-        recommendations.push_back(String::from_str(env, "Regular performance optimization reviews"));
+        recommendations.push_back(String::from_str(
+            env,
+            "Implement automated performance testing in CI/CD pipeline",
+        ));
+        recommendations.push_back(String::from_str(
+            env,
+            "Establish performance budgets for critical operations",
+        ));
+        recommendations.push_back(String::from_str(
+            env,
+            "Enhance monitoring and alerting coverage",
+        ));
+        recommendations.push_back(String::from_str(
+            env,
+            "Regular performance optimization reviews",
+        ));
 
         recommendations
     }
@@ -1158,14 +1311,19 @@ impl RegressionTester {
         test_results: &Vec<RegressionTestResult>,
     ) -> TestingCoverageAnalysis {
         let mut total_scenarios = 0u32;
-        let mut unique_test_types = 0u32;
 
         for i in 0..test_results.len() {
-            total_scenarios += test_results.get(i).unwrap().scenario_results.len() as u32;
+            total_scenarios += test_results.get(i).unwrap().scenario_results.len();
         }
 
         // Simplified coverage analysis
-        unique_test_types = if total_scenarios > 20 { 5 } else if total_scenarios > 10 { 3 } else { 1 };
+        let unique_test_types = if total_scenarios > 20 {
+            5
+        } else if total_scenarios > 10 {
+            3
+        } else {
+            1
+        };
 
         TestingCoverageAnalysis {
             coverage_percentage: ((unique_test_types as f64 / 5.0 * 100.0).min(100.0)) as u64, // 5 main test categories
@@ -1195,7 +1353,7 @@ impl RegressionTester {
         _alerts: &Vec<PerformanceAlert>,
     ) -> RiskAssessment {
         let stability_score = Self::calculate_stability_score(test_results);
-        
+
         let risk_level = if stability_score < 50.0 {
             RiskLevel::Critical
         } else if stability_score < 70.0 {
@@ -1211,28 +1369,43 @@ impl RegressionTester {
             risk_factors: {
                 let mut factors = Vec::new(&soroban_sdk::Env::default());
                 if stability_score < 70.0 {
-                    factors.push_back(String::from_str(&soroban_sdk::Env::default(), "High regression frequency"));
+                    factors.push_back(String::from_str(
+                        &soroban_sdk::Env::default(),
+                        "High regression frequency",
+                    ));
                 }
-                factors.push_back(String::from_str(&soroban_sdk::Env::default(), "Performance instability"));
+                factors.push_back(String::from_str(
+                    &soroban_sdk::Env::default(),
+                    "Performance instability",
+                ));
                 factors
             },
             mitigation_strategies: {
                 let mut strategies = Vec::new(&soroban_sdk::Env::default());
-                strategies.push_back(String::from_str(&soroban_sdk::Env::default(), "Increase test coverage"));
-                strategies.push_back(String::from_str(&soroban_sdk::Env::default(), "Implement performance monitoring"));
+                strategies.push_back(String::from_str(
+                    &soroban_sdk::Env::default(),
+                    "Increase test coverage",
+                ));
+                strategies.push_back(String::from_str(
+                    &soroban_sdk::Env::default(),
+                    "Implement performance monitoring",
+                ));
                 strategies
             },
         }
     }
 
     // Trend calculation helper methods
-    
+
     fn calculate_score_trend(results: &Vec<RegressionTestResult>) -> f64 {
         if results.len() < 2 {
             return 0.0;
         }
 
-        let recent_score = results.get(results.len() - 1).unwrap().overall_performance_score;
+        let recent_score = results
+            .get(results.len() - 1)
+            .unwrap()
+            .overall_performance_score;
         let older_score = results.get(0).unwrap().overall_performance_score;
 
         if older_score > 0 {
@@ -1252,11 +1425,11 @@ impl RegressionTester {
         let mut recent_regressions = 0u32;
 
         for i in 0..half_point {
-            early_regressions += results.get(i).unwrap().regressions_detected.len() as u32;
+            early_regressions += results.get(i).unwrap().regressions_detected.len();
         }
 
         for i in half_point..results.len() {
-            recent_regressions += results.get(i).unwrap().regressions_detected.len() as u32;
+            recent_regressions += results.get(i).unwrap().regressions_detected.len();
         }
 
         let early_rate = early_regressions as f64 / half_point as f64;
@@ -1276,8 +1449,9 @@ impl RegressionTester {
 
         for i in 0..half_point {
             let result = results.get(i).unwrap();
-            let stability = if result.scenario_results.len() > 0 {
-                let passed = result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
+            let stability = if !result.scenario_results.is_empty() {
+                let passed =
+                    result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
                 passed / result.scenario_results.len() as f64 * 100.0
             } else {
                 100.0
@@ -1288,8 +1462,9 @@ impl RegressionTester {
 
         for i in half_point..results.len() {
             let result = results.get(i).unwrap();
-            let stability = if result.scenario_results.len() > 0 {
-                let passed = result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
+            let stability = if !result.scenario_results.is_empty() {
+                let passed =
+                    result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
                 passed / result.scenario_results.len() as f64 * 100.0
             } else {
                 100.0
@@ -1307,11 +1482,20 @@ impl RegressionTester {
         regression_trend: f64,
     ) -> String {
         if score_trend > 10.0 && regression_trend < -0.5 {
-            String::from_str(env, "Performance trending positively - fewer regressions expected")
+            String::from_str(
+                env,
+                "Performance trending positively - fewer regressions expected",
+            )
         } else if score_trend < -10.0 || regression_trend > 0.5 {
-            String::from_str(env, "Warning: Performance degradation trend detected - increased vigilance required")
+            String::from_str(
+                env,
+                "Warning: Performance degradation trend detected - increased vigilance required",
+            )
         } else {
-            String::from_str(env, "Performance trend stable - continue current monitoring practices")
+            String::from_str(
+                env,
+                "Performance trend stable - continue current monitoring practices",
+            )
         }
     }
 
@@ -1328,7 +1512,11 @@ impl RegressionTester {
         BytesN::from_array(env, &id_bytes)
     }
 
-    fn create_regression_report(env: &Env, contract_address: &Address, regressions: &Vec<PerformanceRegression>) -> RegressionReport {
+    fn create_regression_report(
+        env: &Env,
+        contract_address: &Address,
+        regressions: &Vec<PerformanceRegression>,
+    ) -> RegressionReport {
         let regression_detected = !regressions.is_empty();
         let mut critical_count = 0u32;
         let mut high_count = 0u32;
@@ -1348,7 +1536,11 @@ impl RegressionTester {
             performance_changes: Vec::new(env),
             failed_thresholds: Vec::new(env),
             recommendations: Vec::new(env),
-            overall_verdict: if regression_detected { TestVerdict::Fail } else { TestVerdict::Pass },
+            overall_verdict: if regression_detected {
+                TestVerdict::Fail
+            } else {
+                TestVerdict::Pass
+            },
             contract_address: contract_address.clone(),
             report_period_start: env.ledger().timestamp() - 3600,
             report_period_end: env.ledger().timestamp(),
@@ -1361,11 +1553,17 @@ impl RegressionTester {
             most_problematic_areas: Vec::new(env),
             improvement_recommendations: Vec::new(env),
             testing_coverage_analysis: String::from_str(env, "Test coverage complete"),
-            risk_assessment: if critical_count > 0 { RiskLevel::Critical } else if high_count > 0 { RiskLevel::High } else { RiskLevel::Low },
+            risk_assessment: if critical_count > 0 {
+                RiskLevel::Critical
+            } else if high_count > 0 {
+                RiskLevel::High
+            } else {
+                RiskLevel::Low
+            },
         }
     }
 
-    fn create_test_parameters(env: &Env, config: &RegressionTestConfig) -> TestParameters {
+    fn create_test_parameters(_env: &Env, config: &RegressionTestConfig) -> TestParameters {
         TestParameters {
             test_name: config.test_name.clone(),
             iterations: 10,
@@ -1376,7 +1574,9 @@ impl RegressionTester {
 
     fn regression_type_to_string(env: &Env, regression_type: RegressionType) -> String {
         match regression_type {
-            RegressionType::PerformanceDegradation => String::from_str(env, "Performance Degradation"),
+            RegressionType::PerformanceDegradation => {
+                String::from_str(env, "Performance Degradation")
+            }
             RegressionType::MemoryLeakage => String::from_str(env, "Memory Leakage"),
             RegressionType::ResourceConsumption => String::from_str(env, "Resource Consumption"),
             RegressionType::ErrorRateIncrease => String::from_str(env, "Error Rate Increase"),

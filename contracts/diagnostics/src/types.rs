@@ -32,23 +32,23 @@ pub struct MonitoringConfig {
 pub struct PerformanceMetrics {
     pub timestamp: u64,
     pub contract_address: Address,
-    pub execution_time: u64,        // microseconds
+    pub execution_time: u64, // microseconds
     pub gas_used: u64,
-    pub memory_usage: u32,          // bytes
+    pub memory_usage: u32, // bytes
     pub storage_reads: u32,
     pub storage_writes: u32,
-    pub cpu_utilization: u32,       // percentage
-    pub cpu_instructions: u64,      // total CPU instructions executed
+    pub cpu_utilization: u32,  // percentage
+    pub cpu_instructions: u64, // total CPU instructions executed
     pub transaction_count: u32,
     pub error_count: u32,
-    pub error_rate: u32,            // percentage
+    pub error_rate: u32, // percentage
     pub average_execution_time: u64,
     pub average_response_time: u64,
     pub network_bandwidth: u32,
     pub gas_consumption: u64,
     pub storage_usage: u32,
     pub peak_memory_usage: u32,
-    pub network_latency: u32,       // milliseconds
+    pub network_latency: u32, // milliseconds
 }
 
 /// Predictive capacity planning results
@@ -62,7 +62,7 @@ pub struct CapacityPrediction {
     pub capacity_recommendations: Vec<String>,
     pub bottleneck_predictions: Vec<BottleneckPrediction>,
     pub cost_projections: CostProjection,
-    pub confidence_score: u32,      // percentage
+    pub confidence_score: u32, // percentage
     pub generated_at: u64,
 }
 
@@ -258,23 +258,23 @@ pub struct OptimizationRecommendation {
 #[derive(Clone, Debug)]
 #[contracttype]
 pub enum OptimizationCategory {
-    GasOptimization,
-    StorageOptimization,
-    MemoryOptimization,
-    NetworkOptimization,
-    AlgorithmOptimization,
-    ArchitectureOptimization,
+    Gas,
+    Storage,
+    Memory,
+    Network,
+    Algorithm,
+    Architecture,
 }
 
 /// Optimization types for recommendations
 #[derive(Clone, Debug)]
 #[contracttype]
 pub enum OptimizationType {
-    StorageOptimization,
-    ComputeOptimization,
-    NetworkOptimization,
-    MemoryOptimization,
-    GasOptimization,
+    Storage,
+    Compute,
+    Network,
+    Memory,
+    Gas,
     GasEfficiency,
     StorageEfficiency,
     MemoryEfficiency,
@@ -543,7 +543,7 @@ pub struct AnomalyEvent {
 }
 
 /// Types of anomalies
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[contracttype]
 pub enum AnomalyType {
     PerformanceDegradation,
