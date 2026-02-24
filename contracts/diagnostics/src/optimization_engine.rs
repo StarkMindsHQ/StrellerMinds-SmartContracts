@@ -179,7 +179,7 @@ impl OptimizationEngine {
                 },
                 description: String::from_str(env, "Gas usage is high, consider optimization"),
                 immediate_actions,
-                expected_savings: (metrics.gas_used / 10) as u64, // Estimate 10% savings
+                expected_savings: (metrics.gas_used / 10), // Estimate 10% savings
             });
         }
 
@@ -222,7 +222,7 @@ impl OptimizationEngine {
                     "Execution time is slow, performance optimization needed",
                 ),
                 immediate_actions,
-                expected_savings: (metrics.execution_time / 4) as u64, // Estimate 25% improvement
+                expected_savings: (metrics.execution_time / 4), // Estimate 25% improvement
             });
         }
 
@@ -548,9 +548,9 @@ impl OptimizationEngine {
                 },
                 implementation_complexity: Complexity::Complex,
                 estimated_savings: SavingsEstimate {
-                    daily_cost_savings: (metrics.average_execution_time / 10) as u64,
-                    monthly_cost_savings: (metrics.average_execution_time / 10) as u64 * 30,
-                    annual_cost_savings: (metrics.average_execution_time / 10) as u64 * 365,
+                    daily_cost_savings: (metrics.average_execution_time / 10),
+                    monthly_cost_savings: (metrics.average_execution_time / 10) * 30,
+                    annual_cost_savings: (metrics.average_execution_time / 10) * 365,
                     performance_gains: 50,
                 },
                 implementation_steps: {
@@ -569,7 +569,7 @@ impl OptimizationEngine {
                 title: String::from_str(env, "Algorithm Optimization"),
                 expected_improvement: 50,
                 estimated_effort: ImplementationEffort::Complex,
-                cost_savings: (metrics.average_execution_time / 10) as u64,
+                cost_savings: (metrics.average_execution_time / 10),
                 automated_fix_available: false,
                 monitoring_metrics: Vec::new(env),
             });

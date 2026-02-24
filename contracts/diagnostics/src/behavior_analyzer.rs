@@ -14,7 +14,7 @@ impl BehaviorAnalyzer {
         analysis_period: u64,
     ) -> Result<BehaviorAnalysis, DiagnosticsError> {
         // Validate analysis period (must be between 1 day and 1 year)
-        if analysis_period < 86400 || analysis_period > 31_536_000 {
+        if !(86400..=31_536_000).contains(&analysis_period) {
             return Err(DiagnosticsError::InvalidAnalysisPeriod);
         }
 
@@ -443,7 +443,7 @@ impl BehaviorAnalyzer {
         }
 
         let consistency = Self::calculate_timing_consistency(&login_times);
-        let frequency = login_times.len() as u32;
+        let frequency = login_times.len();
 
         BehaviorPattern {
             pattern_type: PatternType::LoginTiming,
@@ -468,7 +468,7 @@ impl BehaviorAnalyzer {
 
         BehaviorPattern {
             pattern_type: PatternType::SessionDuration,
-            frequency: durations.len() as u32,
+            frequency: durations.len(),
             confidence: if variance < 0.3 { 80 } else { 50 },
             impact_on_learning: if avg_duration > 600 && avg_duration < 3600 {
                 ImpactLevel::Positive
@@ -488,7 +488,7 @@ impl BehaviorAnalyzer {
             .filter(|i| matches!(i.interaction_type, InteractionType::ContentView))
             .count() as u32;
 
-        let total_interactions = interactions.len() as u32;
+        let total_interactions = interactions.len();
         let consumption_rate = if total_interactions > 0 {
             (content_views * 100) / total_interactions
         } else {
@@ -542,7 +542,7 @@ impl BehaviorAnalyzer {
     // Helper calculation methods
     fn calculate_completion_rate(interactions: &Vec<UserInteraction>) -> u32 {
         let successful = interactions.iter().filter(|i| i.success).count() as u32;
-        let total = interactions.len() as u32;
+        let total = interactions.len();
         if total > 0 {
             (successful * 100) / total
         } else {
@@ -562,7 +562,7 @@ impl BehaviorAnalyzer {
             return 50; // Default estimate
         }
 
-        let avg_score = assessment_scores.iter().sum::<u32>() / assessment_scores.len() as u32;
+        let avg_score = assessment_scores.iter().sum::<u32>() / assessment_scores.len();
         avg_score.min(100)
     }
 
@@ -612,7 +612,7 @@ impl BehaviorAnalyzer {
     }
 
     fn determine_effectiveness_trend(interactions: &Vec<UserInteraction>) -> EffectivenessTrend {
-        let mut scores = Vec::new(&interactions.env());
+        let mut scores = Vec::new(interactions.env());
 
         for i in 0..interactions.len() {
             let interaction = interactions.get(i).unwrap();
@@ -668,7 +668,7 @@ impl BehaviorAnalyzer {
         }
 
         let total_time: u64 = interactions.iter().map(|i| i.duration).sum();
-        let days = if interactions.len() > 0 {
+        let days = if !interactions.is_empty() {
             let time_span =
                 interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
             (time_span / 86400).max(1)
@@ -702,7 +702,7 @@ impl BehaviorAnalyzer {
             .filter(|i| matches!(i.interaction_type, InteractionType::ContentView))
             .count() as u32;
 
-        let total = interactions.len() as u32;
+        let total = interactions.len();
         if total > 0 {
             (content_interactions * 100) / total
         } else {
@@ -852,12 +852,16 @@ impl BehaviorAnalyzer {
 
         // Get the last 3 scores manually
         let start_idx = scores.len().saturating_sub(3);
-        let mut recent = vec![];
+        let mut recent = [0u32; 3];
+        let mut count = 0;
         for i in start_idx..scores.len() {
-            recent.push(scores.get(i).unwrap());
+            if count < 3 {
+                recent[count] = scores.get(i).unwrap();
+                count += 1;
+            }
         }
 
-        let variance = Self::calculate_score_variance(&recent);
+        let variance = Self::calculate_score_variance(&recent[..count]);
 
         variance < 5.0 // Low variance indicates plateau
     }

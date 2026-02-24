@@ -288,7 +288,7 @@ impl PerformanceMonitor {
             score = score.saturating_sub((gas_used / 100_000) as u32);
         }
 
-        score.max(0).min(100)
+        score.min(100)
     }
 
     /// Calculate efficiency score for operations
@@ -308,7 +308,7 @@ impl PerformanceMonitor {
             score = score.saturating_sub(memory_used / 100);
         }
 
-        score.max(0).min(100)
+        score.min(100)
     }
 }
 

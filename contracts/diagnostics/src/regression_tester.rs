@@ -65,7 +65,7 @@ impl RegressionTester {
                         baseline_comparison: BaselineComparison {
                             baseline_duration: 0,
                             current_duration: 0,
-                            baseline_score: scenario.expected_performance_score as u64,
+                            baseline_score: scenario.expected_performance_score,
                             current_score: 0,
                             performance_delta: -(scenario.expected_performance_score as i64) as i32,
                             regression_detected: true,
@@ -150,7 +150,7 @@ impl RegressionTester {
                 &regressions_detected,
             ),
             test_summary: Self::generate_test_summary(env, &regressions_detected, average_score),
-            test_configuration: Self::create_test_parameters(env, &test_configuration),
+            test_configuration: Self::create_test_parameters(env, test_configuration),
             regressions_detected: regressions_detected.clone(),
             overall_performance_score: average_score as u32,
             performance_trends: Self::analyze_performance_trends(env, contract_address)?,
@@ -170,7 +170,7 @@ impl RegressionTester {
         DiagnosticsEvents::emit_regression_test_complete(
             env,
             contract_address,
-            regressions_detected.len() as u32,
+            regressions_detected.len(),
         );
 
         Ok(test_result)
@@ -252,8 +252,8 @@ impl RegressionTester {
                 scenario_id: scenario.scenario_id.clone(),
                 test_name: scenario.test_name.clone(),
                 metric_name: String::from_str(env, "performance_score"),
-                baseline_value: comparison.baseline_score as u64,
-                current_value: comparison.current_score as u64,
+                baseline_value: comparison.baseline_score,
+                current_value: comparison.current_score,
                 regression_percentage: comparison.performance_delta,
                 severity: RiskLevel::High,
                 regression_type: Self::regression_type_to_string(
@@ -261,7 +261,7 @@ impl RegressionTester {
                     Self::classify_regression_type(&result.performance_metrics, scenario),
                 ),
                 detected_at: env.ledger().timestamp(),
-                performance_impact: comparison.performance_delta.abs() as u32,
+                performance_impact: comparison.performance_delta.unsigned_abs(),
                 affected_operations: Self::identify_affected_operations(
                     env,
                     &result.performance_metrics,
@@ -277,7 +277,7 @@ impl RegressionTester {
                 ),
                 rollback_recommendation: String::from_str(
                     env,
-                    if Self::assess_rollback_need(&comparison) {
+                    if Self::assess_rollback_need(comparison) {
                         "Recommended"
                     } else {
                         "Not Required"
@@ -433,7 +433,7 @@ impl RegressionTester {
             contract_address: contract_address.clone(),
             report_period_start: start_time,
             report_period_end: end_time,
-            total_tests_executed: test_results.len() as u32,
+            total_tests_executed: test_results.len(),
             total_regressions_detected: total_regressions,
             critical_regressions,
             high_severity_regressions,
@@ -700,7 +700,7 @@ impl RegressionTester {
     fn generate_test_summary(
         env: &Env,
         regressions: &Vec<PerformanceRegression>,
-        average_score: f64,
+        _average_score: f64,
     ) -> String {
         if regressions.is_empty() {
             String::from_str(env, "All tests passed successfully")
@@ -985,10 +985,8 @@ impl RegressionTester {
         // significance_level is u32 where higher values indicate more critical issues
         if comparison.significance_level >= 90 {
             true
-        } else if comparison.significance_level >= 70 && comparison.performance_delta < -40 {
-            true
         } else {
-            false
+            comparison.significance_level >= 70 && comparison.performance_delta < -40
         }
     }
 
@@ -1018,7 +1016,7 @@ impl RegressionTester {
         steps
     }
 
-    fn setup_regression_monitoring(env: &Env, scenario: &RegressionTestScenario) -> Vec<String> {
+    fn setup_regression_monitoring(env: &Env, _scenario: &RegressionTestScenario) -> Vec<String> {
         let mut alerts = Vec::new(env);
 
         alerts.push_back(String::from_str(
@@ -1225,8 +1223,8 @@ impl RegressionTester {
 
         for i in 0..test_results.len() {
             let result = test_results.get(i).unwrap();
-            total_tests += result.scenario_results.len() as u32;
-            total_regressions += result.regressions_detected.len() as u32;
+            total_tests += result.scenario_results.len();
+            total_regressions += result.regressions_detected.len();
         }
 
         if total_tests == 0 {
@@ -1315,7 +1313,7 @@ impl RegressionTester {
         let mut total_scenarios = 0u32;
 
         for i in 0..test_results.len() {
-            total_scenarios += test_results.get(i).unwrap().scenario_results.len() as u32;
+            total_scenarios += test_results.get(i).unwrap().scenario_results.len();
         }
 
         // Simplified coverage analysis
@@ -1427,11 +1425,11 @@ impl RegressionTester {
         let mut recent_regressions = 0u32;
 
         for i in 0..half_point {
-            early_regressions += results.get(i).unwrap().regressions_detected.len() as u32;
+            early_regressions += results.get(i).unwrap().regressions_detected.len();
         }
 
         for i in half_point..results.len() {
-            recent_regressions += results.get(i).unwrap().regressions_detected.len() as u32;
+            recent_regressions += results.get(i).unwrap().regressions_detected.len();
         }
 
         let early_rate = early_regressions as f64 / half_point as f64;
@@ -1451,7 +1449,7 @@ impl RegressionTester {
 
         for i in 0..half_point {
             let result = results.get(i).unwrap();
-            let stability = if result.scenario_results.len() > 0 {
+            let stability = if !result.scenario_results.is_empty() {
                 let passed =
                     result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
                 passed / result.scenario_results.len() as f64 * 100.0
@@ -1464,7 +1462,7 @@ impl RegressionTester {
 
         for i in half_point..results.len() {
             let result = results.get(i).unwrap();
-            let stability = if result.scenario_results.len() > 0 {
+            let stability = if !result.scenario_results.is_empty() {
                 let passed =
                     result.scenario_results.len() as f64 - result.regressions_detected.len() as f64;
                 passed / result.scenario_results.len() as f64 * 100.0

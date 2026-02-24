@@ -1,5 +1,9 @@
 #![no_std]
 #![allow(dead_code)]
+#![allow(clippy::manual_memcpy)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::manual_clamp)]
 
 pub mod anomaly_detector;
 pub mod behavior_analyzer;

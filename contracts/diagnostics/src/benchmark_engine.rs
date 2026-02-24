@@ -149,16 +149,15 @@ impl BenchmarkEngine {
             peak_memory = peak_memory.max(100_000); // Simplified memory usage
 
             // Simulate some errors
-            if env.ledger().sequence() % 10 == 0 {
+            if env.ledger().sequence().is_multiple_of(10) {
                 error_count += 1;
             }
         }
 
         let end_time = env.ledger().timestamp();
         let execution_time = end_time - start_time;
-        let success_rate = if scenario.function_calls.len() > 0 {
-            ((scenario.function_calls.len() as u32 - error_count) * 100)
-                / scenario.function_calls.len() as u32
+        let success_rate = if !scenario.function_calls.is_empty() {
+            ((scenario.function_calls.len() - error_count) * 100) / scenario.function_calls.len()
         } else {
             100
         };
@@ -204,7 +203,7 @@ impl BenchmarkEngine {
         let mut recommendations = Vec::new(env);
 
         let avg_score: u32 =
-            results.iter().map(|r| r.performance_score).sum::<u32>() / results.len() as u32;
+            results.iter().map(|r| r.performance_score).sum::<u32>() / results.len();
 
         if avg_score < 70 {
             recommendations.push_back(String::from_str(
@@ -229,7 +228,7 @@ impl BenchmarkEngine {
             return 0;
         }
 
-        results.iter().map(|r| r.performance_score).sum::<u32>() / results.len() as u32
+        results.iter().map(|r| r.performance_score).sum::<u32>() / results.len()
     }
 
     fn compare_with_baseline(

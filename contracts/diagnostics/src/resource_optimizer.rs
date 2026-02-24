@@ -335,8 +335,7 @@ impl ResourceOptimizer {
                     .cpu_utilization
                     .optimization_opportunities
                     .clone(),
-                expected_improvement: (100 - resource_data.cpu_utilization.cpu_efficiency_score)
-                    as u64,
+                expected_improvement: (100 - resource_data.cpu_utilization.cpu_efficiency_score),
                 expected_impact: ImpactEstimate {
                     performance_improvement: 30,
                     cost_reduction: 20,

@@ -83,11 +83,7 @@ impl AnomalyDetector {
             DiagnosticsStorage::store_anomaly_events(env, contract_address, &anomalies);
 
             // Emit anomaly detection event
-            DiagnosticsEvents::emit_anomalies_detected(
-                env,
-                contract_address,
-                anomalies.len() as u32,
-            );
+            DiagnosticsEvents::emit_anomalies_detected(env, contract_address, anomalies.len());
         }
 
         Ok(anomalies)
@@ -127,10 +123,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Performance degraded: execution time increased from {}ms to {}ms",
-                        historical_avg, recent_avg
-                    ),
+                    "Performance degraded: execution time increased significantly",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -180,10 +173,7 @@ impl AnomalyDetector {
                 detected_at: latest_metrics.timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Potential memory leak detected: memory usage growing at {}% per hour",
-                        memory_trend as u32
-                    ),
+                    "Potential memory leak detected: memory usage growing consistently",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -238,10 +228,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Gas usage spike detected: {} gas used vs {} average",
-                        latest_gas, avg_gas
-                    ),
+                    "Gas usage spike detected: significant increase above average",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -298,10 +285,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Error rate spike: {}% vs {}% average",
-                        latest_error_rate, avg_error_rate
-                    ),
+                    "Error rate spike detected: significant increase above average",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -359,10 +343,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Throughput dropped: {} vs {} historical average",
-                        recent_throughput, historical_throughput
-                    ),
+                    "Throughput drop detected: significant decrease below baseline",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -422,10 +403,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Network latency increased: {}ms vs {}ms average",
-                        latest_latency, avg_latency
-                    ),
+                    "Latency increase detected: significant increase above average",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -478,10 +456,7 @@ impl AnomalyDetector {
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(
                     env,
-                    &format!(
-                        "Unusual performance variance detected: {}% coefficient of variation",
-                        execution_time_variance as u32
-                    ),
+                    "Unusual patterns detected: high variance in execution times",
                 ),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
@@ -528,7 +503,7 @@ impl AnomalyDetector {
             }
         }
 
-        if state_inconsistencies > metrics_data.len() as u32 / 4 {
+        if state_inconsistencies > metrics_data.len() / 4 {
             // More than 25% have issues
             anomalies.push_back(AnomalyEvent {
                 anomaly_id: Self::generate_anomaly_id(env),
@@ -537,8 +512,7 @@ impl AnomalyDetector {
                 severity: RiskLevel::High,
                 detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
                 description: String::from_str(env,
-                    &format!("State inconsistencies detected in {} out of {} samples", 
-                        state_inconsistencies, metrics_data.len())),
+                    "State inconsistencies detected in multiple samples"),
                 affected_metrics: {
                     let mut metrics = Vec::new(env);
                     metrics.push_back(String::from_str(env, "error_rate"));
@@ -682,7 +656,7 @@ impl AnomalyDetector {
             DiagnosticsStorage::get_anomaly_events_in_period(env, contract_address, period)?;
 
         let mut trends = AnomalyTrends {
-            total_anomalies: anomalies.len() as u32,
+            total_anomalies: anomalies.len(),
             critical_anomalies: 0,
             high_severity_anomalies: 0,
             most_common_type: String::from_str(env, "UnusualPatterns"),
@@ -829,7 +803,7 @@ impl AnomalyDetector {
             total += metrics.get(i).unwrap().error_rate;
         }
 
-        total / metrics.len() as u32
+        total / metrics.len()
     }
 
     fn calculate_recent_throughput(metrics: &Vec<PerformanceMetrics>, count: u32) -> u32 {
@@ -863,7 +837,7 @@ impl AnomalyDetector {
             total += metrics.get(i).unwrap().transaction_count;
         }
 
-        total / metrics.len() as u32
+        total / metrics.len()
     }
 
     fn calculate_average_network_latency(metrics: &Vec<PerformanceMetrics>) -> u32 {
@@ -876,7 +850,7 @@ impl AnomalyDetector {
             total += metrics.get(i).unwrap().network_latency;
         }
 
-        total / metrics.len() as u32
+        total / metrics.len()
     }
 
     fn calculate_execution_time_variance(metrics: &Vec<PerformanceMetrics>) -> f64 {
@@ -1044,7 +1018,7 @@ impl AnomalyDetector {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testutils"))]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};

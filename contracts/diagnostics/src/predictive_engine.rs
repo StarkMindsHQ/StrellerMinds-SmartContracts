@@ -14,7 +14,7 @@ impl PredictiveEngine {
         prediction_horizon: u64,
     ) -> Result<CapacityPrediction, DiagnosticsError> {
         // Validate prediction horizon (must be between 1 hour and 1 year)
-        if prediction_horizon < 3600 || prediction_horizon > 31_536_000 {
+        if !(3600..=31_536_000).contains(&prediction_horizon) {
             return Err(DiagnosticsError::InvalidPredictionHorizon);
         }
 
@@ -179,9 +179,9 @@ impl PredictiveEngine {
         let first_third = data.len() / 3;
         let second_third = (data.len() * 2) / 3;
 
-        let mut early_vec = Vec::new(&data.env());
-        let mut middle_vec = Vec::new(&data.env());
-        let mut recent_vec = Vec::new(&data.env());
+        let mut early_vec = Vec::new(data.env());
+        let mut middle_vec = Vec::new(data.env());
+        let mut recent_vec = Vec::new(data.env());
 
         for i in 0..first_third {
             early_vec.push_back(data.get(i).unwrap());
@@ -369,7 +369,7 @@ impl PredictiveEngine {
         let mut confidence = 50u32; // Base confidence
 
         // More data points increase confidence
-        confidence += (data.len() as u32).min(30);
+        confidence += data.len().min(30);
 
         // Consistent data increases confidence
         let variance = Self::calculate_variance(data);
@@ -471,7 +471,7 @@ impl PredictiveEngine {
         if data.is_empty() {
             return 0;
         }
-        data.iter().map(|m| m.transaction_count).sum::<u32>() / data.len() as u32
+        data.iter().map(|m| m.transaction_count).sum::<u32>() / data.len()
     }
 
     fn calculate_average_gas_usage(data: &Vec<PerformanceMetrics>) -> u64 {
@@ -488,7 +488,7 @@ impl PredictiveEngine {
         data.iter()
             .map(|m| m.storage_reads + m.storage_writes)
             .sum::<u32>()
-            / data.len() as u32
+            / data.len()
     }
 
     fn calculate_growth_rate(data: &Vec<PerformanceMetrics>) -> f64 {
@@ -582,8 +582,8 @@ impl PredictiveEngine {
         }
 
         let mid = data.len() / 2;
-        let mut first_half = Vec::new(&data.env());
-        let mut second_half = Vec::new(&data.env());
+        let mut first_half = Vec::new(data.env());
+        let mut second_half = Vec::new(data.env());
 
         for i in 0..mid {
             first_half.push_back(data.get(i).unwrap());
