@@ -418,8 +418,8 @@ impl Assessment {
         )
     }
 
-    /// Add a manually graded essay or code question.
-    pub fn add_question_manual(
+    /// Generic add_question for specialized needs (used in tests).
+    pub fn add_question(
         env: Env,
         admin: Address,
         assessment_id: u64,
@@ -428,8 +428,8 @@ impl Assessment {
         difficulty: u32,
         content_hash: BytesN<32>,
         options: Vec<QuestionOption>,
+        answer_key: AnswerKey,
     ) -> Result<u64, AssessmentError> {
-        let answer_key = AnswerKey::Manual;
         Self::add_question_internal(
             &env,
             &admin,
