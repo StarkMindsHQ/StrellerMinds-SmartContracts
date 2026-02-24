@@ -152,4 +152,3 @@ fn test_adaptive_state_updates() {
     Assessment::update_adaptive_state(env.clone(), student.clone(), id, q.question_id, true)
         .unwrap();
 }
-

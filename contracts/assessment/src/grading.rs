@@ -1,8 +1,8 @@
 use soroban_sdk::{vec, Env, Vec};
 
 use crate::types::{
-    AnswerKey, Question, QuestionType, SubmittedAnswer, SubmittedAnswerValue, Submission,
-    SubmissionStatus,
+    AnswerKey, Question, QuestionType, Submission, SubmissionStatus, SubmittedAnswer,
+    SubmittedAnswerValue,
 };
 
 /// Result of automated grading.
@@ -65,11 +65,7 @@ impl GradingEngine {
         }
     }
 
-    fn grade_answer(
-        env: &Env,
-        question: &Question,
-        value: &SubmittedAnswerValue,
-    ) -> (u32, bool) {
+    fn grade_answer(env: &Env, question: &Question, value: &SubmittedAnswerValue) -> (u32, bool) {
         match (&question.question_type, &question.answer_key, value) {
             // Single choice
             (
@@ -90,7 +86,7 @@ impl GradingEngine {
                 AnswerKey::MultipleChoice(correct_ids),
                 SubmittedAnswerValue::MultipleChoice(chosen_ids),
             ) => {
-                if Self::same_set(env, correct_ids, chosen_ids) {
+                if Self::same_set(correct_ids, chosen_ids) {
                     (question.max_score, false)
                 } else {
                     (0, false)
@@ -134,7 +130,7 @@ impl GradingEngine {
         }
     }
 
-    fn same_set(env: &Env, a: &Vec<u32>, b: &Vec<u32>) -> bool {
+    fn same_set(a: &Vec<u32>, b: &Vec<u32>) -> bool {
         if a.len() != b.len() {
             return false;
         }
@@ -196,4 +192,3 @@ impl GradingEngine {
         }
     }
 }
-

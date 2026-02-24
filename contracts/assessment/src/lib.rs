@@ -11,6 +11,7 @@ use types::*;
 #[cfg(test)]
 mod test;
 
+use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, Symbol, Vec};
 
 #[contract]
@@ -123,7 +124,11 @@ fn get_effective_time_limit(env: &Env, config: &AssessmentConfig, student: &Addr
 
 fn get_student_attempts(env: &Env, student: &Address, assessment_id: u64) -> u32 {
     let key = DataKey::StudentAssessmentSubmissions(student.clone(), assessment_id);
-    let ids: Vec<BytesN<32>> = env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+    let ids: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&key)
+        .unwrap_or(Vec::new(env));
     ids.len() as u32
 }
 
@@ -134,8 +139,11 @@ fn append_student_submission(
     submission_id: &BytesN<32>,
 ) {
     let key = DataKey::StudentAssessmentSubmissions(student.clone(), assessment_id);
-    let mut ids: Vec<BytesN<32>> =
-        env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+    let mut ids: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&key)
+        .unwrap_or(Vec::new(env));
     ids.push_back(submission_id.clone());
     env.storage().persistent().set(&key, &ids);
 }
@@ -148,9 +156,10 @@ fn get_submission(env: &Env, submission_id: &BytesN<32>) -> Result<Submission, A
 }
 
 fn put_submission(env: &Env, submission: &Submission) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::Submission(submission.submission_id.clone()), submission);
+    env.storage().persistent().set(
+        &DataKey::Submission(submission.submission_id.clone()),
+        submission,
+    );
 }
 
 fn get_or_init_adaptive_state(env: &Env, student: &Address, assessment_id: u64) -> AdaptiveState {
@@ -163,12 +172,7 @@ fn get_or_init_adaptive_state(env: &Env, student: &Address, assessment_id: u64) 
         })
 }
 
-fn put_adaptive_state(
-    env: &Env,
-    student: &Address,
-    assessment_id: u64,
-    state: &AdaptiveState,
-) {
+fn put_adaptive_state(env: &Env, student: &Address, assessment_id: u64, state: &AdaptiveState) {
     env.storage()
         .persistent()
         .set(&DataKey::Adaptive(student.clone(), assessment_id), state);
@@ -267,9 +271,10 @@ impl Assessment {
         Ok(())
     }
 
-    pub fn add_question(
-        env: Env,
-        admin: Address,
+    /// Internal helper used by the specialized add_question_* functions.
+    fn add_question_internal(
+        env: &Env,
+        admin: &Address,
         assessment_id: u64,
         question_type: QuestionType,
         max_score: u32,
@@ -278,14 +283,14 @@ impl Assessment {
         options: Vec<QuestionOption>,
         answer_key: AnswerKey,
     ) -> Result<u64, AssessmentError> {
-        require_admin(&env, &admin)?;
-        let _ = get_assessment(&env, assessment_id)?;
+        require_admin(env, admin)?;
+        let _ = get_assessment(env, assessment_id)?;
 
         if max_score == 0 || difficulty == 0 {
             return Err(AssessmentError::InvalidQuestionType);
         }
 
-        let qid = get_next_question_id(&env);
+        let qid = get_next_question_id(env);
         let q = Question {
             question_id: qid,
             assessment_id,
@@ -296,28 +301,149 @@ impl Assessment {
             options,
             answer_key,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::Question(qid), &q);
+        env.storage().persistent().set(&DataKey::Question(qid), &q);
 
         let mut ids: Vec<u64> = env
             .storage()
             .persistent()
             .get(&DataKey::AssessmentQuestions(assessment_id))
-            .unwrap_or(Vec::new(&env));
+            .unwrap_or(Vec::new(env));
         ids.push_back(qid);
         env.storage()
             .persistent()
             .set(&DataKey::AssessmentQuestions(assessment_id), &ids);
 
-        AssessmentEvents::emit_question_added(&env, assessment_id, qid);
+        AssessmentEvents::emit_question_added(env, assessment_id, qid);
         Ok(qid)
     }
 
-    pub fn get_assessment_metadata(
+    /// Add a single-choice question.
+    pub fn add_question_single_choice(
         env: Env,
+        admin: Address,
         assessment_id: u64,
-    ) -> Option<AssessmentMetadata> {
+        max_score: u32,
+        difficulty: u32,
+        content_hash: BytesN<32>,
+        options: Vec<QuestionOption>,
+        correct_option_id: u32,
+    ) -> Result<u64, AssessmentError> {
+        let answer_key = AnswerKey::SingleChoice(correct_option_id);
+        Self::add_question_internal(
+            &env,
+            &admin,
+            assessment_id,
+            QuestionType::SingleChoice,
+            max_score,
+            difficulty,
+            content_hash,
+            options,
+            answer_key,
+        )
+    }
+
+    /// Add a multiple-choice question.
+    pub fn add_question_multiple_choice(
+        env: Env,
+        admin: Address,
+        assessment_id: u64,
+        max_score: u32,
+        difficulty: u32,
+        content_hash: BytesN<32>,
+        options: Vec<QuestionOption>,
+        correct_option_ids: Vec<u32>,
+    ) -> Result<u64, AssessmentError> {
+        let answer_key = AnswerKey::MultipleChoice(correct_option_ids);
+        Self::add_question_internal(
+            &env,
+            &admin,
+            assessment_id,
+            QuestionType::MultipleChoice,
+            max_score,
+            difficulty,
+            content_hash,
+            options,
+            answer_key,
+        )
+    }
+
+    /// Add a numeric-range question.
+    pub fn add_question_numeric_range(
+        env: Env,
+        admin: Address,
+        assessment_id: u64,
+        max_score: u32,
+        difficulty: u32,
+        content_hash: BytesN<32>,
+        options: Vec<QuestionOption>,
+        min: i64,
+        max: i64,
+    ) -> Result<u64, AssessmentError> {
+        let answer_key = AnswerKey::NumericRange { min, max };
+        Self::add_question_internal(
+            &env,
+            &admin,
+            assessment_id,
+            QuestionType::Numeric,
+            max_score,
+            difficulty,
+            content_hash,
+            options,
+            answer_key,
+        )
+    }
+
+    /// Add a short-text question.
+    pub fn add_question_short_text(
+        env: Env,
+        admin: Address,
+        assessment_id: u64,
+        max_score: u32,
+        difficulty: u32,
+        content_hash: BytesN<32>,
+        options: Vec<QuestionOption>,
+        accepted_answers: Vec<String>,
+    ) -> Result<u64, AssessmentError> {
+        let answer_key = AnswerKey::ShortText(accepted_answers);
+        Self::add_question_internal(
+            &env,
+            &admin,
+            assessment_id,
+            QuestionType::ShortText,
+            max_score,
+            difficulty,
+            content_hash,
+            options,
+            answer_key,
+        )
+    }
+
+    /// Add a manually graded essay or code question.
+    pub fn add_question_manual(
+        env: Env,
+        admin: Address,
+        assessment_id: u64,
+        question_type: QuestionType,
+        max_score: u32,
+        difficulty: u32,
+        content_hash: BytesN<32>,
+        options: Vec<QuestionOption>,
+    ) -> Result<u64, AssessmentError> {
+        let answer_key = AnswerKey::Manual;
+        Self::add_question_internal(
+            &env,
+            &admin,
+            assessment_id,
+            question_type,
+            max_score,
+            difficulty,
+            content_hash,
+            options,
+            answer_key,
+        )
+    }
+
+    pub fn get_assessment_metadata(env: Env, assessment_id: u64) -> Option<AssessmentMetadata> {
         env.storage()
             .persistent()
             .get(&DataKey::Assessment(assessment_id))
@@ -460,7 +586,9 @@ impl Assessment {
             return Err(AssessmentError::MaxAttemptsReached);
         }
 
-        let sid = env.crypto().sha256(&Vec::from_array(&env, &student.clone().to_xdr(&env)));
+        let addr_bytes = student.clone().to_xdr(&env);
+        let sid_hash = env.crypto().sha256(&addr_bytes);
+        let sid: BytesN<32> = sid_hash.into();
         let submission = Submission {
             submission_id: sid.clone(),
             assessment_id,
@@ -534,10 +662,7 @@ impl Assessment {
         Ok(submission)
     }
 
-    pub fn get_submission_details(
-        env: Env,
-        submission_id: BytesN<32>,
-    ) -> Option<Submission> {
+    pub fn get_submission_details(env: Env, submission_id: BytesN<32>) -> Option<Submission> {
         env.storage()
             .persistent()
             .get(&DataKey::Submission(submission_id))
@@ -610,10 +735,12 @@ impl Assessment {
                 continue;
             }
 
-            let key =
-                DataKey::StudentAssessmentSubmissions(student.clone(), meta.assessment_id);
-            let subs: Vec<BytesN<32>> =
-                env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
+            let key = DataKey::StudentAssessmentSubmissions(student.clone(), meta.assessment_id);
+            let subs: Vec<BytesN<32>> = env
+                .storage()
+                .persistent()
+                .get(&key)
+                .unwrap_or(Vec::new(&env));
             if subs.len() == 0 {
                 id += 1;
                 continue;
@@ -624,10 +751,7 @@ impl Assessment {
                 .persistent()
                 .get::<_, Submission>(&DataKey::Submission(last_id.clone()))
             {
-                result.set(
-                    meta.assessment_id,
-                    (sub.score, sub.max_score, sub.passed),
-                );
+                result.set(meta.assessment_id, (sub.score, sub.max_score, sub.passed));
             }
 
             id += 1;
@@ -636,7 +760,3 @@ impl Assessment {
         result
     }
 }
-
-
-
-

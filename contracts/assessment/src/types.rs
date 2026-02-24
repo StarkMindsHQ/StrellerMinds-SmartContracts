@@ -184,7 +184,7 @@ pub enum DataKey {
     AssessmentCounter,
     QuestionCounter,
     Assessment(u64),
-    AssessmentQuestions(u64),            // assessment_id -> Vec<u64>
+    AssessmentQuestions(u64), // assessment_id -> Vec<u64>
     Question(u64),
     Submission(BytesN<32>),
     StudentAssessmentSubmissions(Address, u64), // (student, assessment_id)
@@ -192,4 +192,3 @@ pub enum DataKey {
     Accommodation(Address),
     Adaptive(Address, u64), // (student, assessment_id)
 }
-

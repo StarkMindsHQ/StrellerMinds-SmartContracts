@@ -31,4 +31,3 @@ pub enum AssessmentError {
     // Integrity / security
     SecurityIntegrationMissing = 40,
 }
-
