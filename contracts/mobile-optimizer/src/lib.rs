@@ -1,516 +1,1138 @@
-// #![no_std]
-// use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Vec, Map, BytesN};
-
-// mod types;
-// mod batch_manager;
-// mod gas_optimizer;
-// mod session_manager;
-// mod offline_manager;
-// mod interaction_flows;
-// mod network_manager;
-
-// #[cfg(test)]
-// mod tests;
-
-// use types::*;
-// use batch_manager::BatchManager;
-// use gas_optimizer::GasOptimizer;
-// use session_manager::SessionManager;
-// use offline_manager::OfflineManager;
-// use interaction_flows::InteractionFlows;
-// use network_manager::NetworkManager;
-// use shared::reentrancy_guard::ReentrancyLock;
-
-// #[contract]
-// pub struct MobileOptimizerContract;
-
-// #[contractimpl]
-// impl MobileOptimizerContract {
-//     /// Initialize the mobile optimizer contract
-//     pub fn initialize(env: Env, admin: Address) {
-//         admin.require_auth();
-
-//         let config = MobileOptimizerConfig {
-//             admin: admin.clone(),
-//             max_batch_size: 10,
-//             default_gas_limit: 1000000,
-//             session_timeout_seconds: 3600, // 1 hour
-//             offline_queue_limit: 100,
-//             network_timeout_ms: 30000,
-//             retry_attempts: 5,
-//         };
-
-//         env.storage().persistent().set(&DataKey::Config, &config);
-//         env.storage().persistent().set(&DataKey::Admin, &admin);
-//     }
-
-//     /// Create a new mobile session
-//     pub fn create_session(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//         preferences: MobilePreferences,
-//     ) -> Result<String, MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         SessionManager::create_session(&env, user, device_id, preferences)
-//             .map_err(|_| MobileOptimizerError::SessionCreationFailed)
-//     }
-
-//     /// Update mobile session
-//     pub fn update_session(
-//         env: Env,
-//         user: Address,
-//         session_id: String,
-//         preferences: MobilePreferences,
-//     ) -> Result<(), MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         SessionManager::update_session(&env, user, session_id, preferences)
-//             .map_err(|_| MobileOptimizerError::SessionUpdateFailed)
-//     }
-
-//     /// Get mobile session information
-//     pub fn get_session(
-//         env: Env,
-//         user: Address,
-//         session_id: String,
-//     ) -> Result<MobileSession, MobileOptimizerError> {
-//         user.require_auth();
-
-//         SessionManager::get_session(&env, &user, &session_id)
-//             .map_err(|_| MobileOptimizerError::SessionNotFound)
-//     }
-
-//     /// Create and execute a transaction batch
-//     pub fn execute_batch(
-//         env: Env,
-//         user: Address,
-//         operations: Vec<BatchOperation>,
-//         execution_strategy: ExecutionStrategy,
-//         session_id: String,
-//     ) -> Result<BatchExecutionResult, MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         // Detect current network quality
-//         let network_quality = NetworkManager::detect_network_quality(&env);
-
-//         // Create batch
-//         let batch = TransactionBatch {
-//             batch_id: format!("batch_{}", env.ledger().timestamp()),
-//             user: user.clone(),
-//             operations,
-//             execution_strategy,
-//             created_at: env.ledger().timestamp(),
-//             status: BatchStatus::Pending,
-//             total_estimated_gas: 0, // Will be calculated
-//             retry_config: Self::create_default_retry_config(&network_quality),
-//             network_quality,
-//         };
-
-//         BatchManager::execute_batch(&env, batch, session_id)
-//             .map_err(|_| MobileOptimizerError::BatchExecutionFailed)
-//     }
-
-//     /// Estimate gas for operations
-//     pub fn estimate_gas(
-//         env: Env,
-//         operations: Vec<BatchOperation>,
-//         network_quality: NetworkQuality,
-//         estimation_mode: GasEstimationMode,
-//     ) -> Result<Vec<GasEstimate>, MobileOptimizerError> {
-//         let mut estimates = Vec::new(&env);
-
-//         for operation in operations {
-//             match GasOptimizer::estimate_operation_gas(&env, &operation, &network_quality, estimation_mode.clone()) {
-//                 Ok(estimate) => estimates.push_back(estimate),
-//                 Err(_) => return Err(MobileOptimizerError::GasEstimationFailed),
-//             }
-//         }
-
-//         Ok(estimates)
-//     }
-
-//     /// Get gas optimization suggestions
-//     pub fn get_gas_optimization_suggestions(
-//         env: Env,
-//         operations: Vec<BatchOperation>,
-//         network_quality: NetworkQuality,
-//     ) -> Result<Vec<GasOptimizationSuggestion>, MobileOptimizerError> {
-//         GasOptimizer::suggest_optimizations(&env, operations, network_quality)
-//             .map_err(|_| MobileOptimizerError::OptimizationFailed)
-//     }
-
-//     /// Quick course enrollment flow
-//     pub fn quick_enroll_course(
-//         env: Env,
-//         user: Address,
-//         course_id: String,
-//         session_id: String,
-//     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         let network_quality = NetworkManager::detect_network_quality(&env);
-
-//         InteractionFlows::quick_enroll_course(&env, user, course_id, session_id, network_quality)
-//             .map_err(|_| MobileOptimizerError::InteractionFailed)
-//     }
-
-//     /// Quick progress update flow
-//     pub fn quick_update_progress(
-//         env: Env,
-//         user: Address,
-//         course_id: String,
-//         module_id: String,
-//         progress_percentage: u32,
-//         session_id: String,
-//     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         let network_quality = NetworkManager::detect_network_quality(&env);
-
-//         InteractionFlows::quick_update_progress(
-//             &env,
-//             user,
-//             course_id,
-//             module_id,
-//             progress_percentage,
-//             session_id,
-//             network_quality,
-//         )
-//         .map_err(|_| MobileOptimizerError::InteractionFailed)
-//     }
-
-//     /// Quick certificate claim flow
-//     pub fn quick_claim_certificate(
-//         env: Env,
-//         user: Address,
-//         course_id: String,
-//         session_id: String,
-//     ) -> Result<MobileInteractionResult, MobileOptimizerError> {
-//         let _guard = ReentrancyLock::new(&env);
-//         user.require_auth();
-
-//         let network_quality = NetworkManager::detect_network_quality(&env);
-
-//         InteractionFlows::quick_claim_certificate(&env, user, course_id, session_id, network_quality)
-//             .map_err(|_| MobileOptimizerError::InteractionFailed)
-//     }
-
-//     /// Queue operation for offline execution
-//     pub fn queue_offline_operation(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//         operation: QueuedOperation,
-//     ) -> Result<(), MobileOptimizerError> {
-//         user.require_auth();
-
-//         OfflineManager::queue_operation(&env, user, device_id, operation)
-//             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
-//     }
-
-//     /// Sync offline operations
-//     pub fn sync_offline_operations(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//     ) -> Result<OfflineSyncResult, MobileOptimizerError> {
-//         user.require_auth();
-
-//         let network_quality = NetworkManager::detect_network_quality(&env);
-
-//         OfflineManager::sync_offline_operations(&env, user, device_id, network_quality)
-//             .map_err(|_| MobileOptimizerError::OfflineSyncFailed)
-//     }
-
-//     /// Get offline queue status
-//     pub fn get_offline_queue_status(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//     ) -> Result<OfflineQueueStatus, MobileOptimizerError> {
-//         user.require_auth();
-
-//         OfflineManager::get_queue_status(&env, &user, &device_id)
-//             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
-//     }
-
-//     /// Resolve offline conflicts
-//     pub fn resolve_offline_conflicts(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//         resolution_strategy: ConflictResolution,
-//         operation_resolutions: Vec<OperationResolution>,
-//     ) -> Result<ConflictResolutionResult, MobileOptimizerError> {
-//         user.require_auth();
-
-//         OfflineManager::resolve_conflicts(&env, user, device_id, resolution_strategy, operation_resolutions)
-//             .map_err(|_| MobileOptimizerError::ConflictResolutionFailed)
-//     }
-
-//     /// Get network statistics
-//     pub fn get_network_statistics(
-//         env: Env,
-//         user: Address,
-//         session_id: String,
-//     ) -> Result<NetworkStatistics, MobileOptimizerError> {
-//         user.require_auth();
-
-//         Ok(NetworkManager::get_network_statistics(&env, session_id))
-//     }
-
-//     /// Get mobile capabilities
-//     pub fn get_mobile_capabilities(env: Env) -> MobileCapabilities {
-//         MobileCapabilities {
-//             max_batch_size: 10,
-//             supported_operations: Self::get_supported_operations(&env),
-//             offline_capabilities: OfflineManager::get_offline_capabilities(&env),
-//             gas_optimization_features: Self::get_gas_optimization_features(&env),
-//             network_adaptation_features: Self::get_network_adaptation_features(&env),
-//         }
-//     }
-
-//     /// Update mobile preferences
-//     pub fn update_mobile_preferences(
-//         env: Env,
-//         user: Address,
-//         session_id: String,
-//         preferences: MobilePreferences,
-//     ) -> Result<(), MobileOptimizerError> {
-//         user.require_auth();
-
-//         SessionManager::update_preferences(&env, user, session_id, preferences)
-//             .map_err(|_| MobileOptimizerError::PreferenceUpdateFailed)
-//     }
-
-//     /// Get mobile analytics
-//     pub fn get_mobile_analytics(
-//         env: Env,
-//         user: Address,
-//         session_id: String,
-//     ) -> Result<MobileAnalytics, MobileOptimizerError> {
-//         user.require_auth();
-
-//         SessionManager::get_session_analytics(&env, &user, &session_id)
-//             .map_err(|_| MobileOptimizerError::AnalyticsNotAvailable)
-//     }
-
-//     /// Clean up completed offline operations
-//     pub fn cleanup_offline_operations(
-//         env: Env,
-//         user: Address,
-//         device_id: String,
-//     ) -> Result<u32, MobileOptimizerError> {
-//         user.require_auth();
-
-//         OfflineManager::cleanup_completed_operations(&env, user, device_id)
-//             .map_err(|_| MobileOptimizerError::OfflineOperationFailed)
-//     }
-
-//     // Admin functions
-
-//     /// Update contract configuration (admin only)
-//     pub fn update_config(
-//         env: Env,
-//         admin: Address,
-//         config: MobileOptimizerConfig,
-//     ) -> Result<(), MobileOptimizerError> {
-//         Self::require_admin(&env, &admin)?;
-
-//         env.storage().persistent().set(&DataKey::Config, &config);
-//         Ok(())
-//     }
-
-//     /// Get contract configuration
-//     pub fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError> {
-//         env.storage().persistent()
-//             .get(&DataKey::Config)
-//             .ok_or(MobileOptimizerError::ConfigNotFound)
-//     }
-
-//     /// Get contract statistics (admin only)
-//     pub fn get_contract_statistics(
-//         env: Env,
-//         admin: Address,
-//     ) -> Result<ContractStatistics, MobileOptimizerError> {
-//         Self::require_admin(&env, &admin)?;
-
-//         Ok(ContractStatistics {
-//             total_sessions: Self::count_total_sessions(&env),
-//             active_sessions: Self::count_active_sessions(&env),
-//             total_batches_executed: Self::count_total_batches(&env),
-//             total_offline_operations: Self::count_offline_operations(&env),
-//             average_gas_savings: Self::calculate_average_gas_savings(&env),
-//         })
-//     }
-
-//     // Helper functions
-
-//     fn require_admin(env: &Env, admin: &Address) -> Result<(), MobileOptimizerError> {
-//         admin.require_auth();
-
-//         let stored_admin: Address = env.storage().persistent()
-//             .get(&DataKey::Admin)
-//             .ok_or(MobileOptimizerError::AdminNotSet)?;
-
-//         if *admin != stored_admin {
-//             return Err(MobileOptimizerError::UnauthorizedAdmin);
-//         }
-
-//         Ok(())
-//     }
-
-//     fn create_default_retry_config(network_quality: &NetworkQuality) -> RetryConfig {
-//         match network_quality {
-//             NetworkQuality::Excellent | NetworkQuality::Good => RetryConfig {
-//                 max_retries: 3,
-//                 base_delay_ms: 500,
-//                 max_delay_ms: 5000,
-//                 backoff_multiplier: 200,
-//                 timeout_ms: 10000,
-//             },
-//             NetworkQuality::Fair => RetryConfig {
-//                 max_retries: 5,
-//                 base_delay_ms: 1000,
-//                 max_delay_ms: 10000,
-//                 backoff_multiplier: 150,
-//                 timeout_ms: 15000,
-//             },
-//             NetworkQuality::Poor => RetryConfig {
-//                 max_retries: 7,
-//                 base_delay_ms: 2000,
-//                 max_delay_ms: 20000,
-//                 backoff_multiplier: 125,
-//                 timeout_ms: 30000,
-//             },
-//             NetworkQuality::Offline => RetryConfig {
-//                 max_retries: 0,
-//                 base_delay_ms: 0,
-//                 max_delay_ms: 0,
-//                 backoff_multiplier: 100,
-//                 timeout_ms: 1000,
-//             },
-//         }
-//     }
-
-//     fn get_supported_operations(env: &Env) -> Vec<OperationType> {
-//         let mut operations = Vec::new(env);
-//         operations.push_back(OperationType::CourseEnrollment);
-//         operations.push_back(OperationType::ProgressUpdate);
-//         operations.push_back(OperationType::CertificateGeneration);
-//         operations.push_back(OperationType::TokenReward);
-//         operations.push_back(OperationType::PreferenceUpdate);
-//         operations.push_back(OperationType::SearchQuery);
-//         operations
-//     }
-
-//     fn get_gas_optimization_features(env: &Env) -> Vec<String> {
-//         let mut features = Vec::new(env);
-//         features.push_back(String::from_str(env, "Dynamic gas estimation"));
-//         features.push_back(String::from_str(env, "Network-aware optimization"));
-//         features.push_back(String::from_str(env, "Batch gas optimization"));
-//         features.push_back(String::from_str(env, "Operation prioritization"));
-//         features
-//     }
-
-//     fn get_network_adaptation_features(env: &Env) -> Vec<String> {
-//         let mut features = Vec::new(env);
-//         features.push_back(String::from_str(env, "Automatic network quality detection"));
-//         features.push_back(String::from_str(env, "Adaptive retry strategies"));
-//         features.push_back(String::from_str(env, "Connection optimization"));
-//         features.push_back(String::from_str(env, "Performance monitoring"));
-//         features
-//     }
-
-//     // Statistics helper functions (simplified implementations)
-//     fn count_total_sessions(env: &Env) -> u32 {
-//         // Would count actual sessions from storage
-//         0
-//     }
-
-//     fn count_active_sessions(env: &Env) -> u32 {
-//         // Would count active sessions
-//         0
-//     }
-
-//     fn count_total_batches(env: &Env) -> u32 {
-//         // Would count executed batches
-//         0
-//     }
-
-//     fn count_offline_operations(env: &Env) -> u32 {
-//         // Would count offline operations
-//         0
-//     }
-
-//     fn calculate_average_gas_savings(env: &Env) -> u32 {
-//         // Would calculate actual gas savings
-//         0
-//     }
-
-//     fn format(template: &str, value: u64) -> String {
-//         // Simple format implementation for no_std
-//         String::from_str(&Env::default(), &template.replace("{}", &value.to_string()))
-//     }
-// }
-
-// // Additional contract types
-
-// #[contracttype]
-// #[derive(Clone, Debug, Eq, PartialEq)]
-// pub struct MobileOptimizerConfig {
-//     pub admin: Address,
-//     pub max_batch_size: u32,
-//     pub default_gas_limit: u64,
-//     pub session_timeout_seconds: u64,
-//     pub offline_queue_limit: u32,
-//     pub network_timeout_ms: u32,
-//     pub retry_attempts: u32,
-// }
-
-// #[contracttype]
-// #[derive(Clone, Debug, Eq, PartialEq)]
-// pub struct MobileCapabilities {
-//     pub max_batch_size: u32,
-//     pub supported_operations: Vec<OperationType>,
-//     pub offline_capabilities: OfflineCapabilities,
-//     pub gas_optimization_features: Vec<String>,
-//     pub network_adaptation_features: Vec<String>,
-// }
-
-// #[contracttype]
-// #[derive(Clone, Debug, Eq, PartialEq)]
-// pub struct ContractStatistics {
-//     pub total_sessions: u32,
-//     pub active_sessions: u32,
-//     pub total_batches_executed: u32,
-//     pub total_offline_operations: u32,
-//     pub average_gas_savings: u32,
-// }
-
-// #[contracttype]
-// #[derive(Clone, Debug, Eq, PartialEq)]
-// pub enum MobileOptimizerError {
-//     SessionCreationFailed,
-//     SessionUpdateFailed,
-//     SessionNotFound,
-//     BatchExecutionFailed,
-//     GasEstimationFailed,
-//     OptimizationFailed,
-//     InteractionFailed,
-//     OfflineOperationFailed,
-//     OfflineSyncFailed,
-//     ConflictResolutionFailed,
-//     PreferenceUpdateFailed,
-//     AnalyticsNotAvailable,
-//     ConfigNotFound,
-//     AdminNotSet,
-//     UnauthorizedAdmin,
-// }
+#![no_std]
+#![allow(clippy::too_many_arguments)]
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
+
+pub mod analytics_monitor;
+pub mod batch_manager;
+pub mod battery_optimizer;
+pub mod collaboration_manager;
+pub mod content_cache;
+pub mod content_manager;
+pub mod gas_optimizer;
+pub mod interaction_flows;
+pub mod network_manager;
+pub mod notification_manager;
+pub mod offline_manager;
+pub mod pwa_manager;
+pub mod security_manager;
+pub mod session_manager;
+pub mod types;
+pub mod user_experience_manager;
+
+#[cfg(test)]
+mod tests;
+
+use analytics_monitor::AnalyticsMonitor;
+use batch_manager::{BatchExecutionResult, BatchManager};
+use battery_optimizer::{BatteryOptimizedSettings, BatteryOptimizer};
+use collaboration_manager::CollaborationManager;
+use content_cache::ContentCacheManager;
+use content_manager::ContentManager;
+use gas_optimizer::GasOptimizer;
+use interaction_flows::{InteractionFlows, MobileInteractionResult};
+use network_manager::{
+    BandwidthOptimization, ConnectionSettings, NetworkAdaptation, NetworkManager, NetworkStatistics,
+};
+use notification_manager::NotificationManager;
+use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, OfflineSyncResult};
+use pwa_manager::{OfflineCapabilityReport, PwaManager};
+use security_manager::SecurityManager;
+use session_manager::{SessionManager, SessionOptimization, SessionStats};
+use types::*;
+use user_experience_manager::UserExperienceManager;
+
+#[contract]
+pub struct MobileOptimizerContract;
+
+#[allow(clippy::too_many_arguments)]
+#[contractimpl]
+impl MobileOptimizerContract {
+    // ========================================================================
+    // Initialization & Admin
+    // ========================================================================
+
+    pub fn initialize(env: Env, admin: Address) {
+        admin.require_auth();
+
+        if env.storage().persistent().has(&DataKey::Initialized) {
+            panic!("already initialized");
+        }
+
+        let config = MobileOptimizerConfig {
+            admin: admin.clone(),
+            max_batch_size: 10,
+            default_gas_limit: 1_000_000,
+            session_timeout_seconds: 3600,
+            offline_queue_limit: 100,
+            network_timeout_ms: 30000,
+            retry_attempts: 5,
+            cache_ttl_seconds: 86400,
+            max_devices_per_user: 5,
+            analytics_retention_days: 90,
+        };
+
+        env.storage().persistent().set(&DataKey::Config, &config);
+        env.storage().persistent().set(&DataKey::Admin, &admin);
+        env.storage().persistent().set(&DataKey::Initialized, &true);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalSessions, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalBatches, &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalOfflineOps, &0u64);
+    }
+
+    pub fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Config)
+            .ok_or(MobileOptimizerError::ConfigNotFound)
+    }
+
+    pub fn update_config(
+        env: Env,
+        admin: Address,
+        config: MobileOptimizerConfig,
+    ) -> Result<(), MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        env.storage().persistent().set(&DataKey::Config, &config);
+        Ok(())
+    }
+
+    // ========================================================================
+    // Session Management
+    // ========================================================================
+
+    pub fn create_session(
+        env: Env,
+        user: Address,
+        device_id: String,
+        preferences: MobilePreferences,
+    ) -> Result<String, MobileOptimizerError> {
+        user.require_auth();
+        let session_id = SessionManager::create_session(&env, user, device_id, preferences)?;
+        Self::increment_counter(&env, &DataKey::TotalSessions);
+        Ok(session_id)
+    }
+
+    pub fn get_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+    ) -> Result<MobileSession, MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::get_session(&env, &session_id)
+    }
+
+    pub fn update_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+        network_quality: NetworkQuality,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::update_session(&env, session_id, Some(network_quality), None)
+    }
+
+    pub fn update_mobile_preferences(
+        env: Env,
+        user: Address,
+        session_id: String,
+        preferences: MobilePreferences,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::update_preferences(&env, session_id, preferences)
+    }
+
+    pub fn suspend_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::suspend_session(&env, session_id)
+    }
+
+    pub fn resume_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+        network_quality: NetworkQuality,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::resume_session(&env, session_id, network_quality)
+    }
+
+    pub fn end_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::end_session(&env, session_id)
+    }
+
+    pub fn get_session_stats(env: Env, user: Address) -> SessionStats {
+        user.require_auth();
+        SessionManager::get_session_stats(&env, &user)
+    }
+
+    pub fn optimize_session(
+        env: Env,
+        user: Address,
+        session_id: String,
+    ) -> Result<SessionOptimization, MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::optimize_session_performance(&env, session_id)
+    }
+
+    pub fn sync_session_state(
+        env: Env,
+        user: Address,
+        source_session_id: String,
+        target_device_id: String,
+    ) -> Result<String, MobileOptimizerError> {
+        user.require_auth();
+        SessionManager::sync_session_state(&env, &user, source_session_id, target_device_id)
+    }
+
+    // ========================================================================
+    // Batch Execution
+    // ========================================================================
+
+    pub fn create_batch(
+        env: Env,
+        user: Address,
+        operations: Vec<BatchOperation>,
+        priority: BatchPriority,
+        strategy: ExecutionStrategy,
+    ) -> Result<String, MobileOptimizerError> {
+        user.require_auth();
+        BatchManager::create_batch(&env, user, operations, priority, strategy)
+    }
+
+    pub fn execute_batch(
+        env: Env,
+        user: Address,
+        batch_id: String,
+    ) -> Result<BatchExecutionResult, MobileOptimizerError> {
+        user.require_auth();
+        let result = BatchManager::execute_batch(&env, batch_id, user)?;
+        Self::increment_counter(&env, &DataKey::TotalBatches);
+        Ok(result)
+    }
+
+    pub fn cancel_batch(
+        env: Env,
+        user: Address,
+        batch_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        BatchManager::cancel_batch(&env, batch_id, user)
+    }
+
+    // ========================================================================
+    // Gas Optimization
+    // ========================================================================
+
+    pub fn estimate_gas(
+        env: Env,
+        operations: Vec<BatchOperation>,
+        network_quality: NetworkQuality,
+    ) -> Result<Vec<GasEstimate>, MobileOptimizerError> {
+        let mut estimates = Vec::new(&env);
+        for op in operations.iter() {
+            let estimate = GasOptimizer::estimate_operation_gas(&env, &op, &network_quality)?;
+            estimates.push_back(estimate);
+        }
+        Ok(estimates)
+    }
+
+    pub fn get_gas_tips(env: Env) -> Vec<String> {
+        GasOptimizer::get_mobile_gas_tips(&env)
+    }
+
+    // ========================================================================
+    // Quick Interaction Flows
+    // ========================================================================
+
+    pub fn quick_enroll_course(
+        env: Env,
+        user: Address,
+        course_id: String,
+        session_id: String,
+    ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        user.require_auth();
+        let nq = NetworkManager::detect_network_quality(&env);
+        InteractionFlows::quick_enroll_course(&env, &user, &course_id, &session_id, &nq)
+    }
+
+    pub fn quick_update_progress(
+        env: Env,
+        user: Address,
+        course_id: String,
+        module_id: String,
+        progress_percentage: u32,
+        session_id: String,
+    ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        user.require_auth();
+        let nq = NetworkManager::detect_network_quality(&env);
+        InteractionFlows::quick_update_progress(
+            &env,
+            &user,
+            &course_id,
+            &module_id,
+            progress_percentage,
+            &session_id,
+            &nq,
+        )
+    }
+
+    pub fn quick_claim_certificate(
+        env: Env,
+        user: Address,
+        course_id: String,
+        session_id: String,
+    ) -> Result<MobileInteractionResult, MobileOptimizerError> {
+        user.require_auth();
+        let nq = NetworkManager::detect_network_quality(&env);
+        InteractionFlows::quick_claim_certificate(&env, &user, &course_id, &session_id, &nq)
+    }
+
+    // ========================================================================
+    // Offline Operations
+    // ========================================================================
+
+    pub fn queue_offline_operation(
+        env: Env,
+        user: Address,
+        device_id: String,
+        operation: QueuedOperation,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        OfflineManager::queue_operation(&env, user, device_id, operation)?;
+        Self::increment_counter(&env, &DataKey::TotalOfflineOps);
+        Ok(())
+    }
+
+    pub fn sync_offline_operations(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<OfflineSyncResult, MobileOptimizerError> {
+        user.require_auth();
+        let nq = NetworkManager::detect_network_quality(&env);
+        OfflineManager::sync_offline_operations(&env, user, device_id, nq)
+    }
+
+    pub fn get_offline_queue_status(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<OfflineQueueStatus, MobileOptimizerError> {
+        user.require_auth();
+        OfflineManager::get_queue_status(&env, &user, &device_id)
+    }
+
+    pub fn resolve_offline_conflicts(
+        env: Env,
+        user: Address,
+        device_id: String,
+        strategy: ConflictResolution,
+    ) -> Result<u32, MobileOptimizerError> {
+        user.require_auth();
+        OfflineManager::resolve_conflicts(&env, user, device_id, strategy)
+    }
+
+    pub fn cleanup_offline_operations(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<u32, MobileOptimizerError> {
+        user.require_auth();
+        OfflineManager::cleanup_completed_operations(&env, user, device_id)
+    }
+
+    pub fn get_offline_capabilities(env: Env) -> OfflineCapabilities {
+        OfflineManager::get_offline_capabilities(&env)
+    }
+
+    // ========================================================================
+    // Network Management
+    // ========================================================================
+
+    pub fn get_network_quality(env: Env) -> NetworkQuality {
+        NetworkManager::detect_network_quality(&env)
+    }
+
+    pub fn get_connection_settings(
+        _env: Env,
+        network_quality: NetworkQuality,
+    ) -> ConnectionSettings {
+        NetworkManager::optimize_connection_settings(&network_quality)
+    }
+
+    pub fn get_bandwidth_optimization(
+        env: Env,
+        network_quality: NetworkQuality,
+        data_usage_mode: DataUsageMode,
+    ) -> BandwidthOptimization {
+        NetworkManager::get_bandwidth_optimization(&env, &network_quality, &data_usage_mode)
+    }
+
+    pub fn get_network_statistics(
+        env: Env,
+        user: Address,
+        session_id: String,
+    ) -> NetworkStatistics {
+        user.require_auth();
+        NetworkManager::get_network_statistics(&env, session_id)
+    }
+
+    pub fn adapt_network(
+        env: Env,
+        previous_quality: NetworkQuality,
+        current_quality: NetworkQuality,
+    ) -> NetworkAdaptation {
+        NetworkManager::adapt_to_network_change(&env, &previous_quality, &current_quality)
+    }
+
+    // ========================================================================
+    // Content Caching & Prefetching (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn cache_content(
+        env: Env,
+        user: Address,
+        cache_key: String,
+        content_hash: BytesN<32>,
+        content_type: ContentType,
+        size_bytes: u64,
+        ttl_seconds: u64,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        ContentCacheManager::cache_content(
+            &env,
+            &user,
+            cache_key,
+            content_hash,
+            content_type,
+            size_bytes,
+            ttl_seconds,
+        )
+    }
+
+    pub fn get_cached_content(
+        env: Env,
+        user: Address,
+        cache_key: String,
+    ) -> Result<CacheEntry, MobileOptimizerError> {
+        user.require_auth();
+        ContentCacheManager::get_cached_content(&env, &user, cache_key)
+    }
+
+    pub fn invalidate_cache(
+        env: Env,
+        user: Address,
+        cache_key: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        ContentCacheManager::invalidate_cache(&env, &user, cache_key)
+    }
+
+    pub fn setup_prefetch_rules(
+        env: Env,
+        user: Address,
+        rules: Vec<PrefetchRule>,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        ContentCacheManager::setup_prefetch_rules(&env, &user, rules)
+    }
+
+    pub fn execute_prefetch(
+        env: Env,
+        user: Address,
+        trigger: PrefetchTrigger,
+    ) -> Result<u32, MobileOptimizerError> {
+        user.require_auth();
+        let nq = NetworkManager::detect_network_quality(&env);
+        ContentCacheManager::execute_prefetch(&env, &user, trigger, &nq)
+    }
+
+    pub fn get_cache_stats(env: Env, user: Address) -> Result<CacheStats, MobileOptimizerError> {
+        user.require_auth();
+        ContentCacheManager::get_cache_stats(&env, &user)
+    }
+
+    // ========================================================================
+    // Battery Optimization (NEW)
+    // ========================================================================
+
+    pub fn update_battery_profile(
+        env: Env,
+        user: Address,
+        device_id: String,
+        battery_level: u32,
+        is_charging: bool,
+    ) -> Result<BatteryProfile, MobileOptimizerError> {
+        user.require_auth();
+        BatteryOptimizer::update_battery_profile(&env, &user, device_id, battery_level, is_charging)
+    }
+
+    pub fn get_battery_optimized_settings(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<BatteryOptimizedSettings, MobileOptimizerError> {
+        user.require_auth();
+        BatteryOptimizer::get_optimized_settings(&env, &user, &device_id)
+    }
+
+    pub fn estimate_battery_impact(
+        env: Env,
+        session_id: String,
+        operations_count: u32,
+        sync_count: u32,
+        cache_operations: u32,
+    ) -> BatteryImpactReport {
+        BatteryOptimizer::estimate_session_battery_impact(
+            &env,
+            &session_id,
+            operations_count,
+            sync_count,
+            cache_operations,
+        )
+    }
+
+    pub fn update_battery_config(
+        env: Env,
+        user: Address,
+        config: BatteryOptimizationConfig,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        BatteryOptimizer::update_battery_config(&env, &user, config)
+    }
+
+    // ========================================================================
+    // Push Notifications & Reminders (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_learning_reminder(
+        env: Env,
+        user: Address,
+        reminder_type: ReminderType,
+        title: String,
+        message: String,
+        scheduled_at: u64,
+        repeat_interval: RepeatInterval,
+        course_id: String,
+    ) -> Result<LearningReminder, MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::create_learning_reminder(
+            &env,
+            &user,
+            reminder_type,
+            title,
+            message,
+            scheduled_at,
+            repeat_interval,
+            course_id,
+        )
+    }
+
+    pub fn get_pending_notifications(
+        env: Env,
+        user: Address,
+    ) -> Result<Vec<LearningReminder>, MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::get_pending_notifications(&env, &user)
+    }
+
+    pub fn mark_notification_sent(
+        env: Env,
+        user: Address,
+        reminder_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::mark_notification_sent(&env, &user, reminder_id)
+    }
+
+    pub fn cancel_reminder(
+        env: Env,
+        user: Address,
+        reminder_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::cancel_reminder(&env, &user, reminder_id)
+    }
+
+    pub fn update_notification_config(
+        env: Env,
+        user: Address,
+        config: NotificationConfig,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::update_notification_config(&env, &user, config)
+    }
+
+    pub fn get_notification_config(
+        env: Env,
+        user: Address,
+    ) -> Result<NotificationConfig, MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::get_notification_config(&env, &user)
+    }
+
+    pub fn create_streak_reminder(
+        env: Env,
+        user: Address,
+        streak_days: u32,
+    ) -> Result<LearningReminder, MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::create_streak_reminder(&env, &user, streak_days)
+    }
+
+    pub fn create_notification_template(
+        env: Env,
+        admin: Address,
+        template_id: String,
+        category: ReminderType,
+        default_content: String,
+        localized_content: Map<String, String>,
+        supported_channels: Vec<String>,
+    ) -> Result<NotificationTemplate, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        NotificationManager::create_notification_template(
+            &env,
+            template_id,
+            category,
+            default_content,
+            localized_content,
+            supported_channels,
+        )
+    }
+
+    pub fn create_notification_campaign(
+        env: Env,
+        admin: Address,
+        campaign_id: String,
+        name: String,
+        variants: Vec<ABTestVariant>,
+        start_date: u64,
+        end_date: u64,
+    ) -> Result<NotificationCampaign, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        NotificationManager::create_campaign(
+            &env,
+            campaign_id,
+            name,
+            variants,
+            start_date,
+            end_date,
+        )
+    }
+
+    pub fn track_notification_engagement(
+        env: Env,
+        user: Address,
+        notification_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::track_engagement(&env, &user, notification_id)
+    }
+
+    // ========================================================================
+    // Content Management (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn publish_content(
+        env: Env,
+        author: Address,
+        content_id: String,
+        content_type: ContentType,
+        title: String,
+        uri: String,
+        access_rule: ContentAccessRule,
+        delivery_config: ContentDeliveryConfig,
+        content_hash: BytesN<32>,
+    ) -> Result<ContentMetadata, MobileOptimizerError> {
+        author.require_auth();
+        ContentManager::publish_content(
+            &env,
+            &author,
+            content_id,
+            content_type,
+            title,
+            uri,
+            access_rule,
+            delivery_config,
+            content_hash,
+        )
+    }
+
+    pub fn update_content_version(
+        env: Env,
+        author: Address,
+        content_id: String,
+        new_uri: String,
+        content_hash: BytesN<32>,
+        changelog: String,
+    ) -> Result<ContentVersion, MobileOptimizerError> {
+        author.require_auth();
+        ContentManager::update_content_version(
+            &env,
+            &author,
+            content_id,
+            new_uri,
+            content_hash,
+            changelog,
+        )
+    }
+
+    pub fn get_content_metadata(
+        env: Env,
+        content_id: String,
+    ) -> Result<ContentMetadata, MobileOptimizerError> {
+        ContentManager::get_content(&env, content_id)
+    }
+
+    pub fn get_content_history(
+        env: Env,
+        content_id: String,
+    ) -> Result<Vec<ContentVersion>, MobileOptimizerError> {
+        ContentManager::get_version_history(&env, content_id)
+    }
+
+    // ========================================================================
+    // Collaboration & Social (NEW)
+    // ========================================================================
+
+    pub fn create_study_group(
+        env: Env,
+        creator: Address,
+        group_id: String,
+        name: String,
+        topic: String,
+        max_members: u32,
+    ) -> Result<StudyGroup, MobileOptimizerError> {
+        creator.require_auth();
+        CollaborationManager::create_study_group(&env, &creator, group_id, name, topic, max_members)
+    }
+
+    pub fn join_study_group(
+        env: Env,
+        user: Address,
+        group_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        CollaborationManager::join_study_group(&env, &user, group_id)
+    }
+
+    pub fn create_forum_post(
+        env: Env,
+        author: Address,
+        post_id: String,
+        group_id: String,
+        content: String,
+        parent_id: Option<String>,
+    ) -> Result<ForumPost, MobileOptimizerError> {
+        author.require_auth();
+        CollaborationManager::create_post(&env, &author, post_id, group_id, content, parent_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn submit_peer_review(
+        env: Env,
+        reviewer: Address,
+        target_user: Address,
+        review_id: String,
+        context_id: String,
+        score: u32,
+        comments: String,
+    ) -> Result<PeerReview, MobileOptimizerError> {
+        reviewer.require_auth();
+        CollaborationManager::submit_review(
+            &env,
+            &reviewer,
+            &target_user,
+            review_id,
+            context_id,
+            score,
+            comments,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn request_mentorship(
+        env: Env,
+        mentee: Address,
+        mentor: Address,
+        session_id: String,
+        topic: String,
+        scheduled_at: u64,
+        duration_minutes: u32,
+    ) -> Result<MentorshipSession, MobileOptimizerError> {
+        mentee.require_auth();
+        CollaborationManager::request_mentorship(
+            &env,
+            &mentee,
+            &mentor,
+            session_id,
+            topic,
+            scheduled_at,
+            duration_minutes,
+        )
+    }
+
+    pub fn update_mentorship_status(
+        env: Env,
+        caller: Address,
+        session_id: String,
+        new_status: MentorshipStatus,
+    ) -> Result<(), MobileOptimizerError> {
+        caller.require_auth();
+        CollaborationManager::update_mentorship_status(&env, &caller, session_id, new_status)
+    }
+
+    pub fn get_collaboration_profile(env: Env, user: Address) -> CollaborationProfile {
+        CollaborationManager::get_profile(&env, &user)
+    }
+
+    // ========================================================================
+    // User Experience & UI (NEW)
+    // ========================================================================
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_ui_preferences(
+        env: Env,
+        user: Address,
+        theme_id: String,
+        language: String,
+        font_scale: u32,
+        high_contrast: bool,
+        reduce_motion: bool,
+        layout_mode: LayoutMode,
+        accessibility_settings: Map<String, bool>,
+    ) -> Result<UiPreferences, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::set_ui_preferences(
+            &env,
+            &user,
+            theme_id,
+            language,
+            font_scale,
+            high_contrast,
+            reduce_motion,
+            layout_mode,
+            accessibility_settings,
+        )
+    }
+
+    pub fn get_ui_preferences(
+        env: Env,
+        user: Address,
+    ) -> Result<UiPreferences, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::get_ui_preferences(&env, &user)
+    }
+
+    pub fn update_onboarding_progress(
+        env: Env,
+        user: Address,
+        step_id: String,
+        is_skipped: bool,
+    ) -> Result<OnboardingState, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::update_onboarding_progress(&env, &user, step_id, is_skipped)
+    }
+
+    pub fn submit_user_feedback(
+        env: Env,
+        user: Address,
+        category: String,
+        rating: u32,
+        comment: String,
+        context_data: Map<String, String>,
+    ) -> Result<UserFeedback, MobileOptimizerError> {
+        user.require_auth();
+        UserExperienceManager::submit_feedback(&env, &user, category, rating, comment, context_data)
+    }
+
+    // ========================================================================
+    // Mobile Security & Biometric Auth (NEW)
+    // ========================================================================
+
+    pub fn enable_biometric_auth(
+        env: Env,
+        user: Address,
+        biometric_type: BiometricType,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::enable_biometric_auth(&env, &user, biometric_type)
+    }
+
+    pub fn authenticate(
+        env: Env,
+        user: Address,
+        device_id: String,
+        auth_method: AuthMethod,
+        ip_hash: BytesN<32>,
+    ) -> Result<AuthenticationEvent, MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::authenticate(&env, &user, device_id, auth_method, ip_hash)
+    }
+
+    pub fn register_trusted_device(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::register_trusted_device(&env, &user, device_id)
+    }
+
+    pub fn revoke_trusted_device(
+        env: Env,
+        user: Address,
+        device_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::revoke_trusted_device(&env, &user, device_id)
+    }
+
+    pub fn get_security_profile(
+        env: Env,
+        user: Address,
+    ) -> Result<SecurityProfile, MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::get_security_profile(&env, &user)
+    }
+
+    pub fn get_security_alerts(env: Env, user: Address) -> Vec<SecurityAlert> {
+        user.require_auth();
+        SecurityManager::get_security_alerts(&env, &user)
+    }
+
+    pub fn resolve_security_alert(
+        env: Env,
+        user: Address,
+        alert_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::resolve_security_alert(&env, &user, alert_id)
+    }
+
+    pub fn enable_two_factor(env: Env, user: Address) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        SecurityManager::enable_two_factor(&env, &user)
+    }
+
+    // ========================================================================
+    // PWA Capabilities (NEW)
+    // ========================================================================
+
+    pub fn get_pwa_config(env: Env, user: Address) -> Result<PwaConfig, MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::get_pwa_config(&env, &user)
+    }
+
+    pub fn update_pwa_install_status(
+        env: Env,
+        user: Address,
+        status: PwaInstallStatus,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::update_install_status(&env, &user, status)
+    }
+
+    pub fn get_pwa_manifest(env: Env) -> PwaManifest {
+        PwaManager::get_pwa_manifest(&env)
+    }
+
+    pub fn update_service_worker(
+        env: Env,
+        user: Address,
+        version: String,
+    ) -> Result<ServiceWorkerStatus, MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::update_service_worker(&env, &user, version)
+    }
+
+    pub fn get_service_worker_status(
+        env: Env,
+        user: Address,
+    ) -> Result<ServiceWorkerStatus, MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::get_service_worker_status(&env, &user)
+    }
+
+    pub fn register_cached_route(
+        env: Env,
+        user: Address,
+        route: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::register_cached_route(&env, &user, route)
+    }
+
+    pub fn register_offline_page(
+        env: Env,
+        user: Address,
+        page: String,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::register_offline_page(&env, &user, page)
+    }
+
+    pub fn toggle_background_sync(
+        env: Env,
+        user: Address,
+        enabled: bool,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        PwaManager::toggle_background_sync(&env, &user, enabled)
+    }
+
+    pub fn get_offline_capability_report(env: Env, user: Address) -> OfflineCapabilityReport {
+        user.require_auth();
+        PwaManager::get_offline_capability_report(&env, &user)
+    }
+
+    // ========================================================================
+    // Analytics & Performance Monitoring (NEW)
+    // ========================================================================
+
+    pub fn track_analytics_event(
+        env: Env,
+        user: Address,
+        event_type: AnalyticsEventType,
+        properties: Map<String, String>,
+        session_id: String,
+        device_type: DeviceType,
+    ) -> Result<AnalyticsEvent, MobileOptimizerError> {
+        user.require_auth();
+        AnalyticsMonitor::track_event(&env, &user, event_type, properties, session_id, device_type)
+    }
+
+    pub fn record_performance_metrics(
+        env: Env,
+        user: Address,
+        metrics: PerformanceMetrics,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        AnalyticsMonitor::record_performance_metrics(&env, &user, metrics)
+    }
+
+    pub fn update_user_engagement(
+        env: Env,
+        user: Address,
+        session_duration_seconds: u64,
+        courses_accessed: u32,
+        modules_completed: u32,
+    ) -> Result<UserEngagement, MobileOptimizerError> {
+        user.require_auth();
+        AnalyticsMonitor::update_user_engagement(
+            &env,
+            &user,
+            session_duration_seconds,
+            courses_accessed,
+            modules_completed,
+        )
+    }
+
+    pub fn get_user_engagement(
+        env: Env,
+        user: Address,
+    ) -> Result<UserEngagement, MobileOptimizerError> {
+        user.require_auth();
+        AnalyticsMonitor::get_user_engagement(&env, &user)
+    }
+
+    pub fn get_mobile_analytics(
+        env: Env,
+        user: Address,
+        device_id: String,
+        period_start: u64,
+        period_end: u64,
+    ) -> Result<MobileAnalytics, MobileOptimizerError> {
+        user.require_auth();
+        AnalyticsMonitor::get_mobile_analytics(&env, &user, device_id, period_start, period_end)
+    }
+
+    pub fn get_analytics_dashboard(
+        env: Env,
+        admin: Address,
+    ) -> Result<AnalyticsDashboard, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+        Ok(AnalyticsMonitor::get_analytics_dashboard(&env))
+    }
+
+    // ========================================================================
+    // Contract Statistics (Admin)
+    // ========================================================================
+
+    pub fn get_contract_statistics(
+        env: Env,
+        admin: Address,
+    ) -> Result<ContractStatistics, MobileOptimizerError> {
+        Self::require_admin(&env, &admin)?;
+
+        let total_sessions: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::TotalSessions)
+            .unwrap_or(0);
+        let total_batches: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::TotalBatches)
+            .unwrap_or(0);
+        let total_offline_ops: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::TotalOfflineOps)
+            .unwrap_or(0);
+
+        Ok(ContractStatistics {
+            total_sessions,
+            total_batches_executed: total_batches,
+            total_offline_operations: total_offline_ops,
+        })
+    }
+
+    // ========================================================================
+    // Helpers
+    // ========================================================================
+
+    fn require_admin(env: &Env, admin: &Address) -> Result<(), MobileOptimizerError> {
+        admin.require_auth();
+        let stored: Address = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Admin)
+            .ok_or(MobileOptimizerError::AdminNotSet)?;
+        if *admin != stored {
+            return Err(MobileOptimizerError::UnauthorizedAdmin);
+        }
+        Ok(())
+    }
+
+    fn increment_counter(env: &Env, key: &DataKey) {
+        let current: u64 = env.storage().persistent().get(key).unwrap_or(0);
+        env.storage().persistent().set(key, &(current + 1));
+    }
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContractStatistics {
+    pub total_sessions: u64,
+    pub total_batches_executed: u64,
+    pub total_offline_operations: u64,
+}

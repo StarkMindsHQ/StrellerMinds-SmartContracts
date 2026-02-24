@@ -457,7 +457,7 @@ impl MockDataGenerator {
         vec![
             // Session with minimum valid duration
             LearningSession {
-                session_id: format!("{}_min", student_id),
+                session_id: format!("{student_id}_min"),
                 student: student_id.to_string(),
                 course_id: course_id.to_string(),
                 module_id: "intro".to_string(),
@@ -471,7 +471,7 @@ impl MockDataGenerator {
             },
             // Session with maximum reasonable duration
             LearningSession {
-                session_id: format!("{}_max", student_id),
+                session_id: format!("{student_id}_max"),
                 student: student_id.to_string(),
                 course_id: course_id.to_string(),
                 module_id: "deep_dive".to_string(),
@@ -485,7 +485,7 @@ impl MockDataGenerator {
             },
             // Failed session
             LearningSession {
-                session_id: format!("{}_fail", student_id),
+                session_id: format!("{student_id}_fail"),
                 student: student_id.to_string(),
                 course_id: course_id.to_string(),
                 module_id: "quiz".to_string(),
@@ -499,7 +499,7 @@ impl MockDataGenerator {
             },
             // Perfect session
             LearningSession {
-                session_id: format!("{}_perfect", student_id),
+                session_id: format!("{student_id}_perfect"),
                 student: student_id.to_string(),
                 course_id: course_id.to_string(),
                 module_id: "final".to_string(),
