@@ -1,0 +1,26 @@
+[package]
+name = "assessment"
+version = "0.1.0"
+edition = "2021"
+description = "Comprehensive assessment system for multi-format questions, automated grading, integrity monitoring, adaptive testing, and learning analytics integration on Soroban"
+license = "Apache-2.0"
+repository = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+readme = "README.md"
+homepage = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
+documentation = "https://docs.rs/assessment"
+keywords = ["stellar", "blockchain", "education", "assessment", "soroban"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+shared = { path = "../shared" }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
