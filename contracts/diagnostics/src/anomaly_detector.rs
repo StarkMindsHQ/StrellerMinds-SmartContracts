@@ -1045,6 +1045,14 @@ mod tests {
                 network_latency: 50,
                 error_rate: 2,
                 transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
             });
         }
 
@@ -1062,6 +1070,14 @@ mod tests {
                 network_latency: 50,
                 error_rate: 2,
                 transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 200,
+                average_response_time: 200,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
             });
         }
 
@@ -1087,13 +1103,21 @@ mod tests {
                 timestamp: 1000 + i * 3600, // hourly samples
                 execution_time: 100,
                 gas_used: 50000,
-                memory_usage: 10_000_000 + (i * 2_000_000), // Growing memory
+                memory_usage: 10_000_000 + (i as u32 * 2_000_000), // Growing memory
                 cpu_instructions: 100_000,
                 storage_reads: 10,
                 storage_writes: 5,
                 network_latency: 50,
                 error_rate: 2,
                 transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000 + (i as u32 * 2_000_000),
             });
         }
 
@@ -1126,6 +1150,14 @@ mod tests {
                 network_latency: 50,
                 error_rate: 2,
                 transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
             });
         }
 
@@ -1142,6 +1174,14 @@ mod tests {
             network_latency: 50,
             error_rate: 2,
             transaction_count: 100,
+            cpu_utilization: 50,
+            error_count: 2,
+            average_execution_time: 100,
+            average_response_time: 100,
+            network_bandwidth: 1000,
+            gas_consumption: 200000,
+            storage_usage: 100,
+            peak_memory_usage: 10_000_000,
         });
 
         let anomalies = AnomalyDetector::detect_gas_spikes(&env, &metrics);
