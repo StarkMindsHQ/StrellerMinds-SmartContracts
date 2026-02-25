@@ -1,5 +1,3 @@
-
-
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Vec};
 
 use crate::{
@@ -306,7 +304,8 @@ fn test_manual_execution() {
     let student = Address::generate(&env);
     let approver1 = Address::generate(&env);
 
-    let mut config = make_multisig_config(&env, "MANUAL_COURSE", core::slice::from_ref(&approver1), 1);
+    let mut config =
+        make_multisig_config(&env, "MANUAL_COURSE", core::slice::from_ref(&approver1), 1);
     config.auto_execute = false; // Disable auto-execute
     client.configure_multisig(&admin, &config);
 
