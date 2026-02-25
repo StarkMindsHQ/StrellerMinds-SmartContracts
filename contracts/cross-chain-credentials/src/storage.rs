@@ -21,9 +21,13 @@ pub fn get_admin(env: &Env) -> Address {
 }
 
 pub fn is_oracle(env: &Env, oracle: &Address) -> bool {
-    env.storage().instance().has(&DataKey::Oracle(oracle.clone()))
+    env.storage()
+        .instance()
+        .has(&DataKey::Oracle(oracle.clone()))
 }
 
 pub fn add_oracle(env: &Env, oracle: &Address) {
-    env.storage().instance().set(&DataKey::Oracle(oracle.clone()), &true);
+    env.storage()
+        .instance()
+        .set(&DataKey::Oracle(oracle.clone()), &true);
 }

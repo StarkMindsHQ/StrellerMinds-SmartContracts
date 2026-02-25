@@ -6,7 +6,7 @@ pub enum ChainId {
     Stellar,
     Ethereum,
     Polygon,
-    BSC,
+    Bsc,
 }
 
 #[contracttype]
