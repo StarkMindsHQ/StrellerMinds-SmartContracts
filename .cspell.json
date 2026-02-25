@@ -63,7 +63,19 @@
     "configs",
     "repo",
     "repos",
-    "versioning"
+    "versioning",
+    "stroops",
+    "bitfield",
+    "unstake",
+    "unstaking",
+    "popcount",
+    "TTL",
+    "ttl",
+    "ledger",
+    "BatchResult",
+    "PackedMetrics",
+    "PackedAccount",
+    "PackedProgress"
   ],
   "ignorePaths": [
     "node_modules/**",

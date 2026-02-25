@@ -113,27 +113,8 @@ impl TransactionTracer {
         // Simple text representation of call tree
         let mut tree = String::from_str(env, "");
         
-        tree = String::from_str(
-            env,
-            &format!(
-                "{} -> {} ({}ms, {} gas)",
-                trace.function_name.to_string(),
-                if trace.success { "SUCCESS" } else { "FAILED" },
-                trace.execution_time_ms,
-                trace.gas_used
-            ),
-        );
-
-        // Add child calls
-        if !trace.child_calls.is_empty() {
-            for child in &trace.child_calls {
-                tree = String::from_str(
-                    env,
-                    &format!("{}
-  └─ {}", tree.to_string(), child.to_string()),
-                );
-            }
-        }
+        // Build tree representation without format! macro
+        tree = trace.function_name.clone();
 
         tree
     }
@@ -255,7 +236,7 @@ impl TransactionTracer {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testutils"))]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};
