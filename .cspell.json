@@ -6,6 +6,8 @@
     "Stellar",
     "StarkMinds",
     "StellarMinds",
+    "StrellerMinds",
+    "Streller",
     "smartcontracts",
     "testnet",
     "mainnet",
@@ -108,7 +110,10 @@
     "latency",
     "throughput",
     "bottleneck",
-    "bottlenecks"
+    "bottlenecks",
+    "joash",
+    "ipfs",
+    "IPFS"
   ],
   "ignorePaths": [
     "node_modules/**",
