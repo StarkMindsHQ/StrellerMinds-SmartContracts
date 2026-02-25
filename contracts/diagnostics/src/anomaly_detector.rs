@@ -1,488 +1,1232 @@
-use crate::types::*;
-use soroban_sdk::{Address, Env, Map, String, Symbol, Vec};
+use crate::{
+    errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
+};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
-/// Automated anomaly detection system
+/// Advanced anomaly detection for system degradation
 pub struct AnomalyDetector;
 
 impl AnomalyDetector {
-    /// Detect anomalies in performance metrics
+    /// Comprehensive anomaly detection across all system metrics
     pub fn detect_anomalies(
         env: &Env,
-        contract_id: &Address,
-        recent_metrics: &Vec<PerformanceMetric>,
-        baseline_metrics: &Vec<PerformanceMetric>,
-    ) -> Vec<AnomalyReport> {
+        contract_address: &Address,
+        detection_period: u64,
+    ) -> Result<Vec<AnomalyEvent>, DiagnosticsError> {
+        if detection_period == 0 {
+            return Err(DiagnosticsError::InvalidDetectionPeriod);
+        }
+
         let mut anomalies = Vec::new(env);
 
-        // Calculate baseline statistics
-        let baseline_stats = Self::calculate_baseline_stats(env, baseline_metrics);
+        // Get historical performance data
+        let current_time = env.ledger().timestamp();
+        let start_time = current_time - detection_period;
 
-        // Check for gas usage spikes
-        if let Some(gas_anomaly) = Self::detect_gas_spike(env, contract_id, recent_metrics, &baseline_stats) {
-            anomalies.push_back(gas_anomaly);
+        // Collect performance metrics for the period
+        let mut metrics_data = Vec::new(env);
+        for i in 0..detection_period / 3600 {
+            // hourly samples
+            let timestamp = start_time + (i * 3600);
+            if let Some(metrics) =
+                DiagnosticsStorage::get_performance_metrics(env, contract_address, timestamp)
+            {
+                metrics_data.push_back(metrics);
+            }
         }
 
-        // Check for slow execution
-        if let Some(slow_anomaly) = Self::detect_slow_execution(env, contract_id, recent_metrics, &baseline_stats) {
-            anomalies.push_back(slow_anomaly);
+        if metrics_data.len() < 2 {
+            return Err(DiagnosticsError::InsufficientDataForPrediction);
         }
 
-        // Check for memory leaks
-        if let Some(memory_anomaly) = Self::detect_memory_pattern_anomaly(env, contract_id, recent_metrics) {
-            anomalies.push_back(memory_anomaly);
+        // Detect different types of anomalies
+        let perf_anomalies = Self::detect_performance_degradation(env, &metrics_data);
+        for i in 0..perf_anomalies.len() {
+            anomalies.push_back(perf_anomalies.get(i).unwrap());
+        }
+        let mem_anomalies = Self::detect_memory_leaks(env, &metrics_data);
+        for i in 0..mem_anomalies.len() {
+            anomalies.push_back(mem_anomalies.get(i).unwrap());
+        }
+        let gas_anomalies = Self::detect_gas_spikes(env, &metrics_data);
+        for i in 0..gas_anomalies.len() {
+            anomalies.push_back(gas_anomalies.get(i).unwrap());
+        }
+        let error_anomalies = Self::detect_error_rate_spikes(env, &metrics_data);
+        for i in 0..error_anomalies.len() {
+            anomalies.push_back(error_anomalies.get(i).unwrap());
+        }
+        let throughput_anomalies = Self::detect_throughput_drops(env, &metrics_data);
+        for i in 0..throughput_anomalies.len() {
+            anomalies.push_back(throughput_anomalies.get(i).unwrap());
+        }
+        let latency_anomalies = Self::detect_latency_increases(env, &metrics_data);
+        for i in 0..latency_anomalies.len() {
+            anomalies.push_back(latency_anomalies.get(i).unwrap());
+        }
+        let pattern_anomalies = Self::detect_unusual_patterns(env, &metrics_data);
+        for i in 0..pattern_anomalies.len() {
+            anomalies.push_back(pattern_anomalies.get(i).unwrap());
+        }
+        let state_anomalies =
+            Self::detect_state_inconsistencies(env, contract_address, &metrics_data);
+        for i in 0..state_anomalies.len() {
+            anomalies.push_back(state_anomalies.get(i).unwrap());
+        }
+        let resource_anomalies = Self::detect_resource_exhaustion(env, &metrics_data);
+        for i in 0..resource_anomalies.len() {
+            anomalies.push_back(resource_anomalies.get(i).unwrap());
         }
 
-        // Check for high error rates
-        if let Some(error_anomaly) = Self::detect_high_error_rate(env, contract_id) {
-            anomalies.push_back(error_anomaly);
+        // Store detected anomalies
+        if !anomalies.is_empty() {
+            DiagnosticsStorage::store_anomaly_events(env, contract_address, &anomalies);
+
+            // Emit anomaly detection event
+            DiagnosticsEvents::emit_anomalies_detected(env, contract_address, anomalies.len());
+        }
+
+        Ok(anomalies)
+    }
+
+    /// Detect performance degradation anomalies
+    fn detect_performance_degradation(
+        env: &Env,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 3 {
+            return anomalies;
+        }
+
+        // Calculate moving average of execution times
+        let recent_avg = Self::calculate_recent_average_execution_time(metrics_data, 3);
+        let historical_avg = Self::calculate_historical_average_execution_time(metrics_data);
+
+        // Check for significant degradation (>50% increase)
+        if recent_avg > historical_avg * 15 / 10 {
+            // 50% increase threshold
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::PerformanceDegradation,
+                severity: if recent_avg > historical_avg * 2 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Performance degraded: execution time increased significantly",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "execution_time"));
+                    metrics.push_back(String::from_str(env, "average_execution_time"));
+                    metrics
+                },
+                root_cause_analysis: Self::analyze_performance_degradation_cause(env, metrics_data),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Analyze recent code changes"));
+                    steps.push_back(String::from_str(env, "Check for resource contention"));
+                    steps.push_back(String::from_str(env, "Review algorithm efficiency"));
+                    steps
+                },
+                auto_resolved: false,
+            });
         }
 
         anomalies
     }
 
-    /// Detect unusual gas consumption spikes
-    fn detect_gas_spike(
-        env: &Env,
-        contract_id: &Address,
-        recent_metrics: &Vec<PerformanceMetric>,
-        baseline_stats: &Map<Symbol, u64>,
-    ) -> Option<AnomalyReport> {
-        if recent_metrics.is_empty() {
-            return None;
-        }
+    /// Detect memory leak anomalies
+    fn detect_memory_leaks(env: &Env, metrics_data: &Vec<PerformanceMetrics>) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
 
-        let baseline_avg_gas = baseline_stats
-            .get(Symbol::new(env, "avg_gas"))
-            .unwrap_or(50000);
-
-        // Calculate recent average
-        let mut total_gas = 0u64;
-        let mut spike_operations = Vec::new(env);
-
-        for metric in recent_metrics {
-            total_gas += metric.gas_consumed;
-            
-            // Check if individual metric is a spike (3x baseline)
-            if metric.gas_consumed > baseline_avg_gas * 3 {
-                spike_operations.push_back(metric.operation.clone());
-            }
-        }
-
-        let recent_avg_gas = total_gas / recent_metrics.len() as u64;
-
-        // If recent average is 2x+ baseline, it's an anomaly
-        if recent_avg_gas > baseline_avg_gas * 2 {
-            let severity = if recent_avg_gas > baseline_avg_gas * 5 {
-                AnomalySeverity::Critical
-            } else if recent_avg_gas > baseline_avg_gas * 3 {
-                AnomalySeverity::Error
-            } else {
-                AnomalySeverity::Warning
-            };
-
-            let mut suggested_fixes = Vec::new(env);
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Review recent code changes for gas optimization",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Check for unnecessary storage operations",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Consider implementing caching for frequently accessed data",
-            ));
-
-            Some(AnomalyReport {
-                anomaly_id: Symbol::new(env, "gas_spike"),
-                contract_id: contract_id.clone(),
-                detected_at: env.ledger().timestamp(),
-                anomaly_type: AnomalyType::UnusualGasSpike,
-                severity,
-                description: String::from_str(
-                    env,
-                    &format!(
-                        "Gas consumption increased from {} to {} ({}% increase)",
-                        baseline_avg_gas,
-                        recent_avg_gas,
-                        ((recent_avg_gas - baseline_avg_gas) * 100) / baseline_avg_gas
-                    ),
-                ),
-                affected_operations: spike_operations,
-                root_cause_analysis: String::from_str(
-                    env,
-                    "Possible causes: increased storage operations, inefficient loops, or new features",
-                ),
-                suggested_fixes,
-            })
-        } else {
-            None
-        }
-    }
-
-    /// Detect slow execution patterns
-    fn detect_slow_execution(
-        env: &Env,
-        contract_id: &Address,
-        recent_metrics: &Vec<PerformanceMetric>,
-        baseline_stats: &Map<Symbol, u64>,
-    ) -> Option<AnomalyReport> {
-        if recent_metrics.is_empty() {
-            return None;
-        }
-
-        let baseline_avg_time = baseline_stats
-            .get(Symbol::new(env, "avg_time"))
-            .unwrap_or(100) as u32;
-
-        let mut total_time = 0u64;
-        let mut slow_operations = Vec::new(env);
-
-        for metric in recent_metrics {
-            total_time += metric.execution_time_ms as u64;
-            
-            // Check if individual metric is slow (3x baseline)
-            if metric.execution_time_ms > baseline_avg_time * 3 {
-                slow_operations.push_back(metric.operation.clone());
-            }
-        }
-
-        let recent_avg_time = (total_time / recent_metrics.len() as u64) as u32;
-
-        // If recent average is 2x+ baseline, it's an anomaly
-        if recent_avg_time > baseline_avg_time * 2 {
-            let severity = if recent_avg_time > baseline_avg_time * 5 {
-                AnomalySeverity::Critical
-            } else if recent_avg_time > baseline_avg_time * 3 {
-                AnomalySeverity::Error
-            } else {
-                AnomalySeverity::Warning
-            };
-
-            let mut suggested_fixes = Vec::new(env);
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Profile code to identify performance bottlenecks",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Optimize database queries and storage access",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Consider parallel processing for independent operations",
-            ));
-
-            Some(AnomalyReport {
-                anomaly_id: Symbol::new(env, "slow_exec"),
-                contract_id: contract_id.clone(),
-                detected_at: env.ledger().timestamp(),
-                anomaly_type: AnomalyType::SlowExecution,
-                severity,
-                description: String::from_str(
-                    env,
-                    &format!(
-                        "Execution time increased from {}ms to {}ms",
-                        baseline_avg_time, recent_avg_time
-                    ),
-                ),
-                affected_operations: slow_operations,
-                root_cause_analysis: String::from_str(
-                    env,
-                    "Possible causes: inefficient algorithms, blocking operations, or resource contention",
-                ),
-                suggested_fixes,
-            })
-        } else {
-            None
-        }
-    }
-
-    /// Detect potential memory leaks
-    fn detect_memory_pattern_anomaly(
-        env: &Env,
-        contract_id: &Address,
-        recent_metrics: &Vec<PerformanceMetric>,
-    ) -> Option<AnomalyReport> {
-        if recent_metrics.len() < 5 {
-            return None;
+        if metrics_data.len() < 5 {
+            return anomalies;
         }
 
         // Check for consistently increasing memory usage
-        let mut consecutive_increases = 0u32;
-        
-        for i in 1..recent_metrics.len() {
-            let prev = recent_metrics.get(i - 1).unwrap();
-            let current = recent_metrics.get(i).unwrap();
-            
-            if current.memory_peak_bytes > prev.memory_peak_bytes {
-                consecutive_increases += 1;
-            } else {
-                consecutive_increases = 0;
+        let memory_trend = Self::calculate_memory_trend(metrics_data);
+
+        if memory_trend > 5.0 {
+            // 5% increase per hour
+            let latest_metrics = metrics_data.get(metrics_data.len() - 1).unwrap();
+
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: latest_metrics.contract_address.clone(),
+                anomaly_type: AnomalyType::MemoryLeak,
+                severity: if memory_trend > 15.0 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
+                detected_at: latest_metrics.timestamp,
+                description: String::from_str(
+                    env,
+                    "Potential memory leak detected: memory usage growing consistently",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "memory_usage"));
+                    metrics.push_back(String::from_str(env, "peak_memory_usage"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "Memory usage shows sustained upward trend indicating potential leak",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Review memory allocation patterns"));
+                    steps.push_back(String::from_str(env, "Implement garbage collection"));
+                    steps.push_back(String::from_str(env, "Monitor object lifecycle"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect gas usage spike anomalies
+    fn detect_gas_spikes(env: &Env, metrics_data: &Vec<PerformanceMetrics>) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 2 {
+            return anomalies;
+        }
+
+        let avg_gas = Self::calculate_average_gas_usage(metrics_data);
+        let latest_gas = metrics_data.get(metrics_data.len() - 1).unwrap().gas_used;
+
+        // Check for gas usage spike (>200% of average)
+        if latest_gas > avg_gas * 3 {
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::GasSpike,
+                severity: if latest_gas > avg_gas * 5 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Gas usage spike detected: significant increase above average",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "gas_used"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "Sudden increase in gas usage may indicate inefficient operations",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Review recent function calls"));
+                    steps.push_back(String::from_str(env, "Optimize gas-intensive operations"));
+                    steps.push_back(String::from_str(env, "Implement gas usage limits"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect error rate spike anomalies
+    fn detect_error_rate_spikes(
+        env: &Env,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 2 {
+            return anomalies;
+        }
+
+        let avg_error_rate = Self::calculate_average_error_rate(metrics_data);
+        let latest_error_rate = metrics_data.get(metrics_data.len() - 1).unwrap().error_rate;
+
+        // Check for error rate spike (>3x average or >10% absolute)
+        if latest_error_rate > avg_error_rate * 3 && latest_error_rate > 10 {
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::ErrorRateSpike,
+                severity: if latest_error_rate > 25 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Error rate spike detected: significant increase above average",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "error_rate"));
+                    metrics.push_back(String::from_str(env, "error_count"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "Sudden increase in error rate indicates system instability",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Investigate error patterns"));
+                    steps.push_back(String::from_str(env, "Review error logs"));
+                    steps.push_back(String::from_str(env, "Implement circuit breakers"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect throughput drop anomalies
+    fn detect_throughput_drops(
+        env: &Env,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 3 {
+            return anomalies;
+        }
+
+        let recent_throughput = Self::calculate_recent_throughput(metrics_data, 3);
+        let historical_throughput = Self::calculate_historical_throughput(metrics_data);
+
+        // Check for significant throughput drop (>30% decrease)
+        if recent_throughput < historical_throughput * 7 / 10 {
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::ThroughputDrop,
+                severity: if recent_throughput < historical_throughput / 2 {
+                    RiskLevel::Critical
+                } else {
+                    RiskLevel::High
+                },
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Throughput drop detected: significant decrease below baseline",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "transaction_count"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "Significant throughput reduction may indicate capacity issues",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Check system capacity"));
+                    steps.push_back(String::from_str(env, "Review load balancing"));
+                    steps.push_back(String::from_str(env, "Optimize bottlenecks"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect latency increase anomalies
+    fn detect_latency_increases(
+        env: &Env,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 2 {
+            return anomalies;
+        }
+
+        let avg_latency = Self::calculate_average_network_latency(metrics_data);
+        let latest_latency = metrics_data
+            .get(metrics_data.len() - 1)
+            .unwrap()
+            .network_latency;
+
+        // Check for latency spike (>150% increase)
+        if latest_latency > avg_latency * 25 / 10 {
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::LatencyIncrease,
+                severity: if latest_latency > avg_latency * 5 {
+                    RiskLevel::High
+                } else {
+                    RiskLevel::Medium
+                },
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Latency increase detected: significant increase above average",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "network_latency"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "Increased network latency may indicate connectivity issues",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Check network connectivity"));
+                    steps.push_back(String::from_str(env, "Review network configuration"));
+                    steps.push_back(String::from_str(env, "Implement request optimization"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect unusual pattern anomalies
+    fn detect_unusual_patterns(
+        env: &Env,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 5 {
+            return anomalies;
+        }
+
+        // Check for unusual variance patterns
+        let execution_time_variance = Self::calculate_execution_time_variance(metrics_data);
+
+        if execution_time_variance > 50.0 {
+            // High variance threshold
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: metrics_data
+                    .get(metrics_data.len() - 1)
+                    .unwrap()
+                    .contract_address
+                    .clone(),
+                anomaly_type: AnomalyType::UnusualPatterns,
+                severity: RiskLevel::Medium,
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(
+                    env,
+                    "Unusual patterns detected: high variance in execution times",
+                ),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "execution_time"));
+                    metrics
+                },
+                root_cause_analysis: String::from_str(
+                    env,
+                    "High performance variance indicates inconsistent behavior",
+                ),
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Analyze performance patterns"));
+                    steps.push_back(String::from_str(env, "Identify variance sources"));
+                    steps.push_back(String::from_str(env, "Implement performance stabilization"));
+                    steps
+                },
+                auto_resolved: false,
+            });
+        }
+
+        anomalies
+    }
+
+    /// Detect state inconsistency anomalies
+    fn detect_state_inconsistencies(
+        env: &Env,
+        contract_address: &Address,
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
+
+        if metrics_data.len() < 2 {
+            return anomalies;
+        }
+
+        // Check for state validation failures or unexpected state changes
+        let mut state_inconsistencies = 0u32;
+
+        for metrics in metrics_data.iter() {
+            // Simulate state inconsistency detection
+            if metrics.error_rate > 5 && metrics.transaction_count > 0 {
+                state_inconsistencies += 1;
             }
         }
 
-        // If memory increased 4+ times consecutively, potential leak
-        if consecutive_increases >= 4 {
-            let mut suggested_fixes = Vec::new(env);
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Review data structures for proper cleanup",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Check for unbounded collections or caches",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Implement proper resource disposal",
-            ));
-
-            Some(AnomalyReport {
-                anomaly_id: Symbol::new(env, "memory_leak"),
-                contract_id: contract_id.clone(),
-                detected_at: env.ledger().timestamp(),
-                anomaly_type: AnomalyType::MemoryLeak,
-                severity: AnomalySeverity::Error,
-                description: String::from_str(
-                    env,
-                    "Memory usage shows consistent upward trend indicating potential leak",
-                ),
-                affected_operations: Vec::new(env),
+        if state_inconsistencies > metrics_data.len() / 4 {
+            // More than 25% have issues
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: contract_address.clone(),
+                anomaly_type: AnomalyType::StateInconsistency,
+                severity: RiskLevel::High,
+                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                description: String::from_str(env,
+                    "State inconsistencies detected in multiple samples"),
+                affected_metrics: {
+                    let mut metrics = Vec::new(env);
+                    metrics.push_back(String::from_str(env, "error_rate"));
+                    metrics.push_back(String::from_str(env, "state_validation"));
+                    metrics
+                },
                 root_cause_analysis: String::from_str(
                     env,
-                    "Memory is not being released properly after operations",
+                    "Contract state validation failures indicate data corruption or race conditions",
                 ),
-                suggested_fixes,
-            })
-        } else {
-            None
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Implement state validation checks"));
+                    steps.push_back(String::from_str(env, "Review concurrent access patterns"));
+                    steps.push_back(String::from_str(env, "Add state recovery mechanisms"));
+                    steps
+                },
+                auto_resolved: false,
+            });
         }
+
+        anomalies
     }
 
-    /// Detect high error rates
-    fn detect_high_error_rate(
+    /// Detect resource exhaustion anomalies
+    fn detect_resource_exhaustion(
         env: &Env,
-        contract_id: &Address,
-    ) -> Option<AnomalyReport> {
-        // In production, this would check actual error rates from transaction traces
-        // For now, we'll use a simplified check
-        
-        // Simulating error rate detection
-        let error_rate = Self::get_recent_error_rate(env);
-        
-        if error_rate > 20 { // More than 20% error rate
-            let severity = if error_rate > 50 {
-                AnomalySeverity::Critical
-            } else if error_rate > 30 {
-                AnomalySeverity::Error
-            } else {
-                AnomalySeverity::Warning
-            };
+        metrics_data: &Vec<PerformanceMetrics>,
+    ) -> Vec<AnomalyEvent> {
+        let mut anomalies = Vec::new(env);
 
-            let mut suggested_fixes = Vec::new(env);
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Review error logs to identify common failure patterns",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Add input validation and error handling",
-            ));
-            suggested_fixes.push_back(String::from_str(
-                env,
-                "Implement circuit breakers for failing operations",
-            ));
+        if metrics_data.is_empty() {
+            return anomalies;
+        }
 
-            Some(AnomalyReport {
-                anomaly_id: Symbol::new(env, "high_errors"),
-                contract_id: contract_id.clone(),
-                detected_at: env.ledger().timestamp(),
-                anomaly_type: AnomalyType::HighErrorRate,
-                severity,
-                description: String::from_str(
-                    env,
-                    &format!("Error rate at {}% (threshold: 20%)", error_rate),
-                ),
-                affected_operations: Vec::new(env),
+        let latest_metrics = metrics_data.get(metrics_data.len() - 1).unwrap();
+
+        // Check for high resource usage that could lead to exhaustion
+        let mut resource_issues = Vec::new(env);
+
+        // Memory usage > 80% of typical maximum
+        if latest_metrics.memory_usage > 800_000_000 {
+            // > 800MB
+            resource_issues.push_back(String::from_str(env, "High memory usage"));
+        }
+
+        // Storage operations approaching limits
+        if latest_metrics.storage_reads > 1000 || latest_metrics.storage_writes > 500 {
+            resource_issues.push_back(String::from_str(env, "High storage operations"));
+        }
+
+        // CPU instructions approaching limits
+        if latest_metrics.cpu_instructions > 50_000_000 {
+            resource_issues.push_back(String::from_str(env, "High CPU usage"));
+        }
+
+        if !resource_issues.is_empty() {
+            anomalies.push_back(AnomalyEvent {
+                anomaly_id: Self::generate_anomaly_id(env),
+                contract_address: latest_metrics.contract_address.clone(),
+                anomaly_type: AnomalyType::ResourceExhaustion,
+                severity: RiskLevel::High,
+                detected_at: latest_metrics.timestamp,
+                description: String::from_str(env, "Resource usage approaching system limits"),
+                affected_metrics: resource_issues.clone(),
                 root_cause_analysis: String::from_str(
                     env,
-                    "Multiple operations failing - check logs for patterns",
+                    "High resource usage may lead to system instability or failures",
                 ),
-                suggested_fixes,
-            })
-        } else {
-            None
+                mitigation_steps: {
+                    let mut steps = Vec::new(env);
+                    steps.push_back(String::from_str(env, "Implement resource usage limits"));
+                    steps.push_back(String::from_str(
+                        env,
+                        "Optimize resource-intensive operations",
+                    ));
+                    steps.push_back(String::from_str(env, "Add resource monitoring alerts"));
+                    steps
+                },
+                auto_resolved: false,
+            });
         }
+
+        anomalies
     }
 
-    /// Generate root cause analysis for an anomaly
+    /// Analyze the root cause of detected anomalies
     pub fn analyze_root_cause(
         env: &Env,
-        anomaly_type: AnomalyType,
-        metrics: &Vec<PerformanceMetric>,
+        anomaly: &AnomalyEvent,
+        historical_data: &Vec<PerformanceMetrics>,
     ) -> String {
-        match anomaly_type {
-            AnomalyType::UnusualGasSpike => {
-                String::from_str(
-                    env,
-                    "Analysis: Gas spike likely caused by increased storage operations or computation complexity",
-                )
+        match anomaly.anomaly_type {
+            AnomalyType::PerformanceDegradation => {
+                Self::analyze_performance_root_cause(env, historical_data)
             }
             AnomalyType::MemoryLeak => {
-                String::from_str(
-                    env,
-                    "Analysis: Memory not being freed - check for unbounded data structures",
-                )
+                String::from_str(env, "Memory allocation patterns show sustained growth without corresponding deallocation")
             }
-            AnomalyType::SlowExecution => {
-                String::from_str(
-                    env,
-                    "Analysis: Performance degradation - review algorithm efficiency",
-                )
+            AnomalyType::GasSpike => {
+                String::from_str(env, "Computational complexity increased due to algorithm changes or data size growth")
             }
-            AnomalyType::HighErrorRate => {
-                String::from_str(
-                    env,
-                    "Analysis: High failure rate - validate inputs and error handling",
-                )
+            AnomalyType::ErrorRateSpike => {
+                String::from_str(env, "Input validation failures or external dependency issues")
+            }
+            AnomalyType::ThroughputDrop => {
+                String::from_str(env, "System capacity constraints or resource contention")
+            }
+            AnomalyType::LatencyIncrease => {
+                String::from_str(env, "Network congestion or external service degradation")
             }
             AnomalyType::StateInconsistency => {
-                String::from_str(
-                    env,
-                    "Analysis: State changes not matching expected patterns",
-                )
+                String::from_str(env, "Race conditions or improper state management")
             }
-            AnomalyType::UnexpectedBehavior => {
-                String::from_str(
-                    env,
-                    "Analysis: Behavior deviating from normal patterns",
-                )
+            AnomalyType::ResourceExhaustion => {
+                String::from_str(env, "Resource usage patterns exceed sustainable thresholds")
+            }
+            AnomalyType::UnusualPatterns => {
+                String::from_str(env, "System behavior deviates from established patterns")
             }
         }
     }
 
-    /// Get anomaly severity score (0-100)
-    pub fn calculate_severity_score(anomaly: &AnomalyReport) -> u32 {
+    /// Calculate anomaly severity score (0-100)
+    pub fn calculate_severity_score(anomaly: &AnomalyEvent) -> u32 {
         match anomaly.severity {
-            AnomalySeverity::Info => 25,
-            AnomalySeverity::Warning => 50,
-            AnomalySeverity::Error => 75,
-            AnomalySeverity::Critical => 100,
+            RiskLevel::Low => 25,
+            RiskLevel::Medium => 50,
+            RiskLevel::High => 75,
+            RiskLevel::Critical => 100,
         }
     }
 
-    // Helper functions
-
-    fn calculate_baseline_stats(
+    /// Get anomaly trend analysis
+    pub fn get_anomaly_trends(
         env: &Env,
-        baseline_metrics: &Vec<PerformanceMetric>,
-    ) -> Map<Symbol, u64> {
-        let mut stats = Map::new(env);
+        contract_address: &Address,
+        period: u64,
+    ) -> Result<AnomalyTrends, DiagnosticsError> {
+        let anomalies =
+            DiagnosticsStorage::get_anomaly_events_in_period(env, contract_address, period)?;
 
-        if baseline_metrics.is_empty() {
-            stats.set(Symbol::new(env, "avg_gas"), 50000);
-            stats.set(Symbol::new(env, "avg_time"), 100);
-            return stats;
+        let mut trends = AnomalyTrends {
+            total_anomalies: anomalies.len(),
+            critical_anomalies: 0,
+            high_severity_anomalies: 0,
+            most_common_type: String::from_str(env, "UnusualPatterns"),
+            trend_direction: TrendDirection::Stable,
+            frequency_increase: false,
+            severity_escalation: false,
+            has_prediction: false,
+            predicted_next_anomaly: 0,
+            improvement_rate: 0,
+        };
+
+        if anomalies.is_empty() {
+            return Ok(trends);
         }
 
-        let mut total_gas = 0u64;
-        let mut total_time = 0u64;
-
-        for metric in baseline_metrics {
-            total_gas += metric.gas_consumed;
-            total_time += metric.execution_time_ms as u64;
+        // Count severity levels
+        for anomaly in anomalies.iter() {
+            match anomaly.severity {
+                RiskLevel::Critical => trends.critical_anomalies += 1,
+                RiskLevel::High => trends.high_severity_anomalies += 1,
+                _ => {}
+            }
         }
 
-        let count = baseline_metrics.len() as u64;
-        stats.set(Symbol::new(env, "avg_gas"), total_gas / count);
-        stats.set(Symbol::new(env, "avg_time"), total_time / count);
+        // Determine most common type
+        let common_type = Self::find_most_common_anomaly_type(&anomalies);
+        trends.most_common_type = Self::anomaly_type_to_string(env, &common_type);
 
-        stats
+        // Calculate trend direction
+        trends.trend_direction = Self::calculate_anomaly_trend_direction(&anomalies);
+
+        Ok(trends)
     }
 
-    fn get_recent_error_rate(_env: &Env) -> u32 {
-        // In production, calculate from actual transaction traces
-        // For now, return a simulated value
-        15 // 15% error rate
+    // Helper calculation methods
+
+    fn anomaly_type_to_string(env: &Env, anomaly_type: &AnomalyType) -> String {
+        match anomaly_type {
+            AnomalyType::GasSpike => String::from_str(env, "GasSpike"),
+            AnomalyType::MemoryLeak => String::from_str(env, "MemoryLeak"),
+            AnomalyType::PerformanceDegradation => String::from_str(env, "PerformanceDegradation"),
+            AnomalyType::ErrorRateSpike => String::from_str(env, "ErrorRateSpike"),
+            AnomalyType::ThroughputDrop => String::from_str(env, "ThroughputDrop"),
+            AnomalyType::LatencyIncrease => String::from_str(env, "LatencyIncrease"),
+            AnomalyType::StateInconsistency => String::from_str(env, "StateInconsistency"),
+            AnomalyType::ResourceExhaustion => String::from_str(env, "ResourceExhaustion"),
+            AnomalyType::UnusualPatterns => String::from_str(env, "UnusualPatterns"),
+        }
+    }
+
+    fn generate_anomaly_id(env: &Env) -> BytesN<32> {
+        let mut data = [0u8; 32];
+        data[0] = 0xAF; // Anomaly identifier
+        let timestamp = env.ledger().timestamp();
+        data[1..9].copy_from_slice(&timestamp.to_be_bytes());
+        BytesN::from_array(env, &data)
+    }
+
+    fn calculate_recent_average_execution_time(
+        metrics: &Vec<PerformanceMetrics>,
+        count: u32,
+    ) -> u64 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let start_index = metrics.len().saturating_sub(count);
+        let mut total = 0u64;
+        let mut actual_count = 0u32;
+
+        for i in start_index..metrics.len() {
+            total += metrics.get(i).unwrap().execution_time;
+            actual_count += 1;
+        }
+
+        if actual_count == 0 {
+            0
+        } else {
+            total / actual_count as u64
+        }
+    }
+
+    fn calculate_historical_average_execution_time(metrics: &Vec<PerformanceMetrics>) -> u64 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let mut total = 0u64;
+        for i in 0..metrics.len() {
+            total += metrics.get(i).unwrap().execution_time;
+        }
+
+        total / metrics.len() as u64
+    }
+
+    fn calculate_memory_trend(metrics: &Vec<PerformanceMetrics>) -> f64 {
+        if metrics.len() < 2 {
+            return 0.0;
+        }
+
+        let half_point = metrics.len() / 2;
+        let mut first_half_total = 0u64;
+        let mut second_half_total = 0u64;
+
+        // Calculate averages for first and second half
+        for i in 0..half_point {
+            first_half_total += metrics.get(i).unwrap().memory_usage as u64;
+        }
+
+        for i in half_point..metrics.len() {
+            second_half_total += metrics.get(i).unwrap().memory_usage as u64;
+        }
+
+        let first_avg = first_half_total / half_point as u64;
+        let second_avg = second_half_total / (metrics.len() - half_point) as u64;
+
+        if first_avg == 0 {
+            return 0.0;
+        }
+
+        ((second_avg as f64 - first_avg as f64) / first_avg as f64) * 100.0
+    }
+
+    fn calculate_average_gas_usage(metrics: &Vec<PerformanceMetrics>) -> u64 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let mut total = 0u64;
+        for i in 0..metrics.len() {
+            total += metrics.get(i).unwrap().gas_used;
+        }
+
+        total / metrics.len() as u64
+    }
+
+    fn calculate_average_error_rate(metrics: &Vec<PerformanceMetrics>) -> u32 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let mut total = 0u32;
+        for i in 0..metrics.len() {
+            total += metrics.get(i).unwrap().error_rate;
+        }
+
+        total / metrics.len()
+    }
+
+    fn calculate_recent_throughput(metrics: &Vec<PerformanceMetrics>, count: u32) -> u32 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let start_index = metrics.len().saturating_sub(count);
+        let mut total = 0u32;
+        let mut actual_count = 0u32;
+
+        for i in start_index..metrics.len() {
+            total += metrics.get(i).unwrap().transaction_count;
+            actual_count += 1;
+        }
+
+        if actual_count == 0 {
+            0
+        } else {
+            total / actual_count
+        }
+    }
+
+    fn calculate_historical_throughput(metrics: &Vec<PerformanceMetrics>) -> u32 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let mut total = 0u32;
+        for i in 0..metrics.len() {
+            total += metrics.get(i).unwrap().transaction_count;
+        }
+
+        total / metrics.len()
+    }
+
+    fn calculate_average_network_latency(metrics: &Vec<PerformanceMetrics>) -> u32 {
+        if metrics.is_empty() {
+            return 0;
+        }
+
+        let mut total = 0u32;
+        for i in 0..metrics.len() {
+            total += metrics.get(i).unwrap().network_latency;
+        }
+
+        total / metrics.len()
+    }
+
+    fn calculate_execution_time_variance(metrics: &Vec<PerformanceMetrics>) -> f64 {
+        if metrics.len() < 2 {
+            return 0.0;
+        }
+
+        let mean = Self::calculate_historical_average_execution_time(metrics) as f64;
+        let mut variance_sum = 0.0;
+
+        for i in 0..metrics.len() {
+            let diff = metrics.get(i).unwrap().execution_time as f64 - mean;
+            variance_sum += diff * diff;
+        }
+
+        let variance = variance_sum / metrics.len() as f64;
+
+        if mean == 0.0 {
+            return 0.0;
+        }
+
+        (variance.sqrt() / mean) * 100.0 // Coefficient of variation as percentage
+    }
+
+    fn analyze_performance_degradation_cause(
+        env: &Env,
+        metrics: &Vec<PerformanceMetrics>,
+    ) -> String {
+        if metrics.is_empty() {
+            return String::from_str(env, "Insufficient data for analysis");
+        }
+
+        let latest = metrics.get(metrics.len() - 1).unwrap();
+
+        // Analyze potential causes
+        if latest.memory_usage > 100_000_000 {
+            // > 100MB
+            String::from_str(
+                env,
+                "High memory usage may be causing performance degradation",
+            )
+        } else if latest.gas_used > 5_000_000 {
+            String::from_str(
+                env,
+                "High gas usage indicates computational complexity issues",
+            )
+        } else if latest.network_latency > 500 {
+            String::from_str(
+                env,
+                "High network latency contributing to performance issues",
+            )
+        } else {
+            String::from_str(
+                env,
+                "Performance degradation cause requires further investigation",
+            )
+        }
+    }
+
+    fn analyze_performance_root_cause(env: &Env, metrics: &Vec<PerformanceMetrics>) -> String {
+        if metrics.is_empty() {
+            return String::from_str(env, "Insufficient data for root cause analysis");
+        }
+
+        let latest = metrics.get(metrics.len() - 1).unwrap();
+
+        if latest.cpu_instructions > 30_000_000 {
+            String::from_str(env, "High CPU usage indicates computational bottlenecks")
+        } else if latest.storage_reads > 500 {
+            String::from_str(
+                env,
+                "Excessive storage operations causing performance issues",
+            )
+        } else if latest.memory_usage > 50_000_000 {
+            String::from_str(env, "Memory pressure affecting system performance")
+        } else {
+            String::from_str(
+                env,
+                "Multiple factors contributing to performance degradation",
+            )
+        }
+    }
+
+    fn find_most_common_anomaly_type(anomalies: &Vec<AnomalyEvent>) -> AnomalyType {
+        if anomalies.is_empty() {
+            return AnomalyType::UnusualPatterns;
+        }
+
+        // Count occurrences of each type
+        let mut gas_spikes = 0u32;
+        let mut memory_leaks = 0u32;
+        let mut performance_issues = 0u32;
+        let mut error_spikes = 0u32;
+        let mut throughput_drops = 0u32;
+        let mut latency_increases = 0u32;
+        let mut state_inconsistencies = 0u32;
+        let mut resource_exhaustion = 0u32;
+        let mut unusual_patterns = 0u32;
+
+        for i in 0..anomalies.len() {
+            match anomalies.get(i).unwrap().anomaly_type {
+                AnomalyType::GasSpike => gas_spikes += 1,
+                AnomalyType::MemoryLeak => memory_leaks += 1,
+                AnomalyType::PerformanceDegradation => performance_issues += 1,
+                AnomalyType::ErrorRateSpike => error_spikes += 1,
+                AnomalyType::ThroughputDrop => throughput_drops += 1,
+                AnomalyType::LatencyIncrease => latency_increases += 1,
+                AnomalyType::StateInconsistency => state_inconsistencies += 1,
+                AnomalyType::ResourceExhaustion => resource_exhaustion += 1,
+                AnomalyType::UnusualPatterns => unusual_patterns += 1,
+            }
+        }
+
+        // Find the most common type
+        let max_count = gas_spikes
+            .max(memory_leaks)
+            .max(performance_issues)
+            .max(error_spikes)
+            .max(throughput_drops)
+            .max(latency_increases)
+            .max(state_inconsistencies)
+            .max(resource_exhaustion)
+            .max(unusual_patterns);
+
+        if gas_spikes == max_count {
+            AnomalyType::GasSpike
+        } else if memory_leaks == max_count {
+            AnomalyType::MemoryLeak
+        } else if performance_issues == max_count {
+            AnomalyType::PerformanceDegradation
+        } else if error_spikes == max_count {
+            AnomalyType::ErrorRateSpike
+        } else if throughput_drops == max_count {
+            AnomalyType::ThroughputDrop
+        } else if latency_increases == max_count {
+            AnomalyType::LatencyIncrease
+        } else if state_inconsistencies == max_count {
+            AnomalyType::StateInconsistency
+        } else if resource_exhaustion == max_count {
+            AnomalyType::ResourceExhaustion
+        } else {
+            AnomalyType::UnusualPatterns
+        }
+    }
+
+    fn calculate_anomaly_trend_direction(anomalies: &Vec<AnomalyEvent>) -> TrendDirection {
+        if anomalies.len() < 2 {
+            return TrendDirection::Stable;
+        }
+
+        // Split into two halves and compare anomaly counts
+        let half_point = anomalies.len() / 2;
+        let first_half_count = half_point;
+        let second_half_count = anomalies.len() - half_point;
+
+        if second_half_count > first_half_count * 12 / 10 {
+            // 20% increase
+            TrendDirection::Increasing
+        } else if second_half_count < first_half_count * 8 / 10 {
+            // 20% decrease
+            TrendDirection::Decreasing
+        } else {
+            TrendDirection::Stable
+        }
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testutils"))]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};
 
     #[test]
+    fn test_detect_performance_degradation() {
+        let env = Env::default();
+        let contract_address = Address::generate(&env);
+
+        // Create historical performance data
+        let mut metrics = Vec::new(&env);
+
+        // Add normal baseline metrics
+        for i in 0..5 {
+            metrics.push_back(PerformanceMetrics {
+                contract_address: contract_address.clone(),
+                timestamp: 1000 + i * 100,
+                execution_time: 100, // Normal execution time
+                gas_used: 50000,
+                memory_usage: 10_000_000,
+                cpu_instructions: 100_000,
+                storage_reads: 10,
+                storage_writes: 5,
+                network_latency: 50,
+                error_rate: 2,
+                transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
+            });
+        }
+
+        // Add degraded performance metrics
+        for i in 5..8 {
+            metrics.push_back(PerformanceMetrics {
+                contract_address: contract_address.clone(),
+                timestamp: 1000 + i * 100,
+                execution_time: 200, // 2x slower
+                gas_used: 50000,
+                memory_usage: 10_000_000,
+                cpu_instructions: 100_000,
+                storage_reads: 10,
+                storage_writes: 5,
+                network_latency: 50,
+                error_rate: 2,
+                transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 200,
+                average_response_time: 200,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
+            });
+        }
+
+        let anomalies = AnomalyDetector::detect_performance_degradation(&env, &metrics);
+        assert!(!anomalies.is_empty());
+
+        let anomaly = anomalies.get(0).unwrap();
+        assert_eq!(anomaly.anomaly_type, AnomalyType::PerformanceDegradation);
+        assert_eq!(anomaly.severity, RiskLevel::High);
+    }
+
+    #[test]
+    fn test_detect_memory_leak() {
+        let env = Env::default();
+        let contract_address = Address::generate(&env);
+
+        // Create metrics showing memory growth
+        let mut metrics = Vec::new(&env);
+
+        for i in 0..8 {
+            metrics.push_back(PerformanceMetrics {
+                contract_address: contract_address.clone(),
+                timestamp: 1000 + i * 3600, // hourly samples
+                execution_time: 100,
+                gas_used: 50000,
+                memory_usage: 10_000_000 + (i as u32 * 2_000_000), // Growing memory
+                cpu_instructions: 100_000,
+                storage_reads: 10,
+                storage_writes: 5,
+                network_latency: 50,
+                error_rate: 2,
+                transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000 + (i as u32 * 2_000_000),
+            });
+        }
+
+        let anomalies = AnomalyDetector::detect_memory_leaks(&env, &metrics);
+        assert!(!anomalies.is_empty());
+
+        let anomaly = anomalies.get(0).unwrap();
+        assert_eq!(anomaly.anomaly_type, AnomalyType::MemoryLeak);
+    }
+
+    #[test]
     fn test_detect_gas_spike() {
         let env = Env::default();
-        let contract_id = Address::generate(&env);
+        let contract_address = Address::generate(&env);
 
-        // Create baseline metrics (normal gas usage)
-        let mut baseline = Vec::new(&env);
-        for i in 0..10 {
-            baseline.push_back(PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("baseline_{}", i)),
-                contract_id: contract_id.clone(),
-                operation: Symbol::new(&env, "normal_op"),
-                timestamp: env.ledger().timestamp(),
-                execution_time_ms: 100,
-                gas_consumed: 50000,
-                memory_peak_bytes: 1000000,
-                cpu_instructions: 100000,
-                io_operations: 5,
-                is_bottleneck: false,
-            });
-        }
+        // Create metrics with gas spike
+        let mut metrics = Vec::new(&env);
 
-        // Create recent metrics with gas spike
-        let mut recent = Vec::new(&env);
+        // Normal gas usage
         for i in 0..5 {
-            recent.push_back(PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("recent_{}", i)),
-                contract_id: contract_id.clone(),
-                operation: Symbol::new(&env, "spike_op"),
-                timestamp: env.ledger().timestamp(),
-                execution_time_ms: 100,
-                gas_consumed: 150000, // 3x baseline
-                memory_peak_bytes: 1000000,
-                cpu_instructions: 100000,
-                io_operations: 5,
-                is_bottleneck: true,
+            metrics.push_back(PerformanceMetrics {
+                contract_address: contract_address.clone(),
+                timestamp: 1000 + i * 100,
+                execution_time: 100,
+                gas_used: 50000,
+                memory_usage: 10_000_000,
+                cpu_instructions: 100_000,
+                storage_reads: 10,
+                storage_writes: 5,
+                network_latency: 50,
+                error_rate: 2,
+                transaction_count: 100,
+                cpu_utilization: 50,
+                error_count: 2,
+                average_execution_time: 100,
+                average_response_time: 100,
+                network_bandwidth: 1000,
+                gas_consumption: 50000,
+                storage_usage: 100,
+                peak_memory_usage: 10_000_000,
             });
         }
 
-        let anomalies = AnomalyDetector::detect_anomalies(
-            &env,
-            &contract_id,
-            &recent,
-            &baseline,
-        );
+        // Gas spike
+        metrics.push_back(PerformanceMetrics {
+            contract_address: contract_address.clone(),
+            timestamp: 1500,
+            execution_time: 100,
+            gas_used: 200000, // 4x normal usage
+            memory_usage: 10_000_000,
+            cpu_instructions: 100_000,
+            storage_reads: 10,
+            storage_writes: 5,
+            network_latency: 50,
+            error_rate: 2,
+            transaction_count: 100,
+            cpu_utilization: 50,
+            error_count: 2,
+            average_execution_time: 100,
+            average_response_time: 100,
+            network_bandwidth: 1000,
+            gas_consumption: 200000,
+            storage_usage: 100,
+            peak_memory_usage: 10_000_000,
+        });
 
+        let anomalies = AnomalyDetector::detect_gas_spikes(&env, &metrics);
         assert!(!anomalies.is_empty());
-        let first_anomaly = anomalies.get(0).unwrap();
-        assert_eq!(first_anomaly.anomaly_type, AnomalyType::UnusualGasSpike);
+
+        let anomaly = anomalies.get(0).unwrap();
+        assert_eq!(anomaly.anomaly_type, AnomalyType::GasSpike);
     }
 
     #[test]
     fn test_calculate_severity_score() {
         let env = Env::default();
-        let contract_id = Address::generate(&env);
+        let contract_address = Address::generate(&env);
 
-        let critical_anomaly = AnomalyReport {
-            anomaly_id: Symbol::new(&env, "test"),
-            contract_id,
-            detected_at: env.ledger().timestamp(),
-            anomaly_type: AnomalyType::UnusualGasSpike,
-            severity: AnomalySeverity::Critical,
-            description: String::from_str(&env, "Test"),
-            affected_operations: Vec::new(&env),
-            root_cause_analysis: String::from_str(&env, "Test"),
-            suggested_fixes: Vec::new(&env),
+        let critical_anomaly = AnomalyEvent {
+            anomaly_id: AnomalyDetector::generate_anomaly_id(&env),
+            contract_address,
+            anomaly_type: AnomalyType::PerformanceDegradation,
+            severity: RiskLevel::Critical,
+            detected_at: 1000,
+            description: String::from_str(&env, "Test anomaly"),
+            affected_metrics: Vec::new(&env),
+            root_cause_analysis: String::from_str(&env, "Test cause"),
+            mitigation_steps: Vec::new(&env),
+            auto_resolved: false,
         };
 
         let score = AnomalyDetector::calculate_severity_score(&critical_anomaly);
         assert_eq!(score, 100);
+    }
+
+    #[test]
+    fn test_comprehensive_anomaly_detection() {
+        let env = Env::default();
+        let contract_address = Address::generate(&env);
+
+        // This would test the main detect_anomalies function
+        // In a real implementation, we'd need proper storage setup
+        let result = AnomalyDetector::detect_anomalies(&env, &contract_address, 86400); // 24 hours
+
+        // Should return an error due to insufficient data in test environment
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            DiagnosticsError::InsufficientDataForPrediction
+        );
     }
 }
