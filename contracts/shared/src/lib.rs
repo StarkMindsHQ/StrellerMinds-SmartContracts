@@ -85,3 +85,4 @@ pub mod validation {
         Ok(soroban_sdk::String::from_str(_env, _text))
     }
 }
+pub mod gas_optimizer;

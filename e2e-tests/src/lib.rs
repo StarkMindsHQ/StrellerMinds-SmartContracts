@@ -68,10 +68,7 @@ impl SorobanClient {
         contract_name: &str,
         deployer_account: &str,
     ) -> Result<String> {
-        let wasm_path = format!(
-            "target/wasm32-unknown-unknown/release/{}.wasm",
-            contract_name
-        );
+        let wasm_path = format!("target/wasm32-unknown-unknown/release/{contract_name}.wasm");
 
         let output = Command::new("soroban")
             .args([
@@ -193,7 +190,7 @@ impl E2ETestHarness {
 
             self.deployed_contracts
                 .insert(contract_name.to_string(), contract_id.clone());
-            println!("✅ Deployed {}: {}", contract_name, contract_id);
+            println!("✅ Deployed {contract_name}: {contract_id}");
         }
 
         // Initialize contracts
@@ -239,7 +236,7 @@ impl E2ETestHarness {
                 .invoke_contract(
                     cert_id,
                     "initialize",
-                    &[format!("--admin {}", admin_address)],
+                    &[format!("--admin {admin_address}")],
                     &self.client.config.admin_account,
                 )
                 .await?;
