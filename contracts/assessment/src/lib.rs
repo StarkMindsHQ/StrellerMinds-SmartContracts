@@ -129,7 +129,7 @@ fn get_student_attempts(env: &Env, student: &Address, assessment_id: u64) -> u32
         .persistent()
         .get(&key)
         .unwrap_or(Vec::new(env));
-    ids.len() as u32
+    ids.len()
 }
 
 fn append_student_submission(
@@ -189,6 +189,7 @@ fn get_integration(env: &Env) -> IntegrationConfig {
         })
 }
 
+#[allow(clippy::too_many_arguments)]
 #[contractimpl]
 impl Assessment {
     // Initialization & configuration
@@ -272,6 +273,7 @@ impl Assessment {
     }
 
     /// Internal helper used by the specialized add_question_* functions.
+    #[allow(clippy::too_many_arguments)]
     fn add_question_internal(
         env: &Env,
         admin: &Address,
@@ -740,7 +742,7 @@ impl Assessment {
                 .persistent()
                 .get(&key)
                 .unwrap_or(Vec::new(&env));
-            if subs.len() == 0 {
+            if subs.is_empty() {
                 id += 1;
                 continue;
             }

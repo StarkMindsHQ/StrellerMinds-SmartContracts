@@ -2,17 +2,21 @@ use super::*;
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::{Address, Bytes, Env, Symbol, Vec};
 
-fn setup() -> (Env, Address) {
+fn setup() -> (Env, AssessmentClient<'static>, Address) {
     let env = Env::default();
     env.mock_all_auths();
+
+    let contract_id = env.register(Assessment, ());
+    let client = AssessmentClient::new(&env, &contract_id);
     let admin = Address::generate(&env);
-    Assessment::initialize(env.clone(), admin.clone()).unwrap();
-    (env, admin)
+
+    client.initialize(&admin);
+    (env, client, admin)
 }
 
 #[test]
 fn test_create_and_publish_assessment() {
-    let (env, admin) = setup();
+    let (env, client, admin) = setup();
     let instructor = Address::generate(&env);
     let course_id = Symbol::new(&env, "COURSE1");
     let module_id = Symbol::new(&env, "MOD1");
@@ -26,27 +30,20 @@ fn test_create_and_publish_assessment() {
         proctoring_required: false,
     };
 
-    let id = Assessment::create_assessment(
-        env.clone(),
-        instructor.clone(),
-        course_id.clone(),
-        module_id.clone(),
-        config,
-    )
-    .unwrap();
+    let id = client.create_assessment(&instructor, &course_id, &module_id, &config);
 
-    let meta = Assessment::get_assessment_metadata(env.clone(), id).unwrap();
+    let meta = client.get_assessment_metadata(&id).unwrap();
     assert_eq!(meta.assessment_id, id);
     assert!(!meta.published);
 
-    Assessment::publish_assessment(env.clone(), admin.clone(), id).unwrap();
-    let meta = Assessment::get_assessment_metadata(env.clone(), id).unwrap();
+    client.publish_assessment(&admin, &id);
+    let meta = client.get_assessment_metadata(&id).unwrap();
     assert!(meta.published);
 }
 
 #[test]
 fn test_single_choice_grading() {
-    let (env, admin) = setup();
+    let (env, client, admin) = setup();
     let instructor = admin.clone();
     let course_id = Symbol::new(&env, "C1");
     let module_id = Symbol::new(&env, "M1");
@@ -60,31 +57,25 @@ fn test_single_choice_grading() {
         proctoring_required: false,
     };
 
-    let id = Assessment::create_assessment(
-        env.clone(),
-        instructor.clone(),
-        course_id.clone(),
-        module_id.clone(),
-        config,
-    )
-    .unwrap();
-    Assessment::publish_assessment(env.clone(), admin.clone(), id).unwrap();
+    let id = client.create_assessment(&instructor, &course_id, &module_id, &config);
+    client.publish_assessment(&admin, &id);
 
-    let qid = Assessment::add_question(
-        env.clone(),
-        admin.clone(),
-        id,
-        QuestionType::SingleChoice,
-        1,
-        1,
-        env.crypto().sha256(&Bytes::new(&env)).into(),
-        Vec::new(&env),
-        AnswerKey::SingleChoice(1),
-    )
-    .unwrap();
+    let content_hash: BytesN<32> = env.crypto().sha256(&Bytes::new(&env)).into();
+    let options: Vec<QuestionOption> = Vec::new(&env);
+
+    let qid = client.add_question(
+        &admin,
+        &id,
+        &QuestionType::SingleChoice,
+        &1u32,
+        &1u32,
+        &content_hash,
+        &options,
+        &AnswerKey::SingleChoice(1),
+    );
 
     let student = Address::generate(&env);
-    let submission_id = Assessment::start_submission(env.clone(), student.clone(), id).unwrap();
+    let submission_id = client.start_submission(&student, &id);
 
     let mut answers: Vec<SubmittedAnswer> = Vec::new(&env);
     answers.push_back(SubmittedAnswer {
@@ -92,9 +83,7 @@ fn test_single_choice_grading() {
         value: SubmittedAnswerValue::SingleChoice(1),
     });
 
-    let submission =
-        Assessment::submit_answers(env.clone(), student.clone(), submission_id.clone(), answers)
-            .unwrap();
+    let submission = client.submit_answers(&student, &submission_id, &answers);
 
     assert_eq!(submission.score, 1);
     assert_eq!(submission.max_score, 1);
@@ -103,7 +92,7 @@ fn test_single_choice_grading() {
 
 #[test]
 fn test_adaptive_state_updates() {
-    let (env, admin) = setup();
+    let (env, client, admin) = setup();
     let instructor = admin.clone();
     let course_id = Symbol::new(&env, "C2");
     let module_id = Symbol::new(&env, "M2");
@@ -117,36 +106,28 @@ fn test_adaptive_state_updates() {
         proctoring_required: false,
     };
 
-    let id = Assessment::create_assessment(
-        env.clone(),
-        instructor.clone(),
-        course_id.clone(),
-        module_id.clone(),
-        config,
-    )
-    .unwrap();
-    Assessment::publish_assessment(env.clone(), admin.clone(), id).unwrap();
+    let id = client.create_assessment(&instructor, &course_id, &module_id, &config);
+    client.publish_assessment(&admin, &id);
 
-    for difficulty in 1..=3 {
-        Assessment::add_question(
-            env.clone(),
-            admin.clone(),
-            id,
-            QuestionType::SingleChoice,
-            1,
-            difficulty,
-            env.crypto().sha256(&Bytes::new(&env)).into(),
-            Vec::new(&env),
-            AnswerKey::SingleChoice(1),
-        )
-        .unwrap();
+    let options: Vec<QuestionOption> = Vec::new(&env);
+    for difficulty in 1u32..=3u32 {
+        let content_hash: BytesN<32> = env.crypto().sha256(&Bytes::new(&env)).into();
+        client.add_question(
+            &admin,
+            &id,
+            &QuestionType::SingleChoice,
+            &1u32,
+            &difficulty,
+            &content_hash,
+            &options,
+            &AnswerKey::SingleChoice(1),
+        );
     }
 
     let student = Address::generate(&env);
-    let maybe_q = Assessment::get_next_question(env.clone(), student.clone(), id).unwrap();
+    let maybe_q = client.get_next_question(&student, &id);
     assert!(maybe_q.is_some());
 
     let q = maybe_q.unwrap();
-    Assessment::update_adaptive_state(env.clone(), student.clone(), id, q.question_id, true)
-        .unwrap();
+    client.update_adaptive_state(&student, &id, &q.question_id, &true);
 }
