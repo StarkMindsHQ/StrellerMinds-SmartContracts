@@ -12,7 +12,7 @@ use types::*;
 mod test;
 
 use soroban_sdk::xdr::ToXdr;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec};
 
 #[contract]
 pub struct Assessment;
@@ -702,12 +702,7 @@ impl Assessment {
         submission.integrity.proctoring_evidence_hash = proctoring_evidence_hash;
 
         if plagiarism_flag {
-            AssessmentEvents::emit_plagiarism_flagged(
-                &env,
-                &submission_id,
-                plagiarism_score,
-                true,
-            );
+            AssessmentEvents::emit_plagiarism_flagged(&env, &submission_id, plagiarism_score, true);
             let flag = Symbol::new(&env, "PLAGIARISM");
             AssessmentEvents::emit_integrity_event(&env, &submission_id, &flag, 100);
         }

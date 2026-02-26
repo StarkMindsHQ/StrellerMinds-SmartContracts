@@ -1,8 +1,6 @@
-#![cfg(test)]
-
 use super::*;
 use soroban_sdk::testutils::Address as _;
-use soroban_sdk::{symbol_short, Address, Env, Symbol, Vec};
+use soroban_sdk::{Address, Bytes, Env, Symbol, Vec};
 
 fn setup() -> (Env, Address) {
     let env = Env::default();
@@ -50,8 +48,8 @@ fn test_create_and_publish_assessment() {
 fn test_single_choice_grading() {
     let (env, admin) = setup();
     let instructor = admin.clone();
-    let course_id = Symbol::short("C1");
-    let module_id = Symbol::short("M1");
+    let course_id = Symbol::new(&env, "C1");
+    let module_id = Symbol::new(&env, "M1");
 
     let config = AssessmentConfig {
         time_limit_seconds: 0,
@@ -79,7 +77,7 @@ fn test_single_choice_grading() {
         QuestionType::SingleChoice,
         1,
         1,
-        env.crypto().sha256(&Vec::new(&env)),
+        env.crypto().sha256(&Bytes::new(&env)).into(),
         Vec::new(&env),
         AnswerKey::SingleChoice(1),
     )
@@ -107,8 +105,8 @@ fn test_single_choice_grading() {
 fn test_adaptive_state_updates() {
     let (env, admin) = setup();
     let instructor = admin.clone();
-    let course_id = Symbol::short("C2");
-    let module_id = Symbol::short("M2");
+    let course_id = Symbol::new(&env, "C2");
+    let module_id = Symbol::new(&env, "M2");
 
     let config = AssessmentConfig {
         time_limit_seconds: 0,
@@ -137,7 +135,7 @@ fn test_adaptive_state_updates() {
             QuestionType::SingleChoice,
             1,
             difficulty,
-            env.crypto().sha256(&Vec::new(&env)),
+            env.crypto().sha256(&Bytes::new(&env)).into(),
             Vec::new(&env),
             AnswerKey::SingleChoice(1),
         )

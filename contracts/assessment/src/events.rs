@@ -4,10 +4,8 @@ pub struct AssessmentEvents;
 
 impl AssessmentEvents {
     pub fn emit_initialized(env: &Env, admin: &Address) {
-        env.events().publish(
-            (symbol_short!("assess"), symbol_short!("init")),
-            admin,
-        );
+        env.events()
+            .publish((symbol_short!("assess"), symbol_short!("init")), admin);
     }
 
     pub fn emit_assessment_created(env: &Env, id: u64, instructor: &Address, course: &Symbol) {
@@ -18,10 +16,8 @@ impl AssessmentEvents {
     }
 
     pub fn emit_assessment_published(env: &Env, id: u64) {
-        env.events().publish(
-            (symbol_short!("assess"), symbol_short!("pub")),
-            id,
-        );
+        env.events()
+            .publish((symbol_short!("assess"), symbol_short!("pub")), id);
     }
 
     pub fn emit_question_added(env: &Env, assessment_id: u64, question_id: u64) {
