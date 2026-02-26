@@ -379,7 +379,7 @@ impl Assessment {
         min: i64,
         max: i64,
     ) -> Result<u64, AssessmentError> {
-        let answer_key = AnswerKey::NumericRange { min, max };
+        let answer_key = AnswerKey::NumericRange(min, max);
         Self::add_question_internal(
             &env,
             &admin,
@@ -419,6 +419,7 @@ impl Assessment {
     }
 
     /// Generic add_question for specialized needs (used in tests).
+    #[allow(clippy::too_many_arguments)]
     pub fn add_question(
         env: Env,
         admin: Address,
@@ -602,10 +603,11 @@ impl Assessment {
             status: SubmissionStatus::InProgress,
             answers: Vec::new(&env),
             integrity: IntegrityMetadata {
-                plagiarism_score: None,
+                plagiarism_score: 0,
                 plagiarism_flag: false,
                 integrity_flags: Vec::new(&env),
-                proctoring_evidence_hash: None,
+                has_proctoring_evidence: false,
+                proctoring_evidence_hash: BytesN::from_array(&env, &[0u8; 32]),
             },
         };
         put_submission(&env, &submission);
@@ -672,10 +674,11 @@ impl Assessment {
         env: Env,
         oracle_or_admin: Address,
         submission_id: BytesN<32>,
-        plagiarism_score: Option<u32>,
+        plagiarism_score: u32,
         plagiarism_flag: bool,
         integrity_flags: Vec<Symbol>,
-        proctoring_evidence_hash: Option<BytesN<32>>,
+        has_proctoring_evidence: bool,
+        proctoring_evidence_hash: BytesN<32>,
     ) -> Result<(), AssessmentError> {
         let integration = get_integration(&env);
         let mut authorized = false;
@@ -695,13 +698,14 @@ impl Assessment {
         submission.integrity.plagiarism_score = plagiarism_score;
         submission.integrity.plagiarism_flag = plagiarism_flag;
         submission.integrity.integrity_flags = integrity_flags.clone();
+        submission.integrity.has_proctoring_evidence = has_proctoring_evidence;
         submission.integrity.proctoring_evidence_hash = proctoring_evidence_hash;
 
         if plagiarism_flag {
             AssessmentEvents::emit_plagiarism_flagged(
                 &env,
                 &submission_id,
-                plagiarism_score.unwrap_or(0),
+                plagiarism_score,
                 true,
             );
             let flag = Symbol::new(&env, "PLAGIARISM");

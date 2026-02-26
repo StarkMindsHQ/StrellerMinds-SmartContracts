@@ -5,35 +5,35 @@ pub struct AssessmentEvents;
 impl AssessmentEvents {
     pub fn emit_initialized(env: &Env, admin: &Address) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("initialized")),
+            (symbol_short!("assess"), symbol_short!("init")),
             admin,
         );
     }
 
     pub fn emit_assessment_created(env: &Env, id: u64, instructor: &Address, course: &Symbol) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("created")),
+            (symbol_short!("assess"), symbol_short!("created")),
             (id, instructor.clone(), course.clone()),
         );
     }
 
     pub fn emit_assessment_published(env: &Env, id: u64) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("published")),
+            (symbol_short!("assess"), symbol_short!("pub")),
             id,
         );
     }
 
     pub fn emit_question_added(env: &Env, assessment_id: u64, question_id: u64) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("q_added")),
+            (symbol_short!("assess"), symbol_short!("q_added")),
             (assessment_id, question_id),
         );
     }
 
     pub fn emit_submission_received(env: &Env, submission_id: &BytesN<32>, assessment_id: u64) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("submitted")),
+            (symbol_short!("assess"), symbol_short!("submit")),
             (submission_id.clone(), assessment_id),
         );
     }
@@ -46,7 +46,7 @@ impl AssessmentEvents {
         passed: bool,
     ) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("graded")),
+            (symbol_short!("assess"), symbol_short!("graded")),
             (submission_id.clone(), score, max_score, passed),
         );
     }
@@ -58,7 +58,7 @@ impl AssessmentEvents {
         flagged: bool,
     ) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("plagiarism")),
+            (symbol_short!("assess"), symbol_short!("plagrsm")),
             (submission_id.clone(), score, flagged),
         );
     }
@@ -70,14 +70,14 @@ impl AssessmentEvents {
         severity: u32,
     ) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("integrity")),
+            (symbol_short!("assess"), symbol_short!("integr")),
             (submission_id.clone(), flag.clone(), severity),
         );
     }
 
     pub fn emit_schedule_created(env: &Env, assessment_id: u64) {
         env.events().publish(
-            (symbol_short!("assessment"), symbol_short!("scheduled")),
+            (symbol_short!("assess"), symbol_short!("sched")),
             assessment_id,
         );
     }

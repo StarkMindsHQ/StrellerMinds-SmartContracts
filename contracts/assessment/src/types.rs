@@ -31,8 +31,8 @@ pub enum AnswerKey {
     SingleChoice(u32),
     /// Set of correct option ids (order-insensitive).
     MultipleChoice(Vec<u32>),
-    /// Numeric range [min, max].
-    NumericRange { min: i64, max: i64 },
+    /// Numeric range (min, max).
+    NumericRange(i64, i64),
     /// Whitelist of acceptable lowercased answers.
     ShortText(Vec<String>),
     /// No automatic grading; requires manual review.
@@ -134,10 +134,11 @@ pub enum SubmissionStatus {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct IntegrityMetadata {
-    pub plagiarism_score: Option<u32>, // 0-100; higher means more similar
+    pub plagiarism_score: u32, // 0-100; higher means more similar; 0 = not checked
     pub plagiarism_flag: bool,
     pub integrity_flags: Vec<Symbol>, // e.g. "MULTI_DEVICE", "TAB_SWITCH"
-    pub proctoring_evidence_hash: Option<BytesN<32>>,
+    pub has_proctoring_evidence: bool,
+    pub proctoring_evidence_hash: BytesN<32>,
 }
 
 /// Full submission record including grading and integrity.
