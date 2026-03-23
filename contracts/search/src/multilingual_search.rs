@@ -151,10 +151,8 @@ impl MultilingualSearch {
     /// Translate query to multiple languages (off-chain)
     pub fn translate_query(env: &Env, query: String, target_languages: Vec<Language>) {
         // Emit event for off-chain translation service
-        env.events().publish(
-            (soroban_sdk::symbol_short!("trans_req"),),
-            (query, target_languages.len()),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("trans_req"),), (query, target_languages.len()));
     }
 
     /// Store translated query from oracle
@@ -216,10 +214,7 @@ impl MultilingualSearch {
     pub fn get_language_content_count(env: &Env, language: Language) -> u32 {
         let lang_key = Self::language_index_key(env, &language);
 
-        if let Some(content_ids) = env
-            .storage()
-            .persistent()
-            .get::<String, Vec<String>>(&lang_key)
+        if let Some(content_ids) = env.storage().persistent().get::<String, Vec<String>>(&lang_key)
         {
             content_ids.len()
         } else {
@@ -230,8 +225,7 @@ impl MultilingualSearch {
     /// Detect query language (would be done off-chain)
     pub fn detect_query_language(env: &Env, query: String) -> Language {
         // Emit event for off-chain language detection
-        env.events()
-            .publish((soroban_sdk::symbol_short!("detect_ln"),), query);
+        env.events().publish((soroban_sdk::symbol_short!("detect_ln"),), query);
 
         // Default to English for now
         Language::English

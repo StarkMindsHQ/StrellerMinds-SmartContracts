@@ -11,11 +11,8 @@ impl CommunityStorage {
     }
 
     pub fn require_admin(env: &Env, addr: &Address) -> Result<(), Error> {
-        let admin: Address = env
-            .storage()
-            .instance()
-            .get(&CommunityKey::Admin)
-            .ok_or(Error::NotInitialized)?;
+        let admin: Address =
+            env.storage().instance().get(&CommunityKey::Admin).ok_or(Error::NotInitialized)?;
         if admin != *addr {
             return Err(Error::Unauthorized);
         }
@@ -23,10 +20,8 @@ impl CommunityStorage {
     }
 
     pub fn require_moderator(env: &Env, addr: &Address) -> Result<(), Error> {
-        let role: Option<ModeratorRole> = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::Moderator(addr.clone()));
+        let role: Option<ModeratorRole> =
+            env.storage().persistent().get(&CommunityKey::Moderator(addr.clone()));
 
         if role.is_none() {
             Self::require_admin(env, addr)?;
@@ -35,21 +30,18 @@ impl CommunityStorage {
     }
 
     pub fn get_config(env: &Env) -> CommunityConfig {
-        env.storage()
-            .instance()
-            .get(&CommunityKey::Config)
-            .unwrap_or(CommunityConfig {
-                post_xp_reward: 10,
-                reply_xp_reward: 5,
-                solution_xp_reward: 50,
-                contribution_base_xp: 100,
-                contribution_base_tokens: 1000,
-                mentor_session_xp: 75,
-                event_attendance_xp: 25,
-                min_reputation_to_moderate: 500,
-                max_reports_per_day: 10,
-                vote_weight_threshold: 100,
-            })
+        env.storage().instance().get(&CommunityKey::Config).unwrap_or(CommunityConfig {
+            post_xp_reward: 10,
+            reply_xp_reward: 5,
+            solution_xp_reward: 50,
+            contribution_base_xp: 100,
+            contribution_base_tokens: 1000,
+            mentor_session_xp: 75,
+            event_attendance_xp: 25,
+            min_reputation_to_moderate: 500,
+            max_reports_per_day: 10,
+            vote_weight_threshold: 100,
+        })
     }
 
     pub fn set_config(env: &Env, config: &CommunityConfig) {

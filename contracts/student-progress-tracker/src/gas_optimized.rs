@@ -77,39 +77,25 @@ fn course_key(learner: &Address, course_id: u32) -> (Symbol, Address, u32) {
 }
 
 fn load_student(env: &Env, learner: &Address) -> StudentAggregate {
-    env.storage()
-        .persistent()
-        .get(&student_key(learner))
-        .unwrap_or_default()
+    env.storage().persistent().get(&student_key(learner)).unwrap_or_default()
 }
 fn save_student(env: &Env, learner: &Address, agg: &StudentAggregate) {
     let key = student_key(learner);
     env.storage().persistent().set(&key, agg);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 fn load_course(env: &Env, learner: &Address, course_id: u32) -> CourseProgress {
-    env.storage()
-        .persistent()
-        .get(&course_key(learner, course_id))
-        .unwrap_or_default()
+    env.storage().persistent().get(&course_key(learner, course_id)).unwrap_or_default()
 }
 fn save_course(env: &Env, learner: &Address, course_id: u32, prog: &CourseProgress) {
     let key = course_key(learner, course_id);
     env.storage().persistent().set(&key, prog);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 pub fn enroll_student(env: &Env, learner: &Address, course_id: u32) {
     learner.require_auth();
-    if env
-        .storage()
-        .persistent()
-        .has(&course_key(learner, course_id))
-    {
+    if env.storage().persistent().has(&course_key(learner, course_id)) {
         return;
     }
     let mut agg = load_student(env, learner);
@@ -135,11 +121,7 @@ pub fn complete_module_with_score(
     }
     let done = prog.modules_done();
     let pct = ((done as u64 * 100) / total_modules as u64) as u8;
-    prog.update_meta(
-        prog.best_score_x10().max(score_x10),
-        pct,
-        env.ledger().sequence(),
-    );
+    prog.update_meta(prog.best_score_x10().max(score_x10), pct, env.ledger().sequence());
     save_course(env, learner, course_id, &prog);
     if pct == 100 {
         let mut agg = load_student(env, learner);

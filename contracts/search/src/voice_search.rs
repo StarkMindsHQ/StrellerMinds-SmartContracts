@@ -49,9 +49,7 @@ impl VoiceSearch {
 
         // Store active session for user
         let user_session_key = Self::user_session_key(env, &user);
-        env.storage()
-            .persistent()
-            .set(&user_session_key, &session_id);
+        env.storage().persistent().set(&user_session_key, &session_id);
 
         session_id
     }
@@ -66,10 +64,8 @@ impl VoiceSearch {
     pub fn get_user_active_session(env: &Env, user: Address) -> Option<ConversationSession> {
         let user_session_key = Self::user_session_key(env, &user);
 
-        if let Some(session_id) = env
-            .storage()
-            .persistent()
-            .get::<String, String>(&user_session_key)
+        if let Some(session_id) =
+            env.storage().persistent().get::<String, String>(&user_session_key)
         {
             Self::get_conversation_session(env, session_id)
         } else {
@@ -88,10 +84,8 @@ impl VoiceSearch {
 
         let key = DataKey::ConversationSession(session_id.clone());
 
-        if let Some(mut session) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, ConversationSession>(&key)
+        if let Some(mut session) =
+            env.storage().persistent().get::<DataKey, ConversationSession>(&key)
         {
             // Add query
             session.queries.push_back(query.clone());
@@ -221,10 +215,8 @@ impl VoiceSearch {
             env.storage().persistent().remove(&user_session_key);
 
             // Emit event
-            env.events().publish(
-                (soroban_sdk::symbol_short!("end_sess"),),
-                (user, session.session_id),
-            );
+            env.events()
+                .publish((soroban_sdk::symbol_short!("end_sess"),), (user, session.session_id));
         }
     }
 
@@ -243,8 +235,7 @@ impl VoiceSearch {
     pub fn cleanup_expired_sessions(env: &Env, timeout_seconds: u64) {
         // This would iterate through active sessions
         // For now, emit event for off-chain cleanup
-        env.events()
-            .publish((soroban_sdk::symbol_short!("cleanup"),), timeout_seconds);
+        env.events().publish((soroban_sdk::symbol_short!("cleanup"),), timeout_seconds);
     }
 
     /// Get voice search confidence score
@@ -263,10 +254,7 @@ impl VoiceSearch {
         audio_hash: String, // Hash/reference to audio file
     ) {
         // Emit event for off-chain speech-to-text processing
-        env.events().publish(
-            (soroban_sdk::symbol_short!("proc_voic"),),
-            (user, audio_hash),
-        );
+        env.events().publish((soroban_sdk::symbol_short!("proc_voic"),), (user, audio_hash));
     }
 
     /// Get conversation context summary
@@ -297,11 +285,8 @@ impl VoiceSearch {
     ) -> Vec<ProcessedVoiceQuery> {
         if let Some(session) = Self::get_user_active_session(env, user) {
             let mut history = Vec::new(env);
-            let start = if session.queries.len() > limit {
-                session.queries.len() - limit
-            } else {
-                0
-            };
+            let start =
+                if session.queries.len() > limit { session.queries.len() - limit } else { 0 };
 
             for i in start..session.queries.len() {
                 if let Some(query) = session.queries.get(i) {

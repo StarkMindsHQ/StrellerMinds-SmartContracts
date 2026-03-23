@@ -275,11 +275,7 @@ impl PredictiveEngine {
 
             bottlenecks.push_back(BottleneckPrediction {
                 bottleneck_type: BottleneckType::CPU,
-                severity: if cpu_trend > 10.0 {
-                    RiskLevel::High
-                } else {
-                    RiskLevel::Medium
-                },
+                severity: if cpu_trend > 10.0 { RiskLevel::High } else { RiskLevel::Medium },
                 estimated_impact: String::from_str(
                     env,
                     "High CPU usage may slow down transaction processing",
@@ -299,11 +295,7 @@ impl PredictiveEngine {
 
             bottlenecks.push_back(BottleneckPrediction {
                 bottleneck_type: BottleneckType::Memory,
-                severity: if memory_trend > 7.0 {
-                    RiskLevel::Critical
-                } else {
-                    RiskLevel::Medium
-                },
+                severity: if memory_trend > 7.0 { RiskLevel::Critical } else { RiskLevel::Medium },
                 estimated_impact: String::from_str(
                     env,
                     "Memory exhaustion may cause contract failures",
@@ -323,11 +315,7 @@ impl PredictiveEngine {
 
             bottlenecks.push_back(BottleneckPrediction {
                 bottleneck_type: BottleneckType::Gas,
-                severity: if gas_trend > 15.0 {
-                    RiskLevel::High
-                } else {
-                    RiskLevel::Medium
-                },
+                severity: if gas_trend > 15.0 { RiskLevel::High } else { RiskLevel::Medium },
                 estimated_impact: String::from_str(env, "High gas costs may deter users"),
                 recommended_actions: actions,
                 estimated_occurrence_time: horizon / 4,
@@ -418,10 +406,8 @@ impl PredictiveEngine {
                         .push_back(String::from_str(env, "Optimize computational algorithms"));
                 }
                 BottleneckType::Gas => {
-                    recommendations.push_back(String::from_str(
-                        env,
-                        "Implement gas optimization techniques",
-                    ));
+                    recommendations
+                        .push_back(String::from_str(env, "Implement gas optimization techniques"));
                 }
                 _ => {}
             }
@@ -485,10 +471,7 @@ impl PredictiveEngine {
         if data.is_empty() {
             return 0;
         }
-        data.iter()
-            .map(|m| m.storage_reads + m.storage_writes)
-            .sum::<u32>()
-            / data.len()
+        data.iter().map(|m| m.storage_reads + m.storage_writes).sum::<u32>() / data.len()
     }
 
     fn calculate_growth_rate(data: &Vec<PerformanceMetrics>) -> f64 {
@@ -605,11 +588,9 @@ impl PredictiveEngine {
             return 0.0;
         }
         let mean = Self::calculate_average_load(data) as f64;
-        let variance = data
-            .iter()
-            .map(|m| (m.transaction_count as f64 - mean).powi(2))
-            .sum::<f64>()
-            / data.len() as f64;
+        let variance =
+            data.iter().map(|m| (m.transaction_count as f64 - mean).powi(2)).sum::<f64>()
+                / data.len() as f64;
         variance.sqrt() / mean
     }
 

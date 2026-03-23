@@ -51,11 +51,8 @@ impl RecommendationEngine {
     /// Update user profile from learning activity
     pub fn update_user_profile(env: &Env, user: Address, course_id: String, completed: bool) {
         let key = DataKey::UserProfile(user.clone());
-        let mut profile = env
-            .storage()
-            .persistent()
-            .get::<DataKey, UserProfile>(&key)
-            .unwrap_or(UserProfile {
+        let mut profile =
+            env.storage().persistent().get::<DataKey, UserProfile>(&key).unwrap_or(UserProfile {
                 user_address: user.clone(),
                 completed_courses: Vec::new(env),
                 skill_levels: Map::new(env),
@@ -76,10 +73,8 @@ impl RecommendationEngine {
         env.storage().persistent().set(&key, &profile);
 
         // Emit event for off-chain processing
-        env.events().publish(
-            (soroban_sdk::symbol_short!("profile"),),
-            (user, course_id, completed),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("profile"),), (user, course_id, completed));
     }
 
     /// Get user learning profile

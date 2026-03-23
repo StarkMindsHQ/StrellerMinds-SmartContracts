@@ -53,27 +53,18 @@ fn progress_key(learner: &Address, course_id: u32) -> (Symbol, Address, u32) {
 }
 
 fn load_progress(env: &Env, learner: &Address, course_id: u32) -> PackedProgress {
-    env.storage()
-        .persistent()
-        .get(&progress_key(learner, course_id))
-        .unwrap_or_default()
+    env.storage().persistent().get(&progress_key(learner, course_id)).unwrap_or_default()
 }
 
 fn save_progress(env: &Env, learner: &Address, course_id: u32, prog: &PackedProgress) {
     let key = progress_key(learner, course_id);
     env.storage().persistent().set(&key, prog);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 pub fn start_course_optimized(env: &Env, learner: &Address, course_id: u32) {
     learner.require_auth();
-    if env
-        .storage()
-        .persistent()
-        .has(&progress_key(learner, course_id))
-    {
+    if env.storage().persistent().has(&progress_key(learner, course_id)) {
         return;
     }
     let mut prog = PackedProgress::default();

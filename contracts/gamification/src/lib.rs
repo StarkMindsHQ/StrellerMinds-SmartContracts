@@ -44,9 +44,7 @@ impl Gamification {
             return Err(Error::AlreadyInitialized);
         }
 
-        env.storage()
-            .instance()
-            .set(&GamificationKey::Admin, &admin);
+        env.storage().instance().set(&GamificationKey::Admin, &admin);
 
         // Default config
         let config = GamificationConfig {
@@ -60,9 +58,7 @@ impl Gamification {
             guild_max_members: 50,
             leaderboard_size: 50,
         };
-        env.storage()
-            .instance()
-            .set(&GamificationKey::Config, &config);
+        env.storage().instance().set(&GamificationKey::Config, &config);
 
         // Initialise all counters
         for key in [
@@ -75,9 +71,7 @@ impl Gamification {
         ] {
             env.storage().persistent().set(&key, &0u64);
         }
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::ActiveSeasonId, &0u64);
+        env.storage().persistent().set(&GamificationKey::ActiveSeasonId, &0u64);
 
         // Seed milestone achievements
         AchievementManager::seed_default_achievements(&env);

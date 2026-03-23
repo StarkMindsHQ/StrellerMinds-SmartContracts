@@ -19,10 +19,7 @@ use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, String, Sym
 pub struct Assessment;
 
 fn get_admin(env: &Env) -> Address {
-    env.storage()
-        .instance()
-        .get(&DataKey::Admin)
-        .expect("admin not set")
+    env.storage().instance().get(&DataKey::Admin).expect("admin not set")
 }
 
 fn require_admin(env: &Env, actor: &Address) -> Result<(), AssessmentError> {
@@ -34,28 +31,16 @@ fn require_admin(env: &Env, actor: &Address) -> Result<(), AssessmentError> {
 }
 
 fn get_next_assessment_id(env: &Env) -> u64 {
-    let current: u64 = env
-        .storage()
-        .instance()
-        .get(&DataKey::AssessmentCounter)
-        .unwrap_or(0);
+    let current: u64 = env.storage().instance().get(&DataKey::AssessmentCounter).unwrap_or(0);
     let next = current + 1;
-    env.storage()
-        .instance()
-        .set(&DataKey::AssessmentCounter, &next);
+    env.storage().instance().set(&DataKey::AssessmentCounter, &next);
     next
 }
 
 fn get_next_question_id(env: &Env) -> u64 {
-    let current: u64 = env
-        .storage()
-        .instance()
-        .get(&DataKey::QuestionCounter)
-        .unwrap_or(0);
+    let current: u64 = env.storage().instance().get(&DataKey::QuestionCounter).unwrap_or(0);
     let next = current + 1;
-    env.storage()
-        .instance()
-        .set(&DataKey::QuestionCounter, &next);
+    env.storage().instance().set(&DataKey::QuestionCounter, &next);
     next
 }
 
@@ -67,9 +52,7 @@ fn get_assessment(env: &Env, assessment_id: u64) -> Result<AssessmentMetadata, A
 }
 
 fn put_assessment(env: &Env, meta: &AssessmentMetadata) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::Assessment(meta.assessment_id), meta);
+    env.storage().persistent().set(&DataKey::Assessment(meta.assessment_id), meta);
 }
 
 fn get_questions_for_assessment(env: &Env, assessment_id: u64) -> Vec<Question> {
@@ -81,11 +64,7 @@ fn get_questions_for_assessment(env: &Env, assessment_id: u64) -> Vec<Question> 
 
     let mut result = Vec::new(env);
     for qid in ids.iter() {
-        if let Some(q) = env
-            .storage()
-            .persistent()
-            .get::<_, Question>(&DataKey::Question(qid))
-        {
+        if let Some(q) = env.storage().persistent().get::<_, Question>(&DataKey::Question(qid)) {
             result.push_back(q);
         }
     }
@@ -93,10 +72,8 @@ fn get_questions_for_assessment(env: &Env, assessment_id: u64) -> Vec<Question> 
 }
 
 fn within_schedule(env: &Env, assessment_id: u64) -> bool {
-    let schedule: Option<ScheduleConfig> = env
-        .storage()
-        .persistent()
-        .get(&DataKey::Schedule(assessment_id));
+    let schedule: Option<ScheduleConfig> =
+        env.storage().persistent().get(&DataKey::Schedule(assessment_id));
     if let Some(s) = schedule {
         let now = env.ledger().timestamp();
         now >= s.start_time && now <= s.end_time
@@ -106,17 +83,12 @@ fn within_schedule(env: &Env, assessment_id: u64) -> bool {
 }
 
 fn get_accommodation(env: &Env, student: &Address) -> Option<AccommodationConfig> {
-    env.storage()
-        .persistent()
-        .get(&DataKey::Accommodation(student.clone()))
+    env.storage().persistent().get(&DataKey::Accommodation(student.clone()))
 }
 
 fn get_effective_time_limit(env: &Env, config: &AssessmentConfig, student: &Address) -> u64 {
     if let Some(ac) = get_accommodation(env, student) {
-        let bonus = config
-            .time_limit_seconds
-            .saturating_mul(ac.extra_time_percent as u64)
-            / 100;
+        let bonus = config.time_limit_seconds.saturating_mul(ac.extra_time_percent as u64) / 100;
         config.time_limit_seconds.saturating_add(bonus)
     } else {
         config.time_limit_seconds
@@ -125,11 +97,7 @@ fn get_effective_time_limit(env: &Env, config: &AssessmentConfig, student: &Addr
 
 fn get_student_attempts(env: &Env, student: &Address, assessment_id: u64) -> u32 {
     let key = DataKey::StudentAssessmentSubmissions(student.clone(), assessment_id);
-    let ids: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&key)
-        .unwrap_or(Vec::new(env));
+    let ids: Vec<BytesN<32>> = env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
     ids.len()
 }
 
@@ -140,11 +108,7 @@ fn append_student_submission(
     submission_id: &BytesN<32>,
 ) {
     let key = DataKey::StudentAssessmentSubmissions(student.clone(), assessment_id);
-    let mut ids: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&key)
-        .unwrap_or(Vec::new(env));
+    let mut ids: Vec<BytesN<32>> = env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
     ids.push_back(submission_id.clone());
     env.storage().persistent().set(&key, &ids);
 }
@@ -157,37 +121,28 @@ fn get_submission(env: &Env, submission_id: &BytesN<32>) -> Result<Submission, A
 }
 
 fn put_submission(env: &Env, submission: &Submission) {
-    env.storage().persistent().set(
-        &DataKey::Submission(submission.submission_id.clone()),
-        submission,
-    );
+    env.storage()
+        .persistent()
+        .set(&DataKey::Submission(submission.submission_id.clone()), submission);
 }
 
 fn get_or_init_adaptive_state(env: &Env, student: &Address, assessment_id: u64) -> AdaptiveState {
     env.storage()
         .persistent()
         .get(&DataKey::Adaptive(student.clone(), assessment_id))
-        .unwrap_or(AdaptiveState {
-            current_difficulty: 3,
-            completed_questions: Vec::new(env),
-        })
+        .unwrap_or(AdaptiveState { current_difficulty: 3, completed_questions: Vec::new(env) })
 }
 
 fn put_adaptive_state(env: &Env, student: &Address, assessment_id: u64, state: &AdaptiveState) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::Adaptive(student.clone(), assessment_id), state);
+    env.storage().persistent().set(&DataKey::Adaptive(student.clone(), assessment_id), state);
 }
 
 fn get_integration(env: &Env) -> IntegrationConfig {
-    env.storage()
-        .instance()
-        .get(&DataKey::Integration)
-        .unwrap_or(IntegrationConfig {
-            analytics_contract: None,
-            progress_contract: None,
-            security_monitor_contract: None,
-        })
+    env.storage().instance().get(&DataKey::Integration).unwrap_or(IntegrationConfig {
+        analytics_contract: None,
+        progress_contract: None,
+        security_monitor_contract: None,
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -253,9 +208,7 @@ impl Assessment {
             published: false,
         };
         put_assessment(&env, &meta);
-        env.storage()
-            .persistent()
-            .set(&DataKey::AssessmentQuestions(id), &Vec::<u64>::new(&env));
+        env.storage().persistent().set(&DataKey::AssessmentQuestions(id), &Vec::<u64>::new(&env));
         AssessmentEvents::emit_assessment_created(&env, id, &instructor, &course_id);
         Ok(id)
     }
@@ -312,9 +265,7 @@ impl Assessment {
             .get(&DataKey::AssessmentQuestions(assessment_id))
             .unwrap_or(Vec::new(env));
         ids.push_back(qid);
-        env.storage()
-            .persistent()
-            .set(&DataKey::AssessmentQuestions(assessment_id), &ids);
+        env.storage().persistent().set(&DataKey::AssessmentQuestions(assessment_id), &ids);
 
         AssessmentEvents::emit_question_added(env, assessment_id, qid);
         Ok(qid)
@@ -448,9 +399,7 @@ impl Assessment {
     }
 
     pub fn get_assessment_metadata(env: Env, assessment_id: u64) -> Option<AssessmentMetadata> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Assessment(assessment_id))
+        env.storage().persistent().get(&DataKey::Assessment(assessment_id))
     }
 
     // Scheduling & accessibility
@@ -476,9 +425,7 @@ impl Assessment {
             time_zone_offset_minutes,
             proctoring_provider,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::Schedule(assessment_id), &schedule);
+        env.storage().persistent().set(&DataKey::Schedule(assessment_id), &schedule);
         AssessmentEvents::emit_schedule_created(&env, assessment_id);
         Ok(())
     }
@@ -490,9 +437,7 @@ impl Assessment {
         config: AccommodationConfig,
     ) -> Result<(), AssessmentError> {
         require_admin(&env, &admin)?;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Accommodation(student), &config);
+        env.storage().persistent().set(&DataKey::Accommodation(student), &config);
         Ok(())
     }
 
@@ -668,9 +613,7 @@ impl Assessment {
     }
 
     pub fn get_submission_details(env: Env, submission_id: BytesN<32>) -> Option<Submission> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Submission(submission_id))
+        env.storage().persistent().get(&DataKey::Submission(submission_id))
     }
 
     pub fn update_integrity_metadata(
@@ -738,11 +681,8 @@ impl Assessment {
             }
 
             let key = DataKey::StudentAssessmentSubmissions(student.clone(), meta.assessment_id);
-            let subs: Vec<BytesN<32>> = env
-                .storage()
-                .persistent()
-                .get(&key)
-                .unwrap_or(Vec::new(&env));
+            let subs: Vec<BytesN<32>> =
+                env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
             if subs.is_empty() {
                 id += 1;
                 continue;

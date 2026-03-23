@@ -58,11 +58,7 @@ impl GradingEngine {
             }
         }
 
-        GradingResult {
-            score,
-            max_score,
-            requires_manual_review,
-        }
+        GradingResult { score, max_score, requires_manual_review }
     }
 
     fn grade_answer(env: &Env, question: &Question, value: &SubmittedAnswerValue) -> (u32, bool) {

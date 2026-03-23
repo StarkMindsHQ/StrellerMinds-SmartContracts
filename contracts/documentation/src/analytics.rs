@@ -20,9 +20,7 @@ impl AnalyticsManager {
             clicked_result: None,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::SearchQuery(query_id), &search);
+        env.storage().persistent().set(&DataKey::SearchQuery(query_id), &search);
 
         Ok(search)
     }
@@ -35,17 +33,13 @@ impl AnalyticsManager {
             .ok_or(Error::DocumentNotFound)?;
 
         search.clicked_result = Some(doc_id);
-        env.storage()
-            .persistent()
-            .set(&DataKey::SearchQuery(query_id), &search);
+        env.storage().persistent().set(&DataKey::SearchQuery(query_id), &search);
 
         Ok(())
     }
 
     pub fn get_document_analytics(env: &Env, doc_id: &String) -> Option<DocumentAnalytics> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Analytics(doc_id.clone()))
+        env.storage().persistent().get(&DataKey::Analytics(doc_id.clone()))
     }
 
     pub fn update_analytics(
@@ -55,28 +49,25 @@ impl AnalyticsManager {
         helpful: u32,
         not_helpful: u32,
     ) -> Result<(), Error> {
-        let mut analytics: DocumentAnalytics = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Analytics(doc_id.clone()))
-            .unwrap_or(DocumentAnalytics {
-                doc_id: doc_id.clone(),
-                total_views: 0,
-                unique_viewers: 0,
-                avg_time_spent: 0,
-                helpful_votes: 0,
-                not_helpful_votes: 0,
-                completion_rate: 0,
-                search_appearances: 0,
-            });
+        let mut analytics: DocumentAnalytics =
+            env.storage().persistent().get(&DataKey::Analytics(doc_id.clone())).unwrap_or(
+                DocumentAnalytics {
+                    doc_id: doc_id.clone(),
+                    total_views: 0,
+                    unique_viewers: 0,
+                    avg_time_spent: 0,
+                    helpful_votes: 0,
+                    not_helpful_votes: 0,
+                    completion_rate: 0,
+                    search_appearances: 0,
+                },
+            );
 
         analytics.total_views += views;
         analytics.helpful_votes += helpful;
         analytics.not_helpful_votes += not_helpful;
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Analytics(doc_id), &analytics);
+        env.storage().persistent().set(&DataKey::Analytics(doc_id), &analytics);
 
         Ok(())
     }

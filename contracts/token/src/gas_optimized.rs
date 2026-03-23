@@ -30,18 +30,13 @@ fn account_key(owner: &Address) -> (Symbol, Address) {
 }
 
 fn load_account(env: &Env, owner: &Address) -> PackedAccount {
-    env.storage()
-        .persistent()
-        .get(&account_key(owner))
-        .unwrap_or_default()
+    env.storage().persistent().get(&account_key(owner)).unwrap_or_default()
 }
 
 fn save_account(env: &Env, owner: &Address, acc: &PackedAccount) {
     let key = account_key(owner);
     env.storage().persistent().set(&key, acc);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 fn load_supply(env: &Env) -> u64 {

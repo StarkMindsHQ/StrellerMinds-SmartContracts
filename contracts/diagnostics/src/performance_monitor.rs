@@ -120,11 +120,8 @@ impl PerformanceMonitor {
             0
         };
 
-        let error_rate = if total_transactions > 0 {
-            (total_errors * 100) / total_transactions
-        } else {
-            0
-        };
+        let error_rate =
+            if total_transactions > 0 { (total_errors * 100) / total_transactions } else { 0 };
 
         Ok(PerformanceReport {
             contract_address: contract_address.clone(),
@@ -132,11 +129,7 @@ impl PerformanceMonitor {
             end_time,
             total_transactions,
             average_execution_time,
-            min_execution_time: if min_execution_time == u64::MAX {
-                0
-            } else {
-                min_execution_time
-            },
+            min_execution_time: if min_execution_time == u64::MAX { 0 } else { min_execution_time },
             max_execution_time,
             total_gas_used,
             peak_memory_usage: peak_memory,

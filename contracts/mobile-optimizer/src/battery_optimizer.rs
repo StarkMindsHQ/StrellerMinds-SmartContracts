@@ -15,9 +15,7 @@ impl BatteryOptimizer {
             reduce_animation: true,
             background_limit_minutes: 30,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::BatteryConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::BatteryConfig(user.clone()), &config);
         config
     }
 
@@ -48,9 +46,7 @@ impl BatteryOptimizer {
         };
 
         let key = Self::battery_key(env, &device_id);
-        env.storage()
-            .persistent()
-            .set(&DataKey::BatteryProfile(key), &profile);
+        env.storage().persistent().set(&DataKey::BatteryProfile(key), &profile);
 
         Ok(profile)
     }
@@ -167,16 +163,12 @@ impl BatteryOptimizer {
 
         let mut recommendations = Vec::new(env);
         if operations_count > 20 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Batch operations to reduce battery usage",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Batch operations to reduce battery usage"));
         }
         if sync_count > 10 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Reduce sync frequency to save battery",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Reduce sync frequency to save battery"));
         }
         if cache_operations > 50 {
             recommendations.push_back(String::from_str(
@@ -204,9 +196,7 @@ impl BatteryOptimizer {
         user: &Address,
         config: BatteryOptimizationConfig,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::BatteryConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::BatteryConfig(user.clone()), &config);
         Ok(())
     }
 

@@ -17,11 +17,7 @@ impl ContentManager {
         delivery_config: ContentDeliveryConfig,
         content_hash: BytesN<32>,
     ) -> Result<ContentMetadata, MobileOptimizerError> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::ContentItem(content_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::ContentItem(content_id.clone())) {
             return Err(MobileOptimizerError::InvalidInput);
         }
 
@@ -38,9 +34,7 @@ impl ContentManager {
             average_rating: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::ContentItem(content_id.clone()), &metadata);
+        env.storage().persistent().set(&DataKey::ContentItem(content_id.clone()), &metadata);
 
         let version = ContentVersion {
             content_id: content_id.clone(),
@@ -53,9 +47,7 @@ impl ContentManager {
 
         let mut history = Vec::new(env);
         history.push_back(version);
-        env.storage()
-            .persistent()
-            .set(&DataKey::ContentVersionHistory(content_id), &history);
+        env.storage().persistent().set(&DataKey::ContentVersionHistory(content_id), &history);
 
         Ok(metadata)
     }
@@ -97,12 +89,8 @@ impl ContentManager {
             .unwrap_or_else(|| Vec::new(env));
         history.push_back(version.clone());
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::ContentItem(content_id.clone()), &metadata);
-        env.storage()
-            .persistent()
-            .set(&DataKey::ContentVersionHistory(content_id), &history);
+        env.storage().persistent().set(&DataKey::ContentItem(content_id.clone()), &metadata);
+        env.storage().persistent().set(&DataKey::ContentVersionHistory(content_id), &history);
 
         Ok(version)
     }

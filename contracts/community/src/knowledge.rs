@@ -38,9 +38,7 @@ impl KnowledgeManager {
             token_reward: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Contribution(contribution_id), &contribution);
+        env.storage().persistent().set(&CommunityKey::Contribution(contribution_id), &contribution);
 
         // Add to user contributions
         let mut user_contribs: Vec<u64> = env
@@ -49,10 +47,9 @@ impl KnowledgeManager {
             .get(&CommunityKey::UserContributions(contributor.clone()))
             .unwrap_or_else(|| Vec::new(env));
         user_contribs.push_back(contribution_id);
-        env.storage().persistent().set(
-            &CommunityKey::UserContributions(contributor.clone()),
-            &user_contribs,
-        );
+        env.storage()
+            .persistent()
+            .set(&CommunityKey::UserContributions(contributor.clone()), &user_contribs);
 
         CommunityEvents::emit_contribution_submitted(env, contributor, contribution_id);
         Ok(contribution_id)
@@ -93,9 +90,7 @@ impl KnowledgeManager {
             let mut category_contribs: Vec<u64> = env
                 .storage()
                 .persistent()
-                .get(&CommunityKey::CategoryContributions(
-                    contribution.category.clone(),
-                ))
+                .get(&CommunityKey::CategoryContributions(contribution.category.clone()))
                 .unwrap_or_else(|| Vec::new(env));
             category_contribs.push_back(contribution_id);
             env.storage().persistent().set(
@@ -115,9 +110,7 @@ impl KnowledgeManager {
             contribution.status = ContributionStatus::Rejected;
         }
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Contribution(contribution_id), &contribution);
+        env.storage().persistent().set(&CommunityKey::Contribution(contribution_id), &contribution);
 
         Ok(())
     }
@@ -151,29 +144,21 @@ impl KnowledgeManager {
                 .get(&CommunityKey::UserStats(contributor_addr.clone()))
                 .unwrap();
             stats.helpful_votes_received += 1;
-            env.storage()
-                .persistent()
-                .set(&CommunityKey::UserStats(contributor_addr), &stats);
+            env.storage().persistent().set(&CommunityKey::UserStats(contributor_addr), &stats);
         }
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Contribution(contribution_id), &contribution);
+        env.storage().persistent().set(&CommunityKey::Contribution(contribution_id), &contribution);
 
         Ok(())
     }
 
     pub fn get_contribution(env: &Env, contribution_id: u64) -> Option<KnowledgeContribution> {
-        let mut contribution: Option<KnowledgeContribution> = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::Contribution(contribution_id));
+        let mut contribution: Option<KnowledgeContribution> =
+            env.storage().persistent().get(&CommunityKey::Contribution(contribution_id));
 
         if let Some(ref mut c) = contribution {
             c.views += 1;
-            env.storage()
-                .persistent()
-                .set(&CommunityKey::Contribution(contribution_id), c);
+            env.storage().persistent().set(&CommunityKey::Contribution(contribution_id), c);
         }
 
         contribution
@@ -194,10 +179,8 @@ impl KnowledgeManager {
         let max = limit.min(contrib_ids.len());
         for i in 0..max {
             if let Some(id) = contrib_ids.get(i) {
-                if let Some(contrib) = env
-                    .storage()
-                    .persistent()
-                    .get(&CommunityKey::Contribution(id))
+                if let Some(contrib) =
+                    env.storage().persistent().get(&CommunityKey::Contribution(id))
                 {
                     contributions.push_back(contrib);
                 }
@@ -215,11 +198,7 @@ impl KnowledgeManager {
 
         let mut contributions = Vec::new(env);
         for id in contrib_ids.iter() {
-            if let Some(contrib) = env
-                .storage()
-                .persistent()
-                .get(&CommunityKey::Contribution(id))
-            {
+            if let Some(contrib) = env.storage().persistent().get(&CommunityKey::Contribution(id)) {
                 contributions.push_back(contrib);
             }
         }
@@ -264,9 +243,7 @@ impl KnowledgeManager {
             });
 
         stats.contributions_made += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserStats(contributor.clone()), &stats);
+        env.storage().persistent().set(&CommunityKey::UserStats(contributor.clone()), &stats);
     }
 
     fn award_xp(_env: &Env, _user: &Address, _xp: u32) {

@@ -115,9 +115,7 @@ impl ReputationManager {
         profile.reputation_score = rep.total_score;
         GamificationStorage::set_profile(env, user, &profile);
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::UserReputation(user.clone()), rep);
+        env.storage().persistent().set(&GamificationKey::UserReputation(user.clone()), rep);
 
         GamificationEvents::emit_reputation_updated(env, user, rep.total_score);
     }

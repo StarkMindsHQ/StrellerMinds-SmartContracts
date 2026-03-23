@@ -31,9 +31,7 @@ impl BatchManager {
             network_quality: NetworkQuality::Good,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::TransactionBatch(batch_id.clone()), &batch);
+        env.storage().persistent().set(&DataKey::TransactionBatch(batch_id.clone()), &batch);
         Self::add_to_user_batches(env, &user, &batch_id);
 
         Ok(batch_id)
@@ -56,16 +54,12 @@ impl BatchManager {
 
         if env.ledger().timestamp() > batch.expires_at {
             batch.status = BatchStatus::Expired;
-            env.storage()
-                .persistent()
-                .set(&DataKey::TransactionBatch(batch_id), &batch);
+            env.storage().persistent().set(&DataKey::TransactionBatch(batch_id), &batch);
             return Err(MobileOptimizerError::BatchExpired);
         }
 
         batch.status = BatchStatus::Executing;
-        env.storage()
-            .persistent()
-            .set(&DataKey::TransactionBatch(batch_id.clone()), &batch);
+        env.storage().persistent().set(&DataKey::TransactionBatch(batch_id.clone()), &batch);
 
         let result = Self::execute_sequential(env, &mut batch);
 
@@ -77,9 +71,7 @@ impl BatchManager {
             BatchStatus::Failed
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::TransactionBatch(batch_id), &batch);
+        env.storage().persistent().set(&DataKey::TransactionBatch(batch_id), &batch);
 
         Ok(result)
     }
@@ -143,9 +135,7 @@ impl BatchManager {
         }
 
         batch.status = BatchStatus::Cancelled;
-        env.storage()
-            .persistent()
-            .set(&DataKey::TransactionBatch(batch_id), &batch);
+        env.storage().persistent().set(&DataKey::TransactionBatch(batch_id), &batch);
         Ok(())
     }
 
@@ -235,9 +225,7 @@ impl BatchManager {
             .get(&DataKey::UserBatches(user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         batches.push_back(batch_id.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserBatches(user.clone()), &batches);
+        env.storage().persistent().set(&DataKey::UserBatches(user.clone()), &batches);
     }
 }
 

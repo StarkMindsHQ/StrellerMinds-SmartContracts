@@ -13,11 +13,7 @@ impl TranslationManager {
         content: String,
         translator: &Address,
     ) -> Result<Translation, Error> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::Translation(translation_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::Translation(translation_id.clone())) {
             return Err(Error::AlreadyExists);
         }
 
@@ -32,9 +28,7 @@ impl TranslationManager {
             created_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Translation(translation_id), &translation);
+        env.storage().persistent().set(&DataKey::Translation(translation_id), &translation);
 
         Ok(translation)
     }
@@ -51,16 +45,12 @@ impl TranslationManager {
             .ok_or(Error::TranslationNotFound)?;
 
         translation.status = status;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Translation(translation_id), &translation);
+        env.storage().persistent().set(&DataKey::Translation(translation_id), &translation);
 
         Ok(())
     }
 
     pub fn get_translation(env: &Env, translation_id: &String) -> Option<Translation> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Translation(translation_id.clone()))
+        env.storage().persistent().get(&DataKey::Translation(translation_id.clone()))
     }
 }

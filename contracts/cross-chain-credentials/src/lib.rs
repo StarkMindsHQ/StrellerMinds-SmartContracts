@@ -43,9 +43,7 @@ impl CrossChainCredentials {
             metadata_hash,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Credential(credential_id.clone()), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
 
         let mut student_creds = env
             .storage()
@@ -53,9 +51,7 @@ impl CrossChainCredentials {
             .get::<DataKey, Vec<String>>(&DataKey::StudentCreds(student.clone()))
             .unwrap_or(Vec::new(&env));
         student_creds.push_back(credential_id.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::StudentCreds(student), &student_creds);
+        env.storage().persistent().set(&DataKey::StudentCreds(student), &student_creds);
 
         credential_id
     }
@@ -64,52 +60,34 @@ impl CrossChainCredentials {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Credential(credential_id.clone()))
-            .unwrap();
+        let mut credential: Credential =
+            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Revoked;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
     }
 
     pub fn suspend_credential(env: Env, credential_id: String) {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Credential(credential_id.clone()))
-            .unwrap();
+        let mut credential: Credential =
+            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Suspended;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
     }
 
     pub fn reactivate_credential(env: Env, credential_id: String) {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Credential(credential_id.clone()))
-            .unwrap();
+        let mut credential: Credential =
+            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Active;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
     }
 
     pub fn get_credential(env: Env, credential_id: String) -> Credential {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Credential(credential_id))
-            .unwrap()
+        env.storage().persistent().get(&DataKey::Credential(credential_id)).unwrap()
     }
 
     pub fn verify_cross_chain(
@@ -117,11 +95,8 @@ impl CrossChainCredentials {
         credential_id: String,
         target_chain: ChainId,
     ) -> CrossChainProof {
-        let credential: Credential = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Credential(credential_id.clone()))
-            .unwrap();
+        let credential: Credential =
+            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
 
         if credential.status != CredentialStatus::Active {
             panic!("Credential not active");
@@ -135,17 +110,12 @@ impl CrossChainCredentials {
             verified_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Proof(credential_id), &proof);
+        env.storage().persistent().set(&DataKey::Proof(credential_id), &proof);
         proof
     }
 
     pub fn get_proof(env: Env, credential_id: String) -> CrossChainProof {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Proof(credential_id))
-            .unwrap()
+        env.storage().persistent().get(&DataKey::Proof(credential_id)).unwrap()
     }
 
     pub fn request_verification(
@@ -164,17 +134,12 @@ impl CrossChainCredentials {
             created_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Request(request_id.clone()), &request);
+        env.storage().persistent().set(&DataKey::Request(request_id.clone()), &request);
         request_id
     }
 
     pub fn get_verification_request(env: Env, request_id: String) -> VerificationRequest {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Request(request_id))
-            .unwrap()
+        env.storage().persistent().get(&DataKey::Request(request_id)).unwrap()
     }
 
     pub fn generate_transcript(env: Env, student: Address) -> Transcript {
@@ -189,10 +154,7 @@ impl CrossChainCredentials {
     }
 
     pub fn get_student_credentials(env: Env, student: Address) -> Vec<String> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::StudentCreds(student))
-            .unwrap_or(Vec::new(&env))
+        env.storage().persistent().get(&DataKey::StudentCreds(student)).unwrap_or(Vec::new(&env))
     }
 
     pub fn add_oracle(env: Env, oracle: Address) {

@@ -88,11 +88,8 @@ fn test_double_initialize_fails() {
 #[test]
 fn test_configure_multisig() {
     let (env, client, admin) = setup_env();
-    let approvers: [Address; 3] = [
-        Address::generate(&env),
-        Address::generate(&env),
-        Address::generate(&env),
-    ];
+    let approvers: [Address; 3] =
+        [Address::generate(&env), Address::generate(&env), Address::generate(&env)];
     let config = make_multisig_config(&env, "COURSE_001", &approvers, 2);
 
     client.configure_multisig(&admin, &config);
@@ -193,12 +190,8 @@ fn test_multisig_rejection() {
     let approver1 = Address::generate(&env);
     let approver2 = Address::generate(&env);
 
-    let config = make_multisig_config(
-        &env,
-        "REJECTION_COURSE",
-        &[approver1.clone(), approver2.clone()],
-        2,
-    );
+    let config =
+        make_multisig_config(&env, "REJECTION_COURSE", &[approver1.clone(), approver2.clone()], 2);
     client.configure_multisig(&admin, &config);
 
     let mut params = make_cert_params(&env, "REJECTION_COURSE", &student);
@@ -231,12 +224,8 @@ fn test_duplicate_approval_fails() {
     let approver1 = Address::generate(&env);
     let approver2 = Address::generate(&env);
 
-    let config = make_multisig_config(
-        &env,
-        "DUP_COURSE",
-        &[approver1.clone(), approver2.clone()],
-        2,
-    );
+    let config =
+        make_multisig_config(&env, "DUP_COURSE", &[approver1.clone(), approver2.clone()], 2);
     client.configure_multisig(&admin, &config);
 
     let mut params = make_cert_params(&env, "DUP_COURSE", &student);
@@ -624,9 +613,7 @@ fn test_verify_compliance() {
     );
     assert!(is_compliant);
 
-    let record = client
-        .get_compliance_record(&params.certificate_id)
-        .unwrap();
+    let record = client.get_compliance_record(&params.certificate_id).unwrap();
     assert!(record.is_compliant);
 }
 
@@ -736,12 +723,8 @@ fn test_audit_trail() {
     let approver1 = Address::generate(&env);
     let approver2 = Address::generate(&env);
 
-    let config = make_multisig_config(
-        &env,
-        "AUDIT_COURSE",
-        &[approver1.clone(), approver2.clone()],
-        2,
-    );
+    let config =
+        make_multisig_config(&env, "AUDIT_COURSE", &[approver1.clone(), approver2.clone()], 2);
     client.configure_multisig(&admin, &config);
 
     let mut params = make_cert_params(&env, "AUDIT_COURSE", &student);
@@ -781,12 +764,8 @@ fn test_get_pending_approvals() {
     let approver1 = Address::generate(&env);
     let approver2 = Address::generate(&env);
 
-    let config = make_multisig_config(
-        &env,
-        "PENDING_COURSE",
-        &[approver1.clone(), approver2.clone()],
-        2,
-    );
+    let config =
+        make_multisig_config(&env, "PENDING_COURSE", &[approver1.clone(), approver2.clone()], 2);
     client.configure_multisig(&admin, &config);
 
     let mut params = make_cert_params(&env, "PENDING_COURSE", &student);

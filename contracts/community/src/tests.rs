@@ -83,12 +83,8 @@ fn test_create_reply() {
         &String::from_str(&env, ""),
     );
 
-    let reply_id = client.create_reply(
-        &user2,
-        &post_id,
-        &String::from_str(&env, "Here's the solution"),
-        &0,
-    );
+    let reply_id =
+        client.create_reply(&user2, &post_id, &String::from_str(&env, "Here's the solution"), &0);
 
     assert_eq!(reply_id, 1);
 

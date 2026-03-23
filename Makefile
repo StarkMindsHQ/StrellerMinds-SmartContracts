@@ -2,7 +2,7 @@
 # 
 # This Makefile provides convenient commands for development and testing
 
-.PHONY: help build test unit-test e2e-test localnet-start localnet-stop localnet-status clean deploy-testnet deploy-mainnet
+.PHONY: help build test unit-test e2e-test localnet-start localnet-stop localnet-status clean deploy-testnet deploy-mainnet fmt lint lint-style pre-commit-install pre-commit-run
 
 # Colors for output
 GREEN=\033[0;32m
@@ -163,6 +163,21 @@ lint:
 	@echo "$(GREEN)[LINT]$(NC) Running clippy..."
 	cargo clippy --all-targets --all-features
 
+# Run strict naming/style lints
+lint-style:
+	@echo "$(GREEN)[LINT]$(NC) Running strict style checks..."
+	cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+
 # Run fmt and lint together
-check-code: fmt lint
+check-code: fmt lint-style
 	@echo "$(GREEN)[CHECK]$(NC) Code formatting and linting complete"
+
+# Install pre-commit hooks
+pre-commit-install:
+	@echo "$(GREEN)[HOOKS]$(NC) Installing pre-commit hooks..."
+	pre-commit install
+
+# Run pre-commit hooks manually across repository
+pre-commit-run:
+	@echo "$(GREEN)[HOOKS]$(NC) Running pre-commit hooks..."
+	pre-commit run --all-files

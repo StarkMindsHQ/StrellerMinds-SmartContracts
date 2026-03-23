@@ -16,11 +16,7 @@ impl MentorshipManager {
         max_mentees: u32,
         bio: String,
     ) -> Result<(), Error> {
-        if env
-            .storage()
-            .persistent()
-            .has(&CommunityKey::MentorProfile(mentor.clone()))
-        {
+        if env.storage().persistent().has(&CommunityKey::MentorProfile(mentor.clone())) {
             return Err(Error::AlreadyMentor);
         }
 
@@ -37,9 +33,7 @@ impl MentorshipManager {
             joined_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
+        env.storage().persistent().set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
 
         CommunityEvents::emit_mentor_registered(env, mentor);
         Ok(())
@@ -81,9 +75,7 @@ impl MentorshipManager {
             completed_at: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorshipRequest(request_id), &request);
+        env.storage().persistent().set(&CommunityKey::MentorshipRequest(request_id), &request);
 
         // Add to user mentorships
         let mut mentorships: Vec<u64> = env
@@ -118,20 +110,13 @@ impl MentorshipManager {
         request.status = MentorshipStatus::Active;
         request.started_at = env.ledger().timestamp();
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorshipRequest(request_id), &request);
+        env.storage().persistent().set(&CommunityKey::MentorshipRequest(request_id), &request);
 
         // Update mentor profile
-        let mut profile: MentorProfile = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::MentorProfile(mentor.clone()))
-            .unwrap();
+        let mut profile: MentorProfile =
+            env.storage().persistent().get(&CommunityKey::MentorProfile(mentor.clone())).unwrap();
         profile.current_mentees += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
+        env.storage().persistent().set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
 
         CommunityEvents::emit_mentorship_started(env, request_id);
         Ok(())
@@ -173,20 +158,13 @@ impl MentorshipManager {
             completed_at: now,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorshipSession(session_id), &session);
+        env.storage().persistent().set(&CommunityKey::MentorshipSession(session_id), &session);
 
         // Update mentor profile
-        let mut profile: MentorProfile = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::MentorProfile(mentor.clone()))
-            .unwrap();
+        let mut profile: MentorProfile =
+            env.storage().persistent().get(&CommunityKey::MentorProfile(mentor.clone())).unwrap();
         profile.total_sessions += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
+        env.storage().persistent().set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
 
         // Update user stats
         Self::update_mentee_stats(env, &request.mentee);
@@ -221,9 +199,7 @@ impl MentorshipManager {
         }
 
         session.rating = rating;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorshipSession(session_id), &session);
+        env.storage().persistent().set(&CommunityKey::MentorshipSession(session_id), &session);
 
         // Update mentor's average rating
         Self::update_mentor_rating(env, &session.mentor);
@@ -232,9 +208,7 @@ impl MentorshipManager {
     }
 
     pub fn get_mentor_profile(env: &Env, mentor: &Address) -> Option<MentorProfile> {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::MentorProfile(mentor.clone()))
+        env.storage().persistent().get(&CommunityKey::MentorProfile(mentor.clone()))
     }
 
     pub fn get_available_mentors(env: &Env) -> Vec<MentorProfile> {
@@ -247,41 +221,33 @@ impl MentorshipManager {
     fn update_mentor_rating(env: &Env, mentor: &Address) {
         // Calculate average rating from all sessions
         // Simplified implementation
-        let profile: MentorProfile = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::MentorProfile(mentor.clone()))
-            .unwrap();
+        let profile: MentorProfile =
+            env.storage().persistent().get(&CommunityKey::MentorProfile(mentor.clone())).unwrap();
 
         // In production, iterate through sessions and calculate average
         // For now, keeping current rating
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
+        env.storage().persistent().set(&CommunityKey::MentorProfile(mentor.clone()), &profile);
     }
 
     fn update_mentee_stats(env: &Env, mentee: &Address) {
-        let mut stats: UserCommunityStats = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::UserStats(mentee.clone()))
-            .unwrap_or(UserCommunityStats {
-                user: mentee.clone(),
-                posts_created: 0,
-                replies_given: 0,
-                solutions_provided: 0,
-                contributions_made: 0,
-                events_attended: 0,
-                mentorship_sessions: 0,
-                helpful_votes_received: 0,
-                reputation_score: 0,
-                joined_at: env.ledger().timestamp(),
-            });
+        let mut stats: UserCommunityStats =
+            env.storage().persistent().get(&CommunityKey::UserStats(mentee.clone())).unwrap_or(
+                UserCommunityStats {
+                    user: mentee.clone(),
+                    posts_created: 0,
+                    replies_given: 0,
+                    solutions_provided: 0,
+                    contributions_made: 0,
+                    events_attended: 0,
+                    mentorship_sessions: 0,
+                    helpful_votes_received: 0,
+                    reputation_score: 0,
+                    joined_at: env.ledger().timestamp(),
+                },
+            );
 
         stats.mentorship_sessions += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserStats(mentee.clone()), &stats);
+        env.storage().persistent().set(&CommunityKey::UserStats(mentee.clone()), &stats);
     }
 
     fn award_xp(_env: &Env, _user: &Address, _xp: u32) {

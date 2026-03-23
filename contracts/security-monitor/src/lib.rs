@@ -148,12 +148,8 @@ impl SecurityMonitor {
             return Err(Error::from_contract_error(1));
         }
 
-        let mut risk_score =
-            SecurityStorage::get_user_risk_score(&env, &user).unwrap_or(UserRiskScore {
-                score: 0,
-                last_updated: 0,
-                risk_factors: Vec::new(&env),
-            });
+        let mut risk_score = SecurityStorage::get_user_risk_score(&env, &user)
+            .unwrap_or(UserRiskScore { score: 0, last_updated: 0, risk_factors: Vec::new(&env) });
 
         risk_score.score = score;
         risk_score.last_updated = env.ledger().timestamp();
@@ -207,9 +203,7 @@ impl SecurityMonitor {
         if risk_score.score >= 10 {
             risk_score.score -= 10;
             risk_score.last_updated = env.ledger().timestamp();
-            risk_score
-                .risk_factors
-                .push_back(Symbol::new(&env, "TrainingCompleted"));
+            risk_score.risk_factors.push_back(Symbol::new(&env, "TrainingCompleted"));
             SecurityStorage::set_user_risk_score(&env, &user, &risk_score);
             SecurityEvents::emit_user_risk_score_updated(
                 &env,

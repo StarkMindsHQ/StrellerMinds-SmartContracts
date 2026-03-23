@@ -527,14 +527,8 @@ impl DistributedTracer {
 
     fn generate_remediation_steps(env: &Env, _root_causes: &Vec<RootCause>) -> Vec<String> {
         let mut steps = Vec::new(env);
-        steps.push_back(String::from_str(
-            env,
-            "Implement comprehensive input validation",
-        ));
-        steps.push_back(String::from_str(
-            env,
-            "Add error boundaries for fault isolation",
-        ));
+        steps.push_back(String::from_str(env, "Implement comprehensive input validation"));
+        steps.push_back(String::from_str(env, "Add error boundaries for fault isolation"));
         steps.push_back(String::from_str(env, "Implement graceful degradation"));
         steps
     }
@@ -544,14 +538,10 @@ impl DistributedTracer {
         _root_causes: &Vec<RootCause>,
     ) -> Vec<String> {
         let mut recommendations = Vec::new(env);
-        recommendations.push_back(String::from_str(
-            env,
-            "Implement automated testing for edge cases",
-        ));
-        recommendations.push_back(String::from_str(
-            env,
-            "Add monitoring for early error detection",
-        ));
+        recommendations
+            .push_back(String::from_str(env, "Implement automated testing for edge cases"));
+        recommendations
+            .push_back(String::from_str(env, "Add monitoring for early error detection"));
         recommendations.push_back(String::from_str(env, "Implement circuit breaker patterns"));
         recommendations
     }
@@ -604,10 +594,7 @@ impl DistributedTracer {
         _bottleneck_changes: &Vec<BottleneckChange>,
     ) -> Vec<String> {
         let mut recommendations = Vec::new(env);
-        recommendations.push_back(String::from_str(
-            env,
-            "Continue current optimization strategy",
-        ));
+        recommendations.push_back(String::from_str(env, "Continue current optimization strategy"));
         recommendations.push_back(String::from_str(env, "Monitor for performance regressions"));
         recommendations
     }
@@ -634,14 +621,9 @@ impl DistributedTracer {
 
     fn generate_error_resolution_suggestions(env: &Env, _failed_count: u32) -> Vec<String> {
         let mut suggestions = Vec::new(env);
-        suggestions.push_back(String::from_str(
-            env,
-            "Review contract interfaces and parameters",
-        ));
-        suggestions.push_back(String::from_str(
-            env,
-            "Implement retry logic with exponential backoff",
-        ));
+        suggestions.push_back(String::from_str(env, "Review contract interfaces and parameters"));
+        suggestions
+            .push_back(String::from_str(env, "Implement retry logic with exponential backoff"));
         suggestions.push_back(String::from_str(env, "Add comprehensive error logging"));
         suggestions
     }

@@ -46,9 +46,7 @@ impl GovernanceManager {
             min_votes_required,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Proposal(proposal_id), &proposal);
+        env.storage().persistent().set(&CommunityKey::Proposal(proposal_id), &proposal);
 
         // Add to active proposals
         let mut active: Vec<u64> = env
@@ -57,9 +55,7 @@ impl GovernanceManager {
             .get(&CommunityKey::ActiveProposals)
             .unwrap_or_else(|| Vec::new(env));
         active.push_back(proposal_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::ActiveProposals, &active);
+        env.storage().persistent().set(&CommunityKey::ActiveProposals, &active);
 
         CommunityEvents::emit_proposal_created(env, proposer, proposal_id);
         Ok(proposal_id)
@@ -93,22 +89,21 @@ impl GovernanceManager {
         }
 
         // Calculate vote weight based on reputation
-        let stats: UserCommunityStats = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::UserStats(voter.clone()))
-            .unwrap_or(UserCommunityStats {
-                user: voter.clone(),
-                posts_created: 0,
-                replies_given: 0,
-                solutions_provided: 0,
-                contributions_made: 0,
-                events_attended: 0,
-                mentorship_sessions: 0,
-                helpful_votes_received: 0,
-                reputation_score: 0,
-                joined_at: now,
-            });
+        let stats: UserCommunityStats =
+            env.storage().persistent().get(&CommunityKey::UserStats(voter.clone())).unwrap_or(
+                UserCommunityStats {
+                    user: voter.clone(),
+                    posts_created: 0,
+                    replies_given: 0,
+                    solutions_provided: 0,
+                    contributions_made: 0,
+                    events_attended: 0,
+                    mentorship_sessions: 0,
+                    helpful_votes_received: 0,
+                    reputation_score: 0,
+                    joined_at: now,
+                },
+            );
 
         let config = CommunityStorage::get_config(env);
         if stats.reputation_score < config.vote_weight_threshold {
@@ -124,9 +119,7 @@ impl GovernanceManager {
             proposal.votes_against += vote_weight;
         }
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Proposal(proposal_id), &proposal);
+        env.storage().persistent().set(&CommunityKey::Proposal(proposal_id), &proposal);
         env.storage().persistent().set(&vote_key, &vote_for);
 
         CommunityEvents::emit_vote_cast(env, voter, proposal_id, vote_for);
@@ -159,9 +152,7 @@ impl GovernanceManager {
             proposal.status = ProposalStatus::Rejected;
         }
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Proposal(proposal_id), &proposal);
+        env.storage().persistent().set(&CommunityKey::Proposal(proposal_id), &proposal);
 
         // Remove from active proposals
         let active: Vec<u64> = env
@@ -176,17 +167,13 @@ impl GovernanceManager {
                 new_active.push_back(id);
             }
         }
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::ActiveProposals, &new_active);
+        env.storage().persistent().set(&CommunityKey::ActiveProposals, &new_active);
 
         Ok(proposal.status)
     }
 
     pub fn get_proposal(env: &Env, proposal_id: u64) -> Option<CommunityProposal> {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::Proposal(proposal_id))
+        env.storage().persistent().get(&CommunityKey::Proposal(proposal_id))
     }
 
     pub fn get_active_proposals(env: &Env) -> Vec<CommunityProposal> {

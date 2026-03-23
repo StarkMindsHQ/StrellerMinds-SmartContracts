@@ -197,10 +197,7 @@ impl SemanticSearch {
     ) -> u32 {
         // Get user profile if exists
         let profile_key = DataKey::UserProfile(user.clone());
-        if let Some(profile) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, UserProfile>(&profile_key)
+        if let Some(profile) = env.storage().persistent().get::<DataKey, UserProfile>(&profile_key)
         {
             let mut boost = 0u32;
 
@@ -234,17 +231,11 @@ impl SemanticSearch {
             let complexity = metadata.complexity_score;
             // Map complexity to difficulty (simplified)
             let matches_difficulty = if complexity < 30 {
-                filters
-                    .difficulty_levels
-                    .contains(&DifficultyLevel::Beginner)
+                filters.difficulty_levels.contains(&DifficultyLevel::Beginner)
             } else if complexity < 60 {
-                filters
-                    .difficulty_levels
-                    .contains(&DifficultyLevel::Intermediate)
+                filters.difficulty_levels.contains(&DifficultyLevel::Intermediate)
             } else if complexity < 85 {
-                filters
-                    .difficulty_levels
-                    .contains(&DifficultyLevel::Advanced)
+                filters.difficulty_levels.contains(&DifficultyLevel::Advanced)
             } else {
                 filters.difficulty_levels.contains(&DifficultyLevel::Expert)
             };

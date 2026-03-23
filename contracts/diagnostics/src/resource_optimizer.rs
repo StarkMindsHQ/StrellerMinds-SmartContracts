@@ -644,18 +644,14 @@ impl ResourceOptimizer {
         };
 
         if peak_memory > avg_memory * 2 {
-            optimizations.push_back(String::from_str(
-                env,
-                "Implement memory pooling to reduce peak usage",
-            ));
+            optimizations
+                .push_back(String::from_str(env, "Implement memory pooling to reduce peak usage"));
         }
 
         if peak_memory > 100_000_000 {
             // > 100MB
-            optimizations.push_back(String::from_str(
-                env,
-                "Review data structures for memory efficiency",
-            ));
+            optimizations
+                .push_back(String::from_str(env, "Review data structures for memory efficiency"));
         }
 
         if Self::assess_memory_leak_risk(metrics) > RiskLevel::Medium {
@@ -665,10 +661,8 @@ impl ResourceOptimizer {
             ));
         }
 
-        optimizations.push_back(String::from_str(
-            env,
-            "Consider lazy loading for large data structures",
-        ));
+        optimizations
+            .push_back(String::from_str(env, "Consider lazy loading for large data structures"));
         optimizations
     }
 
@@ -715,31 +709,22 @@ impl ResourceOptimizer {
         let efficiency = Self::calculate_storage_efficiency(metrics);
 
         if efficiency < 50.0 {
-            optimizations.push_back(String::from_str(
-                env,
-                "Implement storage caching to reduce reads",
-            ));
-            optimizations.push_back(String::from_str(
-                env,
-                "Batch storage operations where possible",
-            ));
+            optimizations
+                .push_back(String::from_str(env, "Implement storage caching to reduce reads"));
+            optimizations
+                .push_back(String::from_str(env, "Batch storage operations where possible"));
         }
 
         if efficiency < 70.0 {
-            optimizations.push_back(String::from_str(
-                env,
-                "Review data access patterns for optimization",
-            ));
+            optimizations
+                .push_back(String::from_str(env, "Review data access patterns for optimization"));
             optimizations.push_back(String::from_str(
                 env,
                 "Consider storage denormalization for frequently accessed data",
             ));
         }
 
-        optimizations.push_back(String::from_str(
-            env,
-            "Implement storage operation monitoring",
-        ));
+        optimizations.push_back(String::from_str(env, "Implement storage operation monitoring"));
         optimizations
     }
 
@@ -771,10 +756,8 @@ impl ResourceOptimizer {
             let m = metrics.get(i).unwrap();
             if m.cpu_instructions > 20_000_000 {
                 // > 20M instructions
-                bottlenecks.push_back(String::from_str(
-                    env,
-                    "High computational complexity detected",
-                ));
+                bottlenecks
+                    .push_back(String::from_str(env, "High computational complexity detected"));
             }
 
             if m.execution_time > 1000 && m.cpu_instructions > 10_000_000 {
@@ -783,10 +766,8 @@ impl ResourceOptimizer {
         }
 
         if bottlenecks.is_empty() {
-            bottlenecks.push_back(String::from_str(
-                env,
-                "No significant CPU bottlenecks identified",
-            ));
+            bottlenecks
+                .push_back(String::from_str(env, "No significant CPU bottlenecks identified"));
         }
 
         bottlenecks
@@ -799,18 +780,11 @@ impl ResourceOptimizer {
             env,
             "Review algorithm complexity and optimization opportunities",
         ));
-        optimizations.push_back(String::from_str(
-            env,
-            "Consider computational result caching",
-        ));
-        optimizations.push_back(String::from_str(
-            env,
-            "Implement lazy evaluation where appropriate",
-        ));
-        optimizations.push_back(String::from_str(
-            env,
-            "Profile critical code paths for optimization",
-        ));
+        optimizations.push_back(String::from_str(env, "Consider computational result caching"));
+        optimizations
+            .push_back(String::from_str(env, "Implement lazy evaluation where appropriate"));
+        optimizations
+            .push_back(String::from_str(env, "Profile critical code paths for optimization"));
 
         optimizations
     }
@@ -882,10 +856,7 @@ impl ResourceOptimizer {
         let mut steps = Vec::new(env);
 
         if gas_util.gas_optimization_potential > 30 {
-            steps.push_back(String::from_str(
-                env,
-                "Conduct comprehensive gas usage audit",
-            ));
+            steps.push_back(String::from_str(env, "Conduct comprehensive gas usage audit"));
             steps.push_back(String::from_str(
                 env,
                 "Optimize storage operations and data structures",
@@ -944,10 +915,7 @@ impl ResourceOptimizer {
                 let mut steps = Vec::new(env);
                 steps.push_back(String::from_str(env, "Implement request batching"));
                 steps.push_back(String::from_str(env, "Add connection pooling"));
-                steps.push_back(String::from_str(
-                    env,
-                    "Optimize serialization/deserialization",
-                ));
+                steps.push_back(String::from_str(env, "Optimize serialization/deserialization"));
                 steps
             },
             expected_improvement: 15,
@@ -1149,27 +1117,18 @@ impl ResourceOptimizer {
                 env,
                 "Continue monitoring resource utilization patterns",
             ));
-            steps.push_back(String::from_str(
-                env,
-                "Identify additional optimization opportunities",
-            ));
+            steps
+                .push_back(String::from_str(env, "Identify additional optimization opportunities"));
         }
 
-        if current_utilization
-            .gas_utilization
-            .gas_optimization_potential
-            > 10
-        {
+        if current_utilization.gas_utilization.gas_optimization_potential > 10 {
             steps.push_back(String::from_str(
                 env,
                 "Focus on remaining gas optimization opportunities",
             ));
         }
 
-        steps.push_back(String::from_str(
-            env,
-            "Implement continuous performance monitoring",
-        ));
+        steps.push_back(String::from_str(env, "Implement continuous performance monitoring"));
         steps
     }
 
@@ -1178,10 +1137,7 @@ impl ResourceOptimizer {
 
         recommendations.push_back(String::from_str(env, "Set up automated performance alerts"));
         recommendations.push_back(String::from_str(env, "Implement resource usage dashboards"));
-        recommendations.push_back(String::from_str(
-            env,
-            "Schedule regular optimization reviews",
-        ));
+        recommendations.push_back(String::from_str(env, "Schedule regular optimization reviews"));
 
         recommendations
     }

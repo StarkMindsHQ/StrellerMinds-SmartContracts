@@ -42,9 +42,7 @@ impl AnalyticsMonitor {
             events = trimmed;
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::AnalyticsEvents(user.clone()), &events);
+        env.storage().persistent().set(&DataKey::AnalyticsEvents(user.clone()), &events);
 
         Ok(event)
     }
@@ -54,10 +52,9 @@ impl AnalyticsMonitor {
         _user: &Address,
         metrics: PerformanceMetrics,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage().persistent().set(
-            &DataKey::PerformanceLog(metrics.session_id.clone()),
-            &metrics,
-        );
+        env.storage()
+            .persistent()
+            .set(&DataKey::PerformanceLog(metrics.session_id.clone()), &metrics);
         Ok(())
     }
 
@@ -69,20 +66,19 @@ impl AnalyticsMonitor {
         modules_completed: u32,
     ) -> Result<UserEngagement, MobileOptimizerError> {
         let now = env.ledger().timestamp();
-        let mut engagement: UserEngagement = env
-            .storage()
-            .persistent()
-            .get(&DataKey::UserEngagement(user.clone()))
-            .unwrap_or(UserEngagement {
-                user: user.clone(),
-                daily_active_time_seconds: 0,
-                sessions_today: 0,
-                courses_accessed: 0,
-                modules_completed: 0,
-                streak_days: 0,
-                last_active: 0,
-                engagement_score: 0,
-            });
+        let mut engagement: UserEngagement =
+            env.storage().persistent().get(&DataKey::UserEngagement(user.clone())).unwrap_or(
+                UserEngagement {
+                    user: user.clone(),
+                    daily_active_time_seconds: 0,
+                    sessions_today: 0,
+                    courses_accessed: 0,
+                    modules_completed: 0,
+                    streak_days: 0,
+                    last_active: 0,
+                    engagement_score: 0,
+                },
+            );
 
         let day_boundary = now - (now % 86400);
         let last_day = engagement.last_active - (engagement.last_active % 86400);
@@ -105,9 +101,7 @@ impl AnalyticsMonitor {
         engagement.last_active = now;
         engagement.engagement_score = Self::calculate_engagement_score(&engagement);
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserEngagement(user.clone()), &engagement);
+        env.storage().persistent().set(&DataKey::UserEngagement(user.clone()), &engagement);
 
         Ok(engagement)
     }
@@ -184,30 +178,25 @@ impl AnalyticsMonitor {
     }
 
     pub fn get_analytics_dashboard(env: &Env) -> AnalyticsDashboard {
-        env.storage()
-            .persistent()
-            .get(&DataKey::AnalyticsDashboard)
-            .unwrap_or(AnalyticsDashboard {
-                total_users: 0,
-                active_users_24h: 0,
-                active_users_7d: 0,
-                total_sessions: 0,
-                avg_session_duration_seconds: 0,
-                offline_usage_percentage: 0,
-                cache_hit_rate_bps: 0,
-                avg_sync_time_ms: 0,
-                error_rate_bps: 0,
-                top_devices: Vec::new(env),
-            })
+        env.storage().persistent().get(&DataKey::AnalyticsDashboard).unwrap_or(AnalyticsDashboard {
+            total_users: 0,
+            active_users_24h: 0,
+            active_users_7d: 0,
+            total_sessions: 0,
+            avg_session_duration_seconds: 0,
+            offline_usage_percentage: 0,
+            cache_hit_rate_bps: 0,
+            avg_sync_time_ms: 0,
+            error_rate_bps: 0,
+            top_devices: Vec::new(env),
+        })
     }
 
     pub fn update_analytics_dashboard(
         env: &Env,
         dashboard: AnalyticsDashboard,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::AnalyticsDashboard, &dashboard);
+        env.storage().persistent().set(&DataKey::AnalyticsDashboard, &dashboard);
         Ok(())
     }
 
@@ -225,35 +214,15 @@ impl AnalyticsMonitor {
         let mut score = 0u32;
 
         let daily_minutes = engagement.daily_active_time_seconds / 60;
-        score += if daily_minutes > 60 {
-            30
-        } else {
-            (daily_minutes as u32) / 2
-        };
+        score += if daily_minutes > 60 { 30 } else { (daily_minutes as u32) / 2 };
 
-        score += if engagement.streak_days > 30 {
-            30
-        } else {
-            engagement.streak_days
-        };
+        score += if engagement.streak_days > 30 { 30 } else { engagement.streak_days };
 
-        score += if engagement.modules_completed > 20 {
-            20
-        } else {
-            engagement.modules_completed
-        };
+        score += if engagement.modules_completed > 20 { 20 } else { engagement.modules_completed };
 
-        score += if engagement.sessions_today > 5 {
-            10
-        } else {
-            engagement.sessions_today * 2
-        };
+        score += if engagement.sessions_today > 5 { 10 } else { engagement.sessions_today * 2 };
 
-        score += if engagement.courses_accessed > 5 {
-            10
-        } else {
-            engagement.courses_accessed * 2
-        };
+        score += if engagement.courses_accessed > 5 { 10 } else { engagement.courses_accessed * 2 };
 
         if score > 100 {
             100

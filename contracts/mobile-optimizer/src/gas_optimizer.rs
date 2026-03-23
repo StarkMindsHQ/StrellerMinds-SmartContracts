@@ -90,18 +90,12 @@ impl GasOptimizer {
             env,
             "Execute non-urgent operations during off-peak hours",
         ));
-        tips.push_back(String::from_str(
-            env,
-            "Use WiFi connections for better network stability",
-        ));
+        tips.push_back(String::from_str(env, "Use WiFi connections for better network stability"));
         tips.push_back(String::from_str(
             env,
             "Cache frequently accessed data to avoid repeated queries",
         ));
-        tips.push_back(String::from_str(
-            env,
-            "Enable automatic retry with exponential backoff",
-        ));
+        tips.push_back(String::from_str(env, "Enable automatic retry with exponential backoff"));
         tips
     }
 
@@ -264,10 +258,7 @@ impl GasOptimizer {
     }
 
     fn is_cacheable(op_type: &OperationType) -> bool {
-        matches!(
-            op_type,
-            OperationType::SearchQuery | OperationType::PreferenceUpdate
-        )
+        matches!(op_type, OperationType::SearchQuery | OperationType::PreferenceUpdate)
     }
 
     fn calculate_cost_in_stroops(gas_amount: u64) -> i64 {

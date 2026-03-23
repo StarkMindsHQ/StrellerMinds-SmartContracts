@@ -12,9 +12,7 @@ impl SecurityStorage {
     // ===== Config and Admin =====
 
     pub fn set_config(env: &Env, config: &SecurityConfig) {
-        env.storage()
-            .instance()
-            .set(&SecurityDataKey::Config, config);
+        env.storage().instance().set(&SecurityDataKey::Config, config);
     }
 
     pub fn get_config(env: &Env) -> Option<SecurityConfig> {
@@ -51,11 +49,8 @@ impl SecurityStorage {
 
     pub fn add_contract_threat(env: &Env, contract: &Symbol, threat_id: &BytesN<32>) {
         let key = SecurityDataKey::ContractThreats(contract.clone());
-        let mut threats: Vec<BytesN<32>> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env));
+        let mut threats: Vec<BytesN<32>> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         threats.push_back(threat_id.clone());
         env.storage().persistent().set(&key, &threats);
@@ -63,10 +58,7 @@ impl SecurityStorage {
 
     pub fn get_contract_threats(env: &Env, contract: &Symbol) -> Vec<BytesN<32>> {
         let key = SecurityDataKey::ContractThreats(contract.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     // ===== Security Metrics =====
@@ -164,11 +156,8 @@ impl SecurityStorage {
         recommendation_id: &BytesN<32>,
     ) {
         let key = SecurityDataKey::ThreatRecommendations(threat_id.clone());
-        let mut recommendations: Vec<BytesN<32>> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env));
+        let mut recommendations: Vec<BytesN<32>> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         recommendations.push_back(recommendation_id.clone());
         env.storage().persistent().set(&key, &recommendations);
@@ -176,10 +165,7 @@ impl SecurityStorage {
 
     pub fn get_threat_recommendations(env: &Env, threat_id: &BytesN<32>) -> Vec<BytesN<32>> {
         let key = SecurityDataKey::ThreatRecommendations(threat_id.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     // ===== Advanced Security Features =====

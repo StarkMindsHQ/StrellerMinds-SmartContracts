@@ -213,6 +213,8 @@ cargo test --package e2e-tests test_certificate_flow -- --nocapture
 
 ## Code Quality
 
+Naming and formatting conventions are documented in **[CODE_STYLE.md](CODE_STYLE.md)**.
+
 ### Formatting and Linting
 
 ```bash
@@ -221,12 +223,17 @@ make fmt
 # or
 cargo fmt --all
 
-# Run linter
+# Run linter (matches CI strictness)
+make lint-style
+# or
+cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+
+# Lighter clippy (warnings allowed)
 make lint
 # or
 cargo clippy --all-targets --all-features
 
-# Both together
+# Format + strict lint (recommended before PR)
 make check-code
 ```
 

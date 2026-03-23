@@ -590,11 +590,7 @@ impl OptimizationEngine {
             recommendations.push_back(OptimizationRecommendation {
                 recommendation_id: Self::generate_recommendation_id("arch_opt_1"),
                 category: OptimizationCategory::Architecture,
-                priority: if metrics.error_rate > 15 {
-                    Priority::Critical
-                } else {
-                    Priority::High
-                },
+                priority: if metrics.error_rate > 15 { Priority::Critical } else { Priority::High },
                 description: String::from_str(
                     env,
                     "Improve architecture resilience and error handling",
@@ -833,10 +829,7 @@ impl OptimizationEngine {
             percentage_of_total: ((network_cost * 100) / total_daily_cost.max(1)) as u32,
         });
 
-        CurrentCostStructure {
-            total_daily_cost,
-            cost_breakdown,
-        }
+        CurrentCostStructure { total_daily_cost, cost_breakdown }
     }
 
     fn identify_cost_opportunities(

@@ -43,10 +43,8 @@ impl CollaborativeFilter {
     ) -> Vec<Recommendation> {
         // Check cache first
         let cache_key = Self::collab_rec_cache_key(env, &user);
-        if let Some(cached) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, Vec<Recommendation>>(&cache_key)
+        if let Some(cached) =
+            env.storage().persistent().get::<DataKey, Vec<Recommendation>>(&cache_key)
         {
             return cached;
         }
@@ -71,10 +69,8 @@ impl CollaborativeFilter {
         env.storage().persistent().set(&expiry_key, &expiry_time);
 
         // Emit event
-        env.events().publish(
-            (soroban_sdk::symbol_short!("collab_r"),),
-            (user, recommendations.len()),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("collab_r"),), (user, recommendations.len()));
     }
 
     /// Calculate collaborative filtering score for a content item
@@ -116,10 +112,8 @@ impl CollaborativeFilter {
     fn get_user_content_interaction(env: &Env, user: Address, content_id: String) -> Option<u32> {
         // Get user interactions
         let key = DataKey::UserInteractions(user.clone());
-        if let Some(interactions) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, Vec<UserInteraction>>(&key)
+        if let Some(interactions) =
+            env.storage().persistent().get::<DataKey, Vec<UserInteraction>>(&key)
         {
             // Find interaction with this content
             for i in 0..interactions.len() {
@@ -170,10 +164,8 @@ impl CollaborativeFilter {
         env.storage().persistent().set(&key, &interactions);
 
         // Emit event for off-chain processing
-        env.events().publish(
-            (soroban_sdk::symbol_short!("interact"),),
-            (user, interaction.content_id),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("interact"),), (user, interaction.content_id));
     }
 
     /// Get user's interaction history
@@ -226,18 +218,10 @@ impl CollaborativeFilter {
 
         // Calculate Jaccard similarity
         let total_unique = interactions_a.len() + interactions_b.len() - overlap;
-        let jaccard = if total_unique > 0 {
-            (overlap * 100) / total_unique
-        } else {
-            0
-        };
+        let jaccard = if total_unique > 0 { (overlap * 100) / total_unique } else { 0 };
 
         // Combine with weighted score
-        let weighted_avg = if overlap > 0 {
-            overlap_weight / overlap
-        } else {
-            0
-        };
+        let weighted_avg = if overlap > 0 { overlap_weight / overlap } else { 0 };
 
         // Final similarity (50% Jaccard, 50% weighted)
         (jaccard + weighted_avg) / 2

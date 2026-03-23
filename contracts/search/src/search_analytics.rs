@@ -31,10 +31,7 @@ impl SearchAnalytics {
         Self::update_popular_queries(env, &query);
 
         // Emit event for off-chain analytics
-        env.events().publish(
-            (soroban_sdk::symbol_short!("search"),),
-            (query, results_count),
-        );
+        env.events().publish((soroban_sdk::symbol_short!("search"),), (query, results_count));
     }
 
     /// Record click event
@@ -64,29 +61,20 @@ impl SearchAnalytics {
         Self::update_ctr(env, &query, &content_id);
 
         // Emit event for off-chain analytics
-        env.events().publish(
-            (soroban_sdk::symbol_short!("click"),),
-            (query, content_id, rank_position),
-        );
+        env.events()
+            .publish((soroban_sdk::symbol_short!("click"),), (query, content_id, rank_position));
     }
 
     /// Get click-through rate for query-content pair
     pub fn get_ctr(env: &Env, query: String, content_id: String) -> u32 {
         let key = Self::ctr_key(env, &query, &content_id);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(0)
     }
 
     /// Update click-through rate
     fn update_ctr(env: &Env, query: &String, content_id: &String) {
         let key = Self::ctr_key(env, query, content_id);
-        let current_ctr = env
-            .storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0);
+        let current_ctr = env.storage().persistent().get::<String, u32>(&key).unwrap_or(0);
 
         // Increment CTR (represents percentage * 10 for precision)
         let new_ctr = current_ctr + 10; // +1% click-through
@@ -96,10 +84,7 @@ impl SearchAnalytics {
     /// Get total search count
     pub fn get_search_count(env: &Env) -> u32 {
         let key = String::from_str(env, "total_searches");
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(0)
     }
 
     /// Increment total search count
@@ -112,24 +97,15 @@ impl SearchAnalytics {
     /// Update popular queries list
     fn update_popular_queries(env: &Env, query: &String) {
         let count_key = Self::query_count_key(env, query);
-        let current_count = env
-            .storage()
-            .persistent()
-            .get::<String, u32>(&count_key)
-            .unwrap_or(0);
+        let current_count = env.storage().persistent().get::<String, u32>(&count_key).unwrap_or(0);
 
-        env.storage()
-            .persistent()
-            .set(&count_key, &(current_count + 1));
+        env.storage().persistent().set(&count_key, &(current_count + 1));
     }
 
     /// Get query frequency
     pub fn get_query_frequency(env: &Env, query: String) -> u32 {
         let count_key = Self::query_count_key(env, &query);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&count_key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u32>(&count_key).unwrap_or(0)
     }
 
     /// Get popular queries
@@ -157,10 +133,7 @@ impl SearchAnalytics {
     /// Get average position of clicked results
     pub fn get_average_click_position(env: &Env, query: String) -> u32 {
         let key = Self::avg_position_key(env, &query);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(50) // Default to position 5
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(50) // Default to position 5
     }
 
     /// Update average click position
@@ -183,17 +156,12 @@ impl SearchAnalytics {
     /// Record zero-result query
     pub fn record_zero_result(env: &Env, query: String) {
         let key = Self::zero_result_key(env, &query);
-        let count = env
-            .storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0);
+        let count = env.storage().persistent().get::<String, u32>(&key).unwrap_or(0);
 
         env.storage().persistent().set(&key, &(count + 1));
 
         // Emit event for content gap analysis
-        env.events()
-            .publish((soroban_sdk::symbol_short!("zero_res"),), query);
+        env.events().publish((soroban_sdk::symbol_short!("zero_res"),), query);
     }
 
     /// Get search abandonment rate
@@ -218,19 +186,13 @@ impl SearchAnalytics {
     /// Get user search count
     fn get_user_search_count(env: &Env, user: Address) -> u32 {
         let key = Self::user_search_count_key(env, &user);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(0)
     }
 
     /// Get user click count
     fn get_user_click_count(env: &Env, user: Address) -> u32 {
         let key = Self::user_click_count_key(env, &user);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(0)
     }
 
     /// Calculate dwell time (time spent on content after click)
@@ -238,11 +200,7 @@ impl SearchAnalytics {
         let key = Self::dwell_time_key(env, &content_id);
 
         // Update average dwell time
-        let current_avg = env
-            .storage()
-            .persistent()
-            .get::<String, u64>(&key)
-            .unwrap_or(0);
+        let current_avg = env.storage().persistent().get::<String, u64>(&key).unwrap_or(0);
 
         let new_avg = if current_avg == 0 {
             duration_seconds
@@ -257,10 +215,7 @@ impl SearchAnalytics {
     /// Get average dwell time for content
     pub fn get_dwell_time(env: &Env, content_id: String) -> u64 {
         let key = Self::dwell_time_key(env, &content_id);
-        env.storage()
-            .persistent()
-            .get::<String, u64>(&key)
-            .unwrap_or(0)
+        env.storage().persistent().get::<String, u64>(&key).unwrap_or(0)
     }
 
     /// Generate search quality score
@@ -275,11 +230,7 @@ impl SearchAnalytics {
         let conversion = Self::calculate_conversion_rate(env, query.clone());
 
         // Lower position = better (invert scale)
-        let position_score = if avg_pos > 0 {
-            (1000 / avg_pos).min(1000)
-        } else {
-            0
-        };
+        let position_score = if avg_pos > 0 { (1000 / avg_pos).min(1000) } else { 0 };
 
         // Combine metrics
         (position_score + conversion) / 2

@@ -18,9 +18,7 @@ impl SecurityManager {
             last_security_check: env.ledger().timestamp(),
             two_factor_enabled: false,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         profile
     }
 
@@ -33,9 +31,7 @@ impl SecurityManager {
         profile.biometric_enabled = true;
         profile.biometric_type = biometric_type;
         profile.last_security_check = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Ok(())
     }
 
@@ -98,9 +94,7 @@ impl SecurityManager {
             }
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Self::record_auth_event(env, user, &event);
 
         if success {
@@ -124,9 +118,7 @@ impl SecurityManager {
         }
 
         profile.trusted_devices.push_back(device_id);
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Ok(())
     }
 
@@ -145,9 +137,7 @@ impl SecurityManager {
         }
         profile.trusted_devices = updated;
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Ok(())
     }
 
@@ -188,9 +178,7 @@ impl SecurityManager {
             updated.push_back(a);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityAlerts(user.clone()), &updated);
+        env.storage().persistent().set(&DataKey::SecurityAlerts(user.clone()), &updated);
         Ok(())
     }
 
@@ -201,9 +189,7 @@ impl SecurityManager {
     ) -> Result<(), MobileOptimizerError> {
         let mut profile = Self::get_or_create_profile(env, user);
         profile.session_lock_timeout = timeout_seconds;
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Ok(())
     }
 
@@ -211,9 +197,7 @@ impl SecurityManager {
         let mut profile = Self::get_or_create_profile(env, user);
         profile.two_factor_enabled = true;
         profile.last_security_check = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::SecurityProfile(user.clone()), &profile);
         Ok(())
     }
 
@@ -297,9 +281,7 @@ impl SecurityManager {
             events = trimmed;
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::AuthEvents(user.clone()), &events);
+        env.storage().persistent().set(&DataKey::AuthEvents(user.clone()), &events);
     }
 
     fn record_security_alert(env: &Env, user: &Address, alert: SecurityAlert) {
@@ -310,8 +292,6 @@ impl SecurityManager {
             .unwrap_or_else(|| Vec::new(env));
 
         alerts.push_back(alert);
-        env.storage()
-            .persistent()
-            .set(&DataKey::SecurityAlerts(user.clone()), &alerts);
+        env.storage().persistent().set(&DataKey::SecurityAlerts(user.clone()), &alerts);
     }
 }

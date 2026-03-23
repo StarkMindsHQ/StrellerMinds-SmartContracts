@@ -30,9 +30,7 @@ impl SocialManager {
         if given_today >= config.max_endorsements_per_day {
             return Err(Error::EndorsementLimitReached);
         }
-        env.storage()
-            .persistent()
-            .set(&rate_key, &(given_today + 1));
+        env.storage().persistent().set(&rate_key, &(given_today + 1));
 
         // Record endorsement
         let endorsement = PeerEndorsement {
@@ -44,11 +42,8 @@ impl SocialManager {
         };
 
         let key = GamificationKey::UserEndorsements(endorsee.clone());
-        let mut list: Vec<PeerEndorsement> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| Vec::new(env));
+        let mut list: Vec<PeerEndorsement> =
+            env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
         list.push_back(endorsement);
         env.storage().persistent().set(&key, &list);
 

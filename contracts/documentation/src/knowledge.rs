@@ -13,11 +13,7 @@ impl KnowledgeManager {
         author: &Address,
         tags: Vec<String>,
     ) -> Result<KnowledgeArticle, Error> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::KnowledgeArticle(article_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::KnowledgeArticle(article_id.clone())) {
             return Err(Error::AlreadyExists);
         }
 
@@ -36,9 +32,7 @@ impl KnowledgeManager {
             tags,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::KnowledgeArticle(article_id), &article);
+        env.storage().persistent().set(&DataKey::KnowledgeArticle(article_id), &article);
 
         Ok(article)
     }
@@ -52,11 +46,7 @@ impl KnowledgeManager {
         author: &Address,
         order_index: u32,
     ) -> Result<FAQ, Error> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::FAQ(faq_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::FAQ(faq_id.clone())) {
             return Err(Error::AlreadyExists);
         }
 
@@ -90,22 +80,16 @@ impl KnowledgeManager {
             article.not_helpful_votes += 1;
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::KnowledgeArticle(article_id), &article);
+        env.storage().persistent().set(&DataKey::KnowledgeArticle(article_id), &article);
 
         Ok(())
     }
 
     pub fn get_article(env: &Env, article_id: &String) -> Option<KnowledgeArticle> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::KnowledgeArticle(article_id.clone()))
+        env.storage().persistent().get(&DataKey::KnowledgeArticle(article_id.clone()))
     }
 
     pub fn get_faq(env: &Env, faq_id: &String) -> Option<FAQ> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::FAQ(faq_id.clone()))
+        env.storage().persistent().get(&DataKey::FAQ(faq_id.clone()))
     }
 }

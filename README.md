@@ -133,10 +133,26 @@ To maintain code quality and consistency, run the following commands locally bef
 
 - **Check for linting issues:**
   ```bash
-  cargo clippy -- -D warnings
+  cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
   ```
 
 These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
+Naming and formatting conventions are documented in [docs/CODE_STYLE.md](docs/CODE_STYLE.md).
+
+### Pre-commit Hooks
+
+Install and enable pre-commit hooks to auto-run formatting and style checks before each commit:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+To run the same checks manually:
+
+```bash
+pre-commit run --all-files
+```
 
 ## 🚢 Deployment
 

@@ -682,9 +682,7 @@ fn test_get_article() {
     );
 
     assert!(client.get_article(&id).is_some());
-    assert!(client
-        .get_article(&String::from_str(&env, "nope"))
-        .is_none());
+    assert!(client.get_article(&String::from_str(&env, "nope")).is_none());
 }
 
 #[test]
@@ -829,9 +827,7 @@ fn test_get_api_endpoint() {
     );
 
     assert!(client.get_api_endpoint(&id).is_some());
-    assert!(client
-        .get_api_endpoint(&String::from_str(&env, "nope"))
-        .is_none());
+    assert!(client.get_api_endpoint(&String::from_str(&env, "nope")).is_none());
 }
 
 // ============================================================================
@@ -961,9 +957,7 @@ fn test_get_tutorial() {
     );
 
     assert!(client.get_tutorial(&id).is_some());
-    assert!(client
-        .get_tutorial(&String::from_str(&env, "nope"))
-        .is_none());
+    assert!(client.get_tutorial(&String::from_str(&env, "nope")).is_none());
 }
 
 // ============================================================================
@@ -983,10 +977,7 @@ fn test_submit_contribution() {
         &String::from_str(&env, "New guide for beginners"),
     );
 
-    assert_eq!(
-        contribution.contribution_id,
-        String::from_str(&env, "contrib-1")
-    );
+    assert_eq!(contribution.contribution_id, String::from_str(&env, "contrib-1"));
     assert_eq!(contribution.contributor, user1);
     assert_eq!(contribution.status, ContributionStatus::Pending);
     assert!(contribution.reviewed_by.is_none());
@@ -1135,9 +1126,7 @@ fn test_get_contribution() {
     );
 
     assert!(client.get_contribution(&id).is_some());
-    assert!(client
-        .get_contribution(&String::from_str(&env, "nope"))
-        .is_none());
+    assert!(client.get_contribution(&String::from_str(&env, "nope")).is_none());
 }
 
 // ============================================================================
@@ -1158,10 +1147,7 @@ fn test_create_translation() {
         &String::from_str(&env, "Bienvenido a la guia"),
     );
 
-    assert_eq!(
-        translation.translation_id,
-        String::from_str(&env, "trans-1")
-    );
+    assert_eq!(translation.translation_id, String::from_str(&env, "trans-1"));
     assert_eq!(translation.language, String::from_str(&env, "es"));
     assert_eq!(translation.status, TranslationStatus::InProgress);
     assert_eq!(translation.translator, user1);
@@ -1276,9 +1262,7 @@ fn test_get_translation() {
     );
 
     assert!(client.get_translation(&id).is_some());
-    assert!(client
-        .get_translation(&String::from_str(&env, "nope"))
-        .is_none());
+    assert!(client.get_translation(&String::from_str(&env, "nope")).is_none());
 }
 
 // ============================================================================
@@ -1573,9 +1557,7 @@ fn test_multi_language_documentation() {
         &TranslationStatus::Published,
     );
 
-    let published_es = client
-        .get_translation(&String::from_str(&env, "ml-es"))
-        .unwrap();
+    let published_es = client.get_translation(&String::from_str(&env, "ml-es")).unwrap();
     assert_eq!(published_es.status, TranslationStatus::Published);
 }
 
