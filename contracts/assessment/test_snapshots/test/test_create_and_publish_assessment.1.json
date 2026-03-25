@@ -5,7 +5,6 @@
   },
   "auth": [
     [],
-    [],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
@@ -13,21 +12,85 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "issue_credential",
+              "function_name": "initialize",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "create_assessment",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "string": "DeFi Mastery"
+                  "symbol": "COURSE1"
                 },
                 {
-                  "string": "hash456"
+                  "symbol": "MOD1"
                 },
                 {
-                  "vec": [
+                  "map": [
                     {
-                      "symbol": "Stellar"
+                      "key": {
+                        "symbol": "allow_review"
+                      },
+                      "val": {
+                        "bool": true
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_adaptive"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "max_attempts"
+                      },
+                      "val": {
+                        "u32": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "pass_score"
+                      },
+                      "val": {
+                        "u32": 50
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "proctoring_required"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_limit_seconds"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
                     }
                   ]
                 }
@@ -38,6 +101,8 @@
         }
       ]
     ],
+    [],
+    [],
     []
   ],
   "ledger": {
@@ -57,10 +122,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "Credential"
+                  "symbol": "Assessment"
                 },
                 {
-                  "string": "CRED"
+                  "u64": 1
                 }
               ]
             },
@@ -77,10 +142,10 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Credential"
+                      "symbol": "Assessment"
                     },
                     {
-                      "string": "CRED"
+                      "u64": 1
                     }
                   ]
                 },
@@ -89,168 +154,99 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "achievement"
+                        "symbol": "assessment_id"
                       },
                       "val": {
-                        "string": "DeFi Mastery"
+                        "u64": 1
                       }
                     },
                     {
                       "key": {
-                        "symbol": "chain_id"
+                        "symbol": "config"
                       },
                       "val": {
-                        "vec": [
+                        "map": [
                           {
-                            "symbol": "Stellar"
+                            "key": {
+                              "symbol": "allow_review"
+                            },
+                            "val": {
+                              "bool": true
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "is_adaptive"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "max_attempts"
+                            },
+                            "val": {
+                              "u32": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "pass_score"
+                            },
+                            "val": {
+                              "u32": 50
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proctoring_required"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "time_limit_seconds"
+                            },
+                            "val": {
+                              "u64": 3600
+                            }
                           }
                         ]
                       }
                     },
                     {
                       "key": {
-                        "symbol": "id"
+                        "symbol": "course_id"
                       },
                       "val": {
-                        "string": "CRED"
+                        "symbol": "COURSE1"
                       }
                     },
                     {
                       "key": {
-                        "symbol": "issued_at"
-                      },
-                      "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "issuer"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "metadata_hash"
-                      },
-                      "val": {
-                        "string": "hash456"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "status"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Active"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student"
+                        "symbol": "instructor"
                       },
                       "val": {
                         "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                       }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "Proof"
-                },
-                {
-                  "string": "CRED"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "Proof"
                     },
                     {
-                      "string": "CRED"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
                       "key": {
-                        "symbol": "credential_id"
+                        "symbol": "module_id"
                       },
                       "val": {
-                        "string": "CRED"
+                        "symbol": "MOD1"
                       }
                     },
                     {
                       "key": {
-                        "symbol": "proof_hash"
+                        "symbol": "published"
                       },
                       "val": {
-                        "string": "proof_hash"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "source_chain"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Stellar"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "target_chain"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Ethereum"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "verified_at"
-                      },
-                      "val": {
-                        "u64": 0
+                        "bool": true
                       }
                     }
                   ]
@@ -269,10 +265,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "StudentCreds"
+                  "symbol": "AssessmentQuestions"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u64": 1
                 }
               ]
             },
@@ -289,20 +285,16 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "StudentCreds"
+                      "symbol": "AssessmentQuestions"
                     },
                     {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      "u64": 1
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "vec": [
-                    {
-                      "string": "CRED"
-                    }
-                  ]
+                  "vec": []
                 }
               }
             },
@@ -344,6 +336,49 @@
                         },
                         "val": {
                           "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "AssessmentCounter"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 1
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "Integration"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "analytics_contract"
+                              },
+                              "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "progress_contract"
+                              },
+                              "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "security_monitor_contract"
+                              },
+                              "val": "void"
+                            }
+                          ]
                         }
                       }
                     ]
@@ -391,6 +426,39 @@
       ],
       [
         {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 5541220902715666415
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 5541220902715666415
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
           "contract_code": {
             "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           }
@@ -412,54 +480,5 @@
       ]
     ]
   },
-  "events": [
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "standard_event"
-              },
-              {
-                "symbol": "creds"
-              },
-              {
-                "symbol": "crosschain"
-              },
-              {
-                "symbol": "proof_generated"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u32": 1
-                },
-                {
-                  "u64": 0
-                },
-                {
-                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                {
-                  "u32": 0
-                },
-                {
-                  "string": "crosschain_event"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    }
-  ]
+  "events": []
 }

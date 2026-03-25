@@ -6979,16 +6979,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "rep_upd"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "reputation_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u32": 10
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -7006,19 +7027,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "ach_earn"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "achievement_earned"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u64": 1
+                  "u64": 1000000
                 },
                 {
-                  "u32": 100
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -7036,16 +7075,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "xp_earn"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "xp_added"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u32": 500
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -7063,16 +7123,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "lvl_up"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "level_up"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u32": 6
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }

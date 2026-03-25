@@ -1,19 +1,47 @@
-use soroban_sdk::{contract, contractimpl, Address, Env, Error};
+use shared::event_schema::{
+    AccessControlEventData, ContractInitializedEvent, TokenEventData, TokensMintedEvent,
+    TokensTransferredEvent,
+};
+use shared::{emit_access_control_event, emit_token_event};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Error};
 
 #[contract]
 pub struct Token;
 
 #[contractimpl]
 impl Token {
-    pub fn initialize(_env: Env, _admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+        emit_access_control_event!(
+            &env,
+            symbol_short!("token"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
+        );
         Ok(())
     }
 
-    pub fn mint(_env: Env, _to: Address, _amount: u64) -> Result<(), Error> {
+    pub fn mint(env: Env, to: Address, amount: u64) -> Result<(), Error> {
+        emit_token_event!(
+            &env,
+            symbol_short!("token"),
+            to.clone(),
+            TokenEventData::TokensMinted(TokensMintedEvent { to, amount: amount as i128 })
+        );
         Ok(())
     }
 
-    pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: u64) -> Result<(), Error> {
+    pub fn transfer(env: Env, from: Address, to: Address, amount: u64) -> Result<(), Error> {
+        from.require_auth();
+        emit_token_event!(
+            &env,
+            symbol_short!("token"),
+            from.clone(),
+            TokenEventData::TokensTransferred(TokensTransferredEvent {
+                from,
+                to,
+                amount: amount as i128,
+            })
+        );
         Ok(())
     }
 

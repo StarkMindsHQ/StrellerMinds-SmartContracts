@@ -6433,16 +6433,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "rep_upd"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "reputation_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u32": 3
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -6460,16 +6481,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "rep_upd"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "reputation_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                  "u32": 1
                 },
                 {
-                  "u32": 5
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -6487,16 +6529,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "recog"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "recognized"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }

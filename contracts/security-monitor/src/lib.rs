@@ -53,7 +53,7 @@ impl SecurityMonitor {
         contract: Symbol,
     ) -> Result<BytesN<32>, Error> {
         let request_id = ThreatDetector::generate_threat_id(&env, &contract); // Re-use ID generator for request ID
-        SecurityEvents::emit_anomaly_analysis_requested(&env, &actor, &contract, &request_id);
+        SecurityEvents::emit_anomaly_requested(&env, &actor, &contract, &request_id);
         Ok(request_id)
     }
 
@@ -78,7 +78,7 @@ impl SecurityMonitor {
     ) -> Result<BytesN<32>, Error> {
         let dummy_contract = Symbol::new(&env, "biometrics");
         let request_id = ThreatDetector::generate_threat_id(&env, &dummy_contract);
-        SecurityEvents::emit_biometrics_verification_requested(&env, &actor, &request_id);
+        SecurityEvents::emit_biometrics_requested(&env, &actor, &request_id);
         Ok(request_id)
     }
 
@@ -102,7 +102,7 @@ impl SecurityMonitor {
     ) -> Result<BytesN<32>, Error> {
         let dummy_contract = Symbol::new(&env, "fraud");
         let request_id = ThreatDetector::generate_threat_id(&env, &dummy_contract);
-        SecurityEvents::emit_fraud_verification_requested(&env, &actor, &request_id);
+        SecurityEvents::emit_fraud_requested(&env, &actor, &request_id);
         Ok(request_id)
     }
 
@@ -130,7 +130,7 @@ impl SecurityMonitor {
             return Err(Error::from_contract_error(1));
         }
         SecurityStorage::set_threat_intelligence(&env, &intel.indicator_type, &intel);
-        SecurityEvents::emit_threat_intelligence_added(&env, &intel);
+        SecurityEvents::emit_intel_added(&env, &intel.source, &intel.indicator_type, &intel.indicator_value, &intel.threat_level);
         Ok(())
     }
 
@@ -156,7 +156,7 @@ impl SecurityMonitor {
         risk_score.risk_factors.push_back(risk_factor.clone());
 
         SecurityStorage::set_user_risk_score(&env, &user, &risk_score);
-        SecurityEvents::emit_user_risk_score_updated(&env, &user, score, &risk_factor);
+        SecurityEvents::emit_risk_score_updated(&env, &user, score, &risk_factor);
         Ok(())
     }
 
@@ -190,7 +190,7 @@ impl SecurityMonitor {
         training.score = score;
 
         SecurityStorage::set_training_status(&env, &user, &training);
-        SecurityEvents::emit_security_training_recorded(&env, &user, &module, score);
+        SecurityEvents::emit_training_recorded(&env, &user, &module, score);
 
         // Optionally reduce risk score based on training
         let mut risk_score =
@@ -205,7 +205,7 @@ impl SecurityMonitor {
             risk_score.last_updated = env.ledger().timestamp();
             risk_score.risk_factors.push_back(Symbol::new(&env, "TrainingCompleted"));
             SecurityStorage::set_user_risk_score(&env, &user, &risk_score);
-            SecurityEvents::emit_user_risk_score_updated(
+            SecurityEvents::emit_risk_score_updated(
                 &env,
                 &user,
                 risk_score.score,
@@ -242,7 +242,7 @@ impl SecurityMonitor {
         };
 
         SecurityStorage::set_incident_report(&env, &report);
-        SecurityEvents::emit_incident_report_generated(&env, &incident_id, &admin);
+        SecurityEvents::emit_incident_reported(&env, &incident_id, &admin);
 
         Ok(incident_id)
     }
