@@ -78,7 +78,7 @@ impl AccessControlStorage {
         Self::get_role(env, user).is_some()
     }
 
-    /// Stores role history for a user
+    /// Stores role history for a user with size limit
     pub fn add_role_history(env: &Env, user: &Address, role: &Role) {
         let key = DataKey::RoleHistory(user.clone());
         let mut history: Vec<Role> = if env.storage().instance().has(&key) {
@@ -87,6 +87,12 @@ impl AccessControlStorage {
             Vec::new(env)
         };
         history.push_back(role.clone());
+        
+        // Keep only last 50 role history entries per user
+        if history.len() > 50 {
+            history.pop_front();
+        }
+        
         env.storage().instance().set(&key, &history);
     }
 
@@ -100,7 +106,7 @@ impl AccessControlStorage {
         }
     }
 
-    /// Stores role grants for a user
+    /// Stores role grants for a user with size limit
     pub fn add_role_grant(env: &Env, user: &Address, role: &Role) {
         let key = DataKey::RoleGrants(user.clone());
         let mut grants: Vec<Role> = if env.storage().instance().has(&key) {
@@ -108,7 +114,21 @@ impl AccessControlStorage {
         } else {
             Vec::new(env)
         };
+        
+        // Check if already exists
+        for i in 0..grants.len() {
+            if grants.get(i).unwrap() == role {
+                return;
+            }
+        }
+        
         grants.push_back(role.clone());
+        
+        // Keep only last 20 role grants per user
+        if grants.len() > 20 {
+            grants.pop_front();
+        }
+        
         env.storage().instance().set(&key, &grants);
     }
 
@@ -122,7 +142,7 @@ impl AccessControlStorage {
         }
     }
 
-    /// Stores role revocations for a user
+    /// Stores role revocations for a user with size limit
     pub fn add_role_revocation(env: &Env, user: &Address, role: &Role) {
         let key = DataKey::RoleRevocations(user.clone());
         let mut revocations: Vec<Role> = if env.storage().instance().has(&key) {
@@ -130,7 +150,21 @@ impl AccessControlStorage {
         } else {
             Vec::new(env)
         };
+        
+        // Check if already exists
+        for i in 0..revocations.len() {
+            if revocations.get(i).unwrap() == role {
+                return;
+            }
+        }
+        
         revocations.push_back(role.clone());
+        
+        // Keep only last 20 role revocations per user
+        if revocations.len() > 20 {
+            revocations.pop_front();
+        }
+        
         env.storage().instance().set(&key, &revocations);
     }
 

@@ -49,15 +49,30 @@ pub fn get_multisig_request(
     env.storage().persistent().get(&CertDataKey::MultiSigRequest(request_id.clone()))
 }
 
-pub fn add_pending_request(env: &Env, request_id: &BytesN<32>) {
-    let mut pending: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::PendingRequests)
-        .unwrap_or_else(|| Vec::new(env));
-    pending.push_back(request_id.clone());
-    env.storage().persistent().set(&CertDataKey::PendingRequests, &pending);
-}
+    /// Add pending request with size limit
+    pub fn add_pending_request(env: &Env, request_id: &BytesN<32>) {
+        let mut pending: Vec<BytesN<32>> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::PendingRequests)
+            .unwrap_or_else(|| Vec::new(env));
+        
+        // Check if already exists
+        for i in 0..pending.len() {
+            if pending.get(i).unwrap() == *request_id {
+                return;
+            }
+        }
+        
+        pending.push_back(request_id.clone());
+        
+        // Keep only last 1000 pending requests
+        if pending.len() > 1000 {
+            pending.pop_front();
+        }
+        
+        env.storage().persistent().set(&CertDataKey::PendingRequests, &pending);
+    }
 
 pub fn get_pending_requests(env: &Env) -> Vec<BytesN<32>> {
     env.storage().persistent().get(&CertDataKey::PendingRequests).unwrap_or_else(|| Vec::new(env))
@@ -70,15 +85,30 @@ pub fn set_pending_requests(env: &Env, pending: &Vec<BytesN<32>>) {
 // ─────────────────────────────────────────────────────────────
 // Approver Pending Tracking
 // ─────────────────────────────────────────────────────────────
-pub fn add_approver_pending(env: &Env, approver: &Address, request_id: &BytesN<32>) {
-    let mut ids: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::ApproverPending(approver.clone()))
-        .unwrap_or_else(|| Vec::new(env));
-    ids.push_back(request_id.clone());
-    env.storage().persistent().set(&CertDataKey::ApproverPending(approver.clone()), &ids);
-}
+    /// Add approver pending with size limit
+    pub fn add_approver_pending(env: &Env, approver: &Address, request_id: &BytesN<32>) {
+        let mut ids: Vec<BytesN<32>> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::ApproverPending(approver.clone()))
+            .unwrap_or_else(|| Vec::new(env));
+        
+        // Check if already exists
+        for i in 0..ids.len() {
+            if ids.get(i).unwrap() == *request_id {
+                return;
+            }
+        }
+        
+        ids.push_back(request_id.clone());
+        
+        // Keep only last 100 pending requests per approver
+        if ids.len() > 100 {
+            ids.pop_front();
+        }
+        
+        env.storage().persistent().set(&CertDataKey::ApproverPending(approver.clone()), &ids);
+    }
 
 pub fn get_approver_pending(env: &Env, approver: &Address) -> Vec<BytesN<32>> {
     env.storage()
@@ -109,15 +139,30 @@ pub fn get_certificate(env: &Env, cert_id: &BytesN<32>) -> Option<Certificate> {
     env.storage().persistent().get(&CertDataKey::Certificate(cert_id.clone()))
 }
 
-pub fn add_student_certificate(env: &Env, student: &Address, cert_id: &BytesN<32>) {
-    let mut certs: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::StudentCertificates(student.clone()))
-        .unwrap_or_else(|| Vec::new(env));
-    certs.push_back(cert_id.clone());
-    env.storage().persistent().set(&CertDataKey::StudentCertificates(student.clone()), &certs);
-}
+    /// Add student certificate with size limit
+    pub fn add_student_certificate(env: &Env, student: &Address, cert_id: &BytesN<32>) {
+        let mut certs: Vec<BytesN<32>> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::StudentCertificates(student.clone()))
+            .unwrap_or_else(|| Vec::new(env));
+        
+        // Check if already exists
+        for i in 0..certs.len() {
+            if certs.get(i).unwrap() == *cert_id {
+                return;
+            }
+        }
+        
+        certs.push_back(cert_id.clone());
+        
+        // Keep only last 50 certificates per student
+        if certs.len() > 50 {
+            certs.pop_front();
+        }
+        
+        env.storage().persistent().set(&CertDataKey::StudentCertificates(student.clone()), &certs);
+    }
 
 pub fn get_student_certificates(env: &Env, student: &Address) -> Vec<BytesN<32>> {
     env.storage()
@@ -190,15 +235,22 @@ pub fn get_compliance(env: &Env, cert_id: &BytesN<32>) -> Option<ComplianceRecor
 // ─────────────────────────────────────────────────────────────
 // Share Records
 // ─────────────────────────────────────────────────────────────
-pub fn add_share_record(env: &Env, cert_id: &BytesN<32>, record: &ShareRecord) {
-    let mut records: Vec<ShareRecord> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::ShareRecords(cert_id.clone()))
-        .unwrap_or_else(|| Vec::new(env));
-    records.push_back(record.clone());
-    env.storage().persistent().set(&CertDataKey::ShareRecords(cert_id.clone()), &records);
-}
+    /// Add share record with size limit
+    pub fn add_share_record(env: &Env, cert_id: &BytesN<32>, record: &ShareRecord) {
+        let mut records: Vec<ShareRecord> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::ShareRecords(cert_id.clone()))
+            .unwrap_or_else(|| Vec::new(env));
+        records.push_back(record.clone());
+        
+        // Keep only last 20 share records per certificate
+        if records.len() > 20 {
+            records.pop_front();
+        }
+        
+        env.storage().persistent().set(&CertDataKey::ShareRecords(cert_id.clone()), &records);
+    }
 
 pub fn get_share_records(env: &Env, cert_id: &BytesN<32>) -> Vec<ShareRecord> {
     env.storage()
@@ -210,15 +262,22 @@ pub fn get_share_records(env: &Env, cert_id: &BytesN<32>) -> Vec<ShareRecord> {
 // ─────────────────────────────────────────────────────────────
 // Audit Trail
 // ─────────────────────────────────────────────────────────────
-pub fn add_audit_entry(env: &Env, request_id: &BytesN<32>, entry: &MultiSigAuditEntry) {
-    let mut entries: Vec<MultiSigAuditEntry> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::AuditTrail(request_id.clone()))
-        .unwrap_or_else(|| Vec::new(env));
-    entries.push_back(entry.clone());
-    env.storage().persistent().set(&CertDataKey::AuditTrail(request_id.clone()), &entries);
-}
+    /// Add audit entry with size limit
+    pub fn add_audit_entry(env: &Env, request_id: &BytesN<32>, entry: &MultiSigAuditEntry) {
+        let mut entries: Vec<MultiSigAuditEntry> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::AuditTrail(request_id.clone()))
+            .unwrap_or_else(|| Vec::new(env));
+        entries.push_back(entry.clone());
+        
+        // Keep only last 50 audit entries per request
+        if entries.len() > 50 {
+            entries.pop_front();
+        }
+        
+        env.storage().persistent().set(&CertDataKey::AuditTrail(request_id.clone()), &entries);
+    }
 
 pub fn get_audit_trail(env: &Env, request_id: &BytesN<32>) -> Vec<MultiSigAuditEntry> {
     env.storage()

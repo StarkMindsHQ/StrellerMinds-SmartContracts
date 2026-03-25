@@ -29,7 +29,7 @@ impl AnalyticsStorage {
         env.storage().persistent().get(&key)
     }
 
-    /// Add session to student's session list
+    /// Add session to student's session list with size limit
     pub fn add_student_session(
         env: &Env,
         student: &Address,
@@ -50,7 +50,11 @@ impl AnalyticsStorage {
             }
         }
 
+        // Add new session and enforce size limit (keep only last 50 sessions)
         sessions.push_back(session_id.clone());
+        if sessions.len() > 50 {
+            sessions.pop_front();
+        }
         env.storage().persistent().set(&key, &sessions);
     }
 
@@ -100,7 +104,7 @@ impl AnalyticsStorage {
         env.storage().persistent().get(&key)
     }
 
-    /// Add student to course
+    /// Add student to course with size limit
     pub fn add_course_student(env: &Env, course_id: &Symbol, student: &Address) {
         let key = DataKey::CourseStudents(course_id.clone());
         let mut students: Vec<Address> = env
@@ -118,6 +122,32 @@ impl AnalyticsStorage {
 
         students.push_back(student.clone());
         env.storage().persistent().set(&key, &students);
+    }
+
+    /// Get paginated students for a course (gas efficient)
+    pub fn get_course_students_paginated(
+        env: &Env, 
+        course_id: &Symbol, 
+        offset: u32, 
+        limit: u32
+    ) -> Vec<Address> {
+        let key = DataKey::CourseStudents(course_id.clone());
+        let all_students: Vec<Address> = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(Vec::new(env));
+        
+        let mut result = Vec::new(env);
+        let end = std::cmp::min(offset + limit, all_students.len() as u32);
+        
+        for i in offset..end {
+            if let Some(student) = all_students.get(i as u32) {
+                result.push_back(student);
+            }
+        }
+        
+        result
     }
 
     /// Get all students in a course
@@ -209,22 +239,38 @@ impl AnalyticsStorage {
             .unwrap_or(Vec::new(env))
     }
 
-    /// Add achievement to student
+    /// Add achievement to student with size limit
     pub fn add_student_achievement(env: &Env, student: &Address, achievement: &Achievement) {
         let mut achievements = Self::get_student_achievements(env, student);
         achievements.push_back(achievement.clone());
+        
+        // Keep only last 100 achievements per student
+        if achievements.len() > 100 {
+            achievements.pop_front();
+        }
+        
         Self::set_student_achievements(env, student, &achievements);
     }
 
-    /// Store leaderboard
+    /// Store leaderboard with size limit
     pub fn set_leaderboard(
         env: &Env,
         course_id: &Symbol,
         metric: &crate::types::LeaderboardMetric,
         entries: &Vec<LeaderboardEntry>,
     ) {
+        // Keep only top 100 entries for gas efficiency
+        let mut limited_entries = Vec::new(env);
+        let limit = std::cmp::min(entries.len(), 100);
+        
+        for i in 0..limit {
+            if let Some(entry) = entries.get(i) {
+                limited_entries.push_back(entry);
+            }
+        }
+        
         let key = DataKey::Leaderboard(course_id.clone(), metric.clone());
-        env.storage().persistent().set(&key, entries);
+        env.storage().persistent().set(&key, &limited_entries);
     }
 
     /// Get leaderboard

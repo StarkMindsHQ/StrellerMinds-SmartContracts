@@ -52,7 +52,20 @@ impl SecurityStorage {
         let mut threats: Vec<BytesN<32>> =
             env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
+        // Check if already exists
+        for i in 0..threats.len() {
+            if threats.get(i).unwrap() == *threat_id {
+                return;
+            }
+        }
+
         threats.push_back(threat_id.clone());
+        
+        // Keep only last 100 threats per contract
+        if threats.len() > 100 {
+            threats.pop_front();
+        }
+        
         env.storage().persistent().set(&key, &threats);
     }
 
@@ -159,7 +172,20 @@ impl SecurityStorage {
         let mut recommendations: Vec<BytesN<32>> =
             env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
+        // Check if already exists
+        for i in 0..recommendations.len() {
+            if recommendations.get(i).unwrap() == *recommendation_id {
+                return;
+            }
+        }
+
         recommendations.push_back(recommendation_id.clone());
+        
+        // Keep only last 50 recommendations per threat
+        if recommendations.len() > 50 {
+            recommendations.pop_front();
+        }
+        
         env.storage().persistent().set(&key, &recommendations);
     }
 
