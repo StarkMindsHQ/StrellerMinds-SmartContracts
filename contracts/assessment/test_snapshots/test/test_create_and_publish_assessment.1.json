@@ -1,10 +1,9 @@
 {
   "generators": {
-    "address": 4,
+    "address": 3,
     "nonce": 0
   },
   "auth": [
-    [],
     [],
     [
       [
@@ -13,21 +12,85 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "issue_credential",
+              "function_name": "initialize",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "create_assessment",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "string": "Achievement"
+                  "symbol": "COURSE1"
                 },
                 {
-                  "string": "hash"
+                  "symbol": "MOD1"
                 },
                 {
-                  "vec": [
+                  "map": [
                     {
-                      "symbol": "Stellar"
+                      "key": {
+                        "symbol": "allow_review"
+                      },
+                      "val": {
+                        "bool": true
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_adaptive"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "max_attempts"
+                      },
+                      "val": {
+                        "u32": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "pass_score"
+                      },
+                      "val": {
+                        "u32": 50
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "proctoring_required"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "time_limit_seconds"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
                     }
                   ]
                 }
@@ -38,6 +101,7 @@
         }
       ]
     ],
+    [],
     [],
     []
   ],
@@ -58,10 +122,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "Credential"
+                  "symbol": "Assessment"
                 },
                 {
-                  "string": "CRED"
+                  "u64": 1
                 }
               ]
             },
@@ -78,10 +142,10 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Credential"
+                      "symbol": "Assessment"
                     },
                     {
-                      "string": "CRED"
+                      "u64": 1
                     }
                   ]
                 },
@@ -90,164 +154,99 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "achievement"
+                        "symbol": "assessment_id"
                       },
                       "val": {
-                        "string": "Achievement"
+                        "u64": 1
                       }
                     },
                     {
                       "key": {
-                        "symbol": "chain_id"
+                        "symbol": "config"
                       },
                       "val": {
-                        "vec": [
+                        "map": [
                           {
-                            "symbol": "Stellar"
+                            "key": {
+                              "symbol": "allow_review"
+                            },
+                            "val": {
+                              "bool": true
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "is_adaptive"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "max_attempts"
+                            },
+                            "val": {
+                              "u32": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "pass_score"
+                            },
+                            "val": {
+                              "u32": 50
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proctoring_required"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "time_limit_seconds"
+                            },
+                            "val": {
+                              "u64": 3600
+                            }
                           }
                         ]
                       }
                     },
                     {
                       "key": {
-                        "symbol": "id"
+                        "symbol": "course_id"
                       },
                       "val": {
-                        "string": "CRED"
+                        "symbol": "COURSE1"
                       }
                     },
                     {
                       "key": {
-                        "symbol": "issued_at"
-                      },
-                      "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "issuer"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "metadata_hash"
-                      },
-                      "val": {
-                        "string": "hash"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "status"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Active"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "student"
+                        "symbol": "instructor"
                       },
                       "val": {
                         "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                       }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "Request"
-                },
-                {
-                  "string": "REQ"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "Request"
                     },
                     {
-                      "string": "REQ"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
                       "key": {
-                        "symbol": "chain_id"
+                        "symbol": "module_id"
                       },
                       "val": {
-                        "vec": [
-                          {
-                            "symbol": "Bsc"
-                          }
-                        ]
+                        "symbol": "MOD1"
                       }
                     },
                     {
                       "key": {
-                        "symbol": "created_at"
+                        "symbol": "published"
                       },
                       "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "credential_id"
-                      },
-                      "val": {
-                        "string": "CRED"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "id"
-                      },
-                      "val": {
-                        "string": "REQ"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "requester"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                        "bool": true
                       }
                     }
                   ]
@@ -266,10 +265,10 @@
             "key": {
               "vec": [
                 {
-                  "symbol": "StudentCreds"
+                  "symbol": "AssessmentQuestions"
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u64": 1
                 }
               ]
             },
@@ -286,20 +285,16 @@
                 "key": {
                   "vec": [
                     {
-                      "symbol": "StudentCreds"
+                      "symbol": "AssessmentQuestions"
                     },
                     {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      "u64": 1
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "vec": [
-                    {
-                      "string": "CRED"
-                    }
-                  ]
+                  "vec": []
                 }
               }
             },
@@ -342,6 +337,49 @@
                         "val": {
                           "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                         }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "AssessmentCounter"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "u64": 1
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "Integration"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "analytics_contract"
+                              },
+                              "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "progress_contract"
+                              },
+                              "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "security_monitor_contract"
+                              },
+                              "val": "void"
+                            }
+                          ]
+                        }
                       }
                     ]
                   }
@@ -375,6 +413,39 @@
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 801925984706572462
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 5541220902715666415
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 5541220902715666415
                   }
                 },
                 "durability": "temporary",
