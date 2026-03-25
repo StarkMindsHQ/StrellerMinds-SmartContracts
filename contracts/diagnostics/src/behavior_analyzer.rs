@@ -163,14 +163,8 @@ impl BehaviorAnalyzer {
             activities.push_back(String::from_str(env, "Peer review exercises"));
 
             let mut benefits = Vec::new(env);
-            benefits.push_back(String::from_str(
-                env,
-                "Improved understanding through discussion",
-            ));
-            benefits.push_back(String::from_str(
-                env,
-                "Enhanced motivation through collaboration",
-            ));
+            benefits.push_back(String::from_str(env, "Improved understanding through discussion"));
+            benefits.push_back(String::from_str(env, "Enhanced motivation through collaboration"));
 
             opportunities.push_back(CollaborativeOpportunity {
                 opportunity_type: CollaborationType::PeerStudy,
@@ -194,10 +188,8 @@ impl BehaviorAnalyzer {
             activities.push_back(String::from_str(env, "Code review and feedback"));
 
             let mut benefits = Vec::new(env);
-            benefits.push_back(String::from_str(
-                env,
-                "Accelerated learning through expert guidance",
-            ));
+            benefits
+                .push_back(String::from_str(env, "Accelerated learning through expert guidance"));
             benefits.push_back(String::from_str(env, "Personalized feedback and direction"));
 
             opportunities.push_back(CollaborativeOpportunity {
@@ -239,11 +231,7 @@ impl BehaviorAnalyzer {
                 duration: 300 + (i * 100), // Varying durations
                 success: i % 4 != 0,       // 75% success rate
                 content_id: String::from_str(env, "content"),
-                score: if i % 3 == 2 {
-                    Some(75 + ((i * 5) % 25) as u32)
-                } else {
-                    None
-                },
+                score: if i % 3 == 2 { Some(75 + ((i * 5) % 25) as u32) } else { None },
             });
         }
 
@@ -489,11 +477,8 @@ impl BehaviorAnalyzer {
             .count() as u32;
 
         let total_interactions = interactions.len();
-        let consumption_rate = if total_interactions > 0 {
-            (content_views * 100) / total_interactions
-        } else {
-            0
-        };
+        let consumption_rate =
+            if total_interactions > 0 { (content_views * 100) / total_interactions } else { 0 };
 
         BehaviorPattern {
             pattern_type: PatternType::ContentConsumption,
@@ -520,11 +505,7 @@ impl BehaviorAnalyzer {
             1
         };
 
-        let pacing_rate = if time_span > 0 {
-            assessments * 86400 / time_span as u32
-        } else {
-            0
-        };
+        let pacing_rate = if time_span > 0 { assessments * 86400 / time_span as u32 } else { 0 };
 
         BehaviorPattern {
             pattern_type: PatternType::ProgressPacing,
@@ -642,16 +623,8 @@ impl BehaviorAnalyzer {
             last_count += 1;
         }
 
-        let first_avg = if first_count > 0 {
-            first_sum / first_count
-        } else {
-            0
-        };
-        let last_avg = if last_count > 0 {
-            last_sum / last_count
-        } else {
-            0
-        };
+        let first_avg = if first_count > 0 { first_sum / first_count } else { 0 };
+        let last_avg = if last_count > 0 { last_sum / last_count } else { 0 };
 
         if last_avg > first_avg + 5 {
             EffectivenessTrend::Improving
@@ -872,11 +845,7 @@ impl BehaviorAnalyzer {
         }
 
         let mean = scores.iter().sum::<u32>() as f64 / scores.len() as f64;
-        scores
-            .iter()
-            .map(|s| (*s as f64 - mean).powi(2))
-            .sum::<f64>()
-            / scores.len() as f64
+        scores.iter().map(|s| (*s as f64 - mean).powi(2)).sum::<f64>() / scores.len() as f64
     }
 
     fn generate_analysis_id(env: &Env) -> BytesN<32> {

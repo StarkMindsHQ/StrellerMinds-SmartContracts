@@ -74,22 +74,13 @@ impl MobileOptimizerContract {
         env.storage().persistent().set(&DataKey::Config, &config);
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Initialized, &true);
-        env.storage()
-            .persistent()
-            .set(&DataKey::TotalSessions, &0u64);
-        env.storage()
-            .persistent()
-            .set(&DataKey::TotalBatches, &0u64);
-        env.storage()
-            .persistent()
-            .set(&DataKey::TotalOfflineOps, &0u64);
+        env.storage().persistent().set(&DataKey::TotalSessions, &0u64);
+        env.storage().persistent().set(&DataKey::TotalBatches, &0u64);
+        env.storage().persistent().set(&DataKey::TotalOfflineOps, &0u64);
     }
 
     pub fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Config)
-            .ok_or(MobileOptimizerError::ConfigNotFound)
+        env.storage().persistent().get(&DataKey::Config).ok_or(MobileOptimizerError::ConfigNotFound)
     }
 
     pub fn update_config(
@@ -1083,21 +1074,12 @@ impl MobileOptimizerContract {
     ) -> Result<ContractStatistics, MobileOptimizerError> {
         Self::require_admin(&env, &admin)?;
 
-        let total_sessions: u64 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::TotalSessions)
-            .unwrap_or(0);
-        let total_batches: u64 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::TotalBatches)
-            .unwrap_or(0);
-        let total_offline_ops: u64 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::TotalOfflineOps)
-            .unwrap_or(0);
+        let total_sessions: u64 =
+            env.storage().persistent().get(&DataKey::TotalSessions).unwrap_or(0);
+        let total_batches: u64 =
+            env.storage().persistent().get(&DataKey::TotalBatches).unwrap_or(0);
+        let total_offline_ops: u64 =
+            env.storage().persistent().get(&DataKey::TotalOfflineOps).unwrap_or(0);
 
         Ok(ContractStatistics {
             total_sessions,

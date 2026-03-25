@@ -37,11 +37,7 @@ pub struct CompactEvent {
 }
 
 pub fn record_event_optimized(env: &Env, learner: &Address, event_type: u32, value: u64) {
-    let mut metrics: PackedMetrics = env
-        .storage()
-        .instance()
-        .get(&KEY_METRICS)
-        .unwrap_or_default();
+    let mut metrics: PackedMetrics = env.storage().instance().get(&KEY_METRICS).unwrap_or_default();
 
     match event_type {
         0 => metrics.total_views += 1,
@@ -75,19 +71,13 @@ pub fn record_event_optimized(env: &Env, learner: &Address, event_type: u32, val
         },
     );
     env.storage().temporary().extend_ttl(&ev_key, 1, 100_000);
-    env.storage()
-        .instance()
-        .set(&KEY_EV_COUNT, &ev_count.saturating_add(1));
+    env.storage().instance().set(&KEY_EV_COUNT, &ev_count.saturating_add(1));
     extend_instance_if_needed(env);
 }
 
 pub fn batch_record_events(env: &Env, _learner: &Address, events: &Vec<(u32, u64)>) -> BatchResult {
     let mut result = BatchResult::new();
-    let mut metrics: PackedMetrics = env
-        .storage()
-        .instance()
-        .get(&KEY_METRICS)
-        .unwrap_or_default();
+    let mut metrics: PackedMetrics = env.storage().instance().get(&KEY_METRICS).unwrap_or_default();
 
     for i in 0..events.len() {
         if let Some((event_type, value)) = events.get(i) {
@@ -125,14 +115,9 @@ pub fn batch_record_events(env: &Env, _learner: &Address, events: &Vec<(u32, u64
 }
 
 pub fn get_metrics(env: &Env) -> PackedMetrics {
-    env.storage()
-        .instance()
-        .get(&KEY_METRICS)
-        .unwrap_or_default()
+    env.storage().instance().get(&KEY_METRICS).unwrap_or_default()
 }
 
 pub fn refresh_storage_ttls(env: &Env) {
-    env.storage()
-        .instance()
-        .extend_ttl(TTL_BUMP_THRESHOLD, 535_680);
+    env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, 535_680);
 }

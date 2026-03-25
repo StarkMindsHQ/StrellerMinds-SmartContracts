@@ -57,25 +57,18 @@ impl VersionManager {
             }
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::DocumentVersion(doc_id, version_number), &version);
+        env.storage().persistent().set(&DataKey::DocumentVersion(doc_id, version_number), &version);
 
         Ok(version)
     }
 
     pub fn get_version(env: &Env, doc_id: String, version_number: u32) -> Option<DocumentVersion> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::DocumentVersion(doc_id, version_number))
+        env.storage().persistent().get(&DataKey::DocumentVersion(doc_id, version_number))
     }
 
     pub fn get_current_version(env: &Env, doc_id: String) -> Option<DocumentVersion> {
         // Get the document to find current version number
-        let doc: Document = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Document(doc_id.clone()))?;
+        let doc: Document = env.storage().persistent().get(&DataKey::Document(doc_id.clone()))?;
 
         Self::get_version(env, doc_id, doc.version)
     }

@@ -116,9 +116,7 @@ impl AdvancedSearchContract {
         Self::require_initialized(&env)?;
         user.require_auth();
 
-        Ok(RecommendationEngine::generate_recommendations(
-            &env, user, limit,
-        ))
+        Ok(RecommendationEngine::generate_recommendations(&env, user, limit))
     }
 
     /// Store recommendations from oracle (off-chain ML service)
@@ -225,9 +223,7 @@ impl AdvancedSearchContract {
         Self::require_initialized(&env)?;
         user.require_auth();
 
-        Ok(CollaborativeFilter::get_collaborative_recommendations(
-            &env, user, limit,
-        ))
+        Ok(CollaborativeFilter::get_collaborative_recommendations(&env, user, limit))
     }
 
     // ==================== Visual Search Functions ====================
@@ -255,9 +251,7 @@ impl AdvancedSearchContract {
     ) -> Result<Vec<String>, Error> {
         Self::require_initialized(&env)?;
 
-        Ok(VisualSearch::find_visually_similar(
-            &env, content_id, min_score, limit,
-        ))
+        Ok(VisualSearch::find_visually_similar(&env, content_id, min_score, limit))
     }
 
     /// Search by color
@@ -384,9 +378,7 @@ impl AdvancedSearchContract {
     ) -> Result<Vec<String>, Error> {
         Self::require_initialized(&env)?;
 
-        Ok(MultilingualSearch::search_by_language(
-            &env, language, query,
-        ))
+        Ok(MultilingualSearch::search_by_language(&env, language, query))
     }
 
     // ==================== Analytics Functions ====================
@@ -509,11 +501,8 @@ impl AdvancedSearchContract {
     }
 
     fn require_admin(env: &Env, user: &Address) -> Result<(), Error> {
-        let admin: Address = env
-            .storage()
-            .instance()
-            .get(&DataKey::Admin)
-            .ok_or(Error::NotInitialized)?;
+        let admin: Address =
+            env.storage().instance().get(&DataKey::Admin).ok_or(Error::NotInitialized)?;
 
         if admin != *user {
             return Err(Error::Unauthorized);

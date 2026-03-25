@@ -20,10 +20,7 @@ impl LearningPathOptimizer {
         }
 
         // Emit event
-        env.events().publish(
-            (soroban_sdk::symbol_short!("path_stor"),),
-            (user, path.steps.len()),
-        );
+        env.events().publish((soroban_sdk::symbol_short!("path_stor"),), (user, path.steps.len()));
     }
 
     /// Get learning path for user
@@ -53,11 +50,7 @@ impl LearningPathOptimizer {
     ) {
         let key = DataKey::LearningPath(user.clone(), String::from_str(env, "default"));
 
-        if let Some(mut path) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, LearningPath>(&key)
-        {
+        if let Some(mut path) = env.storage().persistent().get::<DataKey, LearningPath>(&key) {
             // Update step status
             for i in 0..path.steps.len() {
                 if let Some(mut step) = path.steps.get(i) {
@@ -247,8 +240,7 @@ impl LearningPathOptimizer {
     /// Recommend path adjustment based on performance
     pub fn recommend_path_adjustment(env: &Env, user: Address) {
         // Emit event for off-chain path re-optimization
-        env.events()
-            .publish((soroban_sdk::symbol_short!("adj_path"),), user);
+        env.events().publish((soroban_sdk::symbol_short!("adj_path"),), user);
     }
 
     /// Get path difficulty score

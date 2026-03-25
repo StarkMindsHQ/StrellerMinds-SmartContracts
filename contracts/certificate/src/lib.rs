@@ -234,13 +234,7 @@ impl CertificateContract {
         if now > request.expires_at {
             request.status = MultiSigRequestStatus::Expired;
             storage::set_multisig_request(&env, &request_id, &request);
-            record_audit(
-                &env,
-                &request_id,
-                AuditAction::Expired,
-                &approver,
-                "Request expired",
-            );
+            record_audit(&env, &request_id, AuditAction::Expired, &approver, "Request expired");
             return Err(CertificateError::MultiSigRequestExpired);
         }
 
@@ -466,12 +460,7 @@ impl CertificateContract {
             a.active_certificates += succeeded;
         });
 
-        let result = BatchResult {
-            total: count,
-            succeeded,
-            failed,
-            certificate_ids: cert_ids,
-        };
+        let result = BatchResult { total: count, succeeded, failed, certificate_ids: cert_ids };
 
         events::emit_batch_completed(&env, count, succeeded, failed);
         Ok(result)
@@ -815,13 +804,7 @@ impl CertificateContract {
 
         update_analytics_field(&env, |a| a.total_shared += 1);
 
-        record_audit(
-            &env,
-            &certificate_id,
-            AuditAction::Shared,
-            &owner,
-            "Certificate shared",
-        );
+        record_audit(&env, &certificate_id, AuditAction::Shared, &owner, "Certificate shared");
 
         Ok(())
     }

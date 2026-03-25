@@ -18,9 +18,7 @@ impl PwaManager {
             storage_used_bytes: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         config
     }
 
@@ -38,9 +36,7 @@ impl PwaManager {
     ) -> Result<(), MobileOptimizerError> {
         let mut config = Self::get_or_create_config(env, user);
         config.install_status = status;
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -55,9 +51,7 @@ impl PwaManager {
         env: &Env,
         manifest: PwaManifest,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaManifest, &manifest);
+        env.storage().persistent().set(&DataKey::PwaManifest, &manifest);
         Ok(())
     }
 
@@ -76,15 +70,11 @@ impl PwaManager {
             pending_sync_count: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::SwStatus(user.clone()), &sw_status);
+        env.storage().persistent().set(&DataKey::SwStatus(user.clone()), &sw_status);
 
         let mut config = Self::get_or_create_config(env, user);
         config.service_worker_version = version;
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
 
         Ok(sw_status)
     }
@@ -111,9 +101,7 @@ impl PwaManager {
             }
         }
         config.cached_routes.push_back(route);
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -129,9 +117,7 @@ impl PwaManager {
             }
         }
         config.offline_pages.push_back(page);
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -142,9 +128,7 @@ impl PwaManager {
     ) -> Result<(), MobileOptimizerError> {
         let mut config = Self::get_or_create_config(env, user);
         config.background_sync_enabled = enabled;
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -155,9 +139,7 @@ impl PwaManager {
     ) -> Result<(), MobileOptimizerError> {
         let mut config = Self::get_or_create_config(env, user);
         config.push_subscription_active = active;
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -168,9 +150,7 @@ impl PwaManager {
     ) -> Result<(), MobileOptimizerError> {
         let mut config = Self::get_or_create_config(env, user);
         config.storage_used_bytes = used_bytes;
-        env.storage()
-            .persistent()
-            .set(&DataKey::PwaConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::PwaConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -193,10 +173,7 @@ impl PwaManager {
             .persistent()
             .get::<DataKey, ServiceWorkerStatus>(&DataKey::SwStatus(user.clone()));
 
-        let sw_active = sw_status
-            .as_ref()
-            .map(|s| s.state == SwState::Activated)
-            .unwrap_or(false);
+        let sw_active = sw_status.as_ref().map(|s| s.state == SwState::Activated).unwrap_or(false);
 
         let storage_pct = if config.storage_quota_bytes > 0 {
             ((config.storage_used_bytes * 100) / config.storage_quota_bytes) as u32

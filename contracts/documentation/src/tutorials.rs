@@ -15,11 +15,7 @@ impl TutorialManager {
         steps: Vec<TutorialStep>,
         prerequisites: Vec<String>,
     ) -> Result<Tutorial, Error> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::Tutorial(tutorial_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::Tutorial(tutorial_id.clone())) {
             return Err(Error::AlreadyExists);
         }
 
@@ -36,9 +32,7 @@ impl TutorialManager {
             completion_count: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Tutorial(tutorial_id), &tutorial);
+        env.storage().persistent().set(&DataKey::Tutorial(tutorial_id), &tutorial);
 
         Ok(tutorial)
     }
@@ -51,16 +45,12 @@ impl TutorialManager {
             .ok_or(Error::DocumentNotFound)?;
 
         tutorial.completion_count += 1;
-        env.storage()
-            .persistent()
-            .set(&DataKey::Tutorial(tutorial_id), &tutorial);
+        env.storage().persistent().set(&DataKey::Tutorial(tutorial_id), &tutorial);
 
         Ok(())
     }
 
     pub fn get_tutorial(env: &Env, tutorial_id: &String) -> Option<Tutorial> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Tutorial(tutorial_id.clone()))
+        env.storage().persistent().get(&DataKey::Tutorial(tutorial_id.clone()))
     }
 }

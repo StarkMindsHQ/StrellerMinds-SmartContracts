@@ -23,9 +23,7 @@ impl AchievementManager {
         achievement.created_at = env.ledger().timestamp();
         achievement.is_active = true;
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Achievement(id), &achievement);
+        env.storage().persistent().set(&GamificationKey::Achievement(id), &achievement);
 
         Ok(id)
     }
@@ -138,10 +136,8 @@ impl AchievementManager {
             }
 
             // Load the achievement definition (may not exist if not seeded)
-            let ach_opt: Option<Achievement> = env
-                .storage()
-                .persistent()
-                .get(&GamificationKey::Achievement(id));
+            let ach_opt: Option<Achievement> =
+                env.storage().persistent().get(&GamificationKey::Achievement(id));
 
             if let Some(ach) = ach_opt {
                 if !ach.is_active {
@@ -160,11 +156,8 @@ impl AchievementManager {
 
                 // Append to user's achievement list
                 let list_key = GamificationKey::UserAchievements(user.clone());
-                let mut list: Vec<u64> = env
-                    .storage()
-                    .persistent()
-                    .get(&list_key)
-                    .unwrap_or_else(|| Vec::new(env));
+                let mut list: Vec<u64> =
+                    env.storage().persistent().get(&list_key).unwrap_or_else(|| Vec::new(env));
                 list.push_back(id);
                 env.storage().persistent().set(&list_key, &list);
 
@@ -180,11 +173,8 @@ impl AchievementManager {
 
     pub fn claim_reward(env: &Env, user: &Address, achievement_id: u64) -> Result<i128, Error> {
         let key = GamificationKey::UserAchievement(user.clone(), achievement_id);
-        let mut ua: UserAchievement = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .ok_or(Error::NotFound)?;
+        let mut ua: UserAchievement =
+            env.storage().persistent().get(&key).ok_or(Error::NotFound)?;
 
         if ua.token_reward_claimed {
             return Err(Error::AchievementAlreadyClaimed);
@@ -214,10 +204,8 @@ impl AchievementManager {
         let mut out = Vec::new(env);
         for id in ids.iter() {
             let key = GamificationKey::UserAchievement(user.clone(), id);
-            if let Some(ua) = env
-                .storage()
-                .persistent()
-                .get::<GamificationKey, UserAchievement>(&key)
+            if let Some(ua) =
+                env.storage().persistent().get::<GamificationKey, UserAchievement>(&key)
             {
                 out.push_back(ua);
             }
@@ -228,13 +216,9 @@ impl AchievementManager {
     // ── Adaptive difficulty ────────────────────────────────────────────────
 
     pub fn get_adaptive_difficulty(env: &Env, user: &Address) -> AdaptiveDifficulty {
-        if let Some(ad) = env
-            .storage()
-            .persistent()
-            .get::<GamificationKey, AdaptiveDifficulty>(&GamificationKey::UserDifficulty(
-                user.clone(),
-            ))
-        {
+        if let Some(ad) = env.storage().persistent().get::<GamificationKey, AdaptiveDifficulty>(
+            &GamificationKey::UserDifficulty(user.clone()),
+        ) {
             return ad;
         }
 
@@ -288,9 +272,7 @@ impl AchievementManager {
         };
         ad.last_calculated = now;
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::UserDifficulty(user.clone()), &ad);
+        env.storage().persistent().set(&GamificationKey::UserDifficulty(user.clone()), &ad);
     }
 
     // ── Milestone seeding ──────────────────────────────────────────────────
@@ -309,10 +291,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             100,
             1_000,
-            AchievementRequirements {
-                courses_completed: 1,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { courses_completed: 1, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -324,10 +303,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             500,
             5_000,
-            AchievementRequirements {
-                courses_completed: 5,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { courses_completed: 5, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -339,10 +315,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             1_000,
             10_000,
-            AchievementRequirements {
-                courses_completed: 10,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { courses_completed: 10, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -354,10 +327,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             2_500,
             25_000,
-            AchievementRequirements {
-                courses_completed: 25,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { courses_completed: 25, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -369,10 +339,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             5_000,
             50_000,
-            AchievementRequirements {
-                courses_completed: 50,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { courses_completed: 50, ..Self::zero_req() },
             ts,
         );
 
@@ -386,10 +353,7 @@ impl AchievementManager {
             AchievementCategory::Streak,
             150,
             1_500,
-            AchievementRequirements {
-                streak_days: 7,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { streak_days: 7, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -401,10 +365,7 @@ impl AchievementManager {
             AchievementCategory::Streak,
             600,
             6_000,
-            AchievementRequirements {
-                streak_days: 30,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { streak_days: 30, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -416,10 +377,7 @@ impl AchievementManager {
             AchievementCategory::Streak,
             2_000,
             20_000,
-            AchievementRequirements {
-                streak_days: 100,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { streak_days: 100, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -431,10 +389,7 @@ impl AchievementManager {
             AchievementCategory::Streak,
             10_000,
             100_000,
-            AchievementRequirements {
-                streak_days: 365,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { streak_days: 365, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -446,10 +401,7 @@ impl AchievementManager {
             AchievementCategory::Streak,
             600,
             6_000,
-            AchievementRequirements {
-                streak_days: 30,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { streak_days: 30, ..Self::zero_req() },
             ts,
         );
 
@@ -463,10 +415,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             50,
             500,
-            AchievementRequirements {
-                total_xp: 1_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { total_xp: 1_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -478,10 +427,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             250,
             2_500,
-            AchievementRequirements {
-                total_xp: 5_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { total_xp: 5_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -493,10 +439,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             500,
             5_000,
-            AchievementRequirements {
-                total_xp: 10_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { total_xp: 10_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -508,10 +451,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             2_500,
             25_000,
-            AchievementRequirements {
-                total_xp: 50_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { total_xp: 50_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -523,10 +463,7 @@ impl AchievementManager {
             AchievementCategory::Learning,
             5_000,
             50_000,
-            AchievementRequirements {
-                total_xp: 100_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { total_xp: 100_000, ..Self::zero_req() },
             ts,
         );
 
@@ -540,10 +477,7 @@ impl AchievementManager {
             AchievementCategory::Social,
             100,
             1_000,
-            AchievementRequirements {
-                endorsements_received: 1,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { endorsements_received: 1, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -555,10 +489,7 @@ impl AchievementManager {
             AchievementCategory::Social,
             500,
             5_000,
-            AchievementRequirements {
-                endorsements_received: 10,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { endorsements_received: 10, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -570,10 +501,7 @@ impl AchievementManager {
             AchievementCategory::Social,
             2_000,
             20_000,
-            AchievementRequirements {
-                endorsements_received: 50,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { endorsements_received: 50, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -585,10 +513,7 @@ impl AchievementManager {
             AchievementCategory::Challenge,
             150,
             1_500,
-            AchievementRequirements {
-                challenges_completed: 1,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { challenges_completed: 1, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -600,10 +525,7 @@ impl AchievementManager {
             AchievementCategory::Challenge,
             1_500,
             15_000,
-            AchievementRequirements {
-                challenges_completed: 10,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { challenges_completed: 10, ..Self::zero_req() },
             ts,
         );
 
@@ -617,10 +539,7 @@ impl AchievementManager {
             AchievementCategory::Guild,
             200,
             2_000,
-            AchievementRequirements {
-                guild_contributions: 1_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { guild_contributions: 1_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -632,10 +551,7 @@ impl AchievementManager {
             AchievementCategory::Guild,
             1_000,
             10_000,
-            AchievementRequirements {
-                guild_contributions: 10_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { guild_contributions: 10_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -647,10 +563,7 @@ impl AchievementManager {
             AchievementCategory::Guild,
             5_000,
             50_000,
-            AchievementRequirements {
-                guild_contributions: 50_000,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { guild_contributions: 50_000, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -662,10 +575,7 @@ impl AchievementManager {
             AchievementCategory::Season,
             100,
             1_000,
-            AchievementRequirements {
-                seasons_completed: 1,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { seasons_completed: 1, ..Self::zero_req() },
             ts,
         );
         Self::seed_one(
@@ -677,17 +587,12 @@ impl AchievementManager {
             AchievementCategory::Season,
             500,
             5_000,
-            AchievementRequirements {
-                seasons_completed: 3,
-                ..Self::zero_req()
-            },
+            AchievementRequirements { seasons_completed: 3, ..Self::zero_req() },
             ts,
         );
 
         // Counter starts past the reserved block
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::AchievementCounter, &MILESTONE_RESERVE);
+        env.storage().persistent().set(&GamificationKey::AchievementCounter, &MILESTONE_RESERVE);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -835,10 +740,8 @@ impl AchievementManager {
     }
 
     fn guild_contribution(env: &Env, user: &Address) -> u32 {
-        let member: Option<crate::types::GuildMember> = env
-            .storage()
-            .persistent()
-            .get(&GamificationKey::GuildMember(user.clone()));
+        let member: Option<crate::types::GuildMember> =
+            env.storage().persistent().get(&GamificationKey::GuildMember(user.clone()));
         member.map(|m| m.contribution_xp).unwrap_or(0)
     }
 
@@ -881,8 +784,6 @@ impl AchievementManager {
             is_active: true,
             is_cross_course: true,
         };
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Achievement(id), &ach);
+        env.storage().persistent().set(&GamificationKey::Achievement(id), &ach);
     }
 }

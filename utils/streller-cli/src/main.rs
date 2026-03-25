@@ -4,20 +4,9 @@ use std::fs;
 use std::process::Command;
 
 fn main() {
-    println!(
-        "{}",
-        style("╔════════════════════════════════════════╗").cyan()
-    );
-    println!(
-        "{}",
-        style("║    StrellerMinds Smart Contract CLI    ║")
-            .bold()
-            .cyan()
-    );
-    println!(
-        "{}",
-        style("╚════════════════════════════════════════╝").cyan()
-    );
+    println!("{}", style("╔════════════════════════════════════════╗").cyan());
+    println!("{}", style("║    StrellerMinds Smart Contract CLI    ║").bold().cyan());
+    println!("{}", style("╚════════════════════════════════════════╝").cyan());
 
     let contracts = get_contract_list();
 
@@ -64,17 +53,11 @@ fn get_contract_list() -> Vec<String> {
 
 fn handle_deployment(contracts: &[String]) {
     // Prefixing with underscore (_selection) silences the 'unused variable' warning
-    let _selection = Select::new("Which contract are you focusing on?", contracts.to_vec())
-        .prompt()
-        .unwrap();
+    let _selection =
+        Select::new("Which contract are you focusing on?", contracts.to_vec()).prompt().unwrap();
 
-    println!(
-        "{}",
-        style("Note: The project Makefile deploys ALL contracts to the network.").dim()
-    );
-    let confirm = Confirm::new("Run 'make deploy-testnet' now?")
-        .with_default(false)
-        .prompt();
+    println!("{}", style("Note: The project Makefile deploys ALL contracts to the network.").dim());
+    let confirm = Confirm::new("Run 'make deploy-testnet' now?").with_default(false).prompt();
 
     if let Ok(true) = confirm {
         execute_command("make", &["deploy-testnet"]);
@@ -82,17 +65,9 @@ fn handle_deployment(contracts: &[String]) {
 }
 
 fn execute_command(cmd: &str, args: &[&str]) {
-    println!(
-        "{} {} {}",
-        style("➜ Executing:").bold().dim(),
-        cmd,
-        args.join(" ")
-    );
+    println!("{} {} {}", style("➜ Executing:").bold().dim(), cmd, args.join(" "));
 
-    let mut child = Command::new(cmd)
-        .args(args)
-        .spawn()
-        .expect("Failed to execute command");
+    let mut child = Command::new(cmd).args(args).spawn().expect("Failed to execute command");
 
     let status = child.wait().expect("Failed to wait on child");
 

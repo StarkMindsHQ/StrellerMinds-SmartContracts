@@ -28,15 +28,11 @@ pub fn unpack_bool_u32(packed: u64) -> (bool, u32) {
 
 pub fn extend_persistent_if_needed(env: &Env, key: &impl IntoVal<Env, Val>) {
     let key_val: Val = key.into_val(env);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key_val, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key_val, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 pub fn extend_instance_if_needed(env: &Env) {
-    env.storage()
-        .instance()
-        .extend_ttl(TTL_BUMP_THRESHOLD, TTL_INSTANCE_DAY * 30);
+    env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, TTL_INSTANCE_DAY * 30);
 }
 
 pub fn set_if_changed<
@@ -81,10 +77,6 @@ impl Default for BatchResult {
 
 impl BatchResult {
     pub fn new() -> Self {
-        BatchResult {
-            processed: 0,
-            skipped: 0,
-            failed: 0,
-        }
+        BatchResult { processed: 0, skipped: 0, failed: 0 }
     }
 }

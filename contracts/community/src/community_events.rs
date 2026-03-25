@@ -40,9 +40,7 @@ impl EventManager {
             created_at: now,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Event(event_id), &event);
+        env.storage().persistent().set(&CommunityKey::Event(event_id), &event);
 
         CommunityEvents::emit_event_created(env, organizer, event_id);
         Ok(event_id)
@@ -73,9 +71,7 @@ impl EventManager {
             feedback_rating: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&participant_key, &participant);
+        env.storage().persistent().set(&participant_key, &participant);
 
         // Add to event participants list
         let mut participants: Vec<Address> = env
@@ -84,9 +80,7 @@ impl EventManager {
             .get(&CommunityKey::EventParticipants(event_id))
             .unwrap_or_else(|| Vec::new(env));
         participants.push_back(user.clone());
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::EventParticipants(event_id), &participants);
+        env.storage().persistent().set(&CommunityKey::EventParticipants(event_id), &participants);
 
         // Add to user events
         let mut user_events: Vec<u64> = env
@@ -95,15 +89,11 @@ impl EventManager {
             .get(&CommunityKey::UserEvents(user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         user_events.push_back(event_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserEvents(user.clone()), &user_events);
+        env.storage().persistent().set(&CommunityKey::UserEvents(user.clone()), &user_events);
 
         // Update event
         event.current_participants += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Event(event_id), &event);
+        env.storage().persistent().set(&CommunityKey::Event(event_id), &event);
 
         CommunityEvents::emit_event_registered(env, user, event_id);
         Ok(())
@@ -126,16 +116,11 @@ impl EventManager {
         }
 
         let participant_key = CommunityKey::EventParticipant(user.clone(), event_id);
-        let mut participant: EventParticipant = env
-            .storage()
-            .persistent()
-            .get(&participant_key)
-            .ok_or(Error::NotFound)?;
+        let mut participant: EventParticipant =
+            env.storage().persistent().get(&participant_key).ok_or(Error::NotFound)?;
 
         participant.attended = true;
-        env.storage()
-            .persistent()
-            .set(&participant_key, &participant);
+        env.storage().persistent().set(&participant_key, &participant);
 
         // Update user stats
         Self::update_user_stats(env, user);
@@ -158,9 +143,7 @@ impl EventManager {
         }
 
         event.status = EventStatus::Completed;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Event(event_id), &event);
+        env.storage().persistent().set(&CommunityKey::Event(event_id), &event);
 
         CommunityEvents::emit_event_completed(env, event_id);
         Ok(())
@@ -177,28 +160,21 @@ impl EventManager {
         }
 
         let participant_key = CommunityKey::EventParticipant(user.clone(), event_id);
-        let mut participant: EventParticipant = env
-            .storage()
-            .persistent()
-            .get(&participant_key)
-            .ok_or(Error::NotFound)?;
+        let mut participant: EventParticipant =
+            env.storage().persistent().get(&participant_key).ok_or(Error::NotFound)?;
 
         if !participant.attended {
             return Err(Error::Unauthorized);
         }
 
         participant.feedback_rating = rating;
-        env.storage()
-            .persistent()
-            .set(&participant_key, &participant);
+        env.storage().persistent().set(&participant_key, &participant);
 
         Ok(())
     }
 
     pub fn get_event(env: &Env, event_id: u64) -> Option<CommunityEvent> {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::Event(event_id))
+        env.storage().persistent().get(&CommunityKey::Event(event_id))
     }
 
     pub fn get_event_participants(env: &Env, event_id: u64) -> Vec<EventParticipant> {
@@ -210,10 +186,8 @@ impl EventManager {
 
         let mut participants = Vec::new(env);
         for addr in addresses.iter() {
-            if let Some(p) = env
-                .storage()
-                .persistent()
-                .get(&CommunityKey::EventParticipant(addr, event_id))
+            if let Some(p) =
+                env.storage().persistent().get(&CommunityKey::EventParticipant(addr, event_id))
             {
                 participants.push_back(p);
             }
@@ -223,27 +197,24 @@ impl EventManager {
 
     // Helper functions
     fn update_user_stats(env: &Env, user: &Address) {
-        let mut stats: UserCommunityStats = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::UserStats(user.clone()))
-            .unwrap_or(UserCommunityStats {
-                user: user.clone(),
-                posts_created: 0,
-                replies_given: 0,
-                solutions_provided: 0,
-                contributions_made: 0,
-                events_attended: 0,
-                mentorship_sessions: 0,
-                helpful_votes_received: 0,
-                reputation_score: 0,
-                joined_at: env.ledger().timestamp(),
-            });
+        let mut stats: UserCommunityStats =
+            env.storage().persistent().get(&CommunityKey::UserStats(user.clone())).unwrap_or(
+                UserCommunityStats {
+                    user: user.clone(),
+                    posts_created: 0,
+                    replies_given: 0,
+                    solutions_provided: 0,
+                    contributions_made: 0,
+                    events_attended: 0,
+                    mentorship_sessions: 0,
+                    helpful_votes_received: 0,
+                    reputation_score: 0,
+                    joined_at: env.ledger().timestamp(),
+                },
+            );
 
         stats.events_attended += 1;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserStats(user.clone()), &stats);
+        env.storage().persistent().set(&CommunityKey::UserStats(user.clone()), &stats);
     }
 
     fn award_xp(_env: &Env, _user: &Address, _xp: u32) {

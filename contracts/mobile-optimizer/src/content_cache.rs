@@ -13,9 +13,7 @@ impl ContentCacheManager {
             prefetch_enabled: true,
             compression_enabled: true,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserCacheConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::UserCacheConfig(user.clone()), &config);
 
         let stats = CacheStats {
             total_entries: 0,
@@ -26,9 +24,7 @@ impl ContentCacheManager {
             hit_rate_bps: 0,
             avg_access_time_ms: 0,
         };
-        env.storage()
-            .persistent()
-            .set(&DataKey::CacheStats(user.clone()), &stats);
+        env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
 
         config
     }
@@ -76,15 +72,11 @@ impl ContentCacheManager {
             priority,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::ContentCache(cache_key), &entry);
+        env.storage().persistent().set(&DataKey::ContentCache(cache_key), &entry);
 
         stats.total_entries += 1;
         stats.total_size_bytes += size_bytes;
-        env.storage()
-            .persistent()
-            .set(&DataKey::CacheStats(user.clone()), &stats);
+        env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
 
         Ok(())
     }
@@ -111,32 +103,24 @@ impl ContentCacheManager {
                     Self::remove_entry(env, user, &cache_key, entry.size_bytes)?;
                     stats.miss_count += 1;
                     Self::update_hit_rate(&mut stats);
-                    env.storage()
-                        .persistent()
-                        .set(&DataKey::CacheStats(user.clone()), &stats);
+                    env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
                     return Err(MobileOptimizerError::CacheError);
                 }
 
                 entry.access_count += 1;
                 entry.last_accessed = now;
-                env.storage()
-                    .persistent()
-                    .set(&DataKey::ContentCache(cache_key), &entry);
+                env.storage().persistent().set(&DataKey::ContentCache(cache_key), &entry);
 
                 stats.hit_count += 1;
                 Self::update_hit_rate(&mut stats);
-                env.storage()
-                    .persistent()
-                    .set(&DataKey::CacheStats(user.clone()), &stats);
+                env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
 
                 Ok(entry)
             }
             None => {
                 stats.miss_count += 1;
                 Self::update_hit_rate(&mut stats);
-                env.storage()
-                    .persistent()
-                    .set(&DataKey::CacheStats(user.clone()), &stats);
+                env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
                 Err(MobileOptimizerError::CacheError)
             }
         }
@@ -147,9 +131,7 @@ impl ContentCacheManager {
         user: &Address,
         rules: Vec<PrefetchRule>,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::PrefetchRules(user.clone()), &rules);
+        env.storage().persistent().set(&DataKey::PrefetchRules(user.clone()), &rules);
         Ok(())
     }
 
@@ -228,9 +210,7 @@ impl ContentCacheManager {
         user: &Address,
         config: CacheConfig,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserCacheConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::UserCacheConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -245,9 +225,7 @@ impl ContentCacheManager {
 
         let cleaned = stats.eviction_count;
         stats.eviction_count = 0;
-        env.storage()
-            .persistent()
-            .set(&DataKey::CacheStats(user.clone()), &stats);
+        env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
         Ok(cleaned)
     }
 
@@ -271,9 +249,7 @@ impl ContentCacheManager {
         if stats.total_entries > 0 {
             stats.total_entries -= 1;
         }
-        env.storage()
-            .persistent()
-            .set(&DataKey::CacheStats(user.clone()), &stats);
+        env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
         Ok(freed)
     }
 
@@ -283,9 +259,7 @@ impl ContentCacheManager {
         cache_key: &String,
         size_bytes: u64,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .remove(&DataKey::ContentCache(cache_key.clone()));
+        env.storage().persistent().remove(&DataKey::ContentCache(cache_key.clone()));
 
         let mut stats: CacheStats = env
             .storage()
@@ -297,9 +271,7 @@ impl ContentCacheManager {
         if stats.total_entries > 0 {
             stats.total_entries -= 1;
         }
-        env.storage()
-            .persistent()
-            .set(&DataKey::CacheStats(user.clone()), &stats);
+        env.storage().persistent().set(&DataKey::CacheStats(user.clone()), &stats);
         Ok(())
     }
 

@@ -745,21 +745,14 @@ impl RegressionTester {
         }
 
         if high_count > 0 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Prioritize high-severity regression fixes",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Prioritize high-severity regression fixes"));
             recommendations.push_back(String::from_str(env, "Increase monitoring frequency"));
         }
 
-        recommendations.push_back(String::from_str(
-            env,
-            "Review recent code changes for performance impact",
-        ));
-        recommendations.push_back(String::from_str(
-            env,
-            "Enhance test coverage in affected areas",
-        ));
+        recommendations
+            .push_back(String::from_str(env, "Review recent code changes for performance impact"));
+        recommendations.push_back(String::from_str(env, "Enhance test coverage in affected areas"));
 
         recommendations
     }
@@ -835,10 +828,8 @@ impl RegressionTester {
             }
 
             if metrics.gas_used > 5_000_000 {
-                recommendations.push_back(String::from_str(
-                    env,
-                    "Review gas optimization opportunities",
-                ));
+                recommendations
+                    .push_back(String::from_str(env, "Review gas optimization opportunities"));
             }
 
             if metrics.memory_usage > 100_000_000 {
@@ -850,10 +841,8 @@ impl RegressionTester {
                 recommendations.push_back(String::from_str(env, "Address error rate increases"));
             }
         } else {
-            recommendations.push_back(String::from_str(
-                env,
-                "Performance within acceptable thresholds",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Performance within acceptable thresholds"));
         }
 
         recommendations
@@ -953,20 +942,14 @@ impl RegressionTester {
                 "Execution time regression likely caused by algorithm or I/O changes",
             )
         } else if memory_change > 30.0 {
-            String::from_str(
-                env,
-                "Memory usage increase suggests new memory allocations or leaks",
-            )
+            String::from_str(env, "Memory usage increase suggests new memory allocations or leaks")
         } else if gas_change > 25.0 {
             String::from_str(
                 env,
                 "Gas consumption increase indicates computational complexity changes",
             )
         } else {
-            String::from_str(
-                env,
-                "Multiple factors contributing to performance regression",
-            )
+            String::from_str(env, "Multiple factors contributing to performance regression")
         }
     }
 
@@ -996,18 +979,9 @@ impl RegressionTester {
     ) -> Vec<String> {
         let mut steps = Vec::new(env);
 
-        steps.push_back(String::from_str(
-            env,
-            "Identify specific code changes causing regression",
-        ));
-        steps.push_back(String::from_str(
-            env,
-            "Implement targeted performance fixes",
-        ));
-        steps.push_back(String::from_str(
-            env,
-            "Add specific regression tests for affected areas",
-        ));
+        steps.push_back(String::from_str(env, "Identify specific code changes causing regression"));
+        steps.push_back(String::from_str(env, "Implement targeted performance fixes"));
+        steps.push_back(String::from_str(env, "Add specific regression tests for affected areas"));
         steps.push_back(String::from_str(
             env,
             "Increase monitoring frequency during fix deployment",
@@ -1019,20 +993,11 @@ impl RegressionTester {
     fn setup_regression_monitoring(env: &Env, _scenario: &RegressionTestScenario) -> Vec<String> {
         let mut alerts = Vec::new(env);
 
-        alerts.push_back(String::from_str(
-            env,
-            "Monitor execution time: alert if exceeded",
-        ));
+        alerts.push_back(String::from_str(env, "Monitor execution time: alert if exceeded"));
 
-        alerts.push_back(String::from_str(
-            env,
-            "Monitor gas usage: alert if exceeded",
-        ));
+        alerts.push_back(String::from_str(env, "Monitor gas usage: alert if exceeded"));
 
-        alerts.push_back(String::from_str(
-            env,
-            "Monitor memory usage: alert if exceeded",
-        ));
+        alerts.push_back(String::from_str(env, "Monitor memory usage: alert if exceeded"));
 
         alerts
     }
@@ -1271,10 +1236,7 @@ impl RegressionTester {
         }
 
         if areas.is_empty() {
-            areas.push_back(String::from_str(
-                env,
-                "No significant problem areas identified",
-            ));
+            areas.push_back(String::from_str(env, "No significant problem areas identified"));
         }
 
         areas
@@ -1294,14 +1256,10 @@ impl RegressionTester {
             env,
             "Establish performance budgets for critical operations",
         ));
-        recommendations.push_back(String::from_str(
-            env,
-            "Enhance monitoring and alerting coverage",
-        ));
-        recommendations.push_back(String::from_str(
-            env,
-            "Regular performance optimization reviews",
-        ));
+        recommendations
+            .push_back(String::from_str(env, "Enhance monitoring and alerting coverage"));
+        recommendations
+            .push_back(String::from_str(env, "Regular performance optimization reviews"));
 
         recommendations
     }
@@ -1402,10 +1360,7 @@ impl RegressionTester {
             return 0.0;
         }
 
-        let recent_score = results
-            .get(results.len() - 1)
-            .unwrap()
-            .overall_performance_score;
+        let recent_score = results.get(results.len() - 1).unwrap().overall_performance_score;
         let older_score = results.get(0).unwrap().overall_performance_score;
 
         if older_score > 0 {
@@ -1482,10 +1437,7 @@ impl RegressionTester {
         regression_trend: f64,
     ) -> String {
         if score_trend > 10.0 && regression_trend < -0.5 {
-            String::from_str(
-                env,
-                "Performance trending positively - fewer regressions expected",
-            )
+            String::from_str(env, "Performance trending positively - fewer regressions expected")
         } else if score_trend < -10.0 || regression_trend > 0.5 {
             String::from_str(
                 env,

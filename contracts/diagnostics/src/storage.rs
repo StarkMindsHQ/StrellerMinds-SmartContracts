@@ -46,9 +46,7 @@ pub struct DiagnosticsStorage;
 impl DiagnosticsStorage {
     /// Set the admin address
     pub fn set_admin(env: &Env, admin: &Address) {
-        env.storage()
-            .instance()
-            .set(&DataKey::Admin.to_symbol(env), admin);
+        env.storage().instance().set(&DataKey::Admin.to_symbol(env), admin);
     }
 
     /// Get the admin address
@@ -61,9 +59,7 @@ impl DiagnosticsStorage {
 
     /// Set diagnostics configuration
     pub fn set_config(env: &Env, config: &DiagnosticsConfig) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::Config.to_symbol(env), config);
+        env.storage().persistent().set(&DataKey::Config.to_symbol(env), config);
     }
 
     /// Get diagnostics configuration
@@ -134,9 +130,7 @@ impl DiagnosticsStorage {
         prediction: &CapacityPrediction,
     ) {
         let key = DataKey::CapacityPrediction(contract_address.clone(), prediction.generated_at);
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), prediction);
+        env.storage().persistent().set(&key.to_symbol(env), prediction);
     }
 
     /// Get capacity prediction
@@ -152,9 +146,7 @@ impl DiagnosticsStorage {
     /// Store behavior analysis
     pub fn store_behavior_analysis(env: &Env, user: &Address, analysis: &BehaviorAnalysis) {
         let key = DataKey::BehaviorAnalysis(user.clone(), analysis.analysis_period);
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), analysis);
+        env.storage().persistent().set(&key.to_symbol(env), analysis);
     }
 
     /// Get behavior analysis
@@ -174,9 +166,7 @@ impl DiagnosticsStorage {
         recommendations: &Vec<OptimizationRecommendation>,
     ) {
         let key = DataKey::OptimizationRecommendations(contract_address.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), recommendations);
+        env.storage().persistent().set(&key.to_symbol(env), recommendations);
     }
 
     /// Get optimization recommendations
@@ -191,9 +181,7 @@ impl DiagnosticsStorage {
     /// Store trace data
     pub fn store_trace_data(env: &Env, trace_id: &BytesN<32>, analysis: &TraceAnalysis) {
         let key = DataKey::TraceData(trace_id.clone());
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), analysis);
+        env.storage().persistent().set(&key.to_symbol(env), analysis);
     }
 
     /// Get trace data
@@ -239,9 +227,7 @@ impl DiagnosticsStorage {
     ) {
         let key =
             DataKey::ResourceUtilization(contract_address.clone(), utilization.analysis_period);
-        env.storage()
-            .persistent()
-            .set(&key.to_symbol(env), utilization);
+        env.storage().persistent().set(&key.to_symbol(env), utilization);
     }
 
     /// Get resource utilization analysis
@@ -268,16 +254,12 @@ impl DiagnosticsStorage {
 
     /// Store system health report
     pub fn store_system_health(env: &Env, health_report: &SystemHealthReport) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::SystemHealth.to_symbol(env), health_report);
+        env.storage().persistent().set(&DataKey::SystemHealth.to_symbol(env), health_report);
     }
 
     /// Get system health report
     pub fn get_system_health(env: &Env) -> Option<SystemHealthReport> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::SystemHealth.to_symbol(env))
+        env.storage().persistent().get(&DataKey::SystemHealth.to_symbol(env))
     }
 
     /// Add a contract to the monitored contracts list
@@ -285,9 +267,7 @@ impl DiagnosticsStorage {
         let mut monitored = Self::get_monitored_contracts(env);
         if !monitored.iter().any(|addr| addr == *contract_address) {
             monitored.push_back(contract_address.clone());
-            env.storage()
-                .persistent()
-                .set(&DataKey::MonitoredContracts.to_symbol(env), &monitored);
+            env.storage().persistent().set(&DataKey::MonitoredContracts.to_symbol(env), &monitored);
         }
     }
 
@@ -296,9 +276,7 @@ impl DiagnosticsStorage {
         let mut monitored = Self::get_monitored_contracts(env);
         if let Some(index) = monitored.iter().position(|addr| addr == *contract_address) {
             monitored.remove(index as u32);
-            env.storage()
-                .persistent()
-                .set(&DataKey::MonitoredContracts.to_symbol(env), &monitored);
+            env.storage().persistent().set(&DataKey::MonitoredContracts.to_symbol(env), &monitored);
         }
     }
 
@@ -339,10 +317,7 @@ impl DiagnosticsStorage {
         _session_id: &BytesN<32>,
     ) -> Result<MonitoringSession, DiagnosticsError> {
         let key = Symbol::new(env, "mon_session");
-        env.storage()
-            .persistent()
-            .get(&key)
-            .ok_or(DiagnosticsError::DataNotFound)
+        env.storage().persistent().get(&key).ok_or(DiagnosticsError::DataNotFound)
     }
 
     /// Store performance alert

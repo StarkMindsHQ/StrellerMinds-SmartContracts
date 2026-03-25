@@ -13,11 +13,7 @@ impl CollaborationManager {
         topic: String,
         max_members: u32,
     ) -> Result<StudyGroup, MobileOptimizerError> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::StudyGroup(group_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::StudyGroup(group_id.clone())) {
             return Err(MobileOptimizerError::CollaborationError);
         }
 
@@ -35,9 +31,7 @@ impl CollaborationManager {
             max_members,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::StudyGroup(group_id), &group);
+        env.storage().persistent().set(&DataKey::StudyGroup(group_id), &group);
         Self::update_profile_stats(env, creator, |p| p.groups_joined += 1);
 
         Ok(group)
@@ -65,9 +59,7 @@ impl CollaborationManager {
         }
 
         group.members.push_back(user.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::StudyGroup(group_id), &group);
+        env.storage().persistent().set(&DataKey::StudyGroup(group_id), &group);
         Self::update_profile_stats(env, user, |p| p.groups_joined += 1);
 
         Ok(())
@@ -81,11 +73,7 @@ impl CollaborationManager {
         content: String,
         parent_id: Option<String>,
     ) -> Result<ForumPost, MobileOptimizerError> {
-        if env
-            .storage()
-            .persistent()
-            .has(&DataKey::ForumPost(post_id.clone()))
-        {
+        if env.storage().persistent().has(&DataKey::ForumPost(post_id.clone())) {
             return Err(MobileOptimizerError::CollaborationError);
         }
 
@@ -99,9 +87,7 @@ impl CollaborationManager {
             parent_id,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::ForumPost(post_id), &post);
+        env.storage().persistent().set(&DataKey::ForumPost(post_id), &post);
         Ok(post)
     }
 
@@ -128,9 +114,7 @@ impl CollaborationManager {
             timestamp: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::PeerReview(review_id), &review);
+        env.storage().persistent().set(&DataKey::PeerReview(review_id), &review);
         Self::update_profile_stats(env, reviewer, |p| p.reviews_given += 1);
 
         Self::update_profile_stats(env, target_user, |p| {
@@ -159,9 +143,7 @@ impl CollaborationManager {
             duration_minutes,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::MentorshipSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MentorshipSession(session_id), &session);
         Ok(session)
     }
 
@@ -182,9 +164,7 @@ impl CollaborationManager {
         }
 
         session.status = new_status.clone();
-        env.storage()
-            .persistent()
-            .set(&DataKey::MentorshipSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MentorshipSession(session_id), &session);
 
         if matches!(new_status, MentorshipStatus::Completed) {
             Self::update_profile_stats(env, &session.mentor, |p| p.mentorships_completed += 1);
@@ -194,17 +174,16 @@ impl CollaborationManager {
     }
 
     pub fn get_profile(env: &Env, user: &Address) -> CollaborationProfile {
-        env.storage()
-            .persistent()
-            .get(&DataKey::CollabProfile(user.clone()))
-            .unwrap_or(CollaborationProfile {
+        env.storage().persistent().get(&DataKey::CollabProfile(user.clone())).unwrap_or(
+            CollaborationProfile {
                 user: user.clone(),
                 reputation_score: 50,
                 groups_joined: 0,
                 reviews_given: 0,
                 mentorships_completed: 0,
                 badges: Vec::new(env),
-            })
+            },
+        )
     }
 
     fn update_profile_stats<F>(env: &Env, user: &Address, f: F)
@@ -213,8 +192,6 @@ impl CollaborationManager {
     {
         let mut profile = Self::get_profile(env, user);
         f(&mut profile);
-        env.storage()
-            .persistent()
-            .set(&DataKey::CollabProfile(user.clone()), &profile);
+        env.storage().persistent().set(&DataKey::CollabProfile(user.clone()), &profile);
     }
 }

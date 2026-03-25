@@ -25,11 +25,8 @@ pub enum ScenarioOutcome {
 /// Create realistic learning sessions for a student
 pub fn create_realistic_learning_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::from_entropy();
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (30 * 24 * 60 * 60); // 30 days ago
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (30 * 24 * 60 * 60); // 30 days ago
 
     let mut sessions = Vec::new();
 
@@ -76,10 +73,7 @@ pub fn create_realistic_learning_sessions(student_address: &str) -> Vec<Learning
 /// Create batch learning sessions for testing
 pub fn create_batch_learning_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::from_entropy();
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let base_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
     let mut sessions = Vec::new();
 
@@ -138,11 +132,8 @@ pub fn create_diverse_learning_scenarios(student_address: &str) -> Vec<LearningS
 /// Create sessions for an excellent student
 fn create_excellent_student_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(12345);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (14 * 24 * 60 * 60); // 2 weeks ago
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (14 * 24 * 60 * 60); // 2 weeks ago
 
     let mut sessions = Vec::new();
 
@@ -186,11 +177,8 @@ fn create_excellent_student_sessions(student_address: &str) -> Vec<LearningSessi
 /// Create sessions for a good student
 fn create_good_student_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(67890);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (14 * 24 * 60 * 60);
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (14 * 24 * 60 * 60);
 
     let mut sessions = Vec::new();
 
@@ -233,11 +221,8 @@ fn create_good_student_sessions(student_address: &str) -> Vec<LearningSession> {
 /// Create sessions for an average student
 fn create_average_student_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(11111);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (14 * 24 * 60 * 60);
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (14 * 24 * 60 * 60);
 
     let mut sessions = Vec::new();
 
@@ -274,11 +259,8 @@ fn create_average_student_sessions(student_address: &str) -> Vec<LearningSession
 /// Create sessions for a struggling student
 fn create_struggling_student_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(22222);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (14 * 24 * 60 * 60);
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (14 * 24 * 60 * 60);
 
     let mut sessions = Vec::new();
 
@@ -319,11 +301,8 @@ pub fn create_competitive_sessions(
     performance_rank: usize,
 ) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(performance_rank as u64);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (7 * 24 * 60 * 60);
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (7 * 24 * 60 * 60);
 
     let mut sessions = Vec::new();
 
@@ -394,11 +373,8 @@ pub fn create_time_based_session(
 /// Create sessions for consistency testing
 pub fn create_consistency_test_sessions(student_address: &str) -> Vec<LearningSession> {
     let mut rng = StdRng::seed_from_u64(33333);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        - (5 * 24 * 60 * 60);
+    let base_time =
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - (5 * 24 * 60 * 60);
 
     let mut sessions = Vec::new();
 
@@ -435,10 +411,7 @@ pub fn create_consistency_test_sessions(student_address: &str) -> Vec<LearningSe
 /// Create edge case session for error testing
 pub fn create_edge_case_session(student_address: &str) -> LearningSession {
     let mut rng = StdRng::seed_from_u64(44444);
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let base_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
     LearningSession {
         session_id: generate_session_id(&mut rng, 0, 0),
@@ -457,10 +430,7 @@ pub fn create_edge_case_session(student_address: &str) -> LearningSession {
 
 /// Create smoke test session for CI/CD testing
 pub fn create_smoke_test_session(student_address: &str) -> LearningSession {
-    let base_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let base_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
     LearningSession {
         session_id: hex::encode([5u8; 32]),

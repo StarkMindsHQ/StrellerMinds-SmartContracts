@@ -7,8 +7,7 @@ pub struct DiagnosticsEvents;
 impl DiagnosticsEvents {
     /// Emit initialization event
     pub fn emit_initialized(env: &Env, admin: &Address) {
-        env.events()
-            .publish(("DIAGNOSTICS", "INITIALIZED"), (admin,));
+        env.events().publish(("DIAGNOSTICS", "INITIALIZED"), (admin,));
     }
 
     /// Emit performance monitoring started event
@@ -17,16 +16,13 @@ impl DiagnosticsEvents {
         contract_address: &Address,
         monitoring_id: &BytesN<32>,
     ) {
-        env.events().publish(
-            ("DIAGNOSTICS", "MONITORING_STARTED"),
-            (contract_address, monitoring_id),
-        );
+        env.events()
+            .publish(("DIAGNOSTICS", "MONITORING_STARTED"), (contract_address, monitoring_id));
     }
 
     /// Emit performance monitoring stopped event
     pub fn emit_monitoring_stopped(env: &Env, contract_address: &Address) {
-        env.events()
-            .publish(("DIAGNOSTICS", "MONITORING_STOPPED"), (contract_address,));
+        env.events().publish(("DIAGNOSTICS", "MONITORING_STOPPED"), (contract_address,));
     }
 
     /// Emit performance metrics recorded event
@@ -85,11 +81,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "OPTIMIZATION_RECOMMENDATIONS"),
-            (
-                contract_address,
-                recommendation_count,
-                total_potential_savings,
-            ),
+            (contract_address, recommendation_count, total_potential_savings),
         );
     }
 
@@ -116,12 +108,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "TRACE_SPAN_ADDED"),
-            (
-                trace_id.clone(),
-                span_id.clone(),
-                operation_name.clone(),
-                duration,
-            ),
+            (trace_id.clone(), span_id.clone(), operation_name.clone(), duration),
         );
     }
 
@@ -148,11 +135,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "BENCHMARK_STARTED"),
-            (
-                benchmark_id.clone(),
-                benchmark_name.clone(),
-                target_contracts_count,
-            ),
+            (benchmark_id.clone(), benchmark_name.clone(), target_contracts_count),
         );
     }
 
@@ -166,12 +149,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "BENCHMARK_COMPLETED"),
-            (
-                benchmark_id,
-                execution_time,
-                overall_score,
-                regression_detected,
-            ),
+            (benchmark_id, execution_time, overall_score, regression_detected),
         );
     }
 
@@ -223,12 +201,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "RESOURCE_UTILIZATION_ANALYZED"),
-            (
-                analysis_id,
-                contract_address,
-                total_cost,
-                optimization_opportunities_count,
-            ),
+            (analysis_id, contract_address, total_cost, optimization_opportunities_count),
         );
     }
 
@@ -296,12 +269,7 @@ impl DiagnosticsEvents {
     ) {
         env.events().publish(
             ("DIAGNOSTICS", "PERFORMANCE_ALERT"),
-            (
-                contract_address.clone(),
-                alert_type.clone(),
-                threshold_exceeded,
-                current_value,
-            ),
+            (contract_address.clone(), alert_type.clone(), threshold_exceeded, current_value),
         );
     }
 
@@ -323,11 +291,7 @@ impl DiagnosticsEvents {
 
         env.events().publish(
             ("DIAGNOSTICS", "COST_OPTIMIZATION_OPPORTUNITY"),
-            (
-                contract_address,
-                potential_savings,
-                Symbol::new(env, type_str),
-            ),
+            (contract_address, potential_savings, Symbol::new(env, type_str)),
         );
     }
 
@@ -382,18 +346,13 @@ impl DiagnosticsEvents {
 
     /// Emit resource analysis completion event
     pub fn emit_resource_analysis_complete(env: &Env, contract_address: &Address) {
-        env.events().publish(
-            ("DIAGNOSTICS", "RESOURCE_ANALYSIS_COMPLETE"),
-            contract_address,
-        );
+        env.events().publish(("DIAGNOSTICS", "RESOURCE_ANALYSIS_COMPLETE"), contract_address);
     }
 
     /// Emit anomalies detected event
     pub fn emit_anomalies_detected(env: &Env, contract_address: &Address, anomaly_count: u32) {
-        env.events().publish(
-            ("DIAGNOSTICS", "ANOMALIES_DETECTED"),
-            (contract_address, anomaly_count),
-        );
+        env.events()
+            .publish(("DIAGNOSTICS", "ANOMALIES_DETECTED"), (contract_address, anomaly_count));
     }
 
     /// Emit critical regression alert
@@ -426,15 +385,12 @@ impl DiagnosticsEvents {
         contract_address: &Address,
         regression_id: &BytesN<32>,
     ) {
-        env.events().publish(
-            ("DIAGNOSTICS", "REGRESSION_ALERT"),
-            (contract_address, regression_id),
-        );
+        env.events()
+            .publish(("DIAGNOSTICS", "REGRESSION_ALERT"), (contract_address, regression_id));
     }
 
     /// Emit monitoring scheduled event
     pub fn emit_monitoring_scheduled(env: &Env) {
-        env.events()
-            .publish(("DIAGNOSTICS", "MONITORING_SCHEDULED"), ());
+        env.events().publish(("DIAGNOSTICS", "MONITORING_SCHEDULED"), ());
     }
 }

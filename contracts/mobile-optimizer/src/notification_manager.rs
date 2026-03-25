@@ -23,9 +23,7 @@ impl NotificationManager {
             marketing_consent: false,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::NotifConfig(user.clone()), &config);
         config
     }
 
@@ -65,9 +63,7 @@ impl NotificationManager {
             .unwrap_or_else(|| Vec::new(env));
 
         reminders.push_back(reminder.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &reminders);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &reminders);
 
         Ok(reminder)
     }
@@ -141,9 +137,7 @@ impl NotificationManager {
             updated.push_back(r);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &updated);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &updated);
 
         let sent = sent_reminder.ok_or(MobileOptimizerError::NotificationError)?;
         let record = NotificationRecord {
@@ -165,9 +159,7 @@ impl NotificationManager {
             .get(&DataKey::NotifHistory(user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         history.push_back(record);
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifHistory(user.clone()), &history);
+        env.storage().persistent().set(&DataKey::NotifHistory(user.clone()), &history);
 
         Ok(())
     }
@@ -192,9 +184,7 @@ impl NotificationManager {
             updated.push_back(r);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &updated);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &updated);
         Ok(())
     }
 
@@ -203,9 +193,7 @@ impl NotificationManager {
         user: &Address,
         config: NotificationConfig,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::NotifConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -289,9 +277,7 @@ impl NotificationManager {
             version: 1,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotificationTemplate(template_id), &template);
+        env.storage().persistent().set(&DataKey::NotificationTemplate(template_id), &template);
 
         Ok(template)
     }
@@ -315,9 +301,7 @@ impl NotificationManager {
             total_engaged: 0,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotificationCampaign(campaign_id), &campaign);
+        env.storage().persistent().set(&DataKey::NotificationCampaign(campaign_id), &campaign);
 
         Ok(campaign)
     }
@@ -345,9 +329,7 @@ impl NotificationManager {
             updated_history.push_back(r);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifHistory(user.clone()), &updated_history);
+        env.storage().persistent().set(&DataKey::NotifHistory(user.clone()), &updated_history);
         Ok(())
     }
 

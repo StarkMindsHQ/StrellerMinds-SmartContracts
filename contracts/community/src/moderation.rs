@@ -16,9 +16,7 @@ impl ModerationManager {
     ) -> Result<(), Error> {
         CommunityStorage::require_admin(env, admin)?;
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Moderator(moderator.clone()), &role);
+        env.storage().persistent().set(&CommunityKey::Moderator(moderator.clone()), &role);
 
         Ok(())
     }
@@ -53,9 +51,7 @@ impl ModerationManager {
             resolved_by: Address::from_string(&String::from_str(env, "")),
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Report(report_id), &report);
+        env.storage().persistent().set(&CommunityKey::Report(report_id), &report);
 
         // Add to pending reports
         let mut pending: Vec<u64> = env
@@ -64,9 +60,7 @@ impl ModerationManager {
             .get(&CommunityKey::PendingReports)
             .unwrap_or_else(|| Vec::new(env));
         pending.push_back(report_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::PendingReports, &pending);
+        env.storage().persistent().set(&CommunityKey::PendingReports, &pending);
 
         CommunityEvents::emit_content_reported(env, reporter, report_id);
         Ok(report_id)
@@ -94,9 +88,7 @@ impl ModerationManager {
         report.resolved_at = env.ledger().timestamp();
         report.resolved_by = moderator.clone();
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Report(report_id), &report);
+        env.storage().persistent().set(&CommunityKey::Report(report_id), &report);
 
         // Remove from pending
         let pending: Vec<u64> = env
@@ -112,9 +104,7 @@ impl ModerationManager {
                 new_pending.push_back(id);
             }
         }
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::PendingReports, &new_pending);
+        env.storage().persistent().set(&CommunityKey::PendingReports, &new_pending);
 
         Ok(())
     }
@@ -141,9 +131,7 @@ impl ModerationManager {
             created_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::ModeratorAction(action_id), &action);
+        env.storage().persistent().set(&CommunityKey::ModeratorAction(action_id), &action);
 
         // Add to user actions
         let mut actions: Vec<u64> = env
@@ -152,9 +140,7 @@ impl ModerationManager {
             .get(&CommunityKey::UserActions(target_user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         actions.push_back(action_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserActions(target_user.clone()), &actions);
+        env.storage().persistent().set(&CommunityKey::UserActions(target_user.clone()), &actions);
 
         CommunityEvents::emit_moderator_action(env, moderator, action_id, target_user);
         Ok(action_id)
@@ -185,10 +171,7 @@ impl ModerationManager {
 
         let mut actions = Vec::new(env);
         for id in action_ids.iter() {
-            if let Some(action) = env
-                .storage()
-                .persistent()
-                .get(&CommunityKey::ModeratorAction(id))
+            if let Some(action) = env.storage().persistent().get(&CommunityKey::ModeratorAction(id))
             {
                 actions.push_back(action);
             }

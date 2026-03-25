@@ -165,11 +165,7 @@ impl AnomalyDetector {
                 anomaly_id: Self::generate_anomaly_id(env),
                 contract_address: latest_metrics.contract_address.clone(),
                 anomaly_type: AnomalyType::MemoryLeak,
-                severity: if memory_trend > 15.0 {
-                    RiskLevel::Critical
-                } else {
-                    RiskLevel::High
-                },
+                severity: if memory_trend > 15.0 { RiskLevel::Critical } else { RiskLevel::High },
                 detected_at: latest_metrics.timestamp,
                 description: String::from_str(
                     env,
@@ -380,10 +376,7 @@ impl AnomalyDetector {
         }
 
         let avg_latency = Self::calculate_average_network_latency(metrics_data);
-        let latest_latency = metrics_data
-            .get(metrics_data.len() - 1)
-            .unwrap()
-            .network_latency;
+        let latest_latency = metrics_data.get(metrics_data.len() - 1).unwrap().network_latency;
 
         // Check for latency spike (>150% increase)
         if latest_latency > avg_latency * 25 / 10 {
@@ -585,10 +578,8 @@ impl AnomalyDetector {
                 mitigation_steps: {
                     let mut steps = Vec::new(env);
                     steps.push_back(String::from_str(env, "Implement resource usage limits"));
-                    steps.push_back(String::from_str(
-                        env,
-                        "Optimize resource-intensive operations",
-                    ));
+                    steps
+                        .push_back(String::from_str(env, "Optimize resource-intensive operations"));
                     steps.push_back(String::from_str(env, "Add resource monitoring alerts"));
                     steps
                 },
@@ -888,25 +879,13 @@ impl AnomalyDetector {
         // Analyze potential causes
         if latest.memory_usage > 100_000_000 {
             // > 100MB
-            String::from_str(
-                env,
-                "High memory usage may be causing performance degradation",
-            )
+            String::from_str(env, "High memory usage may be causing performance degradation")
         } else if latest.gas_used > 5_000_000 {
-            String::from_str(
-                env,
-                "High gas usage indicates computational complexity issues",
-            )
+            String::from_str(env, "High gas usage indicates computational complexity issues")
         } else if latest.network_latency > 500 {
-            String::from_str(
-                env,
-                "High network latency contributing to performance issues",
-            )
+            String::from_str(env, "High network latency contributing to performance issues")
         } else {
-            String::from_str(
-                env,
-                "Performance degradation cause requires further investigation",
-            )
+            String::from_str(env, "Performance degradation cause requires further investigation")
         }
     }
 
@@ -920,17 +899,11 @@ impl AnomalyDetector {
         if latest.cpu_instructions > 30_000_000 {
             String::from_str(env, "High CPU usage indicates computational bottlenecks")
         } else if latest.storage_reads > 500 {
-            String::from_str(
-                env,
-                "Excessive storage operations causing performance issues",
-            )
+            String::from_str(env, "Excessive storage operations causing performance issues")
         } else if latest.memory_usage > 50_000_000 {
             String::from_str(env, "Memory pressure affecting system performance")
         } else {
-            String::from_str(
-                env,
-                "Multiple factors contributing to performance degradation",
-            )
+            String::from_str(env, "Multiple factors contributing to performance degradation")
         }
     }
 
@@ -1224,9 +1197,6 @@ mod tests {
 
         // Should return an error due to insufficient data in test environment
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            DiagnosticsError::InsufficientDataForPrediction
-        );
+        assert_eq!(result.unwrap_err(), DiagnosticsError::InsufficientDataForPrediction);
     }
 }

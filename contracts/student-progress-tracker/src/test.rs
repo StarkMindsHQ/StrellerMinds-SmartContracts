@@ -74,13 +74,7 @@ fn test_update_progress_student_auth() {
         invoke: &MockAuthInvoke {
             contract: &client.address,
             fn_name: "update_progress",
-            args: (
-                student.clone(),
-                course_id.clone(),
-                module_id.clone(),
-                percent,
-            )
-                .into_val(&env),
+            args: (student.clone(), course_id.clone(), module_id.clone(), percent).into_val(&env),
             sub_invokes: &[],
         },
     }]);
@@ -157,12 +151,7 @@ fn test_update_progress_invalid_percentage() {
         invoke: &MockAuthInvoke {
             contract: &client.address,
             fn_name: "update_progress",
-            args: (
-                student.clone(),
-                course_id.clone(),
-                module_id.clone(),
-                invalid_percent,
-            )
+            args: (student.clone(), course_id.clone(), module_id.clone(), invalid_percent)
                 .into_val(&env),
             sub_invokes: &[],
         },
@@ -212,13 +201,7 @@ fn test_update_progress_boundary_values() {
         invoke: &MockAuthInvoke {
             contract: &client.address,
             fn_name: "update_progress",
-            args: (
-                student.clone(),
-                course_id.clone(),
-                module_id.clone(),
-                100u32,
-            )
-                .into_val(&env),
+            args: (student.clone(), course_id.clone(), module_id.clone(), 100u32).into_val(&env),
             sub_invokes: &[],
         },
     }]);
@@ -391,13 +374,7 @@ fn test_multiple_students_same_course() {
         invoke: &MockAuthInvoke {
             contract: &client.address,
             fn_name: "update_progress",
-            args: (
-                student1.clone(),
-                course_id.clone(),
-                module_id.clone(),
-                40u32,
-            )
-                .into_val(&env),
+            args: (student1.clone(), course_id.clone(), module_id.clone(), 40u32).into_val(&env),
             sub_invokes: &[],
         },
     }]);
@@ -408,13 +385,7 @@ fn test_multiple_students_same_course() {
         invoke: &MockAuthInvoke {
             contract: &client.address,
             fn_name: "update_progress",
-            args: (
-                student2.clone(),
-                course_id.clone(),
-                module_id.clone(),
-                80u32,
-            )
-                .into_val(&env),
+            args: (student2.clone(), course_id.clone(), module_id.clone(), 80u32).into_val(&env),
             sub_invokes: &[],
         },
     }]);

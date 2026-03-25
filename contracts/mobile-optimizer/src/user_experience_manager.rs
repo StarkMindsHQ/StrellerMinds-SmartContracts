@@ -27,9 +27,7 @@ impl UserExperienceManager {
             accessibility_settings,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::UiPreferences(user.clone()), &prefs);
+        env.storage().persistent().set(&DataKey::UiPreferences(user.clone()), &prefs);
         Ok(prefs)
     }
 
@@ -49,18 +47,17 @@ impl UserExperienceManager {
         step_id: String,
         is_skipped: bool,
     ) -> Result<OnboardingState, MobileOptimizerError> {
-        let mut state = env
-            .storage()
-            .persistent()
-            .get(&DataKey::OnboardingState(user.clone()))
-            .unwrap_or(OnboardingState {
-                user: user.clone(),
-                is_completed: false,
-                current_step: 0,
-                completed_steps: Vec::new(env),
-                skipped_steps: Vec::new(env),
-                last_updated: env.ledger().timestamp(),
-            });
+        let mut state =
+            env.storage().persistent().get(&DataKey::OnboardingState(user.clone())).unwrap_or(
+                OnboardingState {
+                    user: user.clone(),
+                    is_completed: false,
+                    current_step: 0,
+                    completed_steps: Vec::new(env),
+                    skipped_steps: Vec::new(env),
+                    last_updated: env.ledger().timestamp(),
+                },
+            );
 
         if is_skipped {
             state.skipped_steps.push_back(step_id);
@@ -71,9 +68,7 @@ impl UserExperienceManager {
         state.current_step += 1;
         state.last_updated = env.ledger().timestamp();
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::OnboardingState(user.clone()), &state);
+        env.storage().persistent().set(&DataKey::OnboardingState(user.clone()), &state);
         Ok(state)
     }
 
@@ -85,9 +80,7 @@ impl UserExperienceManager {
             .ok_or(MobileOptimizerError::InvalidInput)?;
         state.is_completed = true;
         state.last_updated = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::OnboardingState(user.clone()), &state);
+        env.storage().persistent().set(&DataKey::OnboardingState(user.clone()), &state);
         Ok(())
     }
 
@@ -122,9 +115,7 @@ impl UserExperienceManager {
             .get(&DataKey::UserFeedbackHistory(user.clone()))
             .unwrap_or(Vec::new(env));
         history.push_back(feedback.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserFeedbackHistory(user.clone()), &history);
+        env.storage().persistent().set(&DataKey::UserFeedbackHistory(user.clone()), &history);
 
         Ok(feedback)
     }

@@ -206,18 +206,14 @@ impl BenchmarkEngine {
             results.iter().map(|r| r.performance_score).sum::<u32>() / results.len();
 
         if avg_score < 70 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Consider optimizing critical performance paths",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Consider optimizing critical performance paths"));
         }
 
         let total_errors: u32 = results.iter().map(|r| r.error_count).sum();
         if total_errors > 0 {
-            recommendations.push_back(String::from_str(
-                env,
-                "Implement better error handling and recovery",
-            ));
+            recommendations
+                .push_back(String::from_str(env, "Implement better error handling and recovery"));
         }
 
         recommendations

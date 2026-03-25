@@ -25,9 +25,7 @@ impl OfflineManager {
         queue.queued_operations.push_back(operation);
         queue.last_sync_attempt = env.ledger().timestamp();
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
         Ok(())
     }
 
@@ -84,9 +82,7 @@ impl OfflineManager {
             SyncStatus::InSync
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
 
         Ok(OfflineSyncResult {
             total_operations: total_ops,
@@ -173,9 +169,7 @@ impl OfflineManager {
 
         queue.queued_operations = updated_ops;
         queue.conflict_resolution = resolution_strategy;
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
 
         Ok(resolved)
     }
@@ -210,9 +204,7 @@ impl OfflineManager {
         }
 
         queue.queued_operations = kept;
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
         Ok(cleaned)
     }
 

@@ -6,10 +6,8 @@ pub struct AnalyticsManager;
 
 impl AnalyticsManager {
     pub fn get_community_metrics(env: &Env) -> CommunityMetrics {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::CommunityMetrics)
-            .unwrap_or(CommunityMetrics {
+        env.storage().persistent().get(&CommunityKey::CommunityMetrics).unwrap_or(
+            CommunityMetrics {
                 total_posts: 0,
                 total_replies: 0,
                 total_contributions: 0,
@@ -21,49 +19,34 @@ impl AnalyticsManager {
                 avg_response_time: 0,
                 resolution_rate: 0,
                 last_updated: env.ledger().timestamp(),
-            })
+            },
+        )
     }
 
     pub fn update_metrics(env: &Env) {
         let mut metrics = Self::get_community_metrics(env);
 
         // Update counters from storage
-        metrics.total_posts = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::PostCounter)
-            .unwrap_or(0);
+        metrics.total_posts =
+            env.storage().persistent().get(&CommunityKey::PostCounter).unwrap_or(0);
 
-        metrics.total_replies = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::ReplyCounter)
-            .unwrap_or(0);
+        metrics.total_replies =
+            env.storage().persistent().get(&CommunityKey::ReplyCounter).unwrap_or(0);
 
-        metrics.total_contributions = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::ContributionCounter)
-            .unwrap_or(0);
+        metrics.total_contributions =
+            env.storage().persistent().get(&CommunityKey::ContributionCounter).unwrap_or(0);
 
-        metrics.total_events = env
-            .storage()
-            .persistent()
-            .get(&CommunityKey::EventCounter)
-            .unwrap_or(0);
+        metrics.total_events =
+            env.storage().persistent().get(&CommunityKey::EventCounter).unwrap_or(0);
 
         metrics.last_updated = env.ledger().timestamp();
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::CommunityMetrics, &metrics);
+        env.storage().persistent().set(&CommunityKey::CommunityMetrics, &metrics);
     }
 
     pub fn get_user_stats(env: &Env, user: &Address) -> UserCommunityStats {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::UserStats(user.clone()))
-            .unwrap_or(UserCommunityStats {
+        env.storage().persistent().get(&CommunityKey::UserStats(user.clone())).unwrap_or(
+            UserCommunityStats {
                 user: user.clone(),
                 posts_created: 0,
                 replies_given: 0,
@@ -74,7 +57,8 @@ impl AnalyticsManager {
                 helpful_votes_received: 0,
                 reputation_score: 0,
                 joined_at: env.ledger().timestamp(),
-            })
+            },
+        )
     }
 
     pub fn calculate_reputation(env: &Env, user: &Address) -> u32 {
@@ -92,9 +76,7 @@ impl AnalyticsManager {
         // Update stored reputation
         let mut updated_stats = stats;
         updated_stats.reputation_score = reputation;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserStats(user.clone()), &updated_stats);
+        env.storage().persistent().set(&CommunityKey::UserStats(user.clone()), &updated_stats);
 
         reputation
     }

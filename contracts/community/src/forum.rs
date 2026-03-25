@@ -38,9 +38,7 @@ impl ForumManager {
             course_id,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Post(post_id), &post);
+        env.storage().persistent().set(&CommunityKey::Post(post_id), &post);
 
         // Add to category index
         let mut category_posts: Vec<u64> = env
@@ -60,9 +58,7 @@ impl ForumManager {
             .get(&CommunityKey::UserPosts(author.clone()))
             .unwrap_or_else(|| Vec::new(env));
         user_posts.push_back(post_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserPosts(author.clone()), &user_posts);
+        env.storage().persistent().set(&CommunityKey::UserPosts(author.clone()), &user_posts);
 
         // Update user stats
         Self::update_user_stats(env, author, 1, 0, 0);
@@ -108,9 +104,7 @@ impl ForumManager {
             parent_reply_id,
         };
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Reply(reply_id), &reply);
+        env.storage().persistent().set(&CommunityKey::Reply(reply_id), &reply);
 
         // Add to post replies
         let mut replies: Vec<u64> = env
@@ -119,16 +113,12 @@ impl ForumManager {
             .get(&CommunityKey::PostReplies(post_id))
             .unwrap_or_else(|| Vec::new(env));
         replies.push_back(reply_id);
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::PostReplies(post_id), &replies);
+        env.storage().persistent().set(&CommunityKey::PostReplies(post_id), &replies);
 
         // Update post
         post.replies_count += 1;
         post.updated_at = now;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Post(post_id), &post);
+        env.storage().persistent().set(&CommunityKey::Post(post_id), &post);
 
         // Update user stats
         Self::update_user_stats(env, author, 0, 1, 0);
@@ -168,16 +158,12 @@ impl ForumManager {
         }
 
         reply.is_solution = true;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Reply(reply_id), &reply);
+        env.storage().persistent().set(&CommunityKey::Reply(reply_id), &reply);
 
         // Update post status
         let mut updated_post = post;
         updated_post.status = PostStatus::Resolved;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Post(post_id), &updated_post);
+        env.storage().persistent().set(&CommunityKey::Post(post_id), &updated_post);
 
         // Update reply author stats
         Self::update_user_stats(env, &reply.author, 0, 0, 1);
@@ -208,18 +194,14 @@ impl ForumManager {
             post.downvotes += 1;
         }
 
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::Post(post_id), &post);
+        env.storage().persistent().set(&CommunityKey::Post(post_id), &post);
         env.storage().persistent().set(&vote_key, &upvote);
 
         // Update author's helpful votes
         if upvote {
             let mut stats = Self::get_user_stats(env, &post.author);
             stats.helpful_votes_received += 1;
-            env.storage()
-                .persistent()
-                .set(&CommunityKey::UserStats(post.author), &stats);
+            env.storage().persistent().set(&CommunityKey::UserStats(post.author), &stats);
         }
 
         Ok(())
@@ -231,9 +213,7 @@ impl ForumManager {
 
         if let Some(ref mut p) = post {
             p.views += 1;
-            env.storage()
-                .persistent()
-                .set(&CommunityKey::Post(post_id), p);
+            env.storage().persistent().set(&CommunityKey::Post(post_id), p);
         }
 
         post
@@ -280,16 +260,12 @@ impl ForumManager {
         stats.posts_created += posts;
         stats.replies_given += replies;
         stats.solutions_provided += solutions;
-        env.storage()
-            .persistent()
-            .set(&CommunityKey::UserStats(user.clone()), &stats);
+        env.storage().persistent().set(&CommunityKey::UserStats(user.clone()), &stats);
     }
 
     fn get_user_stats(env: &Env, user: &Address) -> UserCommunityStats {
-        env.storage()
-            .persistent()
-            .get(&CommunityKey::UserStats(user.clone()))
-            .unwrap_or(UserCommunityStats {
+        env.storage().persistent().get(&CommunityKey::UserStats(user.clone())).unwrap_or(
+            UserCommunityStats {
                 user: user.clone(),
                 posts_created: 0,
                 replies_given: 0,
@@ -300,7 +276,8 @@ impl ForumManager {
                 helpful_votes_received: 0,
                 reputation_score: 0,
                 joined_at: env.ledger().timestamp(),
-            })
+            },
+        )
     }
 
     fn award_xp(_env: &Env, _user: &Address, _xp: u32) {

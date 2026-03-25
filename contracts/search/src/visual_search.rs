@@ -65,10 +65,7 @@ impl VisualSearch {
     ) -> Vec<String> {
         // Get cached similar content from oracle
         let cache_key = Self::similar_cache_key(env, &content_id);
-        env.storage()
-            .persistent()
-            .get(&cache_key)
-            .unwrap_or_else(|| Vec::new(env))
+        env.storage().persistent().get(&cache_key).unwrap_or_else(|| Vec::new(env))
     }
 
     /// Store list of visually similar content from oracle

@@ -132,11 +132,7 @@ impl RankingEngine {
     fn get_quality_score(env: &Env, content_id: String) -> u32 {
         // Get from stored content analysis
         let key = DataKey::ContentAnalysis(content_id);
-        if let Some(analysis) = env
-            .storage()
-            .persistent()
-            .get::<DataKey, ContentAnalysis>(&key)
-        {
+        if let Some(analysis) = env.storage().persistent().get::<DataKey, ContentAnalysis>(&key) {
             analysis.quality_score
         } else {
             500 // Default medium quality
@@ -202,17 +198,14 @@ impl RankingEngine {
     pub fn get_ranking_config(env: &Env) -> RankingConfig {
         let key = DataKey::RankingSignals(String::from_str(env, "default_config"));
 
-        env.storage()
-            .persistent()
-            .get::<DataKey, RankingConfig>(&key)
-            .unwrap_or(RankingConfig {
-                relevance_weight: 30,
-                quality_weight: 20,
-                engagement_weight: 15,
-                recency_weight: 10,
-                personalization_weight: 15,
-                authority_weight: 10,
-            })
+        env.storage().persistent().get::<DataKey, RankingConfig>(&key).unwrap_or(RankingConfig {
+            relevance_weight: 30,
+            quality_weight: 20,
+            engagement_weight: 15,
+            recency_weight: 10,
+            personalization_weight: 15,
+            authority_weight: 10,
+        })
     }
 
     /// Apply learning-to-rank model (from oracle)
@@ -232,10 +225,7 @@ impl RankingEngine {
     /// Get ML ranking score
     pub fn get_ml_score(env: &Env, content_id: String) -> u32 {
         let key = Self::ml_score_key(env, &content_id);
-        env.storage()
-            .persistent()
-            .get::<String, u32>(&key)
-            .unwrap_or(500)
+        env.storage().persistent().get::<String, u32>(&key).unwrap_or(500)
     }
 
     /// Boost results based on trending status

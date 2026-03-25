@@ -14,16 +14,10 @@ impl Proxy {
     }
 
     pub fn get_admin(_env: Env) -> Result<Address, Error> {
-        Ok(Address::from_str(
-            &_env,
-            "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        ))
+        Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
     }
 
     pub fn get_implementation(_env: Env) -> Result<Address, Error> {
-        Ok(Address::from_str(
-            &_env,
-            "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        ))
+        Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
     }
 }

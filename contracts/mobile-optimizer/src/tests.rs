@@ -2,12 +2,7 @@ use crate::types::*;
 use crate::{MobileOptimizerContract, MobileOptimizerContractClient};
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Map, String, Vec};
 
-fn setup_contract() -> (
-    Env,
-    MobileOptimizerContractClient<'static>,
-    Address,
-    Address,
-) {
+fn setup_contract() -> (Env, MobileOptimizerContractClient<'static>, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(MobileOptimizerContract, ());
@@ -241,14 +236,7 @@ fn test_cache_content_and_retrieve() {
     let key = String::from_str(&env, "course_materials_101");
     let hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    client.cache_content(
-        &user,
-        &key,
-        &hash,
-        &ContentType::CourseMaterial,
-        &1024,
-        &86400,
-    );
+    client.cache_content(&user, &key, &hash, &ContentType::CourseMaterial, &1024, &86400);
 
     let entry = client.get_cached_content(&user, &key);
     assert_eq!(entry.content_type, ContentType::CourseMaterial);
@@ -261,14 +249,7 @@ fn test_cache_invalidation() {
     let key = String::from_str(&env, "old_data");
     let hash = BytesN::from_array(&env, &[2u8; 32]);
 
-    client.cache_content(
-        &user,
-        &key,
-        &hash,
-        &ContentType::SearchResults,
-        &512,
-        &86400,
-    );
+    client.cache_content(&user, &key, &hash, &ContentType::SearchResults, &512, &86400);
     client.invalidate_cache(&user, &key);
 
     let stats = client.get_cache_stats(&user);
