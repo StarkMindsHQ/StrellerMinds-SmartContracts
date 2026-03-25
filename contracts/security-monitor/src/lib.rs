@@ -130,7 +130,13 @@ impl SecurityMonitor {
             return Err(Error::from_contract_error(1));
         }
         SecurityStorage::set_threat_intelligence(&env, &intel.indicator_type, &intel);
-        SecurityEvents::emit_intel_added(&env, &intel.source, &intel.indicator_type, &intel.indicator_value, &intel.threat_level);
+        SecurityEvents::emit_intel_added(
+            &env,
+            &intel.source,
+            &intel.indicator_type,
+            &intel.indicator_value,
+            &intel.threat_level,
+        );
         Ok(())
     }
 

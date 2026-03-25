@@ -1,6 +1,5 @@
 use crate::types::{
-    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel,
-    ThreatType,
+    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
 };
 use shared::event_schema::{
     AccessControlEventData, AnomalyAnalysisRequestedEvent, BiometricsVerificationRequestedEvent,
