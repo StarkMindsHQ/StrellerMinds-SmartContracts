@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, String, Vec, Map};
+use soroban_sdk::{contracttype, Address, Env, String, Symbol, Vec, Map};
 use crate::types::{
     TokenReward, RewardType, Achievement, AchievementRequirements, AchievementRarity,
     UserAchievement, StakingPool, UserStake, BurnTransaction, BurnType, RewardMultiplier,
@@ -13,7 +13,97 @@ use shared::roles::Permission;
 /// Token incentive management system
 pub struct IncentiveManager;
 
+const CIRCUIT_FAILURE_THRESHOLD: u32 = 3;
+const CIRCUIT_RESET_TIMEOUT_SECONDS: u64 = 300;
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum CircuitState {
+    Closed,
+    Open,
+    HalfOpen,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CircuitStatus {
+    state: CircuitState,
+    failures: u32,
+    opened_at: u64,
+}
+
 impl IncentiveManager {
+    fn circuit_key(env: &Env, operation: &str) -> IncentiveDataKey {
+        IncentiveDataKey::CircuitState(String::from_str(env, operation))
+    }
+
+    fn get_or_init_circuit(env: &Env, operation: &str) -> CircuitStatus {
+        env.storage()
+            .persistent()
+            .get(&Self::circuit_key(env, operation))
+            .unwrap_or(CircuitStatus {
+                state: CircuitState::Closed,
+                failures: 0,
+                opened_at: 0,
+            })
+    }
+
+    fn can_proceed(env: &Env, operation: &str) -> bool {
+        let mut status = Self::get_or_init_circuit(env, operation);
+        match status.state {
+            CircuitState::Closed => true,
+            CircuitState::Open => {
+                if env.ledger().timestamp() >= status.opened_at + CIRCUIT_RESET_TIMEOUT_SECONDS {
+                    status.state = CircuitState::HalfOpen;
+                    env.storage()
+                        .persistent()
+                        .set(&Self::circuit_key(env, operation), &status);
+                    true
+                } else {
+                    false
+                }
+            }
+            CircuitState::HalfOpen => true,
+        }
+    }
+
+    fn record_success(env: &Env, operation: &str) {
+        env.storage().persistent().set(
+            &Self::circuit_key(env, operation),
+            &CircuitStatus {
+                state: CircuitState::Closed,
+                failures: 0,
+                opened_at: 0,
+            },
+        );
+        env.events().publish(
+            (Symbol::new(env, "circuit_closed"), Symbol::new(env, operation)),
+            env.ledger().timestamp(),
+        );
+    }
+
+    fn record_failure(env: &Env, operation: &str, reason: &str) {
+        let mut status = Self::get_or_init_circuit(env, operation);
+        status.failures += 1;
+        if matches!(status.state, CircuitState::HalfOpen)
+            || status.failures >= CIRCUIT_FAILURE_THRESHOLD
+        {
+            status.state = CircuitState::Open;
+            status.opened_at = env.ledger().timestamp();
+            env.events().publish(
+                (
+                    Symbol::new(env, "circuit_opened"),
+                    Symbol::new(env, operation),
+                    status.failures,
+                ),
+                String::from_str(env, reason),
+            );
+        }
+        env.storage()
+            .persistent()
+            .set(&Self::circuit_key(env, operation), &status);
+    }
+
     /// Initialize the incentive system with default configuration
     pub fn initialize(env: &Env, admin: &Address) -> Result<(), Error> {
         // Validate admin permissions
@@ -64,6 +154,9 @@ impl IncentiveManager {
         course_id: &String,
         completion_percentage: u32,
     ) -> Result<i128, Error> {
+        if !Self::can_proceed(env, "reward_course") {
+            return Err(Error::InvalidInput);
+        }
         let config = Self::get_config(env)?;
         let mut reward_amount = config.base_course_reward;
 
@@ -97,6 +190,7 @@ impl IncentiveManager {
         Self::process_reward(env, &reward_id, &reward)?;
         Self::update_user_streak(env, user)?;
         Self::check_achievements(env, user)?;
+        Self::record_success(env, "reward_course");
 
         Ok(reward_amount)
     }
@@ -108,6 +202,9 @@ impl IncentiveManager {
         course_id: &String,
         module_id: &String,
     ) -> Result<i128, Error> {
+        if !Self::can_proceed(env, "reward_module") {
+            return Err(Error::InvalidInput);
+        }
         let config = Self::get_config(env)?;
         let mut reward_amount = config.base_module_reward;
 
@@ -127,6 +224,7 @@ impl IncentiveManager {
         };
 
         Self::process_reward(env, &reward_id, &reward)?;
+        Self::record_success(env, "reward_module");
         Ok(reward_amount)
     }
 
@@ -136,6 +234,9 @@ impl IncentiveManager {
         admin: &Address,
         achievement: Achievement,
     ) -> Result<String, Error> {
+        if !Self::can_proceed(env, "create_pool") {
+            return Err(Error::InvalidInput);
+        }
         AccessControl::require_permission(env, admin, &Permission::UpdateCertificateMetadata)
             .map_err(|_| Error::NotInitialized)?;
 
@@ -199,6 +300,7 @@ impl IncentiveManager {
             &new_pool,
         );
 
+        Self::record_success(env, "create_pool");
         Ok(pool_id)
     }
 
@@ -209,20 +311,26 @@ impl IncentiveManager {
         pool_id: &String,
         amount: i128,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(env, "stake_tokens") {
+            return Err(Error::InvalidInput);
+        }
         user.require_auth();
 
         if amount <= 0 {
+            Self::record_failure(env, "stake_tokens", "invalid_amount");
             return Err(Error::InvalidAmount);
         }
 
         let pool = Self::get_staking_pool(env, pool_id)?;
         if !pool.is_active || amount < pool.minimum_stake {
+            Self::record_failure(env, "stake_tokens", "pool_invalid_or_below_min");
             return Err(Error::InvalidAmount);
         }
 
         // Check user balance (would integrate with token contract)
         let user_balance = Self::get_token_balance(env, user);
         if user_balance < amount {
+            Self::record_failure(env, "stake_tokens", "insufficient_balance");
             return Err(Error::InsufficientBalance);
         }
 
@@ -251,6 +359,7 @@ impl IncentiveManager {
 
         // Grant premium access
         Self::grant_premium_access(env, user, &updated_pool.premium_features)?;
+        Self::record_success(env, "stake_tokens");
 
         Ok(())
     }
@@ -263,14 +372,19 @@ impl IncentiveManager {
         certificate_id: &String,
         upgrade_type: &String,
     ) -> Result<String, Error> {
+        if !Self::can_proceed(env, "burn_upgrade") {
+            return Err(Error::InvalidInput);
+        }
         user.require_auth();
 
         if amount <= 0 {
+            Self::record_failure(env, "burn_upgrade", "invalid_amount");
             return Err(Error::InvalidAmount);
         }
 
         let user_balance = Self::get_token_balance(env, user);
         if user_balance < amount {
+            Self::record_failure(env, "burn_upgrade", "insufficient_balance");
             return Err(Error::InsufficientBalance);
         }
 
@@ -292,6 +406,7 @@ impl IncentiveManager {
 
         // Update global stats
         Self::update_burn_stats(env, amount)?;
+        Self::record_success(env, "burn_upgrade");
 
         Ok(burn_id)
     }

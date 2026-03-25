@@ -253,3 +253,46 @@ impl AccessControlEvents {
         .emit(env);
     }
 }
+
+/// Shared reliability event emissions for circuit breaker operations.
+pub struct ReliabilityEvents;
+
+impl ReliabilityEvents {
+    /// Emit circuit transition event with operation context.
+    pub fn emit_circuit_transition(
+        env: &Env,
+        contract_name: &str,
+        operation: &str,
+        new_state: &str,
+        failure_count: u32,
+    ) {
+        env.events().publish(
+            (
+                Symbol::new(env, "reliability"),
+                Symbol::new(env, "circuit_transition"),
+                Symbol::new(env, contract_name),
+                Symbol::new(env, operation),
+            ),
+            (String::from_str(env, new_state), failure_count, env.ledger().timestamp()),
+        );
+    }
+
+    /// Emit circuit failure event with reason text.
+    pub fn emit_circuit_failure(
+        env: &Env,
+        contract_name: &str,
+        operation: &str,
+        reason: &str,
+        failure_count: u32,
+    ) {
+        env.events().publish(
+            (
+                Symbol::new(env, "reliability"),
+                Symbol::new(env, "circuit_failure"),
+                Symbol::new(env, contract_name),
+                Symbol::new(env, operation),
+            ),
+            (String::from_str(env, reason), failure_count, env.ledger().timestamp()),
+        );
+    }
+}

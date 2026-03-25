@@ -201,6 +201,8 @@ This document provides a comprehensive security audit checklist for the implemen
 - [ ] **Alert Configuration**: Security alerts are configured
 - [ ] **Incident Response**: Incident response plan is in place
 - [ ] **Recovery Procedures**: Recovery procedures are documented
+- [ ] **Circuit Breaker Alerts**: `circuit_opened` and repeated-failure alerts configured
+- [ ] **Circuit Recovery Drills**: `open -> half_open -> closed` workflow tested
 
 ## Compliance Security
 

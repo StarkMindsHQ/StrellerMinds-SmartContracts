@@ -256,6 +256,7 @@ Please read our [Contributing Guidelines](docs/contributing.md) for more details
 - [Mobile Optimizer System](docs/MOBILE_OPTIMIZER_SYSTEM.md)
 - [Token Incentive System](docs/TOKEN_INCENTIVE_SYSTEM.md)
 - [Security Audit Report](docs/SECURITY_AUDIT_REPORT.md)
+- [Incident Runbook](docs/INCIDENT_RUNBOOK.md)
 
 ### 📖 Quickstart: Contributing to Documentation
 

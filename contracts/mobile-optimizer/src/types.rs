@@ -1311,4 +1311,5 @@ pub enum MobileOptimizerError {
     ContentError = 35,
     CollaborationError = 36,
     UserExperienceError = 37,
+    CircuitBreakerOpen = 38,
 }

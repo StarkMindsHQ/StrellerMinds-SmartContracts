@@ -1,6 +1,6 @@
 #![no_std]
 #![allow(clippy::too_many_arguments)]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Symbol, Vec};
 
 pub mod analytics_monitor;
 pub mod batch_manager;
@@ -40,6 +40,24 @@ use security_manager::SecurityManager;
 use session_manager::{SessionManager, SessionOptimization, SessionStats};
 use types::*;
 use user_experience_manager::UserExperienceManager;
+const CIRCUIT_FAILURE_THRESHOLD: u32 = 3;
+const CIRCUIT_RESET_TIMEOUT_SECONDS: u64 = 300;
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum BreakerState {
+    Closed,
+    Open,
+    HalfOpen,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CircuitState {
+    state: BreakerState,
+    failures: u32,
+    opened_at: u64,
+}
 
 #[contract]
 pub struct MobileOptimizerContract;
@@ -47,6 +65,76 @@ pub struct MobileOptimizerContract;
 #[allow(clippy::too_many_arguments)]
 #[contractimpl]
 impl MobileOptimizerContract {
+    fn circuit_key(env: &Env, operation: &str) -> DataKey {
+        DataKey::ContentItem(String::from_str(env, operation))
+    }
+
+    fn get_or_init_circuit(env: &Env, operation: &str) -> CircuitState {
+        env.storage()
+            .persistent()
+            .get(&Self::circuit_key(env, operation))
+            .unwrap_or(CircuitState {
+                state: BreakerState::Closed,
+                failures: 0,
+                opened_at: 0,
+            })
+    }
+
+    fn can_proceed(env: &Env, operation: &str) -> bool {
+        let mut circuit = Self::get_or_init_circuit(env, operation);
+        match circuit.state {
+            BreakerState::Closed => true,
+            BreakerState::Open => {
+                if env.ledger().timestamp() >= circuit.opened_at + CIRCUIT_RESET_TIMEOUT_SECONDS {
+                    circuit.state = BreakerState::HalfOpen;
+                    env.storage()
+                        .persistent()
+                        .set(&Self::circuit_key(env, operation), &circuit);
+                    true
+                } else {
+                    false
+                }
+            }
+            BreakerState::HalfOpen => true,
+        }
+    }
+
+    fn record_success(env: &Env, operation: &str) {
+        env.storage().persistent().set(
+            &Self::circuit_key(env, operation),
+            &CircuitState {
+                state: BreakerState::Closed,
+                failures: 0,
+                opened_at: 0,
+            },
+        );
+        env.events().publish(
+            (Symbol::new(env, "circuit_closed"), Symbol::new(env, operation)),
+            env.ledger().timestamp(),
+        );
+    }
+
+    fn record_failure(env: &Env, operation: &str, reason: &str) {
+        let mut circuit = Self::get_or_init_circuit(env, operation);
+        circuit.failures += 1;
+        if matches!(circuit.state, BreakerState::HalfOpen)
+            || circuit.failures >= CIRCUIT_FAILURE_THRESHOLD
+        {
+            circuit.state = BreakerState::Open;
+            circuit.opened_at = env.ledger().timestamp();
+            env.events().publish(
+                (
+                    Symbol::new(env, "circuit_opened"),
+                    Symbol::new(env, operation),
+                    circuit.failures,
+                ),
+                String::from_str(env, reason),
+            );
+        }
+        env.storage()
+            .persistent()
+            .set(&Self::circuit_key(env, operation), &circuit);
+    }
     // ========================================================================
     // Initialization & Admin
     // ========================================================================
@@ -98,7 +186,11 @@ impl MobileOptimizerContract {
         config: MobileOptimizerConfig,
     ) -> Result<(), MobileOptimizerError> {
         Self::require_admin(&env, &admin)?;
+        if !Self::can_proceed(&env, "update_config") {
+            return Err(MobileOptimizerError::CircuitBreakerOpen);
+        }
         env.storage().persistent().set(&DataKey::Config, &config);
+        Self::record_success(&env, "update_config");
         Ok(())
     }
 
@@ -220,8 +312,16 @@ impl MobileOptimizerContract {
         batch_id: String,
     ) -> Result<BatchExecutionResult, MobileOptimizerError> {
         user.require_auth();
+        if !Self::can_proceed(&env, "execute_batch") {
+            return Err(MobileOptimizerError::CircuitBreakerOpen);
+        }
         let result = BatchManager::execute_batch(&env, batch_id, user)?;
         Self::increment_counter(&env, &DataKey::TotalBatches);
+        if result.failed_count > 0 && result.successful_count == 0 {
+            Self::record_failure(&env, "execute_batch", "all_failed");
+        } else {
+            Self::record_success(&env, "execute_batch");
+        }
         Ok(result)
     }
 
@@ -324,8 +424,17 @@ impl MobileOptimizerContract {
         device_id: String,
     ) -> Result<OfflineSyncResult, MobileOptimizerError> {
         user.require_auth();
+        if !Self::can_proceed(&env, "sync_offline") {
+            return Err(MobileOptimizerError::CircuitBreakerOpen);
+        }
         let nq = NetworkManager::detect_network_quality(&env);
-        OfflineManager::sync_offline_operations(&env, user, device_id, nq)
+        let result = OfflineManager::sync_offline_operations(&env, user, device_id, nq)?;
+        if result.failed_syncs > 0 && result.successful_syncs == 0 {
+            Self::record_failure(&env, "sync_offline", "all_failed");
+        } else {
+            Self::record_success(&env, "sync_offline");
+        }
+        Ok(result)
     }
 
     pub fn get_offline_queue_status(

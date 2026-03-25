@@ -609,4 +609,32 @@ mod tests {
         assert_eq!(reward1.unwrap(), 125_000); // 1.25x for 85%
         assert_eq!(reward2.unwrap(), 150_000); // 1.5x for 90%
     }
+
+    #[test]
+    fn test_stake_circuit_breaker_opens_after_repeated_failures() {
+        let env = create_test_env();
+        let (admin, user, _, _) = create_test_addresses(&env);
+        let contract = setup_contract(&env, &admin);
+
+        // Repeatedly fail staking due to invalid amount to trip breaker threshold.
+        for _ in 0..3 {
+            let _ = Token::stake_tokens(
+                env.clone(),
+                contract.clone(),
+                user.clone(),
+                String::from_str(&env, "missing_pool"),
+                0,
+            );
+        }
+
+        // Once open, operation should be blocked by circuit guard.
+        let result = Token::stake_tokens(
+            env.clone(),
+            contract.clone(),
+            user.clone(),
+            String::from_str(&env, "missing_pool"),
+            100_000,
+        );
+        assert!(result.is_err());
+    }
 }

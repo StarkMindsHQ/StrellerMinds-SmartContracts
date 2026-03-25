@@ -263,6 +263,7 @@ pub enum IncentiveDataKey {
     AchievementCounter,
     BurnCounter,
     EventCounter,
+    CircuitState(String),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

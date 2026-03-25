@@ -51,5 +51,6 @@ pub enum CertificateError {
 
     // General
     InvalidInput = 80,
+    CircuitBreakerOpen = 81,
     InternalError = 99,
 }

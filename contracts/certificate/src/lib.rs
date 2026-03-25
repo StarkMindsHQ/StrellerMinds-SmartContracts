@@ -9,7 +9,7 @@ pub mod types;
 mod test;
 
 use errors::CertificateError;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, String, Symbol, Vec};
 use types::{
     AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
     CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
@@ -27,6 +27,94 @@ const MAX_TIMEOUT: u64 = 2_592_000;
 const MAX_BATCH_SIZE: u32 = 25;
 /// Maximum share records per certificate.
 const MAX_SHARES_PER_CERT: u32 = 100;
+const CIRCUIT_FAILURE_THRESHOLD: u32 = 3;
+const CIRCUIT_RESET_TIMEOUT_SECONDS: u64 = 300;
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum BreakerState {
+    Closed,
+    Open,
+    HalfOpen,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct OperationCircuit {
+    state: BreakerState,
+    failure_count: u32,
+    opened_at: u64,
+}
+
+fn circuit_key(env: &Env, operation: &str) -> (Symbol, Symbol) {
+    (Symbol::new(env, "cert_circuit"), Symbol::new(env, operation))
+}
+
+fn get_or_init_circuit(env: &Env, operation: &str) -> OperationCircuit {
+    env.storage()
+        .instance()
+        .get(&circuit_key(env, operation))
+        .unwrap_or(OperationCircuit {
+            state: BreakerState::Closed,
+            failure_count: 0,
+            opened_at: 0,
+        })
+}
+
+fn can_proceed(env: &Env, operation: &str) -> bool {
+    let mut circuit = get_or_init_circuit(env, operation);
+    match circuit.state {
+        BreakerState::Closed => true,
+        BreakerState::Open => {
+            if env.ledger().timestamp() >= circuit.opened_at + CIRCUIT_RESET_TIMEOUT_SECONDS {
+                circuit.state = BreakerState::HalfOpen;
+                env.storage()
+                    .instance()
+                    .set(&circuit_key(env, operation), &circuit);
+                true
+            } else {
+                false
+            }
+        }
+        BreakerState::HalfOpen => true,
+    }
+}
+
+fn record_success(env: &Env, operation: &str) {
+    let mut circuit = get_or_init_circuit(env, operation);
+    circuit.state = BreakerState::Closed;
+    circuit.failure_count = 0;
+    circuit.opened_at = 0;
+    env.storage()
+        .instance()
+        .set(&circuit_key(env, operation), &circuit);
+    env.events().publish(
+        (Symbol::new(env, "circuit_closed"), Symbol::new(env, operation)),
+        env.ledger().timestamp(),
+    );
+}
+
+fn record_failure(env: &Env, operation: &str, reason: &str) {
+    let mut circuit = get_or_init_circuit(env, operation);
+    circuit.failure_count += 1;
+    if matches!(circuit.state, BreakerState::HalfOpen)
+        || circuit.failure_count >= CIRCUIT_FAILURE_THRESHOLD
+    {
+        circuit.state = BreakerState::Open;
+        circuit.opened_at = env.ledger().timestamp();
+        env.events().publish(
+            (
+                Symbol::new(env, "circuit_opened"),
+                Symbol::new(env, operation),
+                circuit.failure_count,
+            ),
+            String::from_str(env, reason),
+        );
+    }
+    env.storage()
+        .instance()
+        .set(&circuit_key(env, operation), &circuit);
+}
 
 #[contract]
 pub struct CertificateContract;
@@ -124,6 +212,9 @@ impl CertificateContract {
     ) -> Result<(), CertificateError> {
         require_initialized(&env)?;
         require_admin(&env, &admin)?;
+        if !can_proceed(&env, "cfg_msig") {
+            return Err(CertificateError::CircuitBreakerOpen);
+        }
 
         // Validate configuration bounds
         if config.required_approvals == 0 {
@@ -144,6 +235,7 @@ impl CertificateContract {
 
         events::emit_multisig_config_updated(&env, &config.course_id, &admin);
         storage::set_multisig_config(&env, &config.course_id, &config);
+        record_success(&env, "cfg_msig");
         Ok(())
     }
 
@@ -334,6 +426,9 @@ impl CertificateContract {
     ) -> Result<(), CertificateError> {
         require_initialized(&env)?;
         executor.require_auth();
+        if !can_proceed(&env, "exec_msig") {
+            return Err(CertificateError::CircuitBreakerOpen);
+        }
 
         let mut request = storage::get_multisig_request(&env, &request_id)
             .ok_or(CertificateError::MultiSigRequestNotFound)?;
@@ -355,6 +450,7 @@ impl CertificateContract {
             "Request manually executed",
         );
         storage::set_multisig_request(&env, &request_id, &request);
+        record_success(&env, "exec_msig");
         Ok(())
     }
 
@@ -417,6 +513,9 @@ impl CertificateContract {
     ) -> Result<BatchResult, CertificateError> {
         require_initialized(&env)?;
         require_admin(&env, &admin)?;
+        if !can_proceed(&env, "batch_issue") {
+            return Err(CertificateError::CircuitBreakerOpen);
+        }
 
         let count = params_list.len();
         if count == 0 {
@@ -474,6 +573,11 @@ impl CertificateContract {
         };
 
         events::emit_batch_completed(&env, count, succeeded, failed);
+        if failed > 0 && succeeded == 0 {
+            record_failure(&env, "batch_issue", "all_failed");
+        } else {
+            record_success(&env, "batch_issue");
+        }
         Ok(result)
     }
 
@@ -508,6 +612,9 @@ impl CertificateContract {
     ) -> Result<(), CertificateError> {
         require_initialized(&env)?;
         require_admin(&env, &admin)?;
+        if !can_proceed(&env, "revoke_cert") {
+            return Err(CertificateError::CircuitBreakerOpen);
+        }
 
         let mut cert = storage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
@@ -536,6 +643,7 @@ impl CertificateContract {
                 a.active_certificates -= 1;
             }
         });
+        record_success(&env, "revoke_cert");
 
         Ok(())
     }
@@ -548,6 +656,9 @@ impl CertificateContract {
     ) -> Result<BytesN<32>, CertificateError> {
         require_initialized(&env)?;
         require_admin(&env, &admin)?;
+        if !can_proceed(&env, "reissue_cert") {
+            return Err(CertificateError::CircuitBreakerOpen);
+        }
 
         // Verify old certificate was revoked and is eligible
         let old_cert = storage::get_certificate(&env, &old_certificate_id)
@@ -600,6 +711,7 @@ impl CertificateContract {
             a.total_reissued += 1;
             a.active_certificates += 1;
         });
+        record_success(&env, "reissue_cert");
 
         Ok(new_params.certificate_id)
     }

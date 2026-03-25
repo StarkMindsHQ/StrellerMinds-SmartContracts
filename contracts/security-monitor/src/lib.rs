@@ -14,13 +14,89 @@ use crate::types::{
     IncidentReport, SecurityConfig, SecurityThreat, SecurityTrainingStatus, ThreatIntelligence,
     UserRiskScore,
 };
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, String, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Error, String, Symbol, Vec};
+const CIRCUIT_FAILURE_THRESHOLD: u32 = 3;
+const CIRCUIT_RESET_TIMEOUT_SECONDS: u64 = 300;
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum LocalBreakerState {
+    Closed,
+    Open,
+    HalfOpen,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct LocalCircuitState {
+    state: LocalBreakerState,
+    failures: u32,
+    opened_at: u64,
+}
 
 #[contract]
 pub struct SecurityMonitor;
 
 #[contractimpl]
 impl SecurityMonitor {
+    fn circuit_key(env: &Env, operation: &str) -> (Symbol, Symbol) {
+        (Symbol::new(env, "sec_circuit"), Symbol::new(env, operation))
+    }
+
+    fn get_or_init_circuit(env: &Env, operation: &str) -> LocalCircuitState {
+        env.storage()
+            .instance()
+            .get(&Self::circuit_key(env, operation))
+            .unwrap_or(LocalCircuitState {
+                state: LocalBreakerState::Closed,
+                failures: 0,
+                opened_at: 0,
+            })
+    }
+
+    fn can_proceed(env: &Env, operation: &str) -> bool {
+        let mut state = Self::get_or_init_circuit(env, operation);
+        match state.state {
+            LocalBreakerState::Closed => true,
+            LocalBreakerState::Open => {
+                if env.ledger().timestamp() >= state.opened_at + CIRCUIT_RESET_TIMEOUT_SECONDS {
+                    state.state = LocalBreakerState::HalfOpen;
+                    env.storage()
+                        .instance()
+                        .set(&Self::circuit_key(env, operation), &state);
+                    true
+                } else {
+                    false
+                }
+            }
+            LocalBreakerState::HalfOpen => true,
+        }
+    }
+
+    fn record_success(env: &Env, operation: &str) {
+        env.storage().instance().set(
+            &Self::circuit_key(env, operation),
+            &LocalCircuitState {
+                state: LocalBreakerState::Closed,
+                failures: 0,
+                opened_at: 0,
+            },
+        );
+    }
+
+    fn record_failure(env: &Env, operation: &str) {
+        let mut state = Self::get_or_init_circuit(env, operation);
+        state.failures += 1;
+        if matches!(state.state, LocalBreakerState::HalfOpen)
+            || state.failures >= CIRCUIT_FAILURE_THRESHOLD
+        {
+            state.state = LocalBreakerState::Open;
+            state.opened_at = env.ledger().timestamp();
+        }
+        env.storage()
+            .instance()
+            .set(&Self::circuit_key(env, operation), &state);
+    }
     pub fn initialize(env: Env, admin: Address, config: SecurityConfig) -> Result<(), Error> {
         SecurityStorage::set_admin(&env, &admin);
         SecurityStorage::set_config(&env, &config);
@@ -64,10 +140,15 @@ impl SecurityMonitor {
         is_anomalous: bool,
         risk_score: u32,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(&env, "cb_anomaly") {
+            return Err(Error::from_contract_error(2));
+        }
         if !SecurityStorage::is_oracle_authorized(&env, &oracle) {
+            Self::record_failure(&env, "cb_anomaly");
             return Err(Error::from_contract_error(1)); // 1 = unauthorized
         }
         ThreatDetector::handle_anomaly_callback(&env, request_id, is_anomalous, risk_score);
+        Self::record_success(&env, "cb_anomaly");
         Ok(())
     }
 
@@ -88,10 +169,15 @@ impl SecurityMonitor {
         request_id: BytesN<32>,
         is_valid: bool,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(&env, "cb_bio") {
+            return Err(Error::from_contract_error(2));
+        }
         if !SecurityStorage::is_oracle_authorized(&env, &oracle) {
+            Self::record_failure(&env, "cb_bio");
             return Err(Error::from_contract_error(1));
         }
         ThreatDetector::handle_biometrics_callback(&env, request_id, is_valid);
+        Self::record_success(&env, "cb_bio");
         Ok(())
     }
 
@@ -112,10 +198,15 @@ impl SecurityMonitor {
         request_id: BytesN<32>,
         is_fraudulent: bool,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(&env, "cb_fraud") {
+            return Err(Error::from_contract_error(2));
+        }
         if !SecurityStorage::is_oracle_authorized(&env, &oracle) {
+            Self::record_failure(&env, "cb_fraud");
             return Err(Error::from_contract_error(1));
         }
         ThreatDetector::handle_fraud_callback(&env, request_id, is_fraudulent);
+        Self::record_success(&env, "cb_fraud");
         Ok(())
     }
 
@@ -124,13 +215,18 @@ impl SecurityMonitor {
         admin: Address,
         intel: ThreatIntelligence,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(&env, "upd_intel") {
+            return Err(Error::from_contract_error(2));
+        }
         let expected_admin =
             SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
         if admin != expected_admin {
+            Self::record_failure(&env, "upd_intel");
             return Err(Error::from_contract_error(1));
         }
         SecurityStorage::set_threat_intelligence(&env, &intel.indicator_type, &intel);
         SecurityEvents::emit_threat_intelligence_added(&env, &intel);
+        Self::record_success(&env, "upd_intel");
         Ok(())
     }
 
@@ -141,10 +237,14 @@ impl SecurityMonitor {
         score: u32,
         risk_factor: Symbol,
     ) -> Result<(), Error> {
+        if !Self::can_proceed(&env, "upd_risk") {
+            return Err(Error::from_contract_error(2));
+        }
         let expected_admin =
             SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
         if admin != expected_admin && !SecurityStorage::is_oracle_authorized(&env, &admin) {
             // Either admin or an oracle can update the risk score.
+            Self::record_failure(&env, "upd_risk");
             return Err(Error::from_contract_error(1));
         }
 
@@ -161,6 +261,7 @@ impl SecurityMonitor {
 
         SecurityStorage::set_user_risk_score(&env, &user, &risk_score);
         SecurityEvents::emit_user_risk_score_updated(&env, &user, score, &risk_factor);
+        Self::record_success(&env, "upd_risk");
         Ok(())
     }
 

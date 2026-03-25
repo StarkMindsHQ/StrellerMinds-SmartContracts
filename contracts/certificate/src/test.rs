@@ -387,6 +387,54 @@ fn test_batch_empty_fails() {
     assert!(result.is_err());
 }
 
+#[test]
+fn test_batch_issue_circuit_breaker_opens_after_repeated_failures() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let cert_id = BytesN::from_array(&env, &[201u8; 32]);
+
+    // Seed an existing cert so each batch below is guaranteed to fully fail.
+    let mut seed_list: Vec<MintCertificateParams> = Vec::new(&env);
+    seed_list.push_back(MintCertificateParams {
+        certificate_id: cert_id.clone(),
+        course_id: String::from_str(&env, "CB_COURSE"),
+        student: student.clone(),
+        title: String::from_str(&env, "Seed"),
+        description: String::from_str(&env, "Seed cert"),
+        metadata_uri: String::from_str(&env, "https://example.com/seed"),
+        expiry_date: env.ledger().timestamp() + 31_536_000,
+    });
+    client.batch_issue_certificates(&admin, &seed_list);
+
+    // Trip threshold (3) with all-failed batches.
+    for _ in 0..3 {
+        let mut dup_list: Vec<MintCertificateParams> = Vec::new(&env);
+        dup_list.push_back(MintCertificateParams {
+            certificate_id: cert_id.clone(),
+            course_id: String::from_str(&env, "CB_COURSE"),
+            student: student.clone(),
+            title: String::from_str(&env, "Dup"),
+            description: String::from_str(&env, "Duplicate"),
+            metadata_uri: String::from_str(&env, "https://example.com/dup"),
+            expiry_date: env.ledger().timestamp() + 31_536_000,
+        });
+        let _ = client.batch_issue_certificates(&admin, &dup_list);
+    }
+
+    let mut blocked_list: Vec<MintCertificateParams> = Vec::new(&env);
+    blocked_list.push_back(MintCertificateParams {
+        certificate_id: cert_id.clone(),
+        course_id: String::from_str(&env, "CB_COURSE"),
+        student,
+        title: String::from_str(&env, "Blocked"),
+        description: String::from_str(&env, "Blocked by circuit"),
+        metadata_uri: String::from_str(&env, "https://example.com/blocked"),
+        expiry_date: env.ledger().timestamp() + 31_536_000,
+    });
+    let result = client.try_batch_issue_certificates(&admin, &blocked_list);
+    assert!(result.is_err());
+}
+
 // ─────────────────────────────────────────────────────────────
 // 6. Certificate Verification
 // ─────────────────────────────────────────────────────────────

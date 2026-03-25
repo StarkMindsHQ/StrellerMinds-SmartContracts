@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Symbol, Vec};
 
 mod storage;
 mod types;
@@ -8,6 +8,93 @@ use storage::{get_admin, is_oracle, DataKey};
 use types::{
     ChainId, Credential, CredentialStatus, CrossChainProof, Transcript, VerificationRequest,
 };
+const CIRCUIT_FAILURE_THRESHOLD: u32 = 3;
+const CIRCUIT_RESET_TIMEOUT_SECONDS: u64 = 300;
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum BreakerState {
+    Closed,
+    Open,
+    HalfOpen,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CircuitState {
+    state: BreakerState,
+    failures: u32,
+    opened_at: u64,
+}
+
+fn key_for_operation(env: &Env, operation: &str) -> DataKey {
+    DataKey::CircuitState(String::from_str(env, operation))
+}
+
+fn get_or_init_circuit(env: &Env, operation: &str) -> CircuitState {
+    env.storage()
+        .instance()
+        .get(&key_for_operation(env, operation))
+        .unwrap_or(CircuitState {
+            state: BreakerState::Closed,
+            failures: 0,
+            opened_at: 0,
+        })
+}
+
+fn can_proceed(env: &Env, operation: &str) -> bool {
+    let mut state = get_or_init_circuit(env, operation);
+    match state.state {
+        BreakerState::Closed => true,
+        BreakerState::Open => {
+            if env.ledger().timestamp() >= state.opened_at + CIRCUIT_RESET_TIMEOUT_SECONDS {
+                state.state = BreakerState::HalfOpen;
+                env.storage()
+                    .instance()
+                    .set(&key_for_operation(env, operation), &state);
+                true
+            } else {
+                false
+            }
+        }
+        BreakerState::HalfOpen => true,
+    }
+}
+
+fn record_success(env: &Env, operation: &str) {
+    let state = CircuitState {
+        state: BreakerState::Closed,
+        failures: 0,
+        opened_at: 0,
+    };
+    env.storage()
+        .instance()
+        .set(&key_for_operation(env, operation), &state);
+    env.events().publish(
+        (Symbol::new(env, "circuit_closed"), Symbol::new(env, operation)),
+        env.ledger().timestamp(),
+    );
+}
+
+fn record_failure(env: &Env, operation: &str, reason: &str) {
+    let mut state = get_or_init_circuit(env, operation);
+    state.failures += 1;
+    if matches!(state.state, BreakerState::HalfOpen) || state.failures >= CIRCUIT_FAILURE_THRESHOLD {
+        state.state = BreakerState::Open;
+        state.opened_at = env.ledger().timestamp();
+        env.events().publish(
+            (
+                Symbol::new(env, "circuit_opened"),
+                Symbol::new(env, operation),
+                state.failures,
+            ),
+            String::from_str(env, reason),
+        );
+    }
+    env.storage()
+        .instance()
+        .set(&key_for_operation(env, operation), &state);
+}
 
 #[contract]
 pub struct CrossChainCredentials;
@@ -28,6 +115,9 @@ impl CrossChainCredentials {
         metadata_hash: String,
         chain_id: ChainId,
     ) -> String {
+        if !can_proceed(&env, "issue_cred") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
 
@@ -57,10 +147,14 @@ impl CrossChainCredentials {
             .persistent()
             .set(&DataKey::StudentCreds(student), &student_creds);
 
+        record_success(&env, "issue_cred");
         credential_id
     }
 
     pub fn revoke_credential(env: Env, credential_id: String) {
+        if !can_proceed(&env, "revoke_cred") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
 
@@ -73,9 +167,13 @@ impl CrossChainCredentials {
         env.storage()
             .persistent()
             .set(&DataKey::Credential(credential_id), &credential);
+        record_success(&env, "revoke_cred");
     }
 
     pub fn suspend_credential(env: Env, credential_id: String) {
+        if !can_proceed(&env, "suspend_cred") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
 
@@ -88,9 +186,13 @@ impl CrossChainCredentials {
         env.storage()
             .persistent()
             .set(&DataKey::Credential(credential_id), &credential);
+        record_success(&env, "suspend_cred");
     }
 
     pub fn reactivate_credential(env: Env, credential_id: String) {
+        if !can_proceed(&env, "reactivate_cred") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
 
@@ -103,6 +205,7 @@ impl CrossChainCredentials {
         env.storage()
             .persistent()
             .set(&DataKey::Credential(credential_id), &credential);
+        record_success(&env, "reactivate_cred");
     }
 
     pub fn get_credential(env: Env, credential_id: String) -> Credential {
@@ -196,15 +299,23 @@ impl CrossChainCredentials {
     }
 
     pub fn add_oracle(env: Env, oracle: Address) {
+        if !can_proceed(&env, "add_oracle") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
         storage::add_oracle(&env, &oracle);
+        record_success(&env, "add_oracle");
     }
 
     pub fn remove_oracle(env: Env, oracle: Address) {
+        if !can_proceed(&env, "remove_oracle") {
+            panic!("Circuit open");
+        }
         let admin = get_admin(&env);
         admin.require_auth();
         env.storage().instance().remove(&DataKey::Oracle(oracle));
+        record_success(&env, "remove_oracle");
     }
 
     pub fn is_oracle(env: Env, oracle: Address) -> bool {

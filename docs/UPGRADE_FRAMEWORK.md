@@ -294,6 +294,8 @@ Before deploying upgrades:
 - [ ] Communication plan ready
 - [ ] Rollback strategy defined
 - [ ] Stakeholder notifications sent
+- [ ] Circuit breaker alert routing verified
+- [ ] Incident runbook reviewed: `docs/INCIDENT_RUNBOOK.md`
 
 ## Future Enhancements
 
