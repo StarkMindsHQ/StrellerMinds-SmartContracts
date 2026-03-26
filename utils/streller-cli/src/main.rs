@@ -3,6 +3,12 @@ use inquire::{Confirm, Select};
 use std::fs;
 use std::process::Command;
 
+mod debug;
+mod testing;
+
+use debug::*;
+use testing::*;
+
 fn main() {
     println!("{}", style("╔════════════════════════════════════════╗").cyan());
     println!("{}", style("║    StrellerMinds Smart Contract CLI    ║").bold().cyan());
@@ -19,6 +25,8 @@ fn main() {
             "🏗️  Build: Compile All Contracts",
             "🚀 Deploy: Launch to Testnet",
             "🧪 Test: Run All Tests",
+            "🐛 Debug: Debug Tools",
+            "🧪 Test Utils: Testing Utilities",
             "🧹 Clean: Remove Build Artifacts",
             "❌ Exit",
         ];
@@ -33,6 +41,8 @@ fn main() {
             Ok("🏗️  Build: Compile All Contracts") => execute_command("make", &["build"]),
             Ok("🚀 Deploy: Launch to Testnet") => handle_deployment(&contracts),
             Ok("🧪 Test: Run All Tests") => execute_command("make", &["test"]),
+            Ok("🐛 Debug: Debug Tools") => show_debug_menu(),
+            Ok("🧪 Test Utils: Testing Utilities") => show_testing_menu(),
             Ok("🧹 Clean: Remove Build Artifacts") => execute_command("make", &["clean"]),
             _ => {
                 println!("{}", style("Exiting Streller-CLI...").yellow());
