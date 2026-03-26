@@ -1,0 +1,329 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [ main, Inadequate-Documentation ]
+    paths:
+      - 'contracts/**'
+      - 'docs/**'
+      - '.github/workflows/docs-generation.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'contracts/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Install Soroban CLI
+      run: |
+        wget -qO- https://github.com/stellar/soroban/releases/latest/download/soroban-cli-install.sh | bash
+        echo "$HOME/.soroban/bin" >> $GITHUB_PATH
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-registry-
+    
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-index-
+    
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-build-
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-minify-plugin mkdocs-git-revision-date-localized-plugin mkdocs-awesome-pages-plugin
+    
+    - name: Build contracts
+      run: |
+        cargo build --target wasm32-unknown-unknown --release
+    
+    - name: Generate contract documentation
+      run: |
+        # Create docs directory structure
+        mkdir -p docs/generated/contracts
+        
+        # Generate documentation for each contract
+        for contract in contracts/*/; do
+          contract_name=$(basename "$contract")
+          echo "Generating docs for $contract_name"
+          
+          # Extract documentation from Rust source files
+          python scripts/extract_docs.py "$contract" "docs/generated/contracts/$contract_name"
+          
+          # Generate API documentation
+          python scripts/generate_api_docs.py "$contract" "docs/generated/contracts/$contract_name"
+        done
+    
+    - name: Generate architecture diagrams
+      run: |
+        python scripts/generate_diagrams.py docs/architecture/
+    
+    - name: Generate API reference
+      run: |
+        python scripts/generate_api_reference.py docs/api/
+    
+    - name: Validate documentation
+      run: |
+        # Check for broken links
+        mkdocs build --strict
+        
+        # Validate markdown syntax
+        find docs -name "*.md" -exec python -m markdown {} \; > /dev/null
+        
+        # Check for missing documentation
+        python scripts/validate_docs.py
+    
+    - name: Build documentation site
+      run: |
+        mkdocs build --site-dir public
+        
+        # Generate sitemap
+        python scripts/generate_sitemap.py public/
+    
+    - name: Generate documentation metrics
+      run: |
+        python scripts/generate_metrics.py > docs/metrics.json
+        
+        # Display metrics
+        echo "## Documentation Metrics" >> $GITHUB_STEP_SUMMARY
+        python scripts/display_metrics.py docs/metrics.json >> $GITHUB_STEP_SUMMARY
+    
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: public/
+        retention-days: 30
+    
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/Inadequate-Documentation'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
+        destination_dir: docs
+    
+    - name: Deploy to Netlify (Preview)
+      if: github.event_name == 'pull_request'
+      uses: nwtgck/actions-netlify@v2
+      with:
+        publish-dir: './public'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Deploy from GitHub Actions"
+        enable-pull-request-comment: true
+        enable-commit-comment: true
+        overwrites-pull-request-comment: true
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    
+    - name: Comment PR with documentation link
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('Documentation Preview')
+          );
+          
+          const commentBody = `
+          ## 📚 Documentation Preview
+          
+          The documentation has been automatically generated and is available for review:
+          
+          🔗 **Preview Link**: https://deploy-preview-${{ github.event.number }}--stellarminds-docs.netlify.app
+          
+          ### Generated Documentation:
+          - Contract API documentation
+          - Architecture overviews
+          - Data structure documentation
+          - Integration guides
+          - Usage examples
+          
+          ### Documentation Metrics:
+          \`\`\`json
+          ${await fs.promises.readFile('docs/metrics.json', 'utf8')}
+          \`\`\`
+          
+          Please review the documentation and leave feedback on any issues or improvements needed.
+          `;
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: commentBody
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+          }
+
+  validate-docs:
+    runs-on: ubuntu-latest
+    needs: generate-docs
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download documentation artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: documentation
+        path: public/
+    
+    - name: Validate documentation quality
+      run: |
+        # Install validation tools
+        npm install -g markdownlint-cli
+        npm install -g alex
+        npm install -g write-good
+        
+        # Run quality checks
+        echo "## Documentation Quality Report" >> $GITHUB_STEP_SUMMARY
+        
+        # Markdown linting
+        echo "### Markdown Linting" >> $GITHUB_STEP_SUMMARY
+        markdownlint "docs/**/*.md" "public/**/*.md" || echo "⚠️ Some markdown issues found" >> $GITHUB_STEP_SUMMARY
+        
+        # Inclusive language check
+        echo "### Inclusive Language" >> $GITHUB_STEP_SUMMARY
+        alex "docs/**/*.md" "public/**/*.md" || echo "⚠️ Some language improvements suggested" >> $GITHUB_STEP_SUMMARY
+        
+        # Writing quality check
+        echo "### Writing Quality" >> $GITHUB_STEP_SUMMARY
+        write-good "docs/**/*.md" "public/**/*.md" || echo "⚠️ Some writing improvements suggested" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for broken internal links
+        echo "### Link Validation" >> $GITHUB_STEP_SUMMARY
+        python scripts/check_links.py public/ || echo "⚠️ Some broken links found" >> $GITHUB_STEP_SUMMARY
+        
+        # Check documentation coverage
+        echo "### Documentation Coverage" >> $GITHUB_STEP_SUMMARY
+        python scripts/check_coverage.py || echo "⚠️ Some documentation coverage gaps found" >> $GITHUB_STEP_SUMMARY
+
+  notify-team:
+    runs-on: ubuntu-latest
+    needs: [generate-docs, validate-docs]
+    if: always()
+    
+    steps:
+    - name: Notify team on success
+      if: needs.generate-docs.result == 'success' && needs.validate-docs.result == 'success'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '✅ Documentation Generation Successful',
+            body: `
+            The documentation has been successfully generated and deployed.
+            
+            **Build**: ${{ github.sha }}
+            **Branch**: ${{ github.ref_name }}
+            **Triggered by**: ${{ github.event_name }}
+            
+            📖 [View Documentation](https://stellarminds-docs.netlify.app/docs/)
+            
+            Documentation metrics and quality checks have passed successfully.
+            `,
+            labels: ['documentation', 'automated']
+          });
+    
+    - name: Notify team on failure
+      if: needs.generate-docs.result == 'failure' || needs.validate-docs.result == 'failure'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '❌ Documentation Generation Failed',
+            body: `
+            The documentation generation process has failed.
+            
+            **Build**: ${{ github.sha }}
+            **Branch**: ${{ github.ref_name }}
+            **Triggered by**: ${{ github.event_name }}
+            
+            **Failed Steps**:
+            - Generate Docs: ${{ needs.generate-docs.result }}
+            - Validate Docs: ${{ needs.validate-docs.result }}
+            
+            Please check the workflow logs for details and fix any issues.
+            `,
+            labels: ['documentation', 'bug', 'automated']
+          });
+
+  schedule-update:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Generate updated documentation
+      run: |
+        # Install dependencies
+        python -m pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-minify-plugin
+        
+        # Build latest documentation
+        mkdocs build --site-dir public
+        
+        # Check if documentation has changed
+        if git diff --quiet public/; then
+          echo "No documentation changes detected"
+        else
+          echo "Documentation changes detected, creating PR"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/
+          git commit -m "docs: update generated documentation [skip ci]"
+          git push
+        fi

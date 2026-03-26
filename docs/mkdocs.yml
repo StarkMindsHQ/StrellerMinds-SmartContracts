@@ -1,0 +1,223 @@
+site_name: StrellerMinds Smart Contracts Documentation
+site_description: Comprehensive documentation for StrellerMinds educational platform smart contracts
+site_author: StrellerMinds Team
+site_url: https://stellarminds-docs.github.io
+
+# Repository
+repo_name: olaleyeolajide81-sketch/StrellerMinds-SmartContracts
+repo_url: https://github.com/olaleyeolajide81-sketch/StrellerMinds-SmartContracts
+
+# Theme
+theme:
+  name: material
+  language: en
+  features:
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.tabs.link
+    - content.tooltips
+    - header.autohide
+    - navigation.expand
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - toc.integrate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: assets/favicon.png
+  logo: assets/logo.png
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+  - awesome-pages
+
+# Customization
+extra:
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/olaleyeolajide81-sketch/StrellerMinds-SmartContracts
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/strellerminds
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:contact@stellarminds.com
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Navigation
+nav:
+  - Home: 
+    - index.md
+    - Quick Start: quick-start.md
+    - Architecture Overview: architecture-overview.md
+  - Contracts:
+    - Shared Contract:
+      - contracts/shared/README.md
+      - Architecture: architecture/shared-contract.md
+      - Data Structures: data-structures/shared-types.md
+      - API Reference: api/shared-api.md
+    - Analytics Contract:
+      - contracts/analytics/README.md
+      - Architecture: architecture/analytics-contract.md
+      - Data Structures: data-structures/analytics-types.md
+      - API Reference: api/analytics-api.md
+    - Token Contract:
+      - contracts/token/README.md
+      - Architecture: architecture/token-contract.md
+      - Data Structures: data-structures/token-types.md
+      - API Reference: api/token-api.md
+    - Other Contracts:
+      - contracts/progress/README.md
+      - contracts/proxy/README.md
+      - contracts/search/README.md
+      - contracts/mobile-optimizer/README.md
+      - contracts/student-progress-tracker/README.md
+  - Integration:
+    - Integration Guide: usage-examples/integration-guide.md
+    - Frontend Integration:
+      - React Integration: usage-examples/react-integration.md
+      - Vue.js Integration: usage-examples/vue-integration.md
+      - Mobile Integration: usage-examples/mobile-integration.md
+    - API Documentation: api/contract-apis.md
+    - SDK Reference: sdk-reference.md
+  - Development:
+    - Development Setup: development/setup.md
+    - Testing: development/testing.md
+    - Deployment: development/deployment.md
+    - Contributing: development/contributing.md
+  - Reference:
+    - Error Codes: reference/error-codes.md
+    - Events: reference/events.md
+    - Configuration: reference/configuration.md
+    - Security: reference/security.md
+
+# Page tree
+pages:
+  - index.md
+  - quick-start.md
+  - architecture-overview.md
+  - contracts:
+    - shared:
+      - README.md: contracts/shared/README.md
+      - Architecture: architecture/shared-contract.md
+      - Data Structures: data-structures/shared-types.md
+      - API Reference: api/shared-api.md
+    - analytics:
+      - README.md: contracts/analytics/README.md
+      - Architecture: architecture/analytics-contract.md
+      - Data Structures: data-structures/analytics-types.md
+      - API Reference: api/analytics-api.md
+    - token:
+      - README.md: contracts/token/README.md
+      - Architecture: architecture/token-contract.md
+      - Data Structures: data-structures/token-types.md
+      - API Reference: api/token-api.md
+    - other:
+      - Progress: contracts/progress/README.md
+      - Proxy: contracts/proxy/README.md
+      - Search: contracts/search/README.md
+      - Mobile Optimizer: contracts/mobile-optimizer/README.md
+      - Student Progress Tracker: contracts/student-progress-tracker/README.md
+  - integration:
+    - Integration Guide: usage-examples/integration-guide.md
+    - frontend:
+      - React: usage-examples/react-integration.md
+      - Vue.js: usage-examples/vue-integration.md
+      - Mobile: usage-examples/mobile-integration.md
+    - API Documentation: api/contract-apis.md
+    - SDK Reference: sdk-reference.md
+  - development:
+    - Setup: development/setup.md
+    - Testing: development/testing.md
+    - Deployment: development/deployment.md
+    - Contributing: development/contributing.md
+  - reference:
+    - Error Codes: reference/error-codes.md
+    - Events: reference/events.md
+    - Configuration: reference/configuration.md
+    - Security: reference/security.md
+
+# Copyright
+copyright: |
+  &copy; 2024 StrellerMinds - 
+  <a href="#__consent">Change cookie settings</a>
