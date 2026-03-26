@@ -1,3 +1,5 @@
+use shared::emit_analytics_event;
+use shared::event_schema::{AnalyticsEventData, MetricsUpdatedEvent};
 use shared::gas_optimizer::{
     extend_instance_if_needed, pack_u32, unpack_u32, BatchResult, TTL_BUMP_THRESHOLD,
 };
@@ -72,6 +74,17 @@ pub fn record_event_optimized(env: &Env, learner: &Address, event_type: u32, val
     );
     env.storage().temporary().extend_ttl(&ev_key, 1, 100_000);
     env.storage().instance().set(&KEY_EV_COUNT, &ev_count.saturating_add(1));
+
+    emit_analytics_event!(
+        env,
+        symbol_short!("analytics"),
+        learner.clone(),
+        AnalyticsEventData::MetricsUpdated(MetricsUpdatedEvent {
+            metric_id: Symbol::new(env, &event_type.to_string()),
+            new_value: value,
+        })
+    );
+
     extend_instance_if_needed(env);
 }
 

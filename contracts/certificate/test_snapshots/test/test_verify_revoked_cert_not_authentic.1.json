@@ -736,16 +736,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "certificate_verified"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "cert"
+              },
+              {
+                "symbol": "certification"
+              },
+              {
+                "symbol": "cert_verified"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "bytes": "5050505050505050505050505050505050505050505050505050505050505050"
+                  "u32": 1
                 },
                 {
-                  "bool": false
+                  "u64": 0
+                },
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "certification_event"
                 }
               ]
             }

@@ -9,6 +9,17 @@ pub enum ChainId {
     Bsc,
 }
 
+impl ChainId {
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            ChainId::Stellar => 0,
+            ChainId::Ethereum => 1,
+            ChainId::Polygon => 2,
+            ChainId::Bsc => 3,
+        }
+    }
+}
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CredentialStatus {

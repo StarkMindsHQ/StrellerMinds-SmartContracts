@@ -1,5 +1,9 @@
 #![no_std]
 
+use shared::event_schema::{
+    AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
+};
+use shared::{emit_access_control_event, emit_progress_event};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Map, Symbol};
 
 #[derive(Clone)]
@@ -24,6 +28,12 @@ impl ProgressTracker {
         admin.require_auth();
 
         env.storage().instance().set(&DataKey::Admin, &admin);
+        emit_access_control_event!(
+            &env,
+            symbol_short!("progress"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
+        );
     }
     pub fn update_progress(
         env: Env,
@@ -49,9 +59,16 @@ impl ProgressTracker {
         progress_map.set(module_id.clone(), percent);
         env.storage().persistent().set(&key, &progress_map);
 
-        env.events().publish(
-            (symbol_short!("progress"),),
-            (symbol_short!("updated"), student, course_id, module_id, percent),
+        emit_progress_event!(
+            &env,
+            symbol_short!("progress"),
+            student.clone(),
+            ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+                student,
+                course_id,
+                module_id,
+                progress_percentage: percent,
+            })
         );
     }
 

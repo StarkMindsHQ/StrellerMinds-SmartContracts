@@ -1,5 +1,11 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use shared::event_schema::{
+    AccessControlEventData, ContractInitializedEvent, CredentialIssuedEvent,
+    CredentialReactivatedEvent, CredentialRevokedEvent, CredentialSuspendedEvent,
+    CrossChainEventData, OracleUpdatedEvent, ProofGeneratedEvent, VerificationRequestedEvent,
+};
+use shared::{emit_access_control_event, emit_crosschain_event};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 mod storage;
 mod types;
@@ -19,6 +25,12 @@ impl CrossChainCredentials {
             panic!("Already initialized");
         }
         storage::set_admin(&env, &admin);
+        emit_access_control_event!(
+            &env,
+            symbol_short!("creds"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
+        );
     }
 
     pub fn issue_credential(
@@ -35,10 +47,10 @@ impl CrossChainCredentials {
         let credential = Credential {
             id: credential_id.clone(),
             student: student.clone(),
-            issuer: admin,
+            issuer: admin.clone(),
             achievement,
             issued_at: env.ledger().timestamp(),
-            chain_id,
+            chain_id: chain_id.clone(),
             status: CredentialStatus::Active,
             metadata_hash,
         };
@@ -51,7 +63,18 @@ impl CrossChainCredentials {
             .get::<DataKey, Vec<String>>(&DataKey::StudentCreds(student.clone()))
             .unwrap_or(Vec::new(&env));
         student_creds.push_back(credential_id.clone());
-        env.storage().persistent().set(&DataKey::StudentCreds(student), &student_creds);
+        env.storage().persistent().set(&DataKey::StudentCreds(student.clone()), &student_creds);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin.clone(),
+            CrossChainEventData::CredentialIssued(CredentialIssuedEvent {
+                student,
+                credential_id: credential_id.clone(),
+                chain_id: chain_id.to_u32(),
+            })
+        );
 
         credential_id
     }
@@ -63,7 +86,14 @@ impl CrossChainCredentials {
         let mut credential: Credential =
             env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Revoked;
-        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::CredentialRevoked(CredentialRevokedEvent { credential_id })
+        );
     }
 
     pub fn suspend_credential(env: Env, credential_id: String) {
@@ -73,7 +103,14 @@ impl CrossChainCredentials {
         let mut credential: Credential =
             env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Suspended;
-        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::CredentialSuspended(CredentialSuspendedEvent { credential_id })
+        );
     }
 
     pub fn reactivate_credential(env: Env, credential_id: String) {
@@ -83,7 +120,16 @@ impl CrossChainCredentials {
         let mut credential: Credential =
             env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
         credential.status = CredentialStatus::Active;
-        env.storage().persistent().set(&DataKey::Credential(credential_id), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::CredentialReactivated(CredentialReactivatedEvent {
+                credential_id
+            })
+        );
     }
 
     pub fn get_credential(env: Env, credential_id: String) -> Credential {
@@ -105,12 +151,22 @@ impl CrossChainCredentials {
         let proof = CrossChainProof {
             credential_id: credential.id.clone(),
             source_chain: credential.chain_id.clone(),
-            target_chain,
+            target_chain: target_chain.clone(),
             proof_hash: String::from_str(&env, "proof_hash"),
             verified_at: env.ledger().timestamp(),
         };
 
-        env.storage().persistent().set(&DataKey::Proof(credential_id), &proof);
+        env.storage().persistent().set(&DataKey::Proof(credential_id.clone()), &proof);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            credential.student,
+            CrossChainEventData::ProofGenerated(ProofGeneratedEvent {
+                credential_id,
+                target_chain: target_chain.to_u32(),
+            })
+        );
         proof
     }
 
@@ -128,13 +184,24 @@ impl CrossChainCredentials {
 
         let request = VerificationRequest {
             id: request_id.clone(),
-            credential_id,
-            requester,
-            chain_id,
+            credential_id: credential_id.clone(),
+            requester: requester.clone(),
+            chain_id: chain_id.clone(),
             created_at: env.ledger().timestamp(),
         };
 
         env.storage().persistent().set(&DataKey::Request(request_id.clone()), &request);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            requester,
+            CrossChainEventData::VerificationRequested(VerificationRequestedEvent {
+                request_id: request_id.clone(),
+                credential_id,
+                chain_id: chain_id.to_u32(),
+            })
+        );
         request_id
     }
 
@@ -161,12 +228,26 @@ impl CrossChainCredentials {
         let admin = get_admin(&env);
         admin.require_auth();
         storage::add_oracle(&env, &oracle);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::OracleUpdated(OracleUpdatedEvent { oracle, added: true })
+        );
     }
 
     pub fn remove_oracle(env: Env, oracle: Address) {
         let admin = get_admin(&env);
         admin.require_auth();
-        env.storage().instance().remove(&DataKey::Oracle(oracle));
+        env.storage().instance().remove(&DataKey::Oracle(oracle.clone()));
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::OracleUpdated(OracleUpdatedEvent { oracle, added: false })
+        );
     }
 
     pub fn is_oracle(env: Env, oracle: Address) -> bool {

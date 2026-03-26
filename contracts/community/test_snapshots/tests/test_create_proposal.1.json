@@ -3547,16 +3547,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "proposal"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "comm"
+              },
+              {
+                "symbol": "governance"
+              },
+              {
+                "symbol": "proposal_created"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  "u32": 1
                 },
                 {
-                  "u64": 1
+                  "u64": 0
+                },
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "governance_event"
                 }
               ]
             }

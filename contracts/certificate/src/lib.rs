@@ -287,7 +287,7 @@ impl CertificateContract {
             // Check if threshold reached
             if request.current_approvals >= request.required_approvals {
                 request.status = MultiSigRequestStatus::Approved;
-                events::emit_multisig_request_approved(&env, &request_id);
+                events::emit_multisig_request_approved(&env, &request_id, &approver);
 
                 // Auto-execute if configured
                 if config.auto_execute {
@@ -462,7 +462,7 @@ impl CertificateContract {
 
         let result = BatchResult { total: count, succeeded, failed, certificate_ids: cert_ids };
 
-        events::emit_batch_completed(&env, count, succeeded, failed);
+        events::emit_batch_completed(&env, &admin, count, succeeded, failed);
         Ok(result)
     }
 
@@ -479,7 +479,12 @@ impl CertificateContract {
             && (cert.expiry_date == 0 || env.ledger().timestamp() <= cert.expiry_date)
             && cert.blockchain_anchor.is_some();
 
-        events::emit_certificate_verified(&env, &certificate_id, is_valid);
+        events::emit_certificate_verified(
+            &env,
+            &env.current_contract_address(),
+            &certificate_id,
+            is_valid,
+        );
         update_analytics_field(&env, |a| a.total_verified += 1);
 
         Ok(is_valid)
@@ -745,7 +750,7 @@ impl CertificateContract {
         };
 
         storage::set_compliance(&env, &certificate_id, &record);
-        events::emit_compliance_checked(&env, &certificate_id, is_compliant);
+        events::emit_compliance_checked(&env, &verifier, &certificate_id, is_compliant);
 
         record_audit(
             &env,
@@ -828,7 +833,12 @@ impl CertificateContract {
         let is_authentic =
             cert.blockchain_anchor.is_some() && cert.status != CertificateStatus::Revoked;
 
-        events::emit_certificate_verified(&env, &certificate_id, is_authentic);
+        events::emit_certificate_verified(
+            &env,
+            &env.current_contract_address(),
+            &certificate_id,
+            is_authentic,
+        );
         update_analytics_field(&env, |a| a.total_verified += 1);
 
         Ok(is_authentic)

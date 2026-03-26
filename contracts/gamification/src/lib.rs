@@ -236,7 +236,7 @@ impl Gamification {
     pub fn create_season(env: Env, admin: Address, season: Season) -> Result<u64, Error> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
-        SeasonManager::create(&env, season)
+        SeasonManager::create(&env, &admin, season)
     }
 
     pub fn get_active_season(env: Env) -> Option<Season> {
@@ -247,7 +247,7 @@ impl Gamification {
     pub fn end_season(env: Env, admin: Address) -> Result<(), Error> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
-        SeasonManager::end_current_season(&env)
+        SeasonManager::end_current_season(&env, &admin)
     }
 
     pub fn get_season_leaderboard(env: Env, season_id: u64) -> Vec<SeasonLeaderboardEntry> {

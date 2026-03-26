@@ -1,19 +1,44 @@
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error};
+use shared::event_schema::{
+    AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
+    SessionRecordedEvent,
+};
+use shared::{emit_access_control_event, emit_analytics_event};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Error};
 
 #[contract]
 pub struct Analytics;
 
 #[contractimpl]
 impl Analytics {
-    pub fn initialize(_env: Env, _admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+        emit_access_control_event!(
+            &env,
+            symbol_short!("analytics"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
+        );
         Ok(())
     }
 
-    pub fn record_session(_env: Env, _session_id: BytesN<32>) -> Result<(), Error> {
+    pub fn record_session(env: Env, user: Address, session_id: BytesN<32>) -> Result<(), Error> {
+        user.require_auth();
+        emit_analytics_event!(
+            &env,
+            symbol_short!("analytics"),
+            user.clone(),
+            AnalyticsEventData::SessionRecorded(SessionRecordedEvent { session_id })
+        );
         Ok(())
     }
 
-    pub fn complete_session(_env: Env, _session_id: BytesN<32>) -> Result<(), Error> {
+    pub fn complete_session(env: Env, user: Address, session_id: BytesN<32>) -> Result<(), Error> {
+        user.require_auth();
+        emit_analytics_event!(
+            &env,
+            symbol_short!("analytics"),
+            user.clone(),
+            AnalyticsEventData::SessionCompleted(SessionCompletedEvent { session_id })
+        );
         Ok(())
     }
 

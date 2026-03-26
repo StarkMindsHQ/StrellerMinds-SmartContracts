@@ -8318,16 +8318,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "chl_join"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "challenge_joined"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u64": 2
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }

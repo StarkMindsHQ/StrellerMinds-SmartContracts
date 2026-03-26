@@ -1,3 +1,5 @@
+use shared::emit_progress_event;
+use shared::event_schema::{ProgressEventData, ProgressUpdatedEvent};
 use shared::gas_optimizer::{BatchResult, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR};
 use soroban_sdk::{contracttype, symbol_short, Address, Env, Symbol, Vec};
 
@@ -70,6 +72,17 @@ pub fn start_course_optimized(env: &Env, learner: &Address, course_id: u32) {
     let mut prog = PackedProgress::default();
     prog.set_started_ledger(env.ledger().sequence());
     save_progress(env, learner, course_id, &prog);
+    emit_progress_event!(
+        env,
+        symbol_short!("progress"),
+        learner.clone(),
+        ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+            student: learner.clone(),
+            course_id: Symbol::new(env, &course_id.to_string()),
+            module_id: symbol_short!("start"),
+            progress_percentage: 0,
+        })
+    );
 }
 
 pub fn complete_module_optimized(
@@ -87,6 +100,17 @@ pub fn complete_module_optimized(
     let pct = ((prog.completed_module_count() as u64 * 100) / total_modules as u64) as u8;
     prog.set_completion_pct(pct);
     save_progress(env, learner, course_id, &prog);
+    emit_progress_event!(
+        env,
+        symbol_short!("progress"),
+        learner.clone(),
+        ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+            student: learner.clone(),
+            course_id: Symbol::new(env, &course_id.to_string()),
+            module_id: Symbol::new(env, &module_idx.to_string()),
+            progress_percentage: pct as u32,
+        })
+    );
     true
 }
 
@@ -117,6 +141,17 @@ pub fn batch_complete_modules(
         let pct = ((prog.completed_module_count() as u64 * 100) / total_modules as u64) as u8;
         prog.set_completion_pct(pct);
         save_progress(env, learner, course_id, &prog);
+        emit_progress_event!(
+            env,
+            symbol_short!("progress"),
+            learner.clone(),
+            ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+                student: learner.clone(),
+                course_id: Symbol::new(env, &course_id.to_string()),
+                module_id: symbol_short!("batch"),
+                progress_percentage: pct as u32,
+            })
+        );
     }
     result
 }

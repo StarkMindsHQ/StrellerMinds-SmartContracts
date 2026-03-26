@@ -1037,19 +1037,37 @@
           "v0": {
             "topics": [
               {
+                "symbol": "standard_event"
+              },
+              {
                 "symbol": "assess"
               },
               {
-                "symbol": "submit"
+                "symbol": "assessment"
+              },
+              {
+                "symbol": "submission_received"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "bytes": "ecb834aa2cf280ff49bec7c0e8c40383912f02678271e5c078d6c0944580e50d"
+                  "u32": 1
                 },
                 {
-                  "u64": 1
+                  "u64": 0
+                },
+                {
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "assessment_event"
                 }
               ]
             }
@@ -1067,25 +1085,37 @@
           "v0": {
             "topics": [
               {
+                "symbol": "standard_event"
+              },
+              {
                 "symbol": "assess"
               },
               {
-                "symbol": "graded"
+                "symbol": "assessment"
+              },
+              {
+                "symbol": "submission_graded"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "bytes": "ecb834aa2cf280ff49bec7c0e8c40383912f02678271e5c078d6c0944580e50d"
-                },
-                {
                   "u32": 1
                 },
                 {
-                  "u32": 1
+                  "u64": 0
                 },
                 {
-                  "bool": true
+                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "assessment_event"
                 }
               ]
             }
