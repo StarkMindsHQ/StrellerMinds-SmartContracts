@@ -1,12 +1,12 @@
+use chrono::Local;
+use colored::*;
 use console::style;
 use inquire::Select;
+use regex::Regex;
+use std::collections::HashMap;
 use std::fs;
 use std::process::Command;
-use colored::*;
-use chrono::Local;
-use std::collections::HashMap;
 use walkdir::WalkDir;
-use regex::Regex;
 
 pub fn show_debug_menu() {
     loop {
@@ -38,40 +38,39 @@ pub fn show_debug_menu() {
 }
 
 fn analyze_contracts() {
-    println!("{}", style("🔍 Analyzing Smart Contracts...").bold().cyan());
-    
+    println!("{}", style(" Analyzing Smart Contracts...").bold().cyan());
+
     let contracts_dir = "./contracts";
-    if !fs::metadata(contracts_dir).is_ok() {
-        println!("{}", "❌ Contracts directory not found".red());
+    if fs::metadata(contracts_dir).is_err() {
+        println!("{}", " Contracts directory not found".red());
         return;
     }
 
     let mut contract_info = Vec::new();
-    
+    let deps_regex = Regex::new(r#"^\s*(\w+)\s*=\s*["']([^"']+)["']"#).unwrap();
+
     for entry in WalkDir::new(contracts_dir).max_depth(2).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_dir() && entry.path().file_name().unwrap_or_default() != "contracts" {
+        if entry.file_type().is_dir() && entry.path().file_name().unwrap_or_default() != "contracts"
+        {
             let contract_path = entry.path();
             let contract_name = contract_path.file_name().unwrap().to_string_lossy();
-            
+
             let mut info = HashMap::new();
             info.insert("name".to_string(), contract_name.to_string());
-            
+
             // Check for Cargo.toml
             let cargo_toml = contract_path.join("Cargo.toml");
             if cargo_toml.exists() {
                 info.insert("has_cargo".to_string(), "true".to_string());
-                
+
                 // Parse Cargo.toml for dependencies
                 if let Ok(content) = fs::read_to_string(&cargo_toml) {
-                    let deps_regex = Regex::new(r#"^\s*(\w+)\s*="#).unwrap();
-                    let deps: Vec<String> = deps_regex
-                        .captures_iter(&content)
-                        .map(|cap| cap[1].to_string())
-                        .collect();
+                    let deps: Vec<String> =
+                        deps_regex.captures_iter(&content).map(|cap| cap[1].to_string()).collect();
                     info.insert("dependencies".to_string(), deps.join(", "));
                 }
             }
-            
+
             // Check for source files
             let src_dir = contract_path.join("src");
             if src_dir.exists() {
@@ -82,7 +81,7 @@ fn analyze_contracts() {
                     .count();
                 info.insert("rust_files".to_string(), rust_files.to_string());
             }
-            
+
             contract_info.push(info);
         }
     }
@@ -90,16 +89,22 @@ fn analyze_contracts() {
     println!("{}", style("\n Contract Analysis Results:").bold().green());
     for contract in contract_info {
         println!("\n Contract: {}", contract.get("name").unwrap_or(&"Unknown".to_string()).bold());
-        println!("   Has Cargo.toml: {}", 
-            if contract.get("has_cargo").unwrap_or(&"false".to_string()) == "true" { "✅".green() } else { "❌".red() });
-        
+        println!(
+            "   Has Cargo.toml: {}",
+            if contract.get("has_cargo").unwrap_or(&"false".to_string()) == "true" {
+                "✅".green()
+            } else {
+                "❌".red()
+            }
+        );
+
         if let Some(deps) = contract.get("dependencies") {
             let deps_str: &str = deps;
             if !deps_str.is_empty() {
                 println!("   Dependencies: {}", deps_str);
             }
         }
-        
+
         if let Some(files) = contract.get("rust_files") {
             println!("   Rust Files: {}", files);
         }
@@ -107,22 +112,32 @@ fn analyze_contracts() {
 }
 
 fn network_diagnostics() {
+    println!("{}", style(" Running Network Diagnostics...").bold().cyan());
     println!("{}", style("📊 Running Network Diagnostics...").bold().cyan());
-    
+
     // Check if localnet is running
     println!("🔍 Checking Soroban localnet status...");
     execute_command("make", &["localnet-status"]);
-    
+
     // Check Docker containers
     println!("\n🐳 Checking Docker containers...");
-    execute_command("docker", &["ps", "--filter", "name=soroban", "--format", "table {{.Names}}\t{{.Status}}\t{{.Ports}}"]);
-    
+    execute_command(
+        "docker",
+        &[
+            "ps",
+            "--filter",
+            "name=soroban",
+            "--format",
+            "table {{.Names}}\t{{.Status}}\t{{.Ports}}",
+        ],
+    );
+
     // Check network connectivity
     println!("\n🌐 Checking network connectivity...");
     let curl_result = Command::new("curl")
-        .args(&["-s", "http://localhost:8000/status", "--connect-timeout", "5"])
+        .args(["-s", "http://localhost:8000/status", "--connect-timeout", "5"])
         .output();
-    
+
     match curl_result {
         Ok(output) => {
             if output.status.success() {
@@ -135,22 +150,22 @@ fn network_diagnostics() {
             println!("❌ Cannot connect to localnet (curl not available)");
         }
     }
-    
+
     // Check Stellar network status
-    println!("\n⭐ Checking Stellar network status...");
+    println!("\n Checking Stellar network status...");
     execute_command("soroban", &["config", "network", "show"]);
 }
 
 fn analyze_logs() {
-    println!("{}", style("📝 Analyzing Logs...").bold().cyan());
-    
-    let log_files = vec![
+    println!("{}", style(" Analyzing Logs...").bold().cyan());
+
+    let log_files = [
         "./target/debug/build.log",
         "./target/release/build.log",
         "./logs/soroban.log",
         "./logs/contract-deployment.log",
     ];
-    
+
     println!("{}", style("\n📋 Available Log Files:").bold().green());
     for (i, log_file) in log_files.iter().enumerate() {
         if fs::metadata(log_file).is_ok() {
@@ -160,23 +175,24 @@ fn analyze_logs() {
             println!("   {}. {} (❌ Not found)", i + 1, log_file);
         }
     }
-    
-    let options: Vec<String> = log_files.iter()
+
+    let options: Vec<String> = log_files
+        .iter()
         .enumerate()
         .filter(|(_, file)| fs::metadata(file).is_ok())
         .map(|(i, file)| format!("{}. {}", i + 1, file))
         .chain(vec!["⬅️  Back".to_string()])
         .collect();
-    
+
     if options.len() > 1 {
         let choice = Select::new("Select log file to analyze:", options).prompt();
-        
-        if let Ok(selection) = choice {
-            if !selection.starts_with("⬅️") {
-                let file_num = selection.split('.').next().unwrap().parse::<usize>().unwrap() - 1;
-                if let Some(log_file) = log_files.get(file_num) {
-                    analyze_log_file(log_file);
-                }
+
+        if let Ok(selection) = choice
+            && !selection.starts_with("⬅️")
+        {
+            let file_num = selection.split('.').next().unwrap().parse::<usize>().unwrap() - 1;
+            if let Some(log_file) = log_files.get(file_num) {
+                analyze_log_file(log_file);
             }
         }
     }
@@ -184,23 +200,23 @@ fn analyze_logs() {
 
 fn analyze_log_file(log_file: &str) {
     println!("\n{}", style(format!("📖 Analyzing: {}", log_file)).bold().blue());
-    
+
     if let Ok(content) = fs::read_to_string(log_file) {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
-        
+
         // Count error/warning patterns
         let error_regex = Regex::new(r"(?i)error|fail|exception").unwrap();
         let warning_regex = Regex::new(r"(?i)warn|warning").unwrap();
-        
+
         let errors = lines.iter().filter(|line| error_regex.is_match(line)).count();
         let warnings = lines.iter().filter(|line| warning_regex.is_match(line)).count();
-        
+
         println!("📊 Log Statistics:");
         println!("   📄 Total Lines: {}", total_lines);
         println!("   ❌ Errors: {}", errors.to_string().red());
         println!("   ⚠️  Warnings: {}", warnings.to_string().yellow());
-        
+
         // Show last 10 lines
         println!("\n📋 Last 10 lines:");
         for line in lines.iter().skip(total_lines.saturating_sub(10)) {
@@ -219,7 +235,7 @@ fn analyze_log_file(log_file: &str) {
 
 fn gas_profiling() {
     println!("{}", style("🔧 Running Gas Profiling...").bold().cyan());
-    
+
     // Check if gas profiler script exists
     let profiler_script = "./scripts/gas_profiler.sh";
     if fs::metadata(profiler_script).is_ok() {
@@ -228,7 +244,7 @@ fn gas_profiling() {
     } else {
         println!("{}", "❌ Gas profiler script not found".red());
         println!("💡 Creating basic gas profiling utility...");
-        
+
         // Create a simple gas profiling utility
         let contracts = get_contract_list();
         println!("\n📊 Estimated Gas Costs:");
@@ -240,27 +256,27 @@ fn gas_profiling() {
 
 fn performance_metrics() {
     println!("{}", style("📈 Collecting Performance Metrics...").bold().cyan());
-    
+
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
     println!("🕐 Timestamp: {}", timestamp);
-    
+
     // System metrics
     println!("\n💻 System Metrics:");
     execute_command("uname", &["-a"]);
     execute_command("df", &["-h", "."]);
-    
+
     // Rust/Cargo metrics
     println!("\n🦀 Rust/Cargo Metrics:");
     execute_command("rustc", &["--version"]);
     execute_command("cargo", &["--version"]);
-    
+
     // Build metrics
     println!("\n🏗️  Build Metrics:");
     if fs::metadata("./target").is_ok() {
         let metadata = fs::metadata("./target").unwrap();
         println!("   📁 Target directory size: {} bytes", metadata.len());
     }
-    
+
     // Contract metrics
     println!("\n📋 Contract Metrics:");
     let contracts_dir = "./contracts";
@@ -277,7 +293,7 @@ fn performance_metrics() {
 
 fn filesystem_check() {
     println!("{}", style("🗂️  Performing File System Check...").bold().cyan());
-    
+
     let important_dirs = vec![
         ("./contracts", "Smart Contracts"),
         ("./scripts", "Build Scripts"),
@@ -285,7 +301,7 @@ fn filesystem_check() {
         ("./docs", "Documentation"),
         ("./target", "Build Artifacts"),
     ];
-    
+
     println!("\n📁 Directory Structure Check:");
     for (dir, description) in important_dirs {
         if fs::metadata(dir).is_ok() {
@@ -299,16 +315,12 @@ fn filesystem_check() {
             println!("   ❌ {}: {}", description.red(), dir);
         }
     }
-    
+
     // Check file permissions
     println!("\n🔐 File Permissions Check:");
-    let important_files = vec![
-        "./Makefile",
-        "./Cargo.toml",
-        "./scripts/build.sh",
-        "./scripts/deploy_testnet.sh",
-    ];
-    
+    let important_files =
+        vec!["./Makefile", "./Cargo.toml", "./scripts/build.sh", "./scripts/deploy_testnet.sh"];
+
     for file in important_files {
         if fs::metadata(file).is_ok() {
             println!("   ✅ {}", file.green());
@@ -320,33 +332,36 @@ fn filesystem_check() {
 
 fn dependency_analysis() {
     println!("{}", style("🔗 Analyzing Dependencies...").bold().cyan());
-    
+
+    // Pre-compile regex patterns to avoid creating them in loops
+    let dep_regex = Regex::new(r#"^\s*(\w+)\s*=\s*["']([^"']+)["']"#).unwrap();
+
     // Analyze workspace dependencies
     if let Ok(content) = fs::read_to_string("./Cargo.toml") {
         println!("\n📦 Workspace Dependencies:");
-        let dep_regex = Regex::new(r#"^\s*(\w+)\s*=\s*["']([^"']+)["']"#).unwrap();
         for cap in dep_regex.captures_iter(&content) {
             println!("   📦 {}: {}", &cap[1], &cap[2]);
         }
     }
-    
+
     // Analyze individual contract dependencies
     println!("\n📋 Contract Dependencies:");
     let contracts_dir = "./contracts";
     if fs::metadata(contracts_dir).is_ok() {
+        let dep_section_regex = Regex::new(r#"\[dependencies\]"#).unwrap();
+
         for entry in WalkDir::new(contracts_dir).max_depth(2).into_iter().filter_map(|e| e.ok()) {
             if entry.file_type().is_file() && entry.file_name() == "Cargo.toml" {
                 let contract_path = entry.path();
-                let contract_name = contract_path.parent().unwrap().file_name().unwrap().to_string_lossy();
-                
-                if let Ok(content) = fs::read_to_string(contract_path) {
-                    let dep_regex = Regex::new(r#"\[dependencies\]"#).unwrap();
-                    if dep_regex.is_match(&content) {
-                        println!("\n📁 {}", contract_name.bold());
-                        let deps_regex = Regex::new(r#"^\s*(\w+)\s*=\s*["']([^"']+)["']"#).unwrap();
-                        for cap in deps_regex.captures_iter(&content) {
-                            println!("   📦 {}: {}", &cap[1], &cap[2]);
-                        }
+                let contract_name =
+                    contract_path.parent().unwrap().file_name().unwrap().to_string_lossy();
+
+                if let Ok(content) = fs::read_to_string(contract_path)
+                    && dep_section_regex.is_match(&content)
+                {
+                    println!("\n📁 {}", contract_name.bold());
+                    for cap in dep_regex.captures_iter(&content) {
+                        println!("   📦 {}: {}", &cap[1], &cap[2]);
                     }
                 }
             }
@@ -365,10 +380,10 @@ fn get_contract_list() -> Vec<String> {
 
 fn execute_command(cmd: &str, args: &[&str]) {
     println!("{} {} {}", style("➜ Executing:").bold().dim(), cmd, args.join(" "));
-    
+
     let mut child = Command::new(cmd).args(args).spawn().expect("Failed to execute command");
     let status = child.wait().expect("Failed to wait on child");
-    
+
     if status.success() {
         println!("{}", style("✔ Command successful").green());
     } else {
