@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec, Map};
+use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec, Map, String};
 use crate::shared::storage_optimization::{CompactStorage, PackedStudentData, CompressedSessionCollection};
 use crate::shared::storage_cleanup::StorageCleanup;
 
@@ -442,7 +442,7 @@ impl StorageBenchmark {
         )));
         report = report.concat(&String::from_str(env, &format!(
             "- Average Gas Savings: {:.2}%\n", 
-            (1.0 - total_gas_savings / count) * 100.0
+            (1.0 - metrics.lookup_speed_improvement / results.len() as f32) * 100.0
         )));
         
         // Detailed results

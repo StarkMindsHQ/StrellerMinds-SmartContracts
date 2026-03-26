@@ -93,19 +93,19 @@ pub struct CompressedSessionCollection {
 }
 
 impl CompressedSessionCollection {
-    pub fn compress_sessions(sessions: Vec<(u64, u32, u8)>) -> Self {
+    pub fn compress_sessions(env: &soroban_sdk::Env, sessions: Vec<(u64, u32, u8)>) -> Self {
         if sessions.is_empty() {
             return CompressedSessionCollection {
                 base_timestamp: 0,
-                delta_encoded_durations: Vec::new(&sessions.env),
-                packed_metadata: Vec::new(&sessions.env),
+                delta_encoded_durations: Vec::new(env),
+                packed_metadata: Vec::new(env),
                 session_count: 0,
             };
         }
         
         let base_timestamp = sessions.first().unwrap().0;
-        let mut deltas = Vec::new(&sessions.env);
-        let mut packed = Vec::new(&sessions.env);
+        let mut deltas = Vec::new(env);
+        let mut packed = Vec::new(env);
         
         for (timestamp, duration, score_tier) in sessions.iter() {
             let delta = timestamp.saturating_sub(base_timestamp) as u32;
@@ -167,7 +167,14 @@ impl CompactBloomFilter {
     
     fn optimal_bit_count(expected_items: u32) -> u32 {
         // m = -n * ln(p) / ln(2)^2, where p = 0.01 (1% false positive rate)
-        ((expected_items as f64 * 9.585) as u32).next_power_of_two()
+        let result = (expected_items as f64 * 9.585) as u32;
+        if result == 0 {
+            1
+        } else if result.is_power_of_two() {
+            result
+        } else {
+            result.next_power_of_two()
+        }
     }
     
     fn optimal_hash_count(n: u32, m: u32) -> u8 {
@@ -175,7 +182,15 @@ impl CompactBloomFilter {
         ((m as f64 / n as f64) * 0.693) as u8
     }
     
-    pub fn add(&mut self, item: &BytesN<32>) {
+    pub fn add(&mut self, env: &soroban_sdk::Env, item: &BytesN<32>) {
+        // Ensure bit vector has enough capacity
+        let bit_count = Self::optimal_bit_count(1000); // Default capacity
+        let required_words = (bit_count + 63) / 64;
+        
+        while self.bit_vector.len() < required_words {
+            self.bit_vector.push_back(0);
+        }
+        
         // Simple hash implementation for demonstration
         let hash1 = self.hash(item, 0);
         let hash2 = self.hash(item, 1);
@@ -325,9 +340,10 @@ impl CompactStorage {
     
     /// Compress session collection
     pub fn compress_sessions(
+        env: &soroban_sdk::Env,
         sessions: Vec<(u64, u32, u8)>,
     ) -> CompressedSessionCollection {
-        CompressedSessionCollection::compress_sessions(sessions)
+        CompressedSessionCollection::compress_sessions(env, sessions)
     }
     
     /// Create bloom filter for existence checks

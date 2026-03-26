@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec, Map};
+use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec, Map, String};
 
 /// Storage cleanup and maintenance utilities
 pub struct StorageCleanup;

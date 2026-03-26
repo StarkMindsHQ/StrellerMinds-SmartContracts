@@ -61,7 +61,7 @@ pub fn add_pending_request(env: &Env, request_id: &BytesN<32>) {
     
     // Only add if not already present
     if !filter.might_contain(request_id) {
-        filter.add(request_id);
+        filter.add(env, request_id);
         env.storage().persistent().set(&CertDataKey::PendingRequests, &filter);
         
         // Also maintain the actual list for iteration

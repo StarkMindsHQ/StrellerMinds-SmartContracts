@@ -57,12 +57,12 @@ impl AnalyticsStorage {
             new_sessions.push_back((timestamp, 0, 0)); // Default values for compression
             
             // Re-compress
-            compressed = CompressedSessionCollection::compress_sessions(new_sessions);
+            compressed = CompressedSessionCollection::compress_sessions(env, new_sessions);
             env.storage().persistent().set(&key, &compressed);
         } else {
             // Create new compressed collection
             let sessions = Vec::from_array(env, [(timestamp, 0, 0)]);
-            let compressed = CompressedSessionCollection::compress_sessions(sessions);
+            let compressed = CompressedSessionCollection::compress_sessions(env, sessions);
             env.storage().persistent().set(&key, &compressed);
         }
     }
