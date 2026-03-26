@@ -1,5 +1,90 @@
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec, Map};
 use crate::compact_types::{CompactSession, CompactAnalytics, CompactAchievement};
+
+/// Cleanup parameters for storage operations
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct CleanupParameters {
+    pub max_items_per_cleanup: u32,
+    pub age_threshold_days: u32,
+    pub cleanup_interval_hours: u32,
+}
+
+impl CleanupParameters {
+    pub fn conservative() -> Self {
+        Self {
+            max_items_per_cleanup: 100,
+            age_threshold_days: 30,
+            cleanup_interval_hours: 24,
+        }
+    }
+    
+    pub fn aggressive() -> Self {
+        Self {
+            max_items_per_cleanup: 500,
+            age_threshold_days: 7,
+            cleanup_interval_hours: 6,
+        }
+    }
+}
+
+/// Performance report
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct PerformanceReport {
+    pub timestamp: u64,
+    pub benchmarks: BenchmarkResults,
+    pub recommendations: Vec<soroban_sdk::String>,
+    pub storage_efficiency_score: u32,
+}
+
+/// Daily growth metrics
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct DailyGrowth {
+    pub day: u32,
+    pub sessions_added: u32,
+    pub certificates_added: u32,
+    pub analytics_entries_added: u32,
+    pub storage_bytes_added: u64,
+}
+
+/// Growth benchmark results
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct GrowthBenchmark {
+    pub daily_growth: Vec<DailyGrowth>,
+    pub total_growth: u64,
+    pub average_daily_growth: u64,
+    pub growth_rate_percentage: u32,
+}
+
+impl GrowthBenchmark {
+    pub fn new(env: &Env) -> Self {
+        Self {
+            daily_growth: Vec::new(env),
+            total_growth: 0,
+            average_daily_growth: 0,
+            growth_rate_percentage: 0,
+        }
+    }
+    
+    pub fn calculate_total_growth(&self) -> u64 {
+        let mut total = 0u64;
+        for g in self.daily_growth.iter() {
+            total += g.storage_bytes_added;
+        }
+        total
+    }
+    
+    pub fn calculate_growth_rate(&self) -> u32 {
+        if self.total_growth == 0 {
+            return 0;
+        }
+        // Simple growth rate calculation
+        ((self.total_growth / 1000) * 100) as u32
+    }
+}
 
 /// Storage benchmark results for comprehensive analysis
 #[derive(Clone, Debug)]
@@ -15,13 +100,13 @@ pub struct BenchmarkResults {
 }
 
 impl BenchmarkResults {
-    pub fn new() -> Self {
+    pub fn new(env: &Env) -> Self {
         Self {
-            session_benchmark: OperationBenchmark::new("Session Storage"),
-            analytics_benchmark: OperationBenchmark::new("Analytics Storage"),
-            certificate_benchmark: OperationBenchmark::new("Certificate Storage"),
-            cleanup_benchmark: OperationBenchmark::new("Cleanup Operations"),
-            comparison_benchmark: OperationBenchmark::new("Compact vs Full"),
+            session_benchmark: OperationBenchmark::new(env, "Session Storage"),
+            analytics_benchmark: OperationBenchmark::new(env, "Analytics Storage"),
+            certificate_benchmark: OperationBenchmark::new(env, "Certificate Storage"),
+            cleanup_benchmark: OperationBenchmark::new(env, "Cleanup Operations"),
+            comparison_benchmark: OperationBenchmark::new(env, "Compact vs Full"),
             total_gas_used: 0,
             timestamp: 0,
         }
@@ -41,9 +126,9 @@ pub struct OperationBenchmark {
 }
 
 impl OperationBenchmark {
-    pub fn new(name: &str) -> Self {
+    pub fn new(env: &Env, name: &str) -> Self {
         Self {
-            operation_name: soroban_sdk::String::from_str(&Env::default(), name),
+            operation_name: soroban_sdk::String::from_str(env, name),
             gas_used: 0,
             storage_bytes: 0,
             execution_time_ms: 0,
@@ -59,7 +144,7 @@ pub struct StorageBenchmark;
 impl StorageBenchmark {
     /// Benchmark storage operations for performance comparison
     pub fn run_comprehensive_benchmark(env: &Env) -> BenchmarkResults {
-        let mut results = BenchmarkResults::new();
+        let mut results = BenchmarkResults::new(env);
         
         // Benchmark session storage
         results.session_benchmark = Self::benchmark_session_storage(env);
@@ -87,7 +172,7 @@ impl StorageBenchmark {
     
     /// Benchmark session storage operations
     fn benchmark_session_storage(env: &Env) -> OperationBenchmark {
-        let mut benchmark = OperationBenchmark::new("Session Storage");
+        let mut benchmark = OperationBenchmark::new(env, "Session Storage");
         
         let test_student = Address::generate(env);
         let test_course = Symbol::new(env, "TEST_COURSE");
@@ -99,7 +184,7 @@ impl StorageBenchmark {
         for i in 0..100 {
             let session_id = soroban_sdk::BytesN::from_array(&[i as u8; 32]);
             // Simulate session storage operation
-            benchmark.operation_count += 1;
+            benchmark.items_processed += 1;
         }
         
         benchmark.gas_used = 15000; // Estimated gas cost
@@ -110,12 +195,12 @@ impl StorageBenchmark {
     
     /// Benchmark analytics storage operations
     fn benchmark_analytics_storage(env: &Env) -> OperationBenchmark {
-        let mut benchmark = OperationBenchmark::new("Analytics Storage");
+        let mut benchmark = OperationBenchmark::new(env, "Analytics Storage");
         
         // Simulate analytics operations
         for i in 0..50 {
             // Simulate analytics storage
-            benchmark.operation_count += 1;
+            benchmark.items_processed += 1;
         }
         
         benchmark.gas_used = 12000;
@@ -126,12 +211,12 @@ impl StorageBenchmark {
     
     /// Benchmark certificate storage operations
     fn benchmark_certificate_storage(env: &Env) -> OperationBenchmark {
-        let mut benchmark = OperationBenchmark::new("Certificate Storage");
+        let mut benchmark = OperationBenchmark::new(env, "Certificate Storage");
         
         // Simulate certificate operations
         for i in 0..25 {
             // Simulate certificate storage
-            benchmark.operation_count += 1;
+            benchmark.items_processed += 1;
         }
         
         benchmark.gas_used = 10000;
@@ -142,7 +227,7 @@ impl StorageBenchmark {
     
     /// Benchmark cleanup operations
     fn benchmark_cleanup_operations(env: &Env) -> OperationBenchmark {
-        let mut benchmark = OperationBenchmark::new("Cleanup Operations");
+        let mut benchmark = OperationBenchmark::new(env, "Cleanup Operations");
         
         let cleanup_params = CleanupParameters::conservative();
         
@@ -150,7 +235,7 @@ impl StorageBenchmark {
         let start_gas = env.ledger().timestamp();
         
         // Simulate various cleanup operations
-        benchmark.operation_count += 5; // Multiple cleanup types
+        benchmark.items_processed += 5; // Multiple cleanup types
         
         benchmark.gas_used = 8000;
         benchmark.execution_time_ms = 200;
@@ -159,27 +244,17 @@ impl StorageBenchmark {
     }
     
     /// Benchmark compact vs full storage
-    fn benchmark_compact_vs_full(env: &Env) -> ComparisonBenchmark {
-        let mut benchmark = ComparisonBenchmark::new("Compact vs Full Storage");
+    fn benchmark_compact_vs_full(env: &Env) -> OperationBenchmark {
+        let mut benchmark = OperationBenchmark::new(env, "Compact vs Full Storage");
         
-        // Benchmark full storage
-        let full_storage_start = env.ledger().timestamp();
-        for i in 0..100 {
-            // Simulate full storage operations
-            benchmark.full_storage_operations += 1;
+        // Simulate comparison operations
+        for i in 0..50 {
+            // Simulate comparison operations
+            benchmark.items_processed += 1;
         }
-        benchmark.full_storage_gas = 100000; // Estimated
         
-        // Benchmark compact storage
-        let compact_storage_start = env.ledger().timestamp();
-        for i in 0..100 {
-            // Simulate compact storage operations
-            benchmark.compact_storage_operations += 1;
-        }
-        benchmark.compact_storage_gas = 15000; // Estimated
-        
-        benchmark.gas_savings = benchmark.full_storage_gas - benchmark.compact_storage_gas;
-        benchmark.gas_savings_percentage = (benchmark.gas_savings * 100) / benchmark.full_storage_gas;
+        benchmark.gas_used = 25000; // Estimated comparison cost
+        benchmark.execution_time_ms = 150;
         
         benchmark
     }
@@ -191,29 +266,29 @@ impl StorageBenchmark {
         PerformanceReport {
             timestamp: env.ledger().timestamp(),
             benchmarks: benchmark_results,
-            recommendations: Self::generate_recommendations(&benchmark_results),
+            recommendations: Self::generate_recommendations(env, &benchmark_results),
             storage_efficiency_score: Self::calculate_efficiency_score(&benchmark_results),
         }
     }
     
     /// Generate optimization recommendations
-    fn generate_recommendations(results: &BenchmarkResults) -> Vec<String> {
-        let mut recommendations = Vec::new();
+    fn generate_recommendations(env: &Env, results: &BenchmarkResults) -> Vec<soroban_sdk::String> {
+        let mut recommendations = Vec::new(env);
         
         if results.session_benchmark.gas_used > 20000 {
-            recommendations.push("Consider implementing session size limits".to_string());
+            recommendations.push_back(soroban_sdk::String::from_str(env, "Consider implementing session size limits"));
         }
         
         if results.analytics_benchmark.gas_used > 15000 {
-            recommendations.push("Use compact analytics storage format".to_string());
+            recommendations.push_back(soroban_sdk::String::from_str(env, "Use compact analytics storage format"));
         }
         
-        if results.comparison_benchmark.gas_savings_percentage < 80 {
-            recommendations.push("Implement more aggressive compact storage".to_string());
+        if results.comparison_benchmark.gas_used < 20000 {
+            recommendations.push_back(soroban_sdk::String::from_str(env, "Implement more aggressive compact storage"));
         }
         
         if results.cleanup_benchmark.execution_time_ms > 300 {
-            recommendations.push("Optimize cleanup operation frequency".to_string());
+            recommendations.push_back(soroban_sdk::String::from_str(env, "Optimize cleanup operation frequency"));
         }
         
         recommendations
@@ -249,7 +324,7 @@ impl StorageBenchmark {
     
     /// Benchmark storage growth over time
     pub fn benchmark_storage_growth(env: &Env, days: u32) -> GrowthBenchmark {
-        let mut benchmark = GrowthBenchmark::new();
+        let mut benchmark = GrowthBenchmark::new(env);
         
         // Simulate storage growth over specified period
         for day in 0..days {

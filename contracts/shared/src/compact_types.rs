@@ -58,7 +58,9 @@ impl CompactProgress {
         for packed in self.packed_data.iter() {
             let module_id = (packed >> 48) as u16;
             let progress = ((packed >> 32) & 0xFFFF) as u32;
-            let symbol = Symbol::new(env, &module_id.to_string());
+            // Convert module_id to string and then to symbol
+            let module_str = format!("{}", module_id);
+            let symbol = Symbol::new(env, &module_str);
             result.set(symbol, progress);
         }
         result
