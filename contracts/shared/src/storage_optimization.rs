@@ -3,6 +3,81 @@ use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec, Map};
 /// Compact storage optimization utilities
 pub struct CompactStorage;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use soroban_sdk::Env;
+
+    #[test]
+    fn test_packed_student_data() {
+        let env = Env::default();
+        
+        // Test packing and unpacking
+        let packed = PackedStudentData::pack_fields(
+            85, // completion_pct
+            120, // total_time_hours
+            5, // interaction_level
+            3, // performance_tier
+            0, // flags
+        );
+
+        assert_eq!(packed >> 96 & 0xFFFFFFFF, 85);
+        assert_eq!(packed >> 64 & 0xFFFFFFFF, 120);
+        assert_eq!(packed >> 56 & 0xFF, 5);
+        assert_eq!(packed >> 48 & 0xFF, 3);
+    }
+
+    #[test]
+    fn test_compressed_session_collection() {
+        let env = Env::default();
+        
+        let sessions = Vec::from_array(&env, [
+            (1000, 1800, 3),
+            (2000, 3600, 4),
+            (3000, 2700, 2),
+        ]);
+
+        let compressed = CompressedSessionCollection::compress_sessions(&env, sessions.clone());
+        assert_eq!(compressed.session_count, 3);
+        assert_eq!(compressed.base_timestamp, 1000);
+
+        let decompressed = compressed.decompress_sessions(&env);
+        assert_eq!(decompressed.len(), 3);
+    }
+
+    #[test]
+    fn test_bloom_filter() {
+        let env = Env::default();
+        let mut filter = CompactBloomFilter::new(&env, 100);
+        
+        let item1 = BytesN::from_array(&env, &[1; 32]);
+        let item2 = BytesN::from_array(&env, &[2; 32]);
+        
+        filter.add(&env, &item1);
+        assert!(filter.might_contain(&item1));
+        
+        filter.add(&env, &item2);
+        assert!(filter.might_contain(&item2));
+        assert!(filter.might_contain(&item1)); // Should still contain item1
+    }
+
+    #[test]
+    fn test_compact_storage() {
+        let env = Env::default();
+        
+        let packed_data = CompactStorage::optimize_student_data(
+            75, 100, 4, 2, 1000, 2000, 10, 5, 80, 7
+        );
+        
+        assert_eq!(packed_data.first_activity, 1000);
+        assert_eq!(packed_data.last_activity, 2000);
+        assert_eq!(packed_data.total_sessions, 10);
+        assert_eq!(packed_data.completed_modules, 5);
+        assert_eq!(packed_data.average_score, 80);
+        assert_eq!(packed_data.streak_days, 7);
+    }
+}
+
 /// Optimized storage key patterns
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
