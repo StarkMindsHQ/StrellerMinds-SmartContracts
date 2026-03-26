@@ -1,6 +1,57 @@
-use soroban_sdk::{Address, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 use crate::compact_types::{CompactSession, CompactAnalytics, CompactAchievement};
-use crate::storage_cleanup::{StorageCleanup, CleanupParameters};
+
+/// Storage benchmark results for comprehensive analysis
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct BenchmarkResults {
+    pub session_benchmark: OperationBenchmark,
+    pub analytics_benchmark: OperationBenchmark,
+    pub certificate_benchmark: OperationBenchmark,
+    pub cleanup_benchmark: OperationBenchmark,
+    pub comparison_benchmark: OperationBenchmark,
+    pub total_gas_used: u64,
+    pub timestamp: u64,
+}
+
+impl BenchmarkResults {
+    pub fn new() -> Self {
+        Self {
+            session_benchmark: OperationBenchmark::new("Session Storage"),
+            analytics_benchmark: OperationBenchmark::new("Analytics Storage"),
+            certificate_benchmark: OperationBenchmark::new("Certificate Storage"),
+            cleanup_benchmark: OperationBenchmark::new("Cleanup Operations"),
+            comparison_benchmark: OperationBenchmark::new("Compact vs Full"),
+            total_gas_used: 0,
+            timestamp: 0,
+        }
+    }
+}
+
+/// Individual operation benchmark data
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct OperationBenchmark {
+    pub operation_name: soroban_sdk::String,
+    pub gas_used: u64,
+    pub storage_bytes: u64,
+    pub execution_time_ms: u64,
+    pub success_rate: u32, // Percentage
+    pub items_processed: u32,
+}
+
+impl OperationBenchmark {
+    pub fn new(name: &str) -> Self {
+        Self {
+            operation_name: soroban_sdk::String::from_str(&Env::default(), name),
+            gas_used: 0,
+            storage_bytes: 0,
+            execution_time_ms: 0,
+            success_rate: 100,
+            items_processed: 0,
+        }
+    }
+}
 
 /// Storage benchmarking utilities for performance measurement
 pub struct StorageBenchmark;

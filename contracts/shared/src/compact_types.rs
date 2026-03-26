@@ -1,4 +1,69 @@
-use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec, Map};
+use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec, Map, Env};
+
+/// Compact progress tracking using packed data structures
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct CompactProgress {
+    /// Packed module progress data
+    /// Format: [module_id_16bits][progress_16bits][module_id_16bits][progress_16bits]...
+    pub packed_data: Vec<u64>,
+    /// Number of modules tracked
+    pub module_count: u32,
+}
+
+impl CompactProgress {
+    pub fn new(env: &Env) -> Self {
+        Self {
+            packed_data: Vec::new(env),
+            module_count: 0,
+        }
+    }
+
+    pub fn set_progress(&mut self, module_id: u16, progress: u32) {
+        if progress > 100 {
+            panic!("Progress cannot exceed 100");
+        }
+
+        // Check if module already exists
+        for i in 0..self.packed_data.len() {
+            let packed = self.packed_data.get(i).unwrap();
+            let existing_module_id = (packed >> 48) as u16;
+            
+            if existing_module_id == module_id {
+                // Update existing entry
+                let new_packed = ((module_id as u64) << 48) | ((progress as u64) << 32) | (packed & 0xFFFFFFFF);
+                self.packed_data.set(i, new_packed);
+                return;
+            }
+        }
+
+        // Add new entry
+        let packed = ((module_id as u64) << 48) | ((progress as u64) << 32);
+        self.packed_data.push_back(packed);
+        self.module_count += 1;
+    }
+
+    pub fn get_progress(&self, module_id: u16) -> Option<u32> {
+        for packed in self.packed_data.iter() {
+            let existing_module_id = (packed >> 48) as u16;
+            if existing_module_id == module_id {
+                return Some(((packed >> 32) & 0xFFFF) as u32);
+            }
+        }
+        None
+    }
+
+    pub fn get_all_progress(&self, env: &Env) -> Map<Symbol, u32> {
+        let mut result = Map::new(env);
+        for packed in self.packed_data.iter() {
+            let module_id = (packed >> 48) as u16;
+            let progress = ((packed >> 32) & 0xFFFF) as u32;
+            let symbol = Symbol::new(env, &module_id.to_string());
+            result.set(symbol, progress);
+        }
+        result
+    }
+}
 
 /// Compact session data using bit packing for efficiency
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -86,3 +86,13 @@ pub mod validation {
     }
 }
 pub mod gas_optimizer;
+pub mod storage;
+pub mod compact_types;
+pub mod storage_benchmark;
+pub mod storage_cleanup;
+
+// Re-export commonly used storage optimization types
+pub use storage::{DataKey, AccessControlStorage};
+pub use compact_types::{CompactSession, CompactProgress, CompactAnalytics, CompactAchievement};
+pub use storage_benchmark::{StorageBenchmark, BenchmarkResults, OperationBenchmark};
+pub use storage_cleanup::{StorageCleanupScheduler, CleanupResult, StorageCleanup};

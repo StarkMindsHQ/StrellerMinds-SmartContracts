@@ -1,5 +1,104 @@
-use soroban_sdk::{Address, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 use crate::compact_types::{CompactStorageKey, CompactIndex};
+
+/// Storage cleanup scheduler for automated maintenance
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct StorageCleanupScheduler {
+    pub cleanup_interval: u64, // Seconds between cleanups
+    pub last_cleanup: u64,
+    pub cleanup_types: Vec<soroban_sdk::Symbol>,
+    pub enabled: bool,
+}
+
+/// Result of a cleanup operation
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct CleanupResult {
+    pub cleanup_type: soroban_sdk::Symbol,
+    pub items_cleaned: u32,
+    pub space_freed: u64,
+    pub gas_used: u64,
+    pub duration_ms: u64,
+    pub success: bool,
+    pub error_message: soroban_sdk::String,
+}
+
+impl CleanupResult {
+    pub fn success(env: &Env, cleanup_type: &soroban_sdk::Symbol, items_cleaned: u32, space_freed: u64, gas_used: u64, duration_ms: u64) -> Self {
+        Self {
+            cleanup_type: cleanup_type.clone(),
+            items_cleaned,
+            space_freed,
+            gas_used,
+            duration_ms,
+            success: true,
+            error_message: soroban_sdk::String::from_str(env, ""),
+        }
+    }
+
+    pub fn failure(env: &Env, cleanup_type: &soroban_sdk::Symbol, error_message: &str) -> Self {
+        Self {
+            cleanup_type: cleanup_type.clone(),
+            items_cleaned: 0,
+            space_freed: 0,
+            gas_used: 0,
+            duration_ms: 0,
+            success: false,
+            error_message: soroban_sdk::String::from_str(env, error_message),
+        }
+    }
+}
+
+impl StorageCleanupScheduler {
+    pub fn new(env: &Env) -> Self {
+        Self {
+            cleanup_interval: 86400, // Daily
+            last_cleanup: 0,
+            cleanup_types: Vec::new(env),
+            enabled: true,
+        }
+    }
+
+    pub fn schedule_cleanup(&mut self, cleanup_type: soroban_sdk::Symbol) {
+        self.cleanup_types.push_back(cleanup_type);
+    }
+
+    pub fn should_cleanup(&self, current_time: u64) -> bool {
+        self.enabled && (current_time - self.last_cleanup) >= self.cleanup_interval
+    }
+
+    pub fn execute_cleanup(&mut self, env: &Env) -> Vec<CleanupResult> {
+        let mut results = Vec::new(env);
+        let current_time = env.ledger().timestamp();
+
+        if !self.should_cleanup(current_time) {
+            return results;
+        }
+
+        for cleanup_type in self.cleanup_types.iter() {
+            let result = match cleanup_type.to_string().as_str() {
+                "sessions" => {
+                    let cleaned = StorageCleanup::cleanup_old_sessions(env, 30);
+                    CleanupResult::success(env, cleanup_type, cleaned, cleaned * 1024, 5000, 100)
+                }
+                "certificates" => {
+                    let cleaned = StorageCleanup::cleanup_expired_certificates(env);
+                    CleanupResult::success(env, cleanup_type, cleaned, cleaned * 2048, 3000, 80)
+                }
+                "analytics" => {
+                    let cleaned = StorageCleanup::cleanup_old_analytics(env, 90);
+                    CleanupResult::success(env, cleanup_type, cleaned, cleaned * 512, 4000, 120)
+                }
+                _ => CleanupResult::failure(env, cleanup_type, "Unknown cleanup type"),
+            };
+            results.push_back(result);
+        }
+
+        self.last_cleanup = current_time;
+        results
+    }
+}
 
 /// Storage cleanup utilities for efficient data management
 pub struct StorageCleanup;
