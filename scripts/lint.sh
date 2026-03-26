@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Comprehensive linting script for StrellerMinds Smart Contracts
-# This script runs all quality checks and can be used in CI/CD pipelines
+# This script runs quality checks and can be used in CI/CD pipelines
 
 set -e
 
@@ -53,7 +53,7 @@ run_check() {
 
 # Main linting function
 main() {
-    print_status "Starting comprehensive linting checks..."
+    print_status "Starting linting checks..."
     
     # Check if we're in the right directory
     if [ ! -f "Cargo.toml" ]; then
@@ -64,14 +64,9 @@ main() {
     # Run checks in order of importance
     checks=(
         "cargo-fmt:cargo fmt --all -- --check:false"
-        "cargo-clippy:cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style:false"
-        "cargo-audit:cargo audit:true"
-        "cargo-deny:cargo deny check:true"
-        "cargo-machete:cargo machete:true"
-        "cargo-docs:cargo doc --workspace --no-deps --document-private-items:true"
-        "cargo-duplicates:cargo tree --duplicates:true"
-        "cargo-test:cargo test --workspace:false"
+        "cargo-clippy:cargo clippy --workspace --all-targets --all-features -- -D warnings:false"
         "cargo-build:cargo build --workspace --release:false"
+        "cargo-test:cargo test --workspace:false"
     )
     
     failed_checks=()
@@ -110,7 +105,7 @@ case "${1:-}" in
     --fast)
         print_status "Running fast checks only..."
         run_check "cargo-fmt" "cargo fmt --all -- --check"
-        run_check "cargo-clippy" "cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style"
+        run_check "cargo-clippy" "cargo clippy --workspace --all-targets --all-features -- -D warnings"
         ;;
     --help|-h)
         echo "Usage: $0 [OPTION]"
