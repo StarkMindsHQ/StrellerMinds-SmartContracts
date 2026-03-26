@@ -8,6 +8,27 @@ stellar-strkey = "0.0.7"
 ed25519-dalek = "2.0.0"
 rand = "0.8.5"
 
+# Workspace-level linting configuration
+[workspace.lints.rust]
+# Rust built-in lints
+missing_docs = "warn"
+trivial_numeric_casts = "warn"
+unused_extern_crates = "warn"
+unused_import_braces = "warn"
+unused_qualifications = "warn"
+variant_size_differences = "warn"
+
+[workspace.lints.clippy]
+# Clippy lints for better code quality
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+# Allow some pedantic lints that might be too strict for smart contracts
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
 [profile.release]
 opt-level = "z"
 overflow-checks = true

@@ -1,13 +1,99 @@
 repos:
   - repo: local
     hooks:
+      # Rust formatting
       - id: rustfmt
         name: rustfmt (workspace)
         entry: cargo fmt --all
         language: system
         pass_filenames: false
+        args: [--check]
+      
+      # Clippy linting with strict warnings
       - id: rust-clippy-style
-        name: clippy naming/style checks
-        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+        name: clippy linting (strict)
+        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style -W clippy::pedantic -W clippy::nursery
         language: system
         pass_filenames: false
+      
+      # Security audit
+      - id: cargo-audit
+        name: cargo audit (security)
+        entry: cargo audit
+        language: system
+        pass_filenames: false
+        args: [--db, ~/.cargo/advisory-db]
+      
+      # Check for unused dependencies
+      - id: cargo-machete
+        name: cargo machete (unused deps)
+        entry: cargo machete
+        language: system
+        pass_filenames: false
+      
+      # Check documentation coverage
+      - id: cargo-docs
+        name: cargo docs check
+        entry: cargo doc --workspace --no-deps --document-private-items
+        language: system
+        pass_filenames: false
+      
+      # Check for duplicate dependencies
+      - id: cargo-duplicate
+        name: cargo duplicate dependencies
+        entry: cargo tree --duplicates
+        language: system
+        pass_filenames: false
+      
+      # Check for outdated dependencies
+      - id: cargo-outdated
+        name: cargo outdated
+        entry: cargo outdated --workspace
+        language: system
+        pass_filenames: false
+      
+      # Check for license compliance
+      - id: cargo-deny
+        name: cargo deny (licenses & advisories)
+        entry: cargo deny check
+        language: system
+        pass_filenames: false
+      
+      # Check for secret leaks
+      - id: detect-secrets
+        name: detect secrets
+        entry: detect-secrets --baseline .secrets.baseline
+        language: system
+        types: [rust]
+        exclude: |
+          (?x)^(
+            \.git/.*|
+            \.cargo/.*|
+            target/.*|
+            Cargo\.lock|
+            \.secrets\.baseline
+          )$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: mixed-line-ending
+      - id: check-vcs-permalinks
+
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+      - id: clippy
+        args: ['--all-targets', '--all-features', '--', '-D', 'warnings']

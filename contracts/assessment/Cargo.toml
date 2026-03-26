@@ -9,6 +9,10 @@ repository = "https://github.com/Jayy4rl/StrellerMinds-SmartContracts"
 [lib]
 crate-type = ["lib", "cdylib"]
 
+# Inherit workspace linting configuration
+[lints]
+workspace = true
+
 [dependencies]
 soroban-sdk = { workspace = true }
 shared = { path = "../shared" }

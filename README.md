@@ -1,6 +1,7 @@
 # StrellerMinds-SmartContracts
 
 [![CI](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/ci.yml)
+[![Lint](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/lint.yml)
 [![E2E Tests](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/actions/workflows/e2e.yml)
 [![Release](https://img.shields.io/github/v/release/StarkMindsHQ/StrellerMinds-SmartContracts?sort=semver)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/releases)
 [![License](https://img.shields.io/github/license/StarkMindsHQ/StrellerMinds-SmartContracts)](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/blob/main/LICENSE)
@@ -122,37 +123,35 @@ This will:
 
 For more details, see the [E2E Test Documentation](e2e/README.md).
 
-### Linting and Formatting
+### Code Quality & Linting
 
-To maintain code quality and consistency, run the following commands locally before committing:
-
-- **Format code:**
-  ```bash
-  cargo fmt
-  ```
-
-- **Check for linting issues:**
-  ```bash
-  cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
-  ```
-
-These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
-Naming and formatting conventions are documented in [docs/CODE_STYLE.md](docs/CODE_STYLE.md).
-
-### Pre-commit Hooks
-
-Install and enable pre-commit hooks to auto-run formatting and style checks before each commit:
+We maintain high code quality standards through automated linting and security checks:
 
 ```bash
-pip install pre-commit
+# Quick quality checks
+./scripts/lint.sh --fast
+
+# Comprehensive quality checks
+./scripts/lint.sh
+
+# Auto-fix formatting issues
+./scripts/lint.sh --fix
+```
+
+**Quality Checks Include:**
+- **Formatting**: Consistent code style with `rustfmt`
+- **Linting**: Strict `clippy` rules with pedantic and nursery lints
+- **Security**: Vulnerability scanning with `cargo audit`
+- **Dependencies**: License compliance and security with `cargo deny`
+- **Documentation**: Coverage and quality verification
+
+**Pre-commit Hooks:**
+Install pre-commit hooks to automatically run checks before each commit:
+```bash
 pre-commit install
 ```
 
-To run the same checks manually:
-
-```bash
-pre-commit run --all-files
-```
+For detailed information, see the [Code Quality Documentation](docs/CODE_QUALITY.md).
 
 ## 🚢 Deployment
 
