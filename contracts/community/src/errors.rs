@@ -1,49 +1,63 @@
 use soroban_sdk::contracterror;
 
+/// Re-export standardized errors for backward compatibility
+pub use crate::standardized_errors::StandardError;
+
+/// Community-specific errors that extend the standard error set
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Error {
-    AlreadyInitialized = 1,
-    NotInitialized = 2,
-    Unauthorized = 3,
-    NotFound = 4,
-    InvalidInput = 5,
+    // Forum specific errors (4000-4099)
+    PostNotFound = 4000,
+    ReplyNotFound = 4001,
+    AlreadyVoted = 4002,
+    CannotEditPost = 4003,
+    PostClosed = 4004,
 
-    // Forum errors
-    PostNotFound = 10,
-    ReplyNotFound = 11,
-    AlreadyVoted = 12,
-    CannotEditPost = 13,
-    PostClosed = 14,
+    // Mentorship specific errors (4100-4199)
+    MentorNotAvailable = 4100,
+    MentorshipNotFound = 4101,
+    AlreadyMentor = 4102,
+    MaxMenteesReached = 4103,
+    InvalidMentorshipStatus = 4104,
 
-    // Mentorship errors
-    MentorNotAvailable = 20,
-    MentorshipNotFound = 21,
-    AlreadyMentor = 22,
-    MaxMenteesReached = 23,
-    InvalidMentorshipStatus = 24,
+    // Contribution specific errors (4200-4299)
+    ContributionNotFound = 4200,
+    InvalidContributionStatus = 4201,
+    InsufficientReputation = 4202,
 
-    // Contribution errors
-    ContributionNotFound = 30,
-    InvalidContributionStatus = 31,
-    InsufficientReputation = 32,
+    // Event specific errors (4300-4399)
+    EventNotFound = 4300,
+    EventFull = 4301,
+    AlreadyRegistered = 4302,
+    EventNotActive = 4303,
 
-    // Event errors
-    EventNotFound = 40,
-    EventFull = 41,
-    AlreadyRegistered = 42,
-    EventNotActive = 43,
+    // Moderation specific errors (4400-4499)
+    NotModerator = 4400,
+    ReportNotFound = 4401,
+    ReportLimitReached = 4402,
+    AlreadyReported = 4403,
 
-    // Moderation errors
-    NotModerator = 50,
-    ReportNotFound = 51,
-    ReportLimitReached = 52,
-    AlreadyReported = 53,
+    // Governance specific errors (4500-4599)
+    ProposalNotFound = 4500,
+    VotingClosed = 4501,
+    AlreadyVotedOnProposal = 4502,
+    InsufficientVotingPower = 4503,
+}
 
-    // Governance errors
-    ProposalNotFound = 60,
-    VotingClosed = 61,
-    AlreadyVotedOnProposal = 62,
-    InsufficientVotingPower = 63,
+/// Error context for community operations
+pub type CommunityErrorContext = crate::standardized_errors::ErrorContext;
+
+/// Helper macro for community errors with context
+#[macro_export]
+macro_rules! community_error {
+    ($error:expr, $operation:expr, $info:expr) => {
+        $crate::standardized_errors::ErrorContext::new(
+            $crate::standardized_errors::StandardError::from($error),
+            $operation,
+            "CommunityContract",
+            $info,
+        )
+    };
 }

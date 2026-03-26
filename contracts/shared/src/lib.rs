@@ -764,3 +764,8 @@ pub mod validation {
     }
 }
 pub mod gas_optimizer;
+pub mod standardized_errors;
+pub mod error_handler;
+
+#[cfg(test)]
+mod error_tests;

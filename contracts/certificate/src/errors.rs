@@ -1,55 +1,59 @@
 use soroban_sdk::contracterror;
 
+/// Re-export standardized errors for backward compatibility
+pub use crate::standardized_errors::StandardError;
+
+/// Certificate-specific errors that extend the standard error set
 #[contracterror]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum CertificateError {
-    // Initialization
-    AlreadyInitialized = 1,
-    NotInitialized = 2,
-    Unauthorized = 3,
+    // Multi-sig specific errors (3000-3099)
+    MultiSigRequestNotFound = 3000,
+    MultiSigRequestExpired = 3001,
+    ApproverNotAuthorized = 3002,
+    InsufficientApprovals = 3003,
+    InvalidApprovalThreshold = 3004,
+    AlreadyApproved = 3005,
+    RequestNotPending = 3006,
+    RequestAlreadyExecuted = 3007,
 
-    // Multi-sig
-    MultiSigRequestNotFound = 10,
-    MultiSigRequestExpired = 11,
-    ApproverNotAuthorized = 12,
-    InsufficientApprovals = 13,
-    InvalidApprovalThreshold = 14,
-    AlreadyApproved = 15,
-    RequestNotPending = 16,
-    RequestAlreadyExecuted = 17,
+    // Certificate lifecycle specific errors (3100-3199)
+    CertificateRevoked = 3100,
+    CertificateExpired = 3101,
+    CertificateNotEligibleForReissue = 3102,
 
-    // Certificate lifecycle
-    CertificateNotFound = 20,
-    CertificateAlreadyExists = 21,
-    CertificateRevoked = 22,
-    CertificateExpired = 23,
-    CertificateNotEligibleForReissue = 24,
+    // Template specific errors (3200-3299)
+    TemplateInactive = 3200,
 
-    // Template
-    TemplateNotFound = 30,
-    TemplateAlreadyExists = 31,
-    TemplateInactive = 32,
-    MissingRequiredField = 33,
+    // Configuration specific errors (3300-3399)
+    TooManyApprovers = 3300,
+    TimeoutTooShort = 3301,
+    TimeoutTooLong = 3302,
 
-    // Configuration
-    InvalidConfig = 40,
-    ConfigNotFound = 41,
-    TooManyApprovers = 42,
-    TimeoutTooShort = 43,
-    TimeoutTooLong = 44,
+    // Batch operations specific errors (3400-3499)
+    BatchTooLarge = 3400,
+    BatchEmpty = 3401,
 
-    // Batch operations
-    BatchTooLarge = 50,
-    BatchEmpty = 51,
+    // Compliance specific errors (3500-3599)
+    ComplianceCheckFailed = 3500,
+    UnsupportedStandard = 3501,
 
-    // Compliance
-    ComplianceCheckFailed = 60,
-    UnsupportedStandard = 61,
+    // Sharing specific errors (3600-3699)
+    ShareLimitReached = 3600,
+}
 
-    // Sharing
-    ShareLimitReached = 70,
+/// Error context for certificate operations
+pub type CertificateErrorContext = crate::standardized_errors::ErrorContext;
 
-    // General
-    InvalidInput = 80,
-    InternalError = 99,
+/// Helper macro for certificate errors with context
+#[macro_export]
+macro_rules! certificate_error {
+    ($error:expr, $operation:expr, $info:expr) => {
+        $crate::standardized_errors::ErrorContext::new(
+            $crate::standardized_errors::StandardError::from($error),
+            $operation,
+            "CertificateContract",
+            $info,
+        )
+    };
 }

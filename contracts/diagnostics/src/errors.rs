@@ -1,70 +1,77 @@
 use soroban_sdk::contracterror;
 
-/// Error types for the diagnostics platform
+/// Re-export standardized errors for backward compatibility
+pub use crate::standardized_errors::StandardError;
+
+/// Diagnostics-specific errors that extend the standard error set
 #[contracterror]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(u32)]
 pub enum DiagnosticsError {
-    // Configuration (1000-1099)
-    AdminNotSet = 1001,
-    ConfigNotSet = 1002,
-    InvalidConfig = 1003,
-    Unauthorized = 1004,
-    InvalidConfiguration = 1005,
+    // Configuration specific errors (7000-7099)
+    AdminNotSet = 7000,
+    ConfigNotSet = 7001,
+    InvalidDetectionPeriod = 7002,
 
-    // Monitoring (1100-1199)
-    MonitoringDisabled = 1101,
-    InvalidMetrics = 1102,
-    MetricsNotFound = 1103,
-    DataCorrupt = 1105,
-    InvalidDetectionPeriod = 1106,
+    // Monitoring specific errors (7100-7199)
+    MonitoringDisabled = 7100,
+    InvalidMetrics = 7101,
+    MetricsNotFound = 7102,
+    DataCorrupt = 7103,
 
-    // Prediction (1200-1299)
-    PredictionDisabled = 1201,
-    InsufficientData = 1202,
-    ModelError = 1203,
-    InvalidPredictionHorizon = 1204,
-    InsufficientDataForPrediction = 1205,
+    // Prediction specific errors (7200-7299)
+    PredictionDisabled = 7200,
+    ModelError = 7201,
+    InvalidPredictionHorizon = 7202,
+    InsufficientDataForPrediction = 7203,
 
-    // Behavior (1300-1399)
-    BehaviorDisabled = 1301,
-    UserDataNotFound = 1304,
-    InvalidAnalysisPeriod = 1305,
-    InsufficientBehaviorData = 1306,
+    // Behavior specific errors (7300-7399)
+    BehaviorDisabled = 7300,
+    UserDataNotFound = 7301,
+    InvalidAnalysisPeriod = 7302,
+    InsufficientBehaviorData = 7303,
 
-    // Optimization (1400-1499)
-    OptimizationError = 1401,
-    NoOptimizations = 1402,
+    // Optimization specific errors (7400-7499)
+    OptimizationError = 7400,
+    NoOptimizations = 7401,
 
-    // Tracing (1500-1599)
-    TracingDisabled = 1501,
-    TraceNotFound = 1503,
-    InvalidTraceSpan = 1504,
-    TraceAlreadyCompleted = 1505,
+    // Tracing specific errors (7500-7599)
+    TracingDisabled = 7500,
+    TraceNotFound = 7501,
+    InvalidTraceSpan = 7502,
+    TraceAlreadyCompleted = 7503,
 
-    // Benchmark (1600-1699)
-    BenchmarkDisabled = 1601,
-    BenchmarkFailed = 1603,
-    InvalidBenchmarkConfig = 1604,
+    // Benchmark specific errors (7600-7699)
+    BenchmarkDisabled = 7600,
+    BenchmarkFailed = 7601,
+    InvalidBenchmarkConfig = 7602,
 
-    // Anomaly (1700-1799)
-    AnomalyDisabled = 1701,
-    NoAnomalies = 1702,
+    // Anomaly specific errors (7700-7799)
+    AnomalyDisabled = 7700,
+    NoAnomalies = 7701,
 
-    // Resource (1800-1899)
-    ResourceError = 1801,
+    // Resource specific errors (7800-7899)
+    ResourceError = 7800,
 
-    // Regression (1900-1999)
-    RegressionDisabled = 1901,
-    BaselineNotFound = 1903,
-    InvalidTestScenario = 1904,
-    InvalidRegressionConfig = 1905,
+    // Regression specific errors (7900-7999)
+    RegressionDisabled = 7900,
+    BaselineNotFound = 7901,
+    InvalidTestScenario = 7902,
+    InvalidRegressionConfig = 7903,
+}
 
-    // Storage (2100-2199)
-    StorageError = 2101,
-    DataNotFound = 2102,
+/// Error context for diagnostics operations
+pub type DiagnosticsErrorContext = crate::standardized_errors::ErrorContext;
 
-    // General (2300-2399)
-    InternalError = 2301,
-    InvalidInput = 2302,
+/// Helper macro for diagnostics errors with context
+#[macro_export]
+macro_rules! diagnostics_error {
+    ($error:expr, $operation:expr, $info:expr) => {
+        $crate::standardized_errors::ErrorContext::new(
+            $crate::standardized_errors::StandardError::from($error),
+            $operation,
+            "DiagnosticsContract",
+            $info,
+        )
+    };
 }
