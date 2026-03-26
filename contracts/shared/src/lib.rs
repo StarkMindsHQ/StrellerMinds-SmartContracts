@@ -86,3 +86,6 @@ pub mod validation {
     }
 }
 pub mod gas_optimizer;
+pub mod storage_optimization;
+pub mod storage_cleanup;
+pub mod storage_benchmark;
