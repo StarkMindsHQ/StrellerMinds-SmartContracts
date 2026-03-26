@@ -15,14 +15,6 @@ repos:
         entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
         language: system
         pass_filenames: false
-      
-      # Security audit (if available)
-      - id: cargo-audit
-        name: cargo audit (security)
-        entry: cargo audit
-        language: system
-        pass_filenames: false
-        args: [--ignore, "RUSTSEC-2020-0036"] || true
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

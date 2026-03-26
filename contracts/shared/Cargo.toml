@@ -14,6 +14,10 @@ categories = ["cryptography::cryptocurrencies", "web-programming"]
 [lib]
 crate-type = ["lib", "cdylib"]
 
+# Inherit workspace linting configuration
+[lints]
+workspace = true
+
 [features]
 testutils = []
 
