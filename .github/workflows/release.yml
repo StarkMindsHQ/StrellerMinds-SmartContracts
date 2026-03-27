@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  id-token: write
 
 jobs:
   release:
@@ -19,11 +21,10 @@ jobs:
           fetch-depth: 0
 
       - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
 
       - name: Install wasm_opt (Binaryen)
         run: |
@@ -40,8 +41,10 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          mkdir -p dist
+          mkdir -p dist artifacts
           shopt -s nullglob
+          
+          # Copy WASM files
           for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
             base="$(basename "$wasm")"
             name="${base%.wasm}"
@@ -51,13 +54,17 @@ jobs:
             base="$(basename "$wasm")"
             cp "$wasm" "dist/$base"
           done
+          
+          # Generate checksums
           if compgen -G "dist/*" > /dev/null; then
             if command -v sha256sum >/dev/null 2>&1; then
-              sha256sum dist/* > dist/SHA256SUMS.txt
+              (cd dist && sha256sum * > SHA256SUMS.txt)
             else
-              shasum -a 256 dist/* > dist/SHA256SUMS.txt
+              (cd dist && shasum -a 256 * > SHA256SUMS.txt)
             fi
           fi
+          
+          echo "Artifacts prepared in dist/"
 
       - name: Generate SBOM
         run: |
@@ -93,16 +100,19 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
+          BODY=""
+          
           if [ -f .git-cliff.toml ]; then
             if ! command -v git-cliff >/dev/null 2>&1; then
               cargo install git-cliff --locked
             fi
-            BODY=$(git-cliff --tag "$TAG" --config .git-cliff.toml)
-          else
-            Refer to the attached assets under artifacts/<crate>/<version>/ and dist/.
-            EOF
-            )
+            BODY=$(git-cliff --tag "$TAG" --config .git-cliff.toml 2>/dev/null || echo "")
           fi
+          
+          if [ -z "$BODY" ]; then
+            BODY="Release $TAG\n\nSee the attached artifacts for compiled WASM files and SBOM."
+          fi
+          
           echo "body<<EOF" >> "$GITHUB_OUTPUT"
           echo "$BODY" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
