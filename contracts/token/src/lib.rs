@@ -50,3 +50,4 @@ impl Token {
     }
 }
 pub mod gas_optimized;
+pub mod benchmarks;
