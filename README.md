@@ -151,6 +151,83 @@ Monitor our community health with:
 
 View latest report in `community_metrics/` directory.
 
+## 📚 Training & Education
+
+Comprehensive training materials for learning blockchain development with StrellerMinds!
+
+### Learning Paths
+
+**🌱 Beginner Track** (8-10 weeks)
+- Blockchain fundamentals
+- Rust programming
+- Smart contract basics
+- First deployment
+
+**🚀 Intermediate Track** (8-10 weeks)
+- Advanced Soroban patterns
+- Security best practices
+- Real-world projects
+- Team collaboration
+
+**⭐ Advanced Track** (8-10 weeks)
+- System architecture
+- Leadership skills
+- Specialization tracks
+- Mentorship opportunities
+
+### Training Resources
+
+**📖 Complete Curriculum:**
+- **[Training Curriculum](docs/TRAINING_CURRICULUM.md)** - Full learning paths
+- **[Video Scripts](docs/VIDEO_TUTORIAL_SCRIPTS.md)** - Tutorial content
+- **[Workshop Materials](docs/WORKSHOP_MATERIALS.md)** - Hands-on exercises
+- **[Effectiveness Framework](docs/TRAINING_EFFECTIVENESS.md)** - Evaluation system
+- **[Team Training](docs/TEAM_TRAINING_CERTIFICATION.md)** - Professional development
+
+**🎥 Video Tutorials:**
+- "Blockchain Basics Explained" (15 min)
+- "Setup Your Environment" (20 min)
+- "Your First Smart Contract" (25 min)
+- Plus 60+ more in production
+
+**🛠️ Workshops:**
+- Half-day: Blockchain Fundamentals
+- Full-day: Rust Bootcamp
+- 2-Day: Smart Contract Starter
+- Advanced: DeFi Protocol Development
+
+**🏆 Certifications:**
+- Certified Junior Soroban Developer
+- Certified Soroban Developer
+- Certified Senior Soroban Developer
+- Specialty certifications available
+
+### Getting Started with Training
+
+```bash
+# 1. Review curriculum
+cat docs/TRAINING_CURRICULUM.md
+
+# 2. Watch first video
+# Link in curriculum document
+
+# 3. Join next workshop
+# Check GitHub Discussions for schedule
+
+# 4. Start exercises
+# Follow module-by-module path
+```
+
+### For Organizations
+
+**Corporate Training Programs:**
+- Custom cohorts for teams
+- On-site workshops
+- Tailored curriculum
+- Certification tracking
+
+Contact: training@starkminds.io
+
 ## 🛠️ Getting Started
 
 ### Installation
