@@ -107,6 +107,50 @@ This project features a comprehensive release automation system for producing pr
 
 For detailed information, see the [Release Management Guide](docs/RELEASE_MANAGEMENT.md).
 
+## 👥 Community & Contribution
+
+We welcome contributors from all backgrounds! Our community is built on inclusivity, learning, and collaboration.
+
+### Quick Start for Contributors
+
+```bash
+# 1. Read our guidelines
+CODE_OF_CONDUCT.md    # Community standards
+COMMUNITY.md          # Comprehensive community guidelines  
+docs/contributing.md  # How to contribute
+
+# 2. Find your first issue
+# Look for "good first issue" labels on GitHub
+
+# 3. Get help
+# Ask questions in GitHub Discussions or attend office hours
+```
+
+### Community Resources
+
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Our commitment to a safe community
+- **[Community Guidelines](COMMUNITY.md)** - How to participate effectively
+- **[Contribution Guide](docs/contributing.md)** - Step-by-step contribution process
+- **[Community Processes](docs/COMMUNITY_PROCESSES.md)** - Workflows and procedures
+- **[Engagement Templates](docs/COMMUNITY_TEMPLATES.md)** - Communication templates
+
+### Getting Involved
+
+1. **Introduce Yourself**: Start with [GitHub Discussions](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/discussions)
+2. **Find Issues**: Check [good first issues](https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+3. **Ask Questions**: Use our [community question template](.github/ISSUE_TEMPLATE/community_question.md)
+4. **Attend Events**: Join community calls and workshops (see COMMUNITY.md)
+5. **Get Recognized**: We have a contributor recognition program!
+
+### Community Health
+
+Monitor our community health with:
+```bash
+./scripts/community-health-monitor.sh
+```
+
+View latest report in `community_metrics/` directory.
+
 ## 🛠️ Getting Started
 
 ### Installation
