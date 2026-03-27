@@ -28,8 +28,8 @@ This PR addresses Issue #156 by implementing SDKs for StrellerMinds Smart Contra
 - [x] Code formatting applied
 
 ## Tasks Done
-- [x] Create TypeScript/JavaScript SDK
-- [x] Add Python SDK
-- [x] Implement Go SDK
-- [x] Add Rust SDK extensions
-- [x] Create SDK documentation
+- [x] Implement property-based testing in `Token` contract
+- [x] Add `proptest` dependency to workspace
+- [x] Create automated test generators for rewards and transfers
+- [x] Document property testing invariants and usage
+- [x] Implement in a new feature branch `feat/property-based-testing`

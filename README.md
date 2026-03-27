@@ -105,6 +105,16 @@ Run unit tests to ensure everything is functioning as expected:
 cargo test
 ```
 
+#### Property-Based Tests
+
+We use `proptest` to verify contract invariants with random inputs:
+
+```bash
+cargo test -p token --lib property_tests
+```
+
+For more details, see [PROPERTY_TESTING.md](contracts/token/PROPERTY_TESTING.md).
+
 #### End-to-End (E2E) Tests
 
 Run the complete E2E test suite against a local Soroban network:
