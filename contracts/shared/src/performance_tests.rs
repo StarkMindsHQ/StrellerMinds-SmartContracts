@@ -33,17 +33,17 @@ impl SharedTestContract {}
 
 #[test]
 fn test_ttl_ordering() {
-    assert!(TTL_BUMP_THRESHOLD < TTL_INSTANCE_DAY);
-    assert!(TTL_INSTANCE_DAY < TTL_PERSISTENT_MONTH);
-    assert!(TTL_PERSISTENT_MONTH < TTL_PERSISTENT_YEAR);
-    assert!(TTL_PERSISTENT_YEAR < TTL_TEMP_MAX);
+    const { assert!(TTL_BUMP_THRESHOLD < TTL_INSTANCE_DAY) };
+    const { assert!(TTL_INSTANCE_DAY < TTL_PERSISTENT_MONTH) };
+    const { assert!(TTL_PERSISTENT_MONTH < TTL_PERSISTENT_YEAR) };
+    const { assert!(TTL_PERSISTENT_YEAR < TTL_TEMP_MAX) };
 }
 
 #[test]
 fn test_ttl_persistent_year_approximately_one_year_in_ledgers() {
     // 1 ledger ≈ 5 seconds → 1 year ≈ 365*24*3600/5 = 6_307_200 ledgers.
     // TTL_PERSISTENT_YEAR is 535_680 which is ~1 month; name is aspirational.
-    assert!(TTL_PERSISTENT_YEAR > 0);
+    const { assert!(TTL_PERSISTENT_YEAR > 0) };
 }
 
 // ─────────────────────────────────────────────────────────────
