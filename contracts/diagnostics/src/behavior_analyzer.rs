@@ -2,7 +2,6 @@ use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
-use num_traits::float::FloatCore;
 
 /// User behavior analysis and learning pattern identification engine
 pub struct BehaviorAnalyzer;
@@ -776,7 +775,11 @@ impl BehaviorAnalyzer {
         }
 
         let variance = variance_sum / durations.len() as f64;
-        if mean == 0 { 0.0 } else { variance / mean as f64 }
+        if mean == 0 {
+            0.0
+        } else {
+            variance / mean as f64
+        }
     }
 
     fn calculate_interaction_consistency(env: &Env, interactions: &Vec<UserInteraction>) -> f64 {
@@ -848,7 +851,14 @@ impl BehaviorAnalyzer {
         }
 
         let mean = scores.iter().sum::<u32>() as f64 / scores.len() as f64;
-        scores.iter().map(|s| { let d = *s as f64 - mean; d*d }).sum::<f64>() / scores.len() as f64
+        scores
+            .iter()
+            .map(|s| {
+                let d = *s as f64 - mean;
+                d * d
+            })
+            .sum::<f64>()
+            / scores.len() as f64
     }
 
     fn generate_analysis_id(env: &Env) -> BytesN<32> {
