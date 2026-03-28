@@ -10,6 +10,12 @@ All development for StrellerMinds smart contracts must follow these security pri
 4. **Access Control**: Clear access control mechanisms must be in place.
 5. **Audit Readiness**: Code should be written with clarity for future audits.
 
+## Reliability Safeguards
+
+- Critical operations in selected contracts use circuit breaker controls to reduce cascading failures.
+- Operators should follow the incident procedures in [`docs/CIRCUIT_BREAKER_RUNBOOK.md`](./CIRCUIT_BREAKER_RUNBOOK.md).
+- Monitor `circuit` transition events (`open`, `blocked`, `halfopen`, `closed`) for alerting.
+
 ## Security Review Process
 
 1. All PRs must undergo security review before merging.

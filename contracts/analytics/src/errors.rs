@@ -41,4 +41,8 @@ pub enum AnalyticsError {
     UnauthorizedOracle = 21,
     InvalidInsightData = 22,
     InsightNotFound = 23,
+
+    // Reliability / circuit breaker errors
+    CircuitBreakerOpen = 24,
+    CircuitBreakerHalfOpenLimit = 25,
 }

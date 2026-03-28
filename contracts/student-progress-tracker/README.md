@@ -13,6 +13,29 @@ fn initialize(env: Env, admin: Address)
 // Update student progress for a specific module
 fn update_progress(env: Env, student: Address, course_id: Symbol, module_id: Symbol, percent: u32)
 
+// Result-based variant for callers that need explicit error handling
+fn update_progress_safe(
+  env: Env,
+  student: Address,
+  course_id: Symbol,
+  module_id: Symbol,
+  percent: u32,
+) -> Result<(), ProgressError>
+
+// Circuit breaker operations (admin)
+fn configure_circuit_breaker(
+  env: Env,
+  admin: Address,
+  failure_threshold: u32,
+  recovery_timeout_seconds: u64,
+  half_open_max_calls: u32,
+  half_open_success_threshold: u32,
+) -> Result<(), ProgressError>
+
+fn report_operation_failure(env: Env, admin: Address) -> Result<(), ProgressError>
+fn reset_circuit_breaker(env: Env, admin: Address) -> Result<(), ProgressError>
+fn get_circuit_breaker_status(env: Env) -> CircuitBreakerStatus
+
 // Get student progress for a course
 fn get_progress(env: Env, student: Address, course_id: Symbol) -> Map<Symbol, u32>
 
@@ -145,6 +168,12 @@ client.update_progress(&admin, &course_id, &module_id, &100u32);
 - **Persistent Storage**: Progress data persists across contract calls
 - **Map-Based Organization**: Efficient lookup by student and course
 - **Symbol Optimization**: Uses Soroban symbols for efficient storage
+
+### Reliability Controls
+- **Circuit Breaker Protection**: Critical write operation is guarded by `Closed/Open/HalfOpen` states
+- **Operational Failure Reporting**: Admin can persist failures through `report_operation_failure`
+- **Recovery Paths**: Supports cooldown-based half-open probing and manual reset
+- **Monitoring Signals**: Emits `circuit` events for config/failure/open/halfopen/closed/blocked/reset
 
 ## Integration Points
 

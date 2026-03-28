@@ -189,6 +189,140 @@
                         "val": {
                           "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                         }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "CircuitConfig"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "failure_threshold"
+                              },
+                              "val": {
+                                "u32": 3
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "half_open_max_calls"
+                              },
+                              "val": {
+                                "u32": 1
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "half_open_success_threshold"
+                              },
+                              "val": {
+                                "u32": 1
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "recovery_timeout_seconds"
+                              },
+                              "val": {
+                                "u64": 300
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "CircuitStatus"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "alert_count"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "consecutive_failures"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "consecutive_successes"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "half_open_calls"
+                              },
+                              "val": {
+                                "u32": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "last_failure_at"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "last_transition_at"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "state"
+                              },
+                              "val": {
+                                "vec": [
+                                  {
+                                    "symbol": "Closed"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "total_failures"
+                              },
+                              "val": {
+                                "u64": 0
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "total_successes"
+                              },
+                              "val": {
+                                "u64": 2
+                              }
+                            }
+                          ]
+                        }
                       }
                     ]
                   }

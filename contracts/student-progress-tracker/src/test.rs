@@ -1,7 +1,8 @@
 use super::*;
+use shared::circuit_breaker::CircuitState;
 use soroban_sdk::{
     symbol_short,
-    testutils::{Address as _, MockAuth, MockAuthInvoke},
+    testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
     Address, Env, IntoVal,
 };
 
@@ -481,4 +482,73 @@ fn test_unauthorized_update_progress() {
 
     // Test unauthorized user trying to update student's progress (should panic)
     client.update_progress(&student, &course_id, &module_id, &percent);
+}
+
+#[test]
+fn test_circuit_breaker_opens_after_failures() {
+    let (env, client, admin, student) = setup_test_env();
+
+    env.mock_all_auths();
+    client.initialize(&admin);
+
+    client.configure_circuit_breaker(&admin, &2, &60, &1, &1);
+
+    let course_id = symbol_short!("RUST101");
+    let module_id = symbol_short!("MOD1");
+
+    client.report_operation_failure(&admin);
+    client.report_operation_failure(&admin);
+
+    let status = client.get_circuit_breaker_status();
+    assert_eq!(status.state, CircuitState::Open);
+    assert_eq!(status.consecutive_failures, 2);
+
+    let blocked = client.try_update_progress_safe(&student, &course_id, &module_id, &90u32);
+    assert_eq!(blocked, Err(Ok(ProgressError::CircuitBreakerOpen)));
+}
+
+#[test]
+fn test_circuit_breaker_recovers_after_timeout() {
+    let (env, client, admin, student) = setup_test_env();
+
+    env.mock_all_auths();
+    client.initialize(&admin);
+
+    client.configure_circuit_breaker(&admin, &1, &30, &1, &1);
+
+    let course_id = symbol_short!("RUST101");
+    let module_id = symbol_short!("MOD1");
+
+    client.report_operation_failure(&admin);
+    let open_status = client.get_circuit_breaker_status();
+    assert_eq!(open_status.state, CircuitState::Open);
+
+    env.ledger().with_mut(|li| li.timestamp += 31);
+
+    let recovery = client.try_update_progress_safe(&student, &course_id, &module_id, &95u32);
+    assert!(recovery.is_ok());
+
+    let closed_status = client.get_circuit_breaker_status();
+    assert_eq!(closed_status.state, CircuitState::Closed);
+}
+
+#[test]
+fn test_admin_can_reset_open_circuit_breaker() {
+    let (env, client, admin, _student) = setup_test_env();
+
+    env.mock_all_auths();
+    client.initialize(&admin);
+
+    client.configure_circuit_breaker(&admin, &1, &120, &1, &1);
+
+    client.report_operation_failure(&admin);
+
+    let status = client.get_circuit_breaker_status();
+    assert_eq!(status.state, CircuitState::Open);
+
+    client.reset_circuit_breaker(&admin);
+
+    let reset_status = client.get_circuit_breaker_status();
+    assert_eq!(reset_status.state, CircuitState::Closed);
+    assert_eq!(reset_status.consecutive_failures, 0);
 }

@@ -11,3 +11,8 @@ graph LR
     Contract -->|Verifies Logic| Storage[(Stellar Ledger)]
     Storage -->|Emits Event| Mint[Credential Issued]
     Mint -->|Success| Student
+```
+
+## Reliability & Incident Handling
+
+- [Circuit Breaker Operations Runbook](./CIRCUIT_BREAKER_RUNBOOK.md)

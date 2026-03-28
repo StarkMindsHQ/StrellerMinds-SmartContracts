@@ -41,6 +41,7 @@ The Analytics contract provides advanced learning analytics capabilities includi
 - Bulk data operations
 - Data cleanup utilities
 - Performance optimization tools
+- Circuit breaker configuration and incident recovery controls
 
 ## Contract Interface
 
@@ -68,7 +69,28 @@ fn get_progress_analytics(
     student: Address,
     course_id: Symbol,
 ) -> Result<ProgressAnalytics, AnalyticsError>
+
+// Circuit breaker management (admin)
+fn configure_circuit_breaker(
+    env: Env,
+    admin: Address,
+    failure_threshold: u32,
+    recovery_timeout_seconds: u64,
+    half_open_max_calls: u32,
+    half_open_success_threshold: u32,
+) -> Result<(), Error>
+
+fn report_operation_failure(env: Env, admin: Address) -> Result<(), Error>
+fn reset_circuit_breaker(env: Env, admin: Address) -> Result<(), Error>
+fn get_circuit_breaker_status(env: Env) -> CircuitBreakerStatus
 ```
+
+## Reliability: Circuit Breaker
+
+- `record_session` and `complete_session` are protected by a circuit breaker.
+- Breaker states: `Closed`, `Open`, `HalfOpen`.
+- Emitted monitoring topics: `config`, `failure`, `open`, `halfopen`, `closed`, `blocked`, `reset`.
+- Because reverted Soroban transactions roll back state, persisted failure increments are handled by explicit `report_operation_failure` calls from authorized operators.
 
 ### Analytics Functions
 
