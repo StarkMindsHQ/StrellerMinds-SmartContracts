@@ -251,22 +251,35 @@ impl ThreatDetector {
         }
     }
 
-    /// Generate a unique threat ID
+    /// Generate a unique threat ID.
+    ///
+    /// Combines ledger timestamp, ledger sequence, and a per-contract nonce that
+    /// is incremented on every call. This guarantees a distinct, non-zero ID even
+    /// in test environments where the ledger timestamp and sequence are both 0.
     pub fn generate_threat_id(env: &Env, _contract: &Symbol) -> soroban_sdk::BytesN<32> {
+
+        // Retrieve and bump the nonce stored in instance storage.
+        // We reuse the `SecurityDataKey::Config` slot index trick: store the
+        // nonce under a dedicated key so it survives across calls.
+        let nonce_key = soroban_sdk::Symbol::new(env, "ThreatNonce");
+        let nonce: u64 = env
+            .storage()
+            .instance()
+            .get::<soroban_sdk::Symbol, u64>(&nonce_key)
+            .unwrap_or(0)
+            .wrapping_add(1);
+        env.storage().instance().set(&nonce_key, &nonce);
+
         let timestamp = env.ledger().timestamp();
         let sequence = env.ledger().sequence();
 
-        // Create deterministic but unique ID from timestamp, sequence, and contract
         let mut data = [0u8; 32];
-        let ts_bytes = timestamp.to_be_bytes();
-        let seq_bytes = sequence.to_be_bytes();
-
-        // Mix timestamp and sequence
-        data[..8].copy_from_slice(&ts_bytes);
-        data[8..(8 + 4)].copy_from_slice(&seq_bytes);
-
-        // Mix in contract symbol hash (simplified without to_string)
-        // Just use the timestamp/sequence for unique IDs since Symbol doesn't support to_string
+        data[..8].copy_from_slice(&timestamp.to_be_bytes());
+        data[8..12].copy_from_slice(&sequence.to_be_bytes());
+        data[12..20].copy_from_slice(&nonce.to_be_bytes());
+        let hi = ((nonce >> 32) as u32) ^ (nonce as u32);
+        data[20..24].copy_from_slice(&hi.to_be_bytes());
+        // remaining bytes stay 0
 
         soroban_sdk::BytesN::from_array(env, &data)
     }
