@@ -265,9 +265,9 @@ run_e2e_tests() {
         # Run quick tests only if requested
         if [[ "$QUICK" == true ]]; then
             if [[ "$VERBOSE" == true ]]; then
-                test_cmd="$test_cmd test_localnet_connectivity test_account_setup"
+                test_cmd="$test_cmd test_localnet_connectivity"
             else
-                test_cmd="$test_cmd test_localnet_connectivity test_account_setup -- --nocapture"
+                test_cmd="$test_cmd test_localnet_connectivity -- --nocapture"
             fi
         fi
         

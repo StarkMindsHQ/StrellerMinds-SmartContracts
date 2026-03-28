@@ -1,4 +1,5 @@
 import { Contract, SorobanRpc, TransactionBuilder, Address } from 'soroban-client';
+import { retry, isTransientNetworkError, RetryOptions } from './retry';
 
 export class AnalyticsClient {
     contract: Contract;
@@ -28,3 +29,5 @@ export class AnalyticsClient {
 }
 
 export * from './types';
+export { retry, isTransientNetworkError };
+export type { RetryOptions };

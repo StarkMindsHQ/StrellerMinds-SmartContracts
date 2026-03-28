@@ -1,3 +1,4 @@
+#![no_std]
 pub mod achievements;
 pub mod challenges;
 pub mod errors;

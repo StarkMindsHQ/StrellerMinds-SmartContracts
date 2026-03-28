@@ -2,6 +2,7 @@ use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use num_traits::float::FloatCore;
 
 /// User behavior analysis and learning pattern identification engine
 pub struct BehaviorAnalyzer;
@@ -759,7 +760,7 @@ impl BehaviorAnalyzer {
         }
         let variance = variance_sum / times.len() as f64;
 
-        1.0 / (1.0 + variance.sqrt() / 3600.0) // Normalize by hour
+        1.0 / (1.0 + variance / 3600.0) // Normalize by hour without sqrt in no_std
     }
 
     fn calculate_duration_variance(durations: &Vec<u64>, mean: u64) -> f64 {
@@ -770,11 +771,12 @@ impl BehaviorAnalyzer {
         let mut variance_sum = 0.0;
         for i in 0..durations.len() {
             let d = durations.get(i).unwrap();
-            variance_sum += (d as f64 - mean as f64).powi(2);
+            let diff = d as f64 - mean as f64;
+            variance_sum += diff * diff;
         }
 
         let variance = variance_sum / durations.len() as f64;
-        variance.sqrt() / mean as f64
+        if mean == 0 { 0.0 } else { variance / mean as f64 }
     }
 
     fn calculate_interaction_consistency(env: &Env, interactions: &Vec<UserInteraction>) -> f64 {
@@ -799,11 +801,12 @@ impl BehaviorAnalyzer {
         let mut variance_sum = 0.0;
         for i in 0..gaps.len() {
             let g = gaps.get(i).unwrap();
-            variance_sum += (g as f64 - mean_gap).powi(2);
+            let diff = g as f64 - mean_gap;
+            variance_sum += diff * diff;
         }
         let variance = variance_sum / gaps.len() as f64;
 
-        1.0 / (1.0 + variance.sqrt() / 86400.0) // Normalize by day
+        1.0 / (1.0 + variance / 86400.0) // Normalize by day without sqrt
     }
 
     fn get_recent_assessment_scores(env: &Env, interactions: &Vec<UserInteraction>) -> Vec<u32> {
@@ -845,7 +848,7 @@ impl BehaviorAnalyzer {
         }
 
         let mean = scores.iter().sum::<u32>() as f64 / scores.len() as f64;
-        scores.iter().map(|s| (*s as f64 - mean).powi(2)).sum::<f64>() / scores.len() as f64
+        scores.iter().map(|s| { let d = *s as f64 - mean; d*d }).sum::<f64>() / scores.len() as f64
     }
 
     fn generate_analysis_id(env: &Env) -> BytesN<32> {

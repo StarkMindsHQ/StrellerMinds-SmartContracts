@@ -1,3 +1,4 @@
+#![no_std]
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };

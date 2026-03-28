@@ -1,3 +1,4 @@
+#![no_std]
 pub mod circuit_breaker;
 pub mod errors;
 pub mod events;

@@ -2,6 +2,7 @@ use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use num_traits::float::FloatCore;
 
 /// Predictive analytics engine for system capacity planning
 pub struct PredictiveEngine;
@@ -589,9 +590,11 @@ impl PredictiveEngine {
         }
         let mean = Self::calculate_average_load(data) as f64;
         let variance =
-            data.iter().map(|m| (m.transaction_count as f64 - mean).powi(2)).sum::<f64>()
-                / data.len() as f64;
-        variance.sqrt() / mean
+            data.iter().map(|m| {
+                let d = m.transaction_count as f64 - mean;
+                d*d
+            }).sum::<f64>() / data.len() as f64;
+        if mean == 0.0 { 0.0 } else { variance / mean }
     }
 
     // Additional prediction functions

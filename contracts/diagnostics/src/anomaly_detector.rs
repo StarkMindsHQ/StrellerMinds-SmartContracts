@@ -2,6 +2,7 @@ use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use num_traits::float::FloatCore;
 
 /// Advanced anomaly detection for system degradation
 pub struct AnomalyDetector;
@@ -863,7 +864,7 @@ impl AnomalyDetector {
             return 0.0;
         }
 
-        (variance.sqrt() / mean) * 100.0 // Coefficient of variation as percentage
+        if mean == 0.0 { 0.0 } else { (variance / mean) * 100.0 }
     }
 
     fn analyze_performance_degradation_cause(

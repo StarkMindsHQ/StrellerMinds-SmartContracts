@@ -1,3 +1,5 @@
+#![no_std]
+
 use shared::event_schema::{
     AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
     SessionRecordedEvent,

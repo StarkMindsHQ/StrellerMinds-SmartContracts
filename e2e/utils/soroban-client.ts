@@ -12,6 +12,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from './config.js';
+import { retry, isTransientNetworkError } from './retry.js';
 
 export class SorobanClient {
   private server: SorobanRpc.Server;
@@ -29,7 +30,10 @@ export class SorobanClient {
     const keypair = secret ? Keypair.fromSecret(secret) : Keypair.random();
 
     try {
-      await this.server.getAccount(keypair.publicKey());
+      await retry(
+        () => this.server.getAccount(keypair.publicKey()),
+        { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getAccount retry #${a} in ${d}ms: ${e}`) }
+      );
       console.log(`Account ${keypair.publicKey()} already exists and is funded`);
     } catch (error) {
       console.log(`Funding account ${keypair.publicKey()}...`);
@@ -46,7 +50,10 @@ export class SorobanClient {
     const friendbotUrl = `${config.networkUrl.replace('/soroban/rpc', '')}/friendbot?addr=${publicKey}`;
 
     try {
-      const response = await fetch(friendbotUrl);
+      const response = await retry(
+        () => fetch(friendbotUrl),
+        { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`friendbot retry #${a} in ${d}ms: ${e}`) }
+      );
       if (!response.ok) {
         throw new Error(`Friendbot request failed: ${response.statusText}`);
       }
@@ -67,7 +74,10 @@ export class SorobanClient {
     const wasmBuffer = fs.readFileSync(wasmPath);
 
     // Get account details
-    const account = await this.server.getAccount(deployer.publicKey());
+    const account = await retry(
+      () => this.server.getAccount(deployer.publicKey()),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getAccount(deploy) retry #${a} in ${d}ms: ${e}`) }
+    );
 
     // Upload WASM
     console.log(`Uploading WASM: ${path.basename(wasmPath)}`);
@@ -93,7 +103,10 @@ export class SorobanClient {
     console.log(`WASM uploaded successfully, hash: ${wasmHash.toString('hex')}`);
 
     // Create contract instance
-    const accountRefreshed = await this.server.getAccount(deployer.publicKey());
+    const accountRefreshed = await retry(
+      () => this.server.getAccount(deployer.publicKey()),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getAccount(refresh) retry #${a} in ${d}ms: ${e}`) }
+    );
     const createOperation = Operation.createCustomContract({
       wasmHash: wasmHash as Buffer,
       address: deployer,
@@ -129,20 +142,29 @@ export class SorobanClient {
     transaction.sign(signer);
 
     // Submit to network
-    const response = await this.server.sendTransaction(transaction);
+    const response = await retry(
+      () => this.server.sendTransaction(transaction),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`sendTransaction retry #${a} in ${d}ms: ${e}`) }
+    );
 
     if (response.status !== 'PENDING') {
       throw new Error(`Transaction failed: ${response.status}`);
     }
 
     // Poll for result
-    let getResponse = await this.server.getTransaction(response.hash);
+    let getResponse = await retry(
+      () => this.server.getTransaction(response.hash),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getTransaction poll retry #${a} in ${d}ms: ${e}`) }
+    );
     let attempts = 0;
     const maxAttempts = 10;
 
     while (getResponse.status === 'NOT_FOUND' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      getResponse = await this.server.getTransaction(response.hash);
+      getResponse = await retry(
+        () => this.server.getTransaction(response.hash),
+        { isRetryable: isTransientNetworkError }
+      );
       attempts++;
     }
 
@@ -163,7 +185,10 @@ export class SorobanClient {
     caller: Keypair
   ): Promise<any> {
     const contract = new Contract(contractId);
-    const account = await this.server.getAccount(caller.publicKey());
+    const account = await retry(
+      () => this.server.getAccount(caller.publicKey()),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getAccount(invoke) retry #${a} in ${d}ms: ${e}`) }
+    );
 
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
@@ -188,7 +213,10 @@ export class SorobanClient {
       })
     );
 
-    const response = await this.server.getLedgerEntries(ledgerKey);
+    const response = await retry(
+      () => this.server.getLedgerEntries(ledgerKey),
+      { isRetryable: isTransientNetworkError, onRetry: (e, a, d) => console.warn(`getLedgerEntries retry #${a} in ${d}ms: ${e}`) }
+    );
     return response.entries;
   }
 

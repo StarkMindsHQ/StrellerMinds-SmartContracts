@@ -80,7 +80,12 @@ pub fn record_event_optimized(env: &Env, learner: &Address, event_type: u32, val
         symbol_short!("analytics"),
         learner.clone(),
         AnalyticsEventData::MetricsUpdated(MetricsUpdatedEvent {
-            metric_id: Symbol::new(env, &event_type.to_string()),
+            metric_id: match event_type {
+                0 => symbol_short!("view"),
+                1 => symbol_short!("comp"),
+                2 => symbol_short!("score"),
+                _ => symbol_short!("other"),
+            },
             new_value: value,
         })
     );

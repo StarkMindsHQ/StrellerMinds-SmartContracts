@@ -1,3 +1,4 @@
+#![no_std]
 #![allow(clippy::too_many_arguments)]
 pub mod analytics;
 pub mod community_events;

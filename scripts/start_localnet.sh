@@ -76,12 +76,12 @@ stop_existing_container() {
 # Function to start the localnet container
 start_localnet() {
     log_info "Starting Soroban localnet container..."
-    
-    # Start the container using Soroban CLI
-    soroban container start "${NETWORK_NAME}" \
-        --name "${CONTAINER_NAME}" \
-        --ports-mapping "${HOST_PORT}:${CONTAINER_PORT}" \
-        -d
+    # Prefer docker-compose for portability across CLI versions
+    if command -v docker-compose >/dev/null 2>&1; then
+        docker-compose up -d
+    else
+        docker compose up -d
+    fi
     
     # Wait for the container to be ready
     log_info "Waiting for localnet to be ready..."
@@ -102,7 +102,11 @@ start_localnet() {
     if [ $attempt -eq $max_attempts ]; then
         log_error "Localnet failed to start within timeout"
         log_info "Container logs:"
-        soroban container logs "${NETWORK_NAME}" || docker logs "${CONTAINER_NAME}"
+        if command -v docker-compose >/dev/null 2>&1; then
+            docker-compose logs --tail=200 || true
+        else
+            docker compose logs --tail=200 || true
+        fi
         exit 1
     fi
     
@@ -208,8 +212,11 @@ main() {
             ;;
         stop)
             log_info "Stopping Soroban localnet..."
-            soroban container stop "${NETWORK_NAME}" || docker stop "${CONTAINER_NAME}" || true
-            docker rm "${CONTAINER_NAME}" || true
+            if command -v docker-compose >/dev/null 2>&1; then
+                docker-compose down -v || true
+            else
+                docker compose down -v || true
+            fi
             log_success "Localnet stopped"
             ;;
         status)
