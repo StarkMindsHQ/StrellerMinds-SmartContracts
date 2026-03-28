@@ -15,8 +15,8 @@ use soroban_sdk::{contract, contractimpl, symbol_short, Env, Symbol};
 
 use crate::gas_optimizer::{
     pack_bool_u32, pack_u32, set_if_changed, unpack_bool_u32, unpack_u32, BatchResult, SYM_ADMIN,
-    SYM_BALANCE, SYM_CONFIG, SYM_METRICS, SYM_PAUSED, SYM_PROGRESS, SYM_SUPPLY,
-    TTL_BUMP_THRESHOLD, TTL_INSTANCE_DAY, TTL_PERSISTENT_MONTH, TTL_PERSISTENT_YEAR, TTL_TEMP_MAX,
+    SYM_BALANCE, SYM_CONFIG, SYM_METRICS, SYM_PAUSED, SYM_PROGRESS, SYM_SUPPLY, TTL_BUMP_THRESHOLD,
+    TTL_INSTANCE_DAY, TTL_PERSISTENT_MONTH, TTL_PERSISTENT_YEAR, TTL_TEMP_MAX,
 };
 
 // Minimal dummy contract used to satisfy the SDK's requirement that storage
@@ -52,12 +52,7 @@ fn test_ttl_persistent_year_approximately_one_year_in_ledgers() {
 
 #[test]
 fn test_pack_unpack_u32_roundtrip() {
-    let pairs: &[(u32, u32)] = &[
-        (0, 0),
-        (u32::MAX, u32::MAX),
-        (1, 2),
-        (0xDEAD_BEEF, 0xCAFE_BABE),
-    ];
+    let pairs: &[(u32, u32)] = &[(0, 0), (u32::MAX, u32::MAX), (1, 2), (0xDEAD_BEEF, 0xCAFE_BABE)];
     for &(a, b) in pairs {
         let packed = pack_u32(a, b);
         let (ra, rb) = unpack_u32(packed);
@@ -108,10 +103,7 @@ fn test_symbol_constants_are_distinct() {
     ];
     for i in 0..syms.len() {
         for j in (i + 1)..syms.len() {
-            assert_ne!(
-                syms[i], syms[j],
-                "symbol constants at indices {i} and {j} collide"
-            );
+            assert_ne!(syms[i], syms[j], "symbol constants at indices {i} and {j} collide");
         }
     }
 }
@@ -160,7 +152,7 @@ fn test_batch_result_large_batch() {
 #[test]
 fn test_set_if_changed_writes_new_value() {
     let env = Env::default();
-    let contract_id = env.register(None, SharedTestContract);
+    let contract_id = env.register(SharedTestContract, ());
     let key = symbol_short!("TESTK");
     let changed = env.as_contract(&contract_id, || set_if_changed(&env, &key, &42u32));
     assert!(changed, "first write must return true (value changed)");
@@ -169,22 +161,19 @@ fn test_set_if_changed_writes_new_value() {
 #[test]
 fn test_set_if_changed_skips_identical_value() {
     let env = Env::default();
-    let contract_id = env.register(None, SharedTestContract);
+    let contract_id = env.register(SharedTestContract, ());
     let key = symbol_short!("TESTK2");
     env.as_contract(&contract_id, || {
         set_if_changed(&env, &key, &99u32);
     });
     let changed_again = env.as_contract(&contract_id, || set_if_changed(&env, &key, &99u32));
-    assert!(
-        !changed_again,
-        "writing the same value must return false (no write)"
-    );
+    assert!(!changed_again, "writing the same value must return false (no write)");
 }
 
 #[test]
 fn test_set_if_changed_returns_true_on_value_update() {
     let env = Env::default();
-    let contract_id = env.register(None, SharedTestContract);
+    let contract_id = env.register(SharedTestContract, ());
     let key = symbol_short!("TESTK3");
     env.as_contract(&contract_id, || {
         set_if_changed(&env, &key, &1u32);

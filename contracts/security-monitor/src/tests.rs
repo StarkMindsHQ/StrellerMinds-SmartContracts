@@ -18,8 +18,8 @@ use soroban_sdk::{
 use crate::{
     storage::SecurityStorage,
     types::{
-        BreakerState, SecurityConfig, SecurityMetrics, SecurityThreat, ThreatIntelligence,
-        ThreatLevel, ThreatType, MitigationAction,
+        BreakerState, MitigationAction, SecurityConfig, SecurityMetrics, SecurityThreat,
+        ThreatIntelligence, ThreatLevel, ThreatType,
     },
     SecurityMonitor, SecurityMonitorClient,
 };
@@ -114,10 +114,7 @@ fn test_update_threat_intel_rejects_non_admin() {
         added_at: 0,
     };
     let result = client.try_update_threat_intelligence(&attacker, &intel);
-    assert!(
-        result.is_err(),
-        "non-admin must not be allowed to inject threat intel"
-    );
+    assert!(result.is_err(), "non-admin must not be allowed to inject threat intel");
 }
 
 #[test]
@@ -125,16 +122,9 @@ fn test_update_user_risk_rejects_non_admin_non_oracle() {
     let (env, _contract_id, client, _admin) = setup();
     let attacker = Address::generate(&env);
     let target = Address::generate(&env);
-    let result = client.try_update_user_risk_score(
-        &attacker,
-        &target,
-        &99u32,
-        &Symbol::new(&env, "attack"),
-    );
-    assert!(
-        result.is_err(),
-        "random address must not be able to escalate a user risk score"
-    );
+    let result =
+        client.try_update_user_risk_score(&attacker, &target, &99u32, &Symbol::new(&env, "attack"));
+    assert!(result.is_err(), "random address must not be able to escalate a user risk score");
 }
 
 #[test]
@@ -148,10 +138,7 @@ fn test_record_training_rejects_non_admin() {
         &Symbol::new(&env, "Module1"),
         &80u32,
     );
-    assert!(
-        result.is_err(),
-        "non-admin must not record security training"
-    );
+    assert!(result.is_err(), "non-admin must not record security training");
 }
 
 #[test]
@@ -164,10 +151,7 @@ fn test_generate_incident_report_rejects_non_admin() {
         &threat_ids,
         &String::from_str(&env, "impact"),
     );
-    assert!(
-        result.is_err(),
-        "non-admin must not generate incident reports"
-    );
+    assert!(result.is_err(), "non-admin must not generate incident reports");
 }
 
 #[test]
@@ -176,12 +160,8 @@ fn test_oracle_callback_rejects_unauthorized_caller() {
     let fake_oracle = Address::generate(&env);
     let req_id = bytes32(&env, 0xAB);
     // anomaly callback with an unregistered oracle must fail
-    let result =
-        client.try_callback_anomaly_analysis(&fake_oracle, &req_id, &true, &95u32);
-    assert!(
-        result.is_err(),
-        "callback from un-authorized oracle must be rejected"
-    );
+    let result = client.try_callback_anomaly_analysis(&fake_oracle, &req_id, &true, &95u32);
+    assert!(result.is_err(), "callback from un-authorized oracle must be rejected");
 }
 
 #[test]
@@ -189,12 +169,8 @@ fn test_biometrics_callback_rejects_unauthorized_caller() {
     let (env, _contract_id, client, _admin) = setup();
     let fake_oracle = Address::generate(&env);
     let req_id = bytes32(&env, 0xCD);
-    let result =
-        client.try_callback_biometrics_verification(&fake_oracle, &req_id, &true);
-    assert!(
-        result.is_err(),
-        "biometrics callback from unauthorized oracle must fail"
-    );
+    let result = client.try_callback_biometrics_verification(&fake_oracle, &req_id, &true);
+    assert!(result.is_err(), "biometrics callback from unauthorized oracle must fail");
 }
 
 #[test]
@@ -202,12 +178,8 @@ fn test_credential_fraud_callback_rejects_unauthorized_caller() {
     let (env, _contract_id, client, _admin) = setup();
     let fake_oracle = Address::generate(&env);
     let req_id = bytes32(&env, 0xEF);
-    let result =
-        client.try_callback_credential_fraud(&fake_oracle, &req_id, &false);
-    assert!(
-        result.is_err(),
-        "credential-fraud callback from unauthorized oracle must fail"
-    );
+    let result = client.try_callback_credential_fraud(&fake_oracle, &req_id, &false);
+    assert!(result.is_err(), "credential-fraud callback from unauthorized oracle must fail");
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -270,16 +242,9 @@ fn test_update_and_get_user_risk_score() {
     let (env, _contract_id, client, admin) = setup();
     let user = Address::generate(&env);
 
-    client.update_user_risk_score(
-        &admin,
-        &user,
-        &75u32,
-        &Symbol::new(&env, "FailedLogin"),
-    );
+    client.update_user_risk_score(&admin, &user, &75u32, &Symbol::new(&env, "FailedLogin"));
 
-    let score = client
-        .get_user_risk_score(&user)
-        .expect("score must be present after update");
+    let score = client.get_user_risk_score(&user).expect("score must be present after update");
     assert_eq!(score.score, 75);
     assert_eq!(score.risk_factors.len(), 1);
 }
@@ -303,9 +268,7 @@ fn test_security_training_reduces_risk_score() {
     // Record training - should subtract 10 from the score
     client.record_security_training(&admin, &user, &Symbol::new(&env, "Phishing101"), &90u32);
 
-    let score = client
-        .get_user_risk_score(&user)
-        .expect("risk score must exist");
+    let score = client.get_user_risk_score(&user).expect("risk score must exist");
     assert_eq!(score.score, 50, "training should have reduced score by 10");
 }
 
@@ -439,9 +402,8 @@ fn test_security_metrics_stored_and_retrieved() {
 
     env.as_contract(&contract_id, || {
         SecurityStorage::set_security_metrics(&env, &contract_sym, window_id, &metrics);
-        let retrieved =
-            SecurityStorage::get_security_metrics(&env, &contract_sym, window_id)
-                .expect("must retrieve stored metrics");
+        let retrieved = SecurityStorage::get_security_metrics(&env, &contract_sym, window_id)
+            .expect("must retrieve stored metrics");
         assert_eq!(retrieved.total_events, 50);
         assert_eq!(retrieved.error_rate, 10);
     });

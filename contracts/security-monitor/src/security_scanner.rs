@@ -81,10 +81,7 @@ impl SecurityScanner {
     /// # Errors
     /// Returns [`SecurityError::NotInitialized`] when called on a contract
     /// whose SecurityMonitor has not been initialised.
-    pub fn scan(
-        env: &Env,
-        contract: &Symbol,
-    ) -> Result<ScanReport, SecurityError> {
+    pub fn scan(env: &Env, contract: &Symbol) -> Result<ScanReport, SecurityError> {
         // Require initialisation.
         let _ = SecurityStorage::get_config(env).ok_or(SecurityError::NotInitialized)?;
 
@@ -154,10 +151,7 @@ impl SecurityScanner {
     /// Weights: Critical = −25, High = −10, Medium = −5, Low = −1.
     fn compute_score(low: u32, medium: u32, high: u32, critical: u32) -> u32 {
         let penalty =
-            critical.saturating_mul(25)
-                + high.saturating_mul(10)
-                + medium.saturating_mul(5)
-                + low;
+            critical.saturating_mul(25) + high.saturating_mul(10) + medium.saturating_mul(5) + low;
         100u32.saturating_sub(penalty)
     }
 
@@ -188,10 +182,7 @@ mod tests {
         types::{MitigationAction, SecurityConfig, ThreatType},
         SecurityMonitor, SecurityMonitorClient,
     };
-    use soroban_sdk::{
-        testutils::Address as _,
-        Address, BytesN, Env, String,
-    };
+    use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String};
 
     fn setup_scanner() -> (Env, Address /* contract_id */) {
         let env = Env::default();
@@ -203,12 +194,7 @@ mod tests {
         (env, contract_id)
     }
 
-    fn dummy_threat(
-        env: &Env,
-        contract: &Symbol,
-        seed: u8,
-        level: ThreatLevel,
-    ) -> SecurityThreat {
+    fn dummy_threat(env: &Env, contract: &Symbol, seed: u8, level: ThreatLevel) -> SecurityThreat {
         SecurityThreat {
             threat_id: BytesN::from_array(env, &[seed; 32]),
             threat_type: ThreatType::BurstActivity,
@@ -228,9 +214,8 @@ mod tests {
     fn test_scan_clean_contract_gives_full_score() {
         let (env, contract_id) = setup_scanner();
         let contract_sym = Symbol::new(&env, "cleanapp");
-        let report = env.as_contract(&contract_id, || {
-            SecurityScanner::scan(&env, &contract_sym).unwrap()
-        });
+        let report =
+            env.as_contract(&contract_id, || SecurityScanner::scan(&env, &contract_sym).unwrap());
         assert_eq!(report.aggregate_score, 100);
         assert_eq!(report.recommendation, SecurityScanAction::NoAction);
     }
@@ -245,9 +230,8 @@ mod tests {
             SecurityStorage::set_threat(&env, &t);
         });
 
-        let report = env.as_contract(&contract_id, || {
-            SecurityScanner::scan(&env, &contract_sym).unwrap()
-        });
+        let report =
+            env.as_contract(&contract_id, || SecurityScanner::scan(&env, &contract_sym).unwrap());
         assert_eq!(report.high_count, 1);
         assert_eq!(report.recommendation, SecurityScanAction::AlertOperators);
     }
@@ -282,9 +266,8 @@ mod tests {
     fn test_all_mitigated_true_when_no_threats() {
         let (env, contract_id) = setup_scanner();
         let contract_sym = Symbol::new(&env, "safeapp");
-        let result = env.as_contract(&contract_id, || {
-            SecurityScanner::all_mitigated(&env, &contract_sym)
-        });
+        let result =
+            env.as_contract(&contract_id, || SecurityScanner::all_mitigated(&env, &contract_sym));
         assert!(result);
     }
 
@@ -298,9 +281,8 @@ mod tests {
             SecurityStorage::set_threat(&env, &t);
         });
 
-        let result = env.as_contract(&contract_id, || {
-            SecurityScanner::all_mitigated(&env, &contract_sym)
-        });
+        let result =
+            env.as_contract(&contract_id, || SecurityScanner::all_mitigated(&env, &contract_sym));
         assert!(!result);
     }
 

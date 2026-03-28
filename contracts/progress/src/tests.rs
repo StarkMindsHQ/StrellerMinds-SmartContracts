@@ -8,11 +8,7 @@
 
 #![cfg(test)]
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::Address as _,
-    Address, Env,
-};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 use crate::{gas_optimized::PackedProgress, Progress, ProgressClient};
 
@@ -86,11 +82,7 @@ fn test_record_progress_multiple_students() {
 fn test_record_progress_multiple_courses_one_student() {
     let (env, client, _) = setup();
     let student = Address::generate(&env);
-    for course in [
-        symbol_short!("C1"),
-        symbol_short!("C2"),
-        symbol_short!("C3"),
-    ] {
+    for course in [symbol_short!("C1"), symbol_short!("C2"), symbol_short!("C3")] {
         client.record_progress(&student, &course, &100u32);
     }
 }

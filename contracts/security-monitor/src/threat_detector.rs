@@ -257,7 +257,6 @@ impl ThreatDetector {
     /// is incremented on every call. This guarantees a distinct, non-zero ID even
     /// in test environments where the ledger timestamp and sequence are both 0.
     pub fn generate_threat_id(env: &Env, _contract: &Symbol) -> soroban_sdk::BytesN<32> {
-
         // Retrieve and bump the nonce stored in instance storage.
         // We reuse the `SecurityDataKey::Config` slot index trick: store the
         // nonce under a dedicated key so it survives across calls.

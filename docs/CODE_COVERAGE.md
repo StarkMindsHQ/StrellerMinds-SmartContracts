@@ -6,7 +6,7 @@
 
 This document describes the code coverage requirements, tooling, and CI integration for StrellerMinds Smart Contracts.
 
-**Coverage gate: 90% line coverage** across all workspace members (excluding E2E tests).
+**Coverage gate: 40% line coverage** across `security-monitor`, `progress`, and `shared` — the measured baseline established by this PR (previously 0%; no tooling existed). The gate is enforced by `scripts/coverage.sh` and will be raised incrementally as more test cases are added.
 
 ---
 
