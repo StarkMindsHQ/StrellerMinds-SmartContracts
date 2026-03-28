@@ -49,3 +49,6 @@ impl Progress {
     }
 }
 pub mod gas_optimized;
+
+#[cfg(test)]
+pub mod tests;

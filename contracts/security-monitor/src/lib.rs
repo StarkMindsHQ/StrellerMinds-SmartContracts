@@ -4,9 +4,13 @@ pub mod errors;
 pub mod events;
 pub mod interface;
 pub mod recommendation_engine;
+pub mod security_scanner;
 pub mod storage;
 pub mod threat_detector;
 pub mod types;
+
+#[cfg(test)]
+pub mod tests;
 
 use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
