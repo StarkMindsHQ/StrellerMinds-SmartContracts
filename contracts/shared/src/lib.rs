@@ -1,3 +1,4 @@
+#![no_std]
 pub mod access_control {
     use soroban_sdk::{Address, Env};
 
