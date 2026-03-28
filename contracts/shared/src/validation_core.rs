@@ -1,5 +1,6 @@
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use std::string::{String, ToString};
+use std::vec::Vec;
+
 use soroban_sdk::{BytesN, Env};
 
 /// Configuration constants for metadata validation that can be reused across contracts
@@ -558,7 +559,7 @@ mod tests {
     fn security_control_chars_rejected() {
         // Control chars \x01-\x08 are forbidden
         for byte in [0x01u8, 0x02, 0x03, 0x07, 0x08] {
-            let payload = alloc::format!("valid{}text", byte as char);
+            let payload = format!("valid{}text", byte as char);
             let result = CoreValidator::validate_no_forbidden_chars(&payload, "field");
             assert!(result.is_err(), "Control char 0x{:02X} must be rejected", byte);
         }
@@ -590,7 +591,7 @@ mod tests {
 
     #[test]
     fn security_oversized_input_rejected() {
-        let oversized: alloc::string::String = "a".repeat(1001);
+        let oversized: String = "a".repeat(1001);
         let result = CoreValidator::validate_string_length(
             &oversized,
             "description",

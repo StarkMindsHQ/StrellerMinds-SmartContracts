@@ -88,3 +88,8 @@ pub mod validation {
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+
+/// Full validation implementation with security tests.
+/// The `validation` module above is a lightweight stub used by other contracts
+/// at the shared-crate boundary. This module exposes the complete validator.
+pub mod validation_core;
