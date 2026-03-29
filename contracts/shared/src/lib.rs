@@ -86,6 +86,7 @@ pub mod validation {
         Ok(soroban_sdk::String::from_str(_env, _text))
     }
 }
+pub mod error_codes;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
