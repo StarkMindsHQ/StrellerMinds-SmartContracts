@@ -78,7 +78,7 @@ pub fn start_course_optimized(env: &Env, learner: &Address, course_id: u32) {
         learner.clone(),
         ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
             student: learner.clone(),
-            course_id: Symbol::new(env, &course_id.to_string()),
+            course_id: course_symbol(env, course_id),
             module_id: symbol_short!("start"),
             progress_percentage: 0,
         })
@@ -106,8 +106,8 @@ pub fn complete_module_optimized(
         learner.clone(),
         ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
             student: learner.clone(),
-            course_id: Symbol::new(env, &course_id.to_string()),
-            module_id: Symbol::new(env, &module_idx.to_string()),
+            course_id: course_symbol(env, course_id),
+            module_id: module_symbol(env, module_idx),
             progress_percentage: pct as u32,
         })
     );
@@ -147,7 +147,7 @@ pub fn batch_complete_modules(
             learner.clone(),
             ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
                 student: learner.clone(),
-                course_id: Symbol::new(env, &course_id.to_string()),
+                course_id: course_symbol(env, course_id),
                 module_id: symbol_short!("batch"),
                 progress_percentage: pct as u32,
             })
@@ -169,4 +169,12 @@ pub fn get_progress(env: &Env, learner: &Address, course_id: u32) -> PackedProgr
 
 pub fn is_course_complete(env: &Env, learner: &Address, course_id: u32, total_modules: u8) -> bool {
     load_progress(env, learner, course_id).is_completed(total_modules)
+}
+
+fn course_symbol(env: &Env, _course_id: u32) -> Symbol {
+    Symbol::new(env, "course")
+}
+
+fn module_symbol(env: &Env, _module_idx: u8) -> Symbol {
+    Symbol::new(env, "module")
 }
