@@ -1,5 +1,8 @@
 #![no_std]
 #![allow(clippy::too_many_arguments)]
+
+pub mod errors;
+
 use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Map, String, Vec};
 
 pub mod analytics_monitor;
@@ -51,11 +54,11 @@ impl MobileOptimizerContract {
     // Initialization & Admin
     // ========================================================================
 
-    pub fn initialize(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), MobileOptimizerError> {
         admin.require_auth();
 
         if env.storage().persistent().has(&DataKey::Initialized) {
-            panic!("already initialized");
+            return Err(MobileOptimizerError::AlreadyInitialized);
         }
 
         let config = MobileOptimizerConfig {
@@ -77,6 +80,7 @@ impl MobileOptimizerContract {
         env.storage().persistent().set(&DataKey::TotalSessions, &0u64);
         env.storage().persistent().set(&DataKey::TotalBatches, &0u64);
         env.storage().persistent().set(&DataKey::TotalOfflineOps, &0u64);
+        Ok(())
     }
 
     pub fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError> {
