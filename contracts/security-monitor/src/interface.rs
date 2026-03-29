@@ -1,7 +1,7 @@
 use crate::errors::SecurityError;
 use crate::types::{
     CircuitBreakerState, MitigationAction, SecurityConfig, SecurityMetrics, SecurityRecommendation,
-    SecurityThreat, ThreatIntelligence, UserRiskScore,
+    SecurityThreat, ThreatId, ThreatIdList, ThreatIntelligence, UserRiskScore,
 };
 use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
 
@@ -18,16 +18,16 @@ pub trait SecurityMonitorTrait {
     ) -> Result<Vec<SecurityThreat>, SecurityError>;
 
     /// Get a specific threat by ID
-    fn get_threat(env: Env, threat_id: BytesN<32>) -> Result<SecurityThreat, SecurityError>;
+    fn get_threat(env: Env, threat_id: ThreatId) -> Result<SecurityThreat, SecurityError>;
 
     /// Get all threats for a contract
-    fn get_contract_threats(env: Env, contract: Symbol) -> Vec<BytesN<32>>;
+    fn get_contract_threats(env: Env, contract: Symbol) -> ThreatIdList;
 
     /// Apply mitigation action to a threat
     fn apply_mitigation(
         env: Env,
         admin: Address,
-        threat_id: BytesN<32>,
+        threat_id: ThreatId,
         action: MitigationAction,
     ) -> Result<(), SecurityError>;
 
@@ -63,20 +63,20 @@ pub trait SecurityMonitorTrait {
     /// Get recommendations for a threat
     fn get_recommendations(
         env: Env,
-        threat_id: BytesN<32>,
+        threat_id: ThreatId,
     ) -> Result<Vec<SecurityRecommendation>, SecurityError>;
 
     /// Generate recommendations for a threat
     fn generate_recommendations(
         env: Env,
-        threat_id: BytesN<32>,
+        threat_id: ThreatId,
     ) -> Result<Vec<SecurityRecommendation>, SecurityError>;
 
     /// Acknowledge a recommendation
     fn acknowledge_recommendation(
         env: Env,
         admin: Address,
-        recommendation_id: BytesN<32>,
+        recommendation_id: ThreatId,
     ) -> Result<(), SecurityError>;
 
     /// Update security configuration
@@ -96,13 +96,13 @@ pub trait SecurityMonitorTrait {
         env: Env,
         actor: Address,
         contract: Symbol,
-    ) -> Result<BytesN<32>, SecurityError>;
+    ) -> Result<ThreatId, SecurityError>;
 
     /// Oracle callback for AI anomaly analysis
     fn callback_anomaly_analysis(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_anomalous: bool,
         risk_score: u32,
     ) -> Result<(), SecurityError>;
@@ -112,13 +112,13 @@ pub trait SecurityMonitorTrait {
         env: Env,
         actor: Address,
         encrypted_payload: soroban_sdk::String,
-    ) -> Result<BytesN<32>, SecurityError>;
+    ) -> Result<ThreatId, SecurityError>;
 
     /// Oracle callback for biometric verification
     fn callback_biometrics_verification(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_valid: bool,
     ) -> Result<(), SecurityError>;
 
@@ -127,13 +127,13 @@ pub trait SecurityMonitorTrait {
         env: Env,
         actor: Address,
         credential_hash: BytesN<32>,
-    ) -> Result<BytesN<32>, SecurityError>;
+    ) -> Result<ThreatId, SecurityError>;
 
     /// Oracle callback for credential fraud verification
     fn callback_credential_fraud(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_fraudulent: bool,
     ) -> Result<(), SecurityError>;
 
@@ -169,7 +169,7 @@ pub trait SecurityMonitorTrait {
     fn generate_incident_report(
         env: Env,
         admin: Address,
-        threat_ids: Vec<BytesN<32>>,
+        threat_ids: ThreatIdList,
         impact_summary: soroban_sdk::String,
-    ) -> Result<BytesN<32>, SecurityError>;
+    ) -> Result<ThreatId, SecurityError>;
 }

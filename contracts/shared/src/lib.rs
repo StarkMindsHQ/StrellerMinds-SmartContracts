@@ -87,9 +87,11 @@ pub mod validation {
     }
 }
 pub mod error_codes;
+pub mod config;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+pub mod monitoring;
 
 #[cfg(test)]
 pub mod performance_tests;

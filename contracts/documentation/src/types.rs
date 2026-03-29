@@ -1,5 +1,6 @@
 #![allow(clippy::enum_variant_names)]
-use soroban_sdk::{contracttype, Address, String, Vec};
+use shared::config::{ContractConfig, DeploymentEnv};
+use soroban_sdk::{contracttype, Address, Env, String, Vec};
 
 // ============================================================================
 // Core Documentation Types
@@ -281,6 +282,28 @@ pub struct DocumentationConfig {
     pub require_review: bool,
     pub enable_contributions: bool,
     pub enable_analytics: bool,
+}
+
+impl DocumentationConfig {
+    pub fn for_env(env: &Env, admin: Address, profile: DeploymentEnv) -> Self {
+        let defaults = ContractConfig::documentation(profile);
+        Self {
+            admin,
+            moderators: Vec::new(env),
+            supported_languages: Vec::new(env),
+            max_doc_size: defaults.max_doc_size,
+            require_review: defaults.require_review,
+            enable_contributions: defaults.enable_contributions,
+            enable_analytics: defaults.enable_analytics,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), Error> {
+        if self.max_doc_size == 0 {
+            return Err(Error::InvalidDocument);
+        }
+        Ok(())
+    }
 }
 
 // ============================================================================
