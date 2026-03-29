@@ -2,7 +2,7 @@ use soroban_sdk::contracterror;
 
 /// Error types for the diagnostics platform
 #[contracterror]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum DiagnosticsError {
     // Configuration (1000-1099)

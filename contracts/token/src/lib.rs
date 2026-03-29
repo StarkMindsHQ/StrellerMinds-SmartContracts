@@ -1,16 +1,19 @@
+pub mod errors;
+
+use crate::errors::TokenError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, TokenEventData, TokensMintedEvent,
     TokensTransferredEvent,
 };
 use shared::{emit_access_control_event, emit_token_event};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Error};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env};
 
 #[contract]
 pub struct Token;
 
 #[contractimpl]
 impl Token {
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), TokenError> {
         emit_access_control_event!(
             &env,
             symbol_short!("token"),
@@ -20,7 +23,7 @@ impl Token {
         Ok(())
     }
 
-    pub fn mint(env: Env, to: Address, amount: u64) -> Result<(), Error> {
+    pub fn mint(env: Env, to: Address, amount: u64) -> Result<(), TokenError> {
         emit_token_event!(
             &env,
             symbol_short!("token"),
@@ -30,7 +33,7 @@ impl Token {
         Ok(())
     }
 
-    pub fn transfer(env: Env, from: Address, to: Address, amount: u64) -> Result<(), Error> {
+    pub fn transfer(env: Env, from: Address, to: Address, amount: u64) -> Result<(), TokenError> {
         from.require_auth();
         emit_token_event!(
             &env,
@@ -45,7 +48,7 @@ impl Token {
         Ok(())
     }
 
-    pub fn balance(_env: Env, _account: Address) -> Result<u64, Error> {
+    pub fn balance(_env: Env, _account: Address) -> Result<u64, TokenError> {
         Ok(0)
     }
 }
