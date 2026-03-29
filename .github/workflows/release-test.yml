@@ -45,10 +45,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev libudev-dev pkg-config
-          cargo install --locked soroban-cli
-          soroban config help
-          sudo apt-get install -y pkg-config libdbus-1-dev
-          cargo install --locked soroban-cli --version 21.5.0
+          cargo install --locked soroban-cli --version 21.5.0 --force
           soroban --version
           stellar --version
 
