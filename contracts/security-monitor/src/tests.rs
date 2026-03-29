@@ -591,3 +591,90 @@ fn test_scan_for_threats_always_returns_vec() {
     // Should never panic – just return an empty or populated Vec
     let _ = client.scan_for_threats(&contract_sym, &3600u64);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 11. Rate-limiting tests
+// ─────────────────────────────────────────────────────────────
+
+#[test]
+fn test_check_rate_limit_allows_calls_within_window() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 2;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+}
+
+#[test]
+fn test_check_rate_limit_exceeds_after_threshold() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit2");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(client.check_rate_limit(&actor, &contract_sym));
+
+    let threats = client.get_contract_threats(&contract_sym);
+    assert_eq!(threats.len(), 1, "a rate-limit threat should be persisted");
+}
+
+#[test]
+fn test_check_rate_limit_resets_after_window() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().set_timestamp(100);
+
+    let contract_id = env.register(SecurityMonitor, ());
+    let client = SecurityMonitorClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    client.initialize(&admin, &SecurityConfig::default_config());
+
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit3");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 10;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(client.check_rate_limit(&actor, &contract_sym));
+
+    env.ledger().set_timestamp(111);
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+}
+
+#[test]
+fn test_request_anomaly_analysis_enforces_rate_limit() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "oracleflow");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    let _ = client.request_anomaly_analysis(&actor, &contract_sym);
+    let second = client.try_request_anomaly_analysis(&actor, &contract_sym);
+    assert!(second.is_err(), "second request in the same window should be rejected");
+}
