@@ -15,7 +15,8 @@ use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
 use crate::threat_detector::ThreatDetector;
 use crate::types::{
-    IncidentReport, SecurityConfig, SecurityThreat, SecurityTrainingStatus, ThreatIntelligence,
+    IncidentReport, MitigationAction, RateLimitState, SecurityConfig, SecurityThreat,
+    SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence, ThreatLevel, ThreatType,
     UserRiskScore,
 };
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, String, Symbol, Vec};
@@ -25,6 +26,14 @@ pub struct SecurityMonitor;
 
 #[contractimpl]
 impl SecurityMonitor {
+    fn not_initialized_error() -> Error {
+        Error::from_contract_error(2)
+    }
+
+    fn rate_limit_exceeded_error() -> Error {
+        Error::from_contract_error(3)
+    }
+
     pub fn initialize(env: Env, admin: Address, config: SecurityConfig) -> Result<(), Error> {
         SecurityStorage::set_admin(&env, &admin);
         SecurityStorage::set_config(&env, &config);
@@ -40,13 +49,69 @@ impl SecurityMonitor {
         Ok(Vec::new(&_env)) // Basic placeholder
     }
 
-    pub fn get_threat(env: Env, threat_id: BytesN<32>) -> Result<SecurityThreat, Error> {
+    pub fn get_threat(env: Env, threat_id: ThreatId) -> Result<SecurityThreat, Error> {
         SecurityStorage::get_threat(&env, &threat_id).ok_or(Error::from_contract_error(0))
         // 0 = generic error placeholder
     }
 
-    pub fn get_contract_threats(env: Env, contract: Symbol) -> Vec<BytesN<32>> {
+    pub fn get_contract_threats(env: Env, contract: Symbol) -> ThreatIdList {
         SecurityStorage::get_contract_threats(&env, &contract)
+    }
+
+    pub fn check_rate_limit(env: Env, actor: Address, contract: Symbol) -> Result<bool, Error> {
+        let config = SecurityStorage::get_config(&env).ok_or_else(Self::not_initialized_error)?;
+        let current_time = env.ledger().timestamp();
+
+        let mut state = SecurityStorage::get_rate_limit_state(&env, &actor, &contract).unwrap_or(
+            RateLimitState {
+                window_started_at: current_time,
+                event_count: 0,
+                last_attempt_at: current_time,
+            },
+        );
+
+        if current_time >= state.window_started_at.saturating_add(config.rate_limit_window) {
+            state.window_started_at = current_time;
+            state.event_count = 0;
+        }
+
+        state.event_count = state.event_count.saturating_add(1);
+        state.last_attempt_at = current_time;
+        SecurityStorage::set_rate_limit_state(&env, &actor, &contract, &state);
+
+        let exceeded = state.event_count > config.rate_limit_per_window;
+        if exceeded {
+            SecurityEvents::emit_rate_limit_exceeded(
+                &env,
+                &actor,
+                &contract,
+                state.event_count,
+                config.rate_limit_per_window,
+            );
+
+            let severity = if state.event_count >= config.rate_limit_per_window.saturating_mul(2) {
+                ThreatLevel::High
+            } else {
+                ThreatLevel::Medium
+            };
+
+            let threat = SecurityThreat {
+                threat_id: ThreatDetector::generate_threat_id(&env, &contract),
+                threat_type: ThreatType::RateLimitExceeded,
+                threat_level: severity,
+                detected_at: current_time,
+                contract: contract.clone(),
+                actor: Some(actor.clone()),
+                description: String::from_str(&env, "Rate limit exceeded"),
+                metric_value: state.event_count,
+                threshold_value: config.rate_limit_per_window,
+                auto_mitigated: true,
+                mitigation_action: MitigationAction::RateLimitApplied,
+            };
+            SecurityStorage::set_threat(&env, &threat);
+        }
+
+        Ok(exceeded)
     }
 
     // --- Advanced Features Implementation ---
@@ -55,7 +120,10 @@ impl SecurityMonitor {
         env: Env,
         actor: Address,
         contract: Symbol,
-    ) -> Result<BytesN<32>, Error> {
+    ) -> Result<ThreatId, Error> {
+        if Self::check_rate_limit(env.clone(), actor.clone(), contract.clone())? {
+            return Err(Self::rate_limit_exceeded_error());
+        }
         let request_id = ThreatDetector::generate_threat_id(&env, &contract); // Re-use ID generator for request ID
         SecurityEvents::emit_anomaly_requested(&env, &actor, &contract, &request_id);
         Ok(request_id)
@@ -64,7 +132,7 @@ impl SecurityMonitor {
     pub fn callback_anomaly_analysis(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_anomalous: bool,
         risk_score: u32,
     ) -> Result<(), Error> {
@@ -79,8 +147,11 @@ impl SecurityMonitor {
         env: Env,
         actor: Address,
         _encrypted_payload: String,
-    ) -> Result<BytesN<32>, Error> {
+    ) -> Result<ThreatId, Error> {
         let dummy_contract = Symbol::new(&env, "biometrics");
+        if Self::check_rate_limit(env.clone(), actor.clone(), dummy_contract.clone())? {
+            return Err(Self::rate_limit_exceeded_error());
+        }
         let request_id = ThreatDetector::generate_threat_id(&env, &dummy_contract);
         SecurityEvents::emit_biometrics_requested(&env, &actor, &request_id);
         Ok(request_id)
@@ -89,7 +160,7 @@ impl SecurityMonitor {
     pub fn callback_biometrics_verification(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_valid: bool,
     ) -> Result<(), Error> {
         if !SecurityStorage::is_oracle_authorized(&env, &oracle) {
@@ -103,8 +174,11 @@ impl SecurityMonitor {
         env: Env,
         actor: Address,
         _credential_hash: BytesN<32>,
-    ) -> Result<BytesN<32>, Error> {
+    ) -> Result<ThreatId, Error> {
         let dummy_contract = Symbol::new(&env, "fraud");
+        if Self::check_rate_limit(env.clone(), actor.clone(), dummy_contract.clone())? {
+            return Err(Self::rate_limit_exceeded_error());
+        }
         let request_id = ThreatDetector::generate_threat_id(&env, &dummy_contract);
         SecurityEvents::emit_fraud_requested(&env, &actor, &request_id);
         Ok(request_id)
@@ -113,7 +187,7 @@ impl SecurityMonitor {
     pub fn callback_credential_fraud(
         env: Env,
         oracle: Address,
-        request_id: BytesN<32>,
+        request_id: ThreatId,
         is_fraudulent: bool,
     ) -> Result<(), Error> {
         if !SecurityStorage::is_oracle_authorized(&env, &oracle) {
@@ -229,9 +303,9 @@ impl SecurityMonitor {
     pub fn generate_incident_report(
         env: Env,
         admin: Address,
-        threat_ids: Vec<BytesN<32>>,
+        threat_ids: ThreatIdList,
         impact_summary: String,
-    ) -> Result<BytesN<32>, Error> {
+    ) -> Result<ThreatId, Error> {
         let expected_admin =
             SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
         if admin != expected_admin {
