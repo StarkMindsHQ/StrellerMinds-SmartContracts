@@ -321,4 +321,16 @@ pub enum CertDataKey {
     // Counters
     RequestCounter,
     CertificateCounter,
+
+    // Rate Limiting
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
+    RateLimitCfg,            // CertRateLimitConfig
+}
+
+/// Configurable rate limits for certificate operations.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CertRateLimitConfig {
+    pub max_requests_per_day: u32,
+    pub window_seconds: u64,
 }

@@ -176,6 +176,15 @@ pub struct IntegrationConfig {
     pub security_monitor_contract: Option<Address>,
 }
 
+/// Configurable rate limits for assessment operations.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct AssessmentRateLimits {
+    pub max_submissions_per_day: u32,
+    pub max_answers_per_day: u32,
+    pub window_seconds: u64,
+}
+
 /// Storage keys for the assessment contract.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
@@ -192,4 +201,6 @@ pub enum DataKey {
     Schedule(u64),
     Accommodation(Address),
     Adaptive(Address, u64), // (student, assessment_id)
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
+    RateLimitCfg,            // AssessmentRateLimits
 }

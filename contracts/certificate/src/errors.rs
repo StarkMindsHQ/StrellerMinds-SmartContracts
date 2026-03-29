@@ -52,4 +52,7 @@ pub enum CertificateError {
     // General
     InvalidInput = 80,
     InternalError = 99,
+
+    // Rate limiting
+    RateLimitExceeded = 90,
 }

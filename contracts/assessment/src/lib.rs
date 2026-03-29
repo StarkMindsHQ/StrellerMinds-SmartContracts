@@ -7,6 +7,7 @@ pub mod types;
 use errors::AssessmentError;
 use events::AssessmentEvents;
 use grading::GradingEngine;
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use types::*;
 
 #[cfg(test)]
@@ -14,6 +15,17 @@ mod test;
 
 use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec};
+
+const RL_OP_START_SUBMISSION: u64 = 1;
+const RL_OP_SUBMIT_ANSWERS: u64 = 2;
+
+fn get_rate_limits(env: &Env) -> AssessmentRateLimits {
+    env.storage().instance().get(&DataKey::RateLimitCfg).unwrap_or(AssessmentRateLimits {
+        max_submissions_per_day: 3,
+        max_answers_per_day: 5,
+        window_seconds: 86_400,
+    })
+}
 
 #[contract]
 pub struct Assessment;
@@ -163,7 +175,26 @@ impl Assessment {
                 security_monitor_contract: None,
             },
         );
+        env.storage().instance().set(
+            &DataKey::RateLimitCfg,
+            &AssessmentRateLimits {
+                max_submissions_per_day: 3,
+                max_answers_per_day: 5,
+                window_seconds: 86_400,
+            },
+        );
         AssessmentEvents::emit_initialized(&env, &admin);
+        Ok(())
+    }
+
+    pub fn update_rate_limits(
+        env: Env,
+        admin: Address,
+        rate_limits: AssessmentRateLimits,
+    ) -> Result<(), AssessmentError> {
+        require_admin(&env, &admin)?;
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::RateLimitCfg, &rate_limits);
         Ok(())
     }
 
@@ -514,6 +545,12 @@ impl Assessment {
         assessment_id: u64,
     ) -> Result<BytesN<32>, AssessmentError> {
         student.require_auth();
+        let rl = get_rate_limits(&env);
+        enforce_rate_limit(
+            &env,
+            &DataKey::RateLimit(student.clone(), RL_OP_START_SUBMISSION),
+            &RateLimitConfig { max_calls: rl.max_submissions_per_day, window_seconds: rl.window_seconds },
+        ).map_err(|_| AssessmentError::RateLimitExceeded)?;
         let meta = get_assessment(&env, assessment_id)?;
         if !meta.published {
             return Err(AssessmentError::AssessmentNotPublished);
@@ -570,6 +607,12 @@ impl Assessment {
         answers: Vec<SubmittedAnswer>,
     ) -> Result<Submission, AssessmentError> {
         student.require_auth();
+        let rl = get_rate_limits(&env);
+        enforce_rate_limit(
+            &env,
+            &DataKey::RateLimit(student.clone(), RL_OP_SUBMIT_ANSWERS),
+            &RateLimitConfig { max_calls: rl.max_answers_per_day, window_seconds: rl.window_seconds },
+        ).map_err(|_| AssessmentError::RateLimitExceeded)?;
         let mut submission = get_submission(&env, &submission_id)?;
         if submission.student != student {
             return Err(AssessmentError::Unauthorized);

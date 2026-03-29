@@ -30,4 +30,7 @@ pub enum AssessmentError {
 
     // Integrity / security
     SecurityIntegrationMissing = 40,
+
+    // Rate limiting
+    RateLimitExceeded = 50,
 }

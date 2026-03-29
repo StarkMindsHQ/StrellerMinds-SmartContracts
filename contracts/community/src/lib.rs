@@ -14,6 +14,7 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 pub use errors::Error;
@@ -27,6 +28,23 @@ use knowledge::KnowledgeManager;
 use mentorship::MentorshipManager;
 use moderation::ModerationManager;
 use storage::CommunityStorage;
+
+// Rate limit operation IDs
+const RL_OP_POST: u64 = 1;
+const RL_OP_REPLY: u64 = 2;
+const RL_OP_VOTE: u64 = 3;
+const RL_OP_REPORT: u64 = 4;
+const RL_OP_PROPOSAL: u64 = 5;
+const RL_OP_CONTRIBUTION: u64 = 6;
+
+fn check_rate_limit(env: &Env, user: &Address, operation: u64, config: &RateLimitConfig) -> Result<(), Error> {
+    let is_admin = CommunityStorage::require_admin(env, user).is_ok();
+    if is_admin {
+        return Ok(());
+    }
+    enforce_rate_limit(env, &CommunityKey::RateLimit(user.clone(), operation), config)
+        .map_err(|_| Error::RateLimitExceeded)
+}
 
 #[contract]
 pub struct Community;
@@ -57,6 +75,12 @@ impl Community {
             min_reputation_to_moderate: 500,
             max_reports_per_day: 10,
             vote_weight_threshold: 100,
+            rate_limit_post: 5,
+            rate_limit_reply: 20,
+            rate_limit_vote: 50,
+            rate_limit_proposal: 2,
+            rate_limit_contribution: 5,
+            rate_limit_window: 86_400,
         };
         CommunityStorage::set_config(&env, &config);
 
@@ -93,6 +117,8 @@ impl Community {
         course_id: String,
     ) -> Result<u64, Error> {
         author.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &author, RL_OP_POST, &RateLimitConfig { max_calls: cfg.rate_limit_post, window_seconds: cfg.rate_limit_window })?;
         ForumManager::create_post(&env, &author, category, title, content, tags, course_id)
     }
 
@@ -104,6 +130,8 @@ impl Community {
         parent_reply_id: u64,
     ) -> Result<u64, Error> {
         author.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &author, RL_OP_REPLY, &RateLimitConfig { max_calls: cfg.rate_limit_reply, window_seconds: cfg.rate_limit_window })?;
         ForumManager::create_reply(&env, &author, post_id, content, parent_reply_id)
     }
 
@@ -119,6 +147,8 @@ impl Community {
 
     pub fn vote_post(env: Env, voter: Address, post_id: u64, upvote: bool) -> Result<(), Error> {
         voter.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &voter, RL_OP_VOTE, &RateLimitConfig { max_calls: cfg.rate_limit_vote, window_seconds: cfg.rate_limit_window })?;
         ForumManager::vote_post(&env, &voter, post_id, upvote)
     }
 
@@ -213,6 +243,8 @@ impl Community {
         tags: Vec<String>,
     ) -> Result<u64, Error> {
         contributor.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &contributor, RL_OP_CONTRIBUTION, &RateLimitConfig { max_calls: cfg.rate_limit_contribution, window_seconds: cfg.rate_limit_window })?;
         KnowledgeManager::submit_contribution(
             &env,
             &contributor,
@@ -341,6 +373,8 @@ impl Community {
         description: String,
     ) -> Result<u64, Error> {
         reporter.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &reporter, RL_OP_REPORT, &RateLimitConfig { max_calls: cfg.max_reports_per_day, window_seconds: cfg.rate_limit_window })?;
         ModerationManager::report_content(
             &env,
             &reporter,
@@ -379,6 +413,8 @@ impl Community {
         min_votes_required: u32,
     ) -> Result<u64, Error> {
         proposer.require_auth();
+        let cfg = CommunityStorage::get_config(&env);
+        check_rate_limit(&env, &proposer, RL_OP_PROPOSAL, &RateLimitConfig { max_calls: cfg.rate_limit_proposal, window_seconds: cfg.rate_limit_window })?;
         GovernanceManager::create_proposal(
             &env,
             &proposer,

@@ -725,6 +725,54 @@
                             },
                             {
                               "key": {
+                                "symbol": "rate_limit_contribution"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_post"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_proposal"
+                              },
+                              "val": {
+                                "u32": 2
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_reply"
+                              },
+                              "val": {
+                                "u32": 20
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_vote"
+                              },
+                              "val": {
+                                "u32": 50
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_window"
+                              },
+                              "val": {
+                                "u64": 86400
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "reply_xp_reward"
                               },
                               "val": {

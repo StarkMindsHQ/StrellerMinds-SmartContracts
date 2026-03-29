@@ -29,4 +29,5 @@ pub enum Error {
     GuildNameTooLong = 23,
     SeasonNotEnded = 24,
     InsufficientXP = 25,
+    RateLimitExceeded = 26,
 }

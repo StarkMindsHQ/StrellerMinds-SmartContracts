@@ -1,4 +1,4 @@
-use soroban_sdk::{testutils::Address as _, Address, Env, String, Vec};
+use soroban_sdk::{testutils::Address as _, testutils::Ledger, Address, Env, String, Vec};
 
 use crate::types::*;
 use crate::{Community, CommunityClient};
@@ -309,9 +309,20 @@ fn test_create_proposal() {
     let (env, admin, user1, _, _) = create_test_env();
     let client = setup_community(&env, &admin);
 
-    // Build reputation through activity
-    // Create posts to build reputation
-    for _i in 0..10 {
+    // Build reputation through activity across multiple days to stay within rate limits
+    env.ledger().with_mut(|l| l.timestamp = 86_400);
+    for _i in 0..5 {
+        client.create_post(
+            &user1,
+            &ForumCategory::General,
+            &String::from_str(&env, "Post"),
+            &String::from_str(&env, "Content"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+    env.ledger().with_mut(|l| l.timestamp = 86_400 * 2);
+    for _i in 0..5 {
         client.create_post(
             &user1,
             &ForumCategory::General,
@@ -336,6 +347,123 @@ fn test_create_proposal() {
     );
 
     assert_eq!(proposal_id, 1);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  Rate Limiting Tests
+// ══════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_post_rate_limit_exceeded() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // 5 posts should succeed (daily limit)
+    for _i in 0..5 {
+        client.create_post(
+            &user1,
+            &ForumCategory::General,
+            &String::from_str(&env, "Post"),
+            &String::from_str(&env, "Content"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+
+    // 6th post should fail
+    let result = client.try_create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "Post"),
+        &String::from_str(&env, "Content"),
+        &Vec::new(&env),
+        &String::from_str(&env, ""),
+    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_admin_bypasses_rate_limit() {
+    let (env, admin, _, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // Admin can create more than 5 posts per day
+    for _i in 0..10 {
+        client.create_post(
+            &admin,
+            &ForumCategory::General,
+            &String::from_str(&env, "Post"),
+            &String::from_str(&env, "Content"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+}
+
+#[test]
+fn test_rate_limit_resets_after_window() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // Exhaust the limit
+    for _i in 0..5 {
+        client.create_post(
+            &user1,
+            &ForumCategory::General,
+            &String::from_str(&env, "Post"),
+            &String::from_str(&env, "Content"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+
+    // Advance to next day
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000 + 86_400);
+
+    // Should succeed again
+    client.create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "Post"),
+        &String::from_str(&env, "Content"),
+        &Vec::new(&env),
+        &String::from_str(&env, ""),
+    );
+}
+
+#[test]
+fn test_rate_limits_independent_per_operation() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // Exhaust post limit
+    for _i in 0..5 {
+        client.create_post(
+            &user1,
+            &ForumCategory::General,
+            &String::from_str(&env, "Post"),
+            &String::from_str(&env, "Content"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+
+    // Replies should still work (different operation)
+    let post_id = 1;
+    client.create_reply(
+        &user1,
+        &post_id,
+        &String::from_str(&env, "Reply"),
+        &0,
+    );
 }
 
 // ══════════════════════════════════════════════════════════════════════

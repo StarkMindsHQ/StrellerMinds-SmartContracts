@@ -281,6 +281,10 @@ pub struct DocumentationConfig {
     pub require_review: bool,
     pub enable_contributions: bool,
     pub enable_analytics: bool,
+    // Rate limits (max calls per rate_limit_window)
+    pub rate_limit_create_doc: u32,
+    pub rate_limit_contribution: u32,
+    pub rate_limit_window: u64,
 }
 
 // ============================================================================
@@ -309,6 +313,7 @@ pub enum DataKey {
     TotalDocuments,
     TotalViews,
     TotalContributions,
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
 }
 
 // ============================================================================
@@ -332,4 +337,5 @@ pub enum Error {
     DocumentTooLarge = 11,
     InvalidStatus = 12,
     AlreadyExists = 13,
+    RateLimitExceeded = 14,
 }

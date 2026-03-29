@@ -374,6 +374,13 @@ pub struct CommunityConfig {
     pub min_reputation_to_moderate: u32,
     pub max_reports_per_day: u32,
     pub vote_weight_threshold: u32,
+    // Rate limits (max calls per window_seconds)
+    pub rate_limit_post: u32,
+    pub rate_limit_reply: u32,
+    pub rate_limit_vote: u32,
+    pub rate_limit_proposal: u32,
+    pub rate_limit_contribution: u32,
+    pub rate_limit_window: u64,
 }
 
 // ───────────────────────────────────────────────
@@ -437,4 +444,7 @@ pub enum CommunityKey {
     Proposal(u64),
     ActiveProposals, // Vec<u64>
     ProposalVote(Address, u64),
+
+    // Rate Limiting
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
 }

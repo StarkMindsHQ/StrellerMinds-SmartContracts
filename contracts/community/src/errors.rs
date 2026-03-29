@@ -46,4 +46,7 @@ pub enum Error {
     VotingClosed = 61,
     AlreadyVotedOnProposal = 62,
     InsufficientVotingPower = 63,
+
+    // Rate limiting errors
+    RateLimitExceeded = 70,
 }

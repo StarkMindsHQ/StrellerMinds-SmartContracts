@@ -401,6 +401,10 @@ pub struct GamificationConfig {
     pub guild_max_members: u32,
     /// maximum entries kept in each leaderboard
     pub leaderboard_size: u32,
+    // Rate limits (max calls per rate_limit_window)
+    pub rate_limit_activity: u32,
+    pub rate_limit_recognition: u32,
+    pub rate_limit_window: u64,
 }
 
 // ───────────────────────────────────────────────
@@ -463,4 +467,7 @@ pub enum GamificationKey {
 
     // ── Adaptive Difficulty ─────────────────────
     UserDifficulty(Address),
+
+    // ── Rate Limiting ──────────────────────────
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
 }
