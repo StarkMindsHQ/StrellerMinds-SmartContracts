@@ -1,4 +1,8 @@
 #![no_std]
+
+pub mod errors;
+
+use crate::errors::CrossChainError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, CredentialIssuedEvent,
     CredentialReactivatedEvent, CredentialRevokedEvent, CredentialSuspendedEvent,
@@ -21,9 +25,9 @@ pub struct CrossChainCredentials;
 
 #[contractimpl]
 impl CrossChainCredentials {
-    pub fn initialize(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), CrossChainError> {
         if env.storage().instance().has(&DataKey::Admin) {
-            panic!("Already initialized");
+            return Err(CrossChainError::AlreadyInitialized);
         }
         storage::set_admin(&env, &admin);
         emit_access_control_event!(
@@ -32,6 +36,7 @@ impl CrossChainCredentials {
             admin.clone(),
             AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
         );
+        Ok(())
     }
 
     pub fn issue_credential(
@@ -80,12 +85,15 @@ impl CrossChainCredentials {
         credential_id
     }
 
-    pub fn revoke_credential(env: Env, credential_id: String) {
+    pub fn revoke_credential(env: Env, credential_id: String) -> Result<(), CrossChainError> {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential =
-            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
+        let mut credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
         credential.status = CredentialStatus::Revoked;
         env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
 
@@ -95,14 +103,18 @@ impl CrossChainCredentials {
             admin,
             CrossChainEventData::CredentialRevoked(CredentialRevokedEvent { credential_id })
         );
+        Ok(())
     }
 
-    pub fn suspend_credential(env: Env, credential_id: String) {
+    pub fn suspend_credential(env: Env, credential_id: String) -> Result<(), CrossChainError> {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential =
-            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
+        let mut credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
         credential.status = CredentialStatus::Suspended;
         env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
 
@@ -112,14 +124,18 @@ impl CrossChainCredentials {
             admin,
             CrossChainEventData::CredentialSuspended(CredentialSuspendedEvent { credential_id })
         );
+        Ok(())
     }
 
-    pub fn reactivate_credential(env: Env, credential_id: String) {
+    pub fn reactivate_credential(env: Env, credential_id: String) -> Result<(), CrossChainError> {
         let admin = get_admin(&env);
         admin.require_auth();
 
-        let mut credential: Credential =
-            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
+        let mut credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
         credential.status = CredentialStatus::Active;
         env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
 
@@ -131,22 +147,29 @@ impl CrossChainCredentials {
                 credential_id
             })
         );
+        Ok(())
     }
 
-    pub fn get_credential(env: Env, credential_id: String) -> Credential {
-        env.storage().persistent().get(&DataKey::Credential(credential_id)).unwrap()
+    pub fn get_credential(env: Env, credential_id: String) -> Result<Credential, CrossChainError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id))
+            .ok_or(CrossChainError::CredentialNotFound)
     }
 
     pub fn verify_cross_chain(
         env: Env,
         credential_id: String,
         target_chain: ChainId,
-    ) -> CrossChainProof {
-        let credential: Credential =
-            env.storage().persistent().get(&DataKey::Credential(credential_id.clone())).unwrap();
+    ) -> Result<CrossChainProof, CrossChainError> {
+        let credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
 
         if credential.status != CredentialStatus::Active {
-            panic!("Credential not active");
+            return Err(CrossChainError::CredentialNotActive);
         }
 
         let proof = CrossChainProof {
@@ -168,11 +191,14 @@ impl CrossChainCredentials {
                 target_chain: target_chain.to_u32(),
             })
         );
-        proof
+        Ok(proof)
     }
 
-    pub fn get_proof(env: Env, credential_id: String) -> CrossChainProof {
-        env.storage().persistent().get(&DataKey::Proof(credential_id)).unwrap()
+    pub fn get_proof(env: Env, credential_id: String) -> Result<CrossChainProof, CrossChainError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Proof(credential_id))
+            .ok_or(CrossChainError::ProofNotFound)
     }
 
     pub fn request_verification(
@@ -206,8 +232,14 @@ impl CrossChainCredentials {
         request_id
     }
 
-    pub fn get_verification_request(env: Env, request_id: String) -> VerificationRequest {
-        env.storage().persistent().get(&DataKey::Request(request_id)).unwrap()
+    pub fn get_verification_request(
+        env: Env,
+        request_id: String,
+    ) -> Result<VerificationRequest, CrossChainError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Request(request_id))
+            .ok_or(CrossChainError::VerificationRequestNotFound)
     }
 
     pub fn generate_transcript(env: Env, student: Address) -> Transcript {

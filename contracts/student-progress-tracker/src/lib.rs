@@ -1,5 +1,8 @@
 #![no_std]
 
+pub mod errors;
+
+use crate::errors::StudentProgressError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
@@ -25,7 +28,7 @@ pub struct ProgressTracker;
 
 #[contractimpl]
 impl ProgressTracker {
-    pub fn initialize(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), StudentProgressError> {
         admin.require_auth();
 
         env.storage().instance().set(&DataKey::Admin, &admin);
@@ -35,18 +38,24 @@ impl ProgressTracker {
             admin.clone(),
             AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
         );
+        Ok(())
     }
+
     pub fn update_progress(
         env: Env,
         student: Address,
         course_id: Symbol,
         module_id: Symbol,
         percent: u32,
-    ) {
+    ) -> Result<(), StudentProgressError> {
         if percent > 100 {
-            panic!("percentage cannot be more than 100");
+            return Err(StudentProgressError::InvalidPercent);
         }
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("admin not set");
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(StudentProgressError::AdminNotSet)?;
         if student != admin {
             student.require_auth();
         } else {
@@ -71,6 +80,7 @@ impl ProgressTracker {
                 progress_percentage: percent,
             })
         );
+        Ok(())
     }
 
     pub fn get_progress(env: Env, student: Address, course_id: Symbol) -> Map<Symbol, u32> {
@@ -78,8 +88,8 @@ impl ProgressTracker {
         env.storage().persistent().get(&key).unwrap_or(Map::new(&env))
     }
 
-    pub fn get_admin(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Admin).expect("admin not set")
+    pub fn get_admin(env: Env) -> Result<Address, StudentProgressError> {
+        env.storage().instance().get(&DataKey::Admin).ok_or(StudentProgressError::AdminNotSet)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

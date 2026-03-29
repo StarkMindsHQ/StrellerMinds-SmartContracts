@@ -1,9 +1,9 @@
 use soroban_sdk::contracterror;
 
 #[contracterror]
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
-pub enum Error {
+pub enum GamificationError {
     AlreadyInitialized = 1,
     NotInitialized = 2,
     Unauthorized = 3,
@@ -30,3 +30,6 @@ pub enum Error {
     SeasonNotEnded = 24,
     InsufficientXP = 25,
 }
+
+/// Backward-compatible alias used by internal submodules.
+pub type Error = GamificationError;

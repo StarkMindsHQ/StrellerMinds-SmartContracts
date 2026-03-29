@@ -9,8 +9,6 @@
 //!    changes in a way that increases logical complexity, the tests surface it.
 //! 3. Benchmark `BatchResult` aggregation patterns used across contracts.
 
-#![cfg(test)]
-
 use soroban_sdk::{contract, contractimpl, symbol_short, Env, Symbol};
 
 use crate::gas_optimizer::{
