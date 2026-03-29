@@ -99,6 +99,35 @@ This document outlines the framework for reviewing the effectiveness of the Stre
    - Resource allocation optimization
    - Bottleneck identification
 
+### 4. Training Effectiveness
+
+Training is a tool multiplier. Measure whether people can use the toolchain and workflows confidently and consistently after onboarding, workshops, and refreshers.
+
+#### Key Performance Indicators (KPIs)
+
+| Metric | Target | Measurement Method | Frequency |
+|--------|--------|-------------------|-----------|
+| Time to First Passing PR | ≤ 5 working days | PR metadata + reviewer confirmation | Per new joiner |
+| Onboarding Completion Rate | ≥ 90% | Module/workshop checklist completion | Monthly |
+| Confidence Score Increase | +1.0 avg (1–5 scale) | Pre/post training survey | Per cohort |
+| Repeat Question Rate | -30% | Support channel tagging + themes | Monthly |
+| Production Regression Rate (New Joiners) | 0 critical | Post-merge incident tracking | Quarterly |
+
+#### Measurement Methods
+
+1. **Pre/Post Assessments**
+   - Short survey before and after training modules
+   - Practical exercise scoring (build/test/lint, localnet, E2E)
+
+2. **Workflow Outcomes**
+   - First PR lead time and review iterations
+   - CI failure themes (fmt/clippy/tests) by cohort
+
+3. **Qualitative Feedback**
+   - Workshop retro notes
+   - Most confusing docs/pages list
+   - Most valuable demos list
+
 ## Review Process
 
 ### Monthly Reviews
@@ -156,6 +185,7 @@ This document outlines the framework for reviewing the effectiveness of the Stre
 #### Deliverables
 - Quarterly strategic review
 - Developer experience report
+- Training effectiveness report
 - Technical debt analysis
 - Enhancement roadmap
 
@@ -388,6 +418,52 @@ This document outlines the framework for reviewing the effectiveness of the Stre
 - Strategic initiatives
 - Investment requirements
 - Risk mitigation
+```
+
+#### Training Effectiveness Report
+```
+# Training Effectiveness Report - [Cohort/Month] [Year]
+
+## Scope
+- Track(s): Contributor / Maintainer / Release Engineer
+- Modules delivered:
+- Workshops delivered:
+
+## Outcomes
+- Time to first passing PR (median, p90):
+- CI failure themes (top 3):
+- Confidence delta (pre → post):
+
+## What Worked
+- Demos that unblocked people:
+- Docs that were clear:
+
+## Gaps / Friction
+- Commands/workflows that failed:
+- Docs that were confusing:
+- Tooling pain points:
+
+## Action Items
+- Documentation changes:
+- Tooling changes:
+- Next cohort adjustments:
+```
+
+#### Training Survey Template
+```
+# Training Survey - Pre/Post
+
+## Self-Assessment (1–5)
+- I can build the workspace confidently.
+- I can run unit tests and interpret failures.
+- I can run clippy/formatting checks and fix findings.
+- I understand where to find contract entrypoints, storage, and events.
+- I can use localnet and run quick E2E checks.
+
+## Open Questions
+- What was the most confusing part?
+- What saved you the most time?
+- Which doc page needs the most improvement?
 ```
 
 ## Conclusion

@@ -1,6 +1,8 @@
 #![no_std]
 #![allow(clippy::too_many_arguments)]
 
+pub mod errors;
+
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 

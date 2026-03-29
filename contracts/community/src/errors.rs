@@ -3,7 +3,7 @@ use soroban_sdk::contracterror;
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
-pub enum Error {
+pub enum CommunityError {
     AlreadyInitialized = 1,
     NotInitialized = 2,
     Unauthorized = 3,
@@ -50,3 +50,6 @@ pub enum Error {
     // Rate limiting errors
     RateLimitExceeded = 70,
 }
+
+/// Backward-compatible alias used by internal submodules.
+pub type Error = CommunityError;

@@ -17,6 +17,7 @@ use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 pub use errors::Error;
+pub use errors::GamificationError;
 pub use types::*;
 
 use achievements::AchievementManager;
@@ -50,7 +51,7 @@ impl Gamification {
     // ══════════════════════════════════════════════════════════════════════
 
     /// One-time setup.  Seeds the 25 default milestone achievements.
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), GamificationError> {
         admin.require_auth();
 
         if GamificationStorage::is_initialized(&env) {
@@ -106,7 +107,7 @@ impl Gamification {
         env: Env,
         user: Address,
         activity: ActivityRecord,
-    ) -> Result<Vec<u64>, Error> {
+    ) -> Result<Vec<u64>, GamificationError> {
         user.require_auth();
         let cfg = GamificationStorage::get_config(&env);
         check_rate_limit(&env, &user, RL_OP_ACTIVITY, &RateLimitConfig { max_calls: cfg.rate_limit_activity, window_seconds: cfg.rate_limit_window })?;
@@ -134,7 +135,7 @@ impl Gamification {
         env: Env,
         admin: Address,
         achievement: Achievement,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, GamificationError> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
         AchievementManager::create(&env, achievement)
@@ -149,7 +150,7 @@ impl Gamification {
         env: Env,
         user: Address,
         achievement_id: u64,
-    ) -> Result<i128, Error> {
+    ) -> Result<i128, GamificationError> {
         user.require_auth();
         AchievementManager::claim_reward(&env, &user, achievement_id)
     }
@@ -175,13 +176,21 @@ impl Gamification {
     //  Challenge / Quest Functions
     // ══════════════════════════════════════════════════════════════════════
 
-    pub fn create_challenge(env: Env, admin: Address, challenge: Challenge) -> Result<u64, Error> {
+    pub fn create_challenge(
+        env: Env,
+        admin: Address,
+        challenge: Challenge,
+    ) -> Result<u64, GamificationError> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
         ChallengeManager::create(&env, &admin, challenge)
     }
 
-    pub fn join_challenge(env: Env, user: Address, challenge_id: u64) -> Result<(), Error> {
+    pub fn join_challenge(
+        env: Env,
+        user: Address,
+        challenge_id: u64,
+    ) -> Result<(), GamificationError> {
         user.require_auth();
         ChallengeManager::join(&env, &user, challenge_id)
     }
@@ -192,7 +201,7 @@ impl Gamification {
         user: Address,
         challenge_id: u64,
         progress: u32,
-    ) -> Result<bool, Error> {
+    ) -> Result<bool, GamificationError> {
         user.require_auth();
         ChallengeManager::update_progress(&env, &user, challenge_id, progress)
     }
@@ -224,17 +233,17 @@ impl Gamification {
         description: String,
         max_members: u32,
         is_public: bool,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, GamificationError> {
         creator.require_auth();
         GuildManager::create(&env, &creator, name, description, max_members, is_public)
     }
 
-    pub fn join_guild(env: Env, user: Address, guild_id: u64) -> Result<(), Error> {
+    pub fn join_guild(env: Env, user: Address, guild_id: u64) -> Result<(), GamificationError> {
         user.require_auth();
         GuildManager::join(&env, &user, guild_id)
     }
 
-    pub fn leave_guild(env: Env, user: Address) -> Result<(), Error> {
+    pub fn leave_guild(env: Env, user: Address) -> Result<(), GamificationError> {
         user.require_auth();
         GuildManager::leave(&env, &user)
     }
@@ -251,7 +260,11 @@ impl Gamification {
     //  Season Functions
     // ══════════════════════════════════════════════════════════════════════
 
-    pub fn create_season(env: Env, admin: Address, season: Season) -> Result<u64, Error> {
+    pub fn create_season(
+        env: Env,
+        admin: Address,
+        season: Season,
+    ) -> Result<u64, GamificationError> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
         SeasonManager::create(&env, &admin, season)
@@ -262,7 +275,7 @@ impl Gamification {
     }
 
     /// End the current season (only callable after `end_time` has passed).
-    pub fn end_season(env: Env, admin: Address) -> Result<(), Error> {
+    pub fn end_season(env: Env, admin: Address) -> Result<(), GamificationError> {
         admin.require_auth();
         GamificationStorage::require_admin(&env, &admin)?;
         SeasonManager::end_current_season(&env, &admin)
@@ -281,7 +294,7 @@ impl Gamification {
         endorser: Address,
         endorsee: Address,
         skill: String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), GamificationError> {
         endorser.require_auth();
         SocialManager::endorse(&env, &endorser, &endorsee, skill)
     }
@@ -292,7 +305,7 @@ impl Gamification {
         to: Address,
         recognition_type: RecognitionType,
         message: String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), GamificationError> {
         from.require_auth();
         let cfg = GamificationStorage::get_config(&env);
         check_rate_limit(&env, &from, RL_OP_RECOGNITION, &RateLimitConfig { max_calls: cfg.rate_limit_recognition, window_seconds: cfg.rate_limit_window })?;

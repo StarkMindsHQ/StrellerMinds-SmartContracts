@@ -8,8 +8,6 @@
 //! - Incident reporting
 //! - Input boundary / adversarial edge cases
 
-#![cfg(test)]
-
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
     Address, BytesN, Env, String, Symbol, Vec,
