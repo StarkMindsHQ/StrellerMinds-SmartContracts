@@ -47,7 +47,7 @@ impl DocumentationContract {
             return Err(Error::AlreadyInitialized);
         }
 
-        let config = DocumentationConfig::for_env(admin.clone(), DeploymentEnv::Production);
+        let config = DocumentationConfig::for_env(&env, admin.clone(), DeploymentEnv::Production);
         config.validate()?;
 
         env.storage().persistent().set(&DataKey::Admin, &admin);

@@ -1,6 +1,6 @@
 #![allow(clippy::enum_variant_names)]
 use shared::config::{ContractConfig, DeploymentEnv};
-use soroban_sdk::{contracttype, Address, String, Vec};
+use soroban_sdk::{contracttype, Address, Env, String, Vec};
 
 // ============================================================================
 // Core Documentation Types
@@ -285,12 +285,12 @@ pub struct DocumentationConfig {
 }
 
 impl DocumentationConfig {
-    pub fn for_env(admin: Address, profile: DeploymentEnv) -> Self {
+    pub fn for_env(env: &Env, admin: Address, profile: DeploymentEnv) -> Self {
         let defaults = ContractConfig::documentation(profile);
         Self {
             admin,
-            moderators: Vec::new(),
-            supported_languages: Vec::new(),
+            moderators: Vec::new(env),
+            supported_languages: Vec::new(env),
             max_doc_size: defaults.max_doc_size,
             require_review: defaults.require_review,
             enable_contributions: defaults.enable_contributions,
