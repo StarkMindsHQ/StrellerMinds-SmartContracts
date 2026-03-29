@@ -192,30 +192,43 @@ impl Monitoring {
 #[cfg(test)]
 mod tests {
     use super::{MetricKind, Monitoring};
-    use soroban_sdk::{testutils::Ledger, Env, Symbol};
+    use soroban_sdk::{contract, contractimpl, testutils::Ledger, Env, Symbol};
+
+    #[contract]
+    struct MonitoringTestContract;
+
+    #[contractimpl]
+    impl MonitoringTestContract {}
 
     #[test]
     fn increment_counter_accumulates_values() {
         let env = Env::default();
+        let contract_id = env.register(MonitoringTestContract, ());
         env.ledger().set_timestamp(100);
         let metric = Symbol::new(&env, "rpc_calls");
 
-        let first = Monitoring::increment_counter(&env, &metric, 1);
-        let second = Monitoring::increment_counter(&env, &metric, 2);
+        let first =
+            env.as_contract(&contract_id, || Monitoring::increment_counter(&env, &metric, 1));
+        let second =
+            env.as_contract(&contract_id, || Monitoring::increment_counter(&env, &metric, 2));
+        let stored = env.as_contract(&contract_id, || Monitoring::get_counter(&env, &metric));
 
         assert_eq!(first.kind, MetricKind::Counter);
         assert_eq!(first.value, 1);
         assert_eq!(second.value, 3);
-        assert_eq!(Monitoring::get_counter(&env, &metric).unwrap().value, 3);
+        assert_eq!(stored.unwrap().value, 3);
     }
 
     #[test]
     fn record_contract_call_tracks_status_and_latency() {
         let env = Env::default();
+        let contract_id = env.register(MonitoringTestContract, ());
         env.ledger().set_timestamp(250);
         let contract = Symbol::new(&env, "token");
 
-        let latency = Monitoring::record_contract_call(&env, &contract, false, 45);
+        let latency = env.as_contract(&contract_id, || {
+            Monitoring::record_contract_call(&env, &contract, false, 45)
+        });
 
         assert_eq!(latency.kind, MetricKind::Gauge);
         assert_eq!(latency.value, 45);
