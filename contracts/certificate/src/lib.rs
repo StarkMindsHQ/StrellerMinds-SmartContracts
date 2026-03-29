@@ -9,7 +9,8 @@ pub mod types;
 mod test;
 
 use errors::CertificateError;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Vec};
 use types::{
     AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
     CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
@@ -897,5 +898,13 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = storage::is_initialized(&env);
+        let report =
+            Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }

@@ -89,6 +89,9 @@ pub mod validation {
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+pub mod monitoring;
 
+#[cfg(test)]
+pub mod monitoring_tests;
 #[cfg(test)]
 pub mod performance_tests;

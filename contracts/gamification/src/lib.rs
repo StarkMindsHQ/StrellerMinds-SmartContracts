@@ -13,7 +13,8 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub use errors::Error;
 pub use types::*;
@@ -297,5 +298,12 @@ impl Gamification {
 
     pub fn get_admin(env: Env) -> Option<Address> {
         env.storage().instance().get(&GamificationKey::Admin)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = GamificationStorage::is_initialized(&env);
+        let report = Monitor::build_health_report(&env, symbol_short!("gamifica"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }

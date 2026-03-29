@@ -109,6 +109,7 @@ impl EventUtils {
             EventData::Community(_) => 128,
             EventData::Search(_) => 128,
             EventData::Err(_) => 64,
+            EventData::Monitoring(_) => 96,
         }
     }
 

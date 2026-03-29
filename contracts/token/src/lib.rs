@@ -2,6 +2,7 @@ use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, TokenEventData, TokensMintedEvent,
     TokensTransferredEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_token_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Error};
 
@@ -47,6 +48,19 @@ impl Token {
 
     pub fn balance(_env: Env, _account: Address) -> Result<u64, Error> {
         Ok(0)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let mut report = Monitor::build_health_report(&env, symbol_short!("token"), initialized);
+        Monitor::add_metric(
+            &mut report,
+            symbol_short!("uptime"),
+            1,
+            env.ledger().timestamp(),
+        );
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 pub mod gas_optimized;

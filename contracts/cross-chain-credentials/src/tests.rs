@@ -1,4 +1,5 @@
 use super::*;
+use shared::monitoring::ContractHealthStatus;
 use soroban_sdk::{testutils::Address as _, Address, Env, String};
 use types::{ChainId, CredentialStatus};
 
@@ -173,4 +174,29 @@ fn test_verification_request() {
     assert_eq!(request.credential_id, cred_id);
     assert_eq!(request.chain_id, ChainId::Bsc);
     assert_eq!(request.requester, requester);
+}
+
+#[test]
+fn test_health_check_before_init() {
+    let env = Env::default();
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Unknown);
+    assert!(!report.initialized);
+}
+
+#[test]
+fn test_health_check_after_init() {
+    let env = Env::default();
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    client.initialize(&admin);
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Healthy);
+    assert!(report.initialized);
 }

@@ -14,7 +14,8 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub use errors::Error;
 pub use types::*;
@@ -441,5 +442,12 @@ impl Community {
 
     pub fn get_config(env: Env) -> CommunityConfig {
         CommunityStorage::get_config(&env)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = CommunityStorage::is_initialized(&env);
+        let report = Monitor::build_health_report(&env, symbol_short!("communit"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
