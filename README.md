@@ -388,6 +388,8 @@ StrellerMinds-SmartContracts/
 ### Contribution Resources
 - **[Contributing Guidelines](docs/contributing.md)** - Detailed contribution process
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
+- **[Community Guidelines](COMMUNITY_GUIDELINES.md)** - How we engage and keep the project healthy
+- **[Governance and Triage](.github/GOVERNANCE.md)** - Maintainer process and review expectations
 - **[Release Process](docs/RELEASE_PROCESS.md)** - How releases are managed
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - High-level system design
 
