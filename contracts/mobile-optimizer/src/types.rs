@@ -1,6 +1,6 @@
 #![allow(clippy::enum_variant_names)]
 
-use soroban_sdk::{contracterror, contracttype, Address, BytesN, Map, String, Vec};
+use soroban_sdk::{contracttype, Address, BytesN, Map, String, Vec};
 
 // ============================================================================
 // Core Transaction & Batch Types
@@ -1270,45 +1270,4 @@ pub struct CollaborationProfile {
 // Contract-Level Error Enum
 // ============================================================================
 
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum MobileOptimizerError {
-    NotInitialized = 1,
-    AlreadyInitialized = 2,
-    SessionCreationFailed = 3,
-    SessionUpdateFailed = 4,
-    SessionNotFound = 5,
-    SessionExpired = 6,
-    BatchExecutionFailed = 7,
-    BatchNotFound = 8,
-    BatchExpired = 9,
-    GasEstimationFailed = 10,
-    OptimizationFailed = 11,
-    InteractionFailed = 12,
-    OfflineOperationFailed = 13,
-    OfflineSyncFailed = 14,
-    OfflineQueueFull = 15,
-    ConflictResolutionFailed = 16,
-    PreferenceUpdateFailed = 17,
-    AnalyticsNotAvailable = 18,
-    ConfigNotFound = 19,
-    AdminNotSet = 20,
-    UnauthorizedAdmin = 21,
-    Unauthorized = 22,
-    CacheError = 23,
-    CacheFull = 24,
-    DeviceNotRegistered = 25,
-    MaxDevicesReached = 26,
-    SyncFailed = 27,
-    SecurityViolation = 28,
-    BiometricAuthFailed = 29,
-    AccountLocked = 30,
-    NotificationError = 31,
-    PwaError = 32,
-    InvalidInput = 33,
-    InternalError = 34,
-    ContentError = 35,
-    CollaborationError = 36,
-    UserExperienceError = 37,
-}
+pub use crate::errors::MobileOptimizerError;

@@ -1,7 +1,11 @@
 #![no_std]
 #![allow(dead_code)]
 
-use soroban_sdk::{contract, contracterror, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+
+pub mod errors;
+
+pub use errors::{Error, SearchError};
 
 mod collaborative_filter;
 mod content_analyzer;
@@ -30,22 +34,6 @@ use voice_search::VoiceSearch;
 // Import SearchAnalytics from module, not from types to avoid shadow warning
 use search_analytics::SearchAnalytics as AnalyticsModule;
 pub use types::*;
-
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Error {
-    AlreadyInitialized = 1,
-    NotInitialized = 2,
-    Unauthorized = 3,
-    InvalidQuery = 4,
-    ContentNotFound = 5,
-    InvalidMetadata = 6,
-    InvalidScore = 7,
-    SessionExpired = 8,
-    InvalidLanguage = 9,
-    OracleNotAuthorized = 10,
-}
 
 #[contract]
 pub struct AdvancedSearchContract;

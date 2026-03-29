@@ -1,6 +1,8 @@
 #![no_std]
 #![allow(clippy::too_many_arguments)]
 
+pub mod errors;
+
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 pub mod analytics;
