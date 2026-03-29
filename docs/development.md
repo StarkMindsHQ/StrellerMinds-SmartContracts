@@ -8,7 +8,7 @@ This project maintains compatibility with the following versions:
 |-----------|---------|-------|
 | Rust Toolchain | stable | See `rust-toolchain.toml` for exact configuration |
 | Soroban SDK | 22.0.0 | Defined in workspace `Cargo.toml` |
-| Soroban CLI | Latest compatible with SDK 22.0.0 | Install via `cargo install soroban-cli` |
+| Soroban CLI | 21.5.0 | Pinned to the repo bootstrap/install workflow |
 | Stellar Strkey | 0.0.7 | Workspace dependency |
 | Ed25519 Dalek | 2.0.0 | Workspace dependency |
 | Rand | 0.8.5 | Workspace dependency |
@@ -33,7 +33,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 2. Install Soroban CLI:
 ```bash
-cargo install --locked soroban-cli
+cargo install --locked soroban-cli --version 21.5.0
 ```
 
 3. Add WebAssembly target:
