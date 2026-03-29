@@ -1,5 +1,11 @@
 use soroban_sdk::{contracttype, Address, BytesN, Map, String, Symbol, Vec};
 
+/// Reusable aliases for diagnostics identifiers and benchmark collections.
+pub type BenchmarkId = BytesN<32>;
+pub type ScenarioList = Vec<TestScenario>;
+pub type ScenarioResultList = Vec<ScenarioResult>;
+pub type RecommendationList = Vec<String>;
+
 /// Configuration for the diagnostics platform
 #[derive(Clone, Debug)]
 #[contracttype]
@@ -434,7 +440,7 @@ pub struct ErrorAnalysis {
 pub struct BenchmarkConfig {
     pub benchmark_name: String,
     pub target_contracts: Vec<Address>,
-    pub test_scenarios: Vec<TestScenario>,
+    pub test_scenarios: ScenarioList,
     pub duration: u64,
     pub concurrent_users: u32,
     pub has_baseline: bool,
@@ -485,15 +491,15 @@ pub enum LoadPattern {
 #[derive(Clone, Debug)]
 #[contracttype]
 pub struct BenchmarkResult {
-    pub benchmark_id: BytesN<32>,
+    pub benchmark_id: BenchmarkId,
     pub benchmark_name: String,
     pub execution_time: u64,
-    pub scenario_results: Vec<ScenarioResult>,
+    pub scenario_results: ScenarioResultList,
     pub has_comparison: bool,
     pub comparison_baseline_time: u64,
     pub comparison_improvement_pct: i32,
     pub bottlenecks: Vec<PerformanceBottleneck>,
-    pub recommendations: Vec<String>,
+    pub recommendations: RecommendationList,
     pub overall_score: u32,
     pub performance_comparison: String,
 }
