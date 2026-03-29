@@ -9,7 +9,9 @@ pub mod types;
 mod test;
 
 use errors::CertificateError;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
+use shared::logger::{LogLevel, Logger};
+use shared::{log_error, log_info, log_warn};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Vec};
 use types::{
     AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
     CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
@@ -38,6 +40,7 @@ fn require_admin(env: &Env, caller: &Address) -> Result<(), CertificateError> {
     caller.require_auth();
     let admin = storage::get_admin(env);
     if *caller != admin {
+        log_error!(env, symbol_short!("cert"), symbol_short!("unauth"));
         return Err(CertificateError::Unauthorized);
     }
     Ok(())
@@ -111,6 +114,8 @@ impl CertificateContract {
         admin.require_auth();
         storage::set_admin(&env, &admin);
         storage::set_initialized(&env);
+        Logger::init(&env, LogLevel::Info);
+        log_info!(&env, symbol_short!("cert"), symbol_short!("init_ok"));
         Ok(())
     }
 
@@ -507,9 +512,11 @@ impl CertificateContract {
             .ok_or(CertificateError::CertificateNotFound)?;
 
         if cert.status == CertificateStatus::Revoked {
+            log_warn!(&env, symbol_short!("cert"), symbol_short!("dup_revk"));
             return Err(CertificateError::CertificateRevoked);
         }
 
+        log_info!(&env, symbol_short!("cert"), symbol_short!("revoke"));
         cert.status = CertificateStatus::Revoked;
         storage::set_certificate(&env, &certificate_id, &cert);
 
