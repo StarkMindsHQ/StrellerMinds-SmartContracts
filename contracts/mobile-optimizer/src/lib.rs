@@ -25,6 +25,7 @@ pub mod user_experience_manager;
 #[cfg(test)]
 mod tests;
 
+use crate::errors::MobileOptimizerError;
 use analytics_monitor::AnalyticsMonitor;
 use batch_manager::{BatchExecutionResult, BatchManager};
 use battery_optimizer::{BatteryOptimizedSettings, BatteryOptimizer};

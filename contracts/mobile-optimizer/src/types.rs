@@ -3,8 +3,6 @@
 use shared::config::{ContractConfig, DeploymentEnv};
 use soroban_sdk::{contracttype, Address, BytesN, Map, String, Vec};
 
-use crate::errors::MobileOptimizerError;
-
 // ============================================================================
 // Core Transaction & Batch Types
 // ============================================================================
