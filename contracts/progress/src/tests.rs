@@ -6,8 +6,6 @@
 //! - Gas-optimized `PackedProgress` bit-packing operations
 //! - Batch-update throughput benchmark
 
-#![cfg(test)]
-
 use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 use crate::{gas_optimized::PackedProgress, Progress, ProgressClient};

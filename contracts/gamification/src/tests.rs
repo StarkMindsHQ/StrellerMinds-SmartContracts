@@ -5,7 +5,7 @@ use crate::types::{
     ActivityType, Challenge, ChallengeDifficulty, ChallengeType, LeaderboardCategory,
     RecognitionType, Season,
 };
-use crate::{Gamification, GamificationClient};
+use crate::{Gamification, GamificationClient, GamificationError};
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────
 
@@ -848,4 +848,39 @@ fn test_recognize_short_message() {
         &RecognitionType::HelpfulAnswer,
         &String::from_str(&env, "AB"),
     );
+}
+
+// ─── Error Scenario Tests ─────────────────────────────────────────────────────
+
+#[test]
+fn test_initialize_already_initialized_returns_error() {
+    let (_env, client, admin) = setup_env();
+    // already initialized by setup_env(); second call should fail
+    let result = client.try_initialize(&admin);
+    assert_eq!(result, Err(Ok(GamificationError::AlreadyInitialized)));
+}
+
+#[test]
+fn test_join_nonexistent_challenge_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_challenge(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_join_nonexistent_guild_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_guild(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_gamification_error_derives_are_correct() {
+    // Verify Copy, Ord, PartialOrd
+    let e = GamificationError::Unauthorized;
+    let e2 = e; // Copy
+    assert_eq!(e, e2);
+    assert!(GamificationError::AlreadyInitialized < GamificationError::Unauthorized);
 }

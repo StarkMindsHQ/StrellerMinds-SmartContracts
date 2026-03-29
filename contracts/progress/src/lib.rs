@@ -1,15 +1,18 @@
+pub mod errors;
+
+use crate::errors::ProgressError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
 use shared::{emit_access_control_event, emit_progress_event};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Error, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, Vec};
 
 #[contract]
 pub struct Progress;
 
 #[contractimpl]
 impl Progress {
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), ProgressError> {
         admin.require_auth();
         if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
             panic!("Already initialized");
@@ -30,7 +33,7 @@ impl Progress {
         student: Address,
         course_id: Symbol,
         progress: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ProgressError> {
         emit_progress_event!(
             &env,
             symbol_short!("progress"),
@@ -45,7 +48,11 @@ impl Progress {
         Ok(())
     }
 
-    pub fn get_progress(_env: Env, _student: Address, _course_id: Symbol) -> Result<u32, Error> {
+    pub fn get_progress(
+        _env: Env,
+        _student: Address,
+        _course_id: Symbol,
+    ) -> Result<u32, ProgressError> {
         Ok(0)
     }
 

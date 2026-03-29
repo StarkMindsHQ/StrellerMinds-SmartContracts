@@ -16,6 +16,7 @@ mod tests;
 
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
+pub use errors::CommunityError;
 pub use errors::Error;
 pub use types::*;
 
@@ -37,7 +38,7 @@ impl Community {
     //  Initialization
     // ══════════════════════════════════════════════════════════════════════
 
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address) -> Result<(), CommunityError> {
         admin.require_auth();
 
         if CommunityStorage::is_initialized(&env) {
@@ -91,7 +92,7 @@ impl Community {
         content: String,
         tags: Vec<String>,
         course_id: String,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         author.require_auth();
         ForumManager::create_post(&env, &author, category, title, content, tags, course_id)
     }
@@ -102,7 +103,7 @@ impl Community {
         post_id: u64,
         content: String,
         parent_reply_id: u64,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         author.require_auth();
         ForumManager::create_reply(&env, &author, post_id, content, parent_reply_id)
     }
@@ -112,12 +113,17 @@ impl Community {
         post_author: Address,
         post_id: u64,
         reply_id: u64,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         post_author.require_auth();
         ForumManager::mark_solution(&env, &post_author, post_id, reply_id)
     }
 
-    pub fn vote_post(env: Env, voter: Address, post_id: u64, upvote: bool) -> Result<(), Error> {
+    pub fn vote_post(
+        env: Env,
+        voter: Address,
+        post_id: u64,
+        upvote: bool,
+    ) -> Result<(), CommunityError> {
         voter.require_auth();
         ForumManager::vote_post(&env, &voter, post_id, upvote)
     }
@@ -146,7 +152,7 @@ impl Community {
         expertise_level: MentorExpertise,
         max_mentees: u32,
         bio: String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         mentor.require_auth();
         MentorshipManager::register_mentor(
             &env,
@@ -164,12 +170,16 @@ impl Community {
         mentor: Address,
         topic: String,
         message: String,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         mentee.require_auth();
         MentorshipManager::request_mentorship(&env, &mentee, &mentor, topic, message)
     }
 
-    pub fn accept_mentorship(env: Env, mentor: Address, request_id: u64) -> Result<(), Error> {
+    pub fn accept_mentorship(
+        env: Env,
+        mentor: Address,
+        request_id: u64,
+    ) -> Result<(), CommunityError> {
         mentor.require_auth();
         MentorshipManager::accept_mentorship(&env, &mentor, request_id)
     }
@@ -180,7 +190,7 @@ impl Community {
         request_id: u64,
         duration: u64,
         notes: String,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         mentor.require_auth();
         MentorshipManager::complete_session(&env, &mentor, request_id, duration, notes)
     }
@@ -190,7 +200,7 @@ impl Community {
         mentee: Address,
         session_id: u64,
         rating: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         mentee.require_auth();
         MentorshipManager::rate_session(&env, &mentee, session_id, rating)
     }
@@ -211,7 +221,7 @@ impl Community {
         content: String,
         category: ForumCategory,
         tags: Vec<String>,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         contributor.require_auth();
         KnowledgeManager::submit_contribution(
             &env,
@@ -229,7 +239,7 @@ impl Community {
         moderator: Address,
         contribution_id: u64,
         approve: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         moderator.require_auth();
         KnowledgeManager::review_contribution(&env, &moderator, contribution_id, approve)
     }
@@ -239,7 +249,7 @@ impl Community {
         voter: Address,
         contribution_id: u64,
         upvote: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         voter.require_auth();
         KnowledgeManager::vote_contribution(&env, &voter, contribution_id, upvote)
     }
@@ -268,7 +278,7 @@ impl Community {
         max_participants: u32,
         is_public: bool,
         xp_reward: u32,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         organizer.require_auth();
         EventManager::create_event(
             &env,
@@ -284,7 +294,11 @@ impl Community {
         )
     }
 
-    pub fn register_for_event(env: Env, user: Address, event_id: u64) -> Result<(), Error> {
+    pub fn register_for_event(
+        env: Env,
+        user: Address,
+        event_id: u64,
+    ) -> Result<(), CommunityError> {
         user.require_auth();
         EventManager::register_for_event(&env, &user, event_id)
     }
@@ -294,12 +308,16 @@ impl Community {
         organizer: Address,
         event_id: u64,
         user: Address,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         organizer.require_auth();
         EventManager::mark_attendance(&env, &organizer, event_id, &user)
     }
 
-    pub fn complete_event(env: Env, organizer: Address, event_id: u64) -> Result<(), Error> {
+    pub fn complete_event(
+        env: Env,
+        organizer: Address,
+        event_id: u64,
+    ) -> Result<(), CommunityError> {
         organizer.require_auth();
         EventManager::complete_event(&env, &organizer, event_id)
     }
@@ -309,7 +327,7 @@ impl Community {
         user: Address,
         event_id: u64,
         rating: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         user.require_auth();
         EventManager::submit_feedback(&env, &user, event_id, rating)
     }
@@ -327,7 +345,7 @@ impl Community {
         admin: Address,
         moderator: Address,
         role: ModeratorRole,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         admin.require_auth();
         ModerationManager::add_moderator(&env, &admin, &moderator, role)
     }
@@ -339,7 +357,7 @@ impl Community {
         content_id: u64,
         reason: ReportReason,
         description: String,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         reporter.require_auth();
         ModerationManager::report_content(
             &env,
@@ -356,7 +374,7 @@ impl Community {
         moderator: Address,
         report_id: u64,
         action: String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         moderator.require_auth();
         ModerationManager::resolve_report(&env, &moderator, report_id, action)
     }
@@ -377,7 +395,7 @@ impl Community {
         description: String,
         voting_duration: u64,
         min_votes_required: u32,
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, CommunityError> {
         proposer.require_auth();
         GovernanceManager::create_proposal(
             &env,
@@ -395,12 +413,12 @@ impl Community {
         voter: Address,
         proposal_id: u64,
         vote_for: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommunityError> {
         voter.require_auth();
         GovernanceManager::vote_on_proposal(&env, &voter, proposal_id, vote_for)
     }
 
-    pub fn finalize_proposal(env: Env, proposal_id: u64) -> Result<ProposalStatus, Error> {
+    pub fn finalize_proposal(env: Env, proposal_id: u64) -> Result<ProposalStatus, CommunityError> {
         GovernanceManager::finalize_proposal(&env, proposal_id)
     }
 
@@ -432,7 +450,11 @@ impl Community {
     //  Admin Functions
     // ══════════════════════════════════════════════════════════════════════
 
-    pub fn update_config(env: Env, admin: Address, config: CommunityConfig) -> Result<(), Error> {
+    pub fn update_config(
+        env: Env,
+        admin: Address,
+        config: CommunityConfig,
+    ) -> Result<(), CommunityError> {
         admin.require_auth();
         CommunityStorage::require_admin(&env, &admin)?;
         CommunityStorage::set_config(&env, &config);
