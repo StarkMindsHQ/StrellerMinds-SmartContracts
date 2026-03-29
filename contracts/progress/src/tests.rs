@@ -33,9 +33,9 @@ fn setup() -> (Env, ProgressClient<'static>, Address) {
 #[test]
 fn test_initialize_succeeds() {
     let (_, client, admin) = setup();
-    // Initialization is the setup itself; calling again should complete without panic
-    // (the contract does not enforce single-init so this is a smoke test)
-    let _ = client.try_initialize(&admin);
+    // Second init should fail since we now guard against re-initialization
+    let result = client.try_initialize(&admin);
+    assert!(result.is_err());
 }
 
 // ─────────────────────────────────────────────────────────────

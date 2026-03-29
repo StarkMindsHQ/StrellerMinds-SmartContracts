@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::CommunityEvents;
 use crate::storage::CommunityStorage;
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct EventManager;
 
@@ -21,6 +22,18 @@ impl EventManager {
         is_public: bool,
         xp_reward: u32,
     ) -> Result<u64, Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_soroban_string_length(
+            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_time_range(start_time, end_time)
+            .map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_range(max_participants, "max_participants", 1, ValidationConfig::MAX_PARTICIPANTS)
+            .map_err(|_| Error::InvalidInput)?;
+
         let event_id = CommunityStorage::increment_counter(env, CommunityKey::EventCounter);
         let now = env.ledger().timestamp();
 
@@ -155,9 +168,8 @@ impl EventManager {
         event_id: u64,
         rating: u32,
     ) -> Result<(), Error> {
-        if rating > 100 {
-            return Err(Error::InvalidInput);
-        }
+        CoreValidator::validate_range(rating, "rating", 1, ValidationConfig::MAX_RATING)
+            .map_err(|_| Error::InvalidInput)?;
 
         let participant_key = CommunityKey::EventParticipant(user.clone(), event_id);
         let mut participant: EventParticipant =

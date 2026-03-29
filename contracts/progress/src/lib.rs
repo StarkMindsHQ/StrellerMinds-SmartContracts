@@ -10,6 +10,12 @@ pub struct Progress;
 #[contractimpl]
 impl Progress {
     pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+        admin.require_auth();
+        if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&soroban_sdk::symbol_short!("admin"), &admin);
+
         emit_access_control_event!(
             &env,
             symbol_short!("progress"),

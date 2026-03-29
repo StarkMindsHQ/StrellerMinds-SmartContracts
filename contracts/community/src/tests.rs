@@ -101,12 +101,12 @@ fn test_mark_solution() {
         &user1,
         &ForumCategory::TechnicalHelp,
         &String::from_str(&env, "Question"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "I need help with this problem"),
         &Vec::new(&env),
         &String::from_str(&env, ""),
     );
 
-    let reply_id = client.create_reply(&user2, &post_id, &String::from_str(&env, "Answer"), &0);
+    let reply_id = client.create_reply(&user2, &post_id, &String::from_str(&env, "Here is the answer to your question"), &0);
 
     client.mark_solution(&user1, &post_id, &reply_id);
 
@@ -122,8 +122,8 @@ fn test_vote_post() {
     let post_id = client.create_post(
         &user1,
         &ForumCategory::General,
-        &String::from_str(&env, "Post"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "Test Post"),
+        &String::from_str(&env, "This is test content for voting"),
         &Vec::new(&env),
         &String::from_str(&env, ""),
     );
@@ -200,7 +200,7 @@ fn test_mentorship_flow() {
     assert_eq!(session_id, 1);
 
     // Rate session
-    client.rate_session(&user2, &session_id, &95);
+    client.rate_session(&user2, &session_id, &5);
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -236,8 +236,8 @@ fn test_review_contribution() {
     let contrib_id = client.submit_contribution(
         &user1,
         &ContributionType::Article,
-        &String::from_str(&env, "Article"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "Article Title"),
+        &String::from_str(&env, "This is the article content for review"),
         &ForumCategory::General,
         &Vec::new(&env),
     );
@@ -285,8 +285,8 @@ fn test_event_registration() {
     let event_id = client.create_event(
         &user1,
         &EventType::Webinar,
-        &String::from_str(&env, "Webinar"),
-        &String::from_str(&env, "Description"),
+        &String::from_str(&env, "Webinar Session"),
+        &String::from_str(&env, "A webinar about blockchain technology"),
         &1000,
         &2000,
         &10,
@@ -315,8 +315,8 @@ fn test_create_proposal() {
         client.create_post(
             &user1,
             &ForumCategory::General,
-            &String::from_str(&env, "Post"),
-            &String::from_str(&env, "Content"),
+            &String::from_str(&env, "Test Post"),
+            &String::from_str(&env, "This is test content for building reputation"),
             &Vec::new(&env),
             &String::from_str(&env, ""),
         );
@@ -330,7 +330,7 @@ fn test_create_proposal() {
         &user1,
         &ProposalType::FeatureRequest,
         &String::from_str(&env, "New Feature"),
-        &String::from_str(&env, "Add new functionality"),
+        &String::from_str(&env, "Add new functionality to the platform"),
         &86400,
         &10,
     );
@@ -361,12 +361,191 @@ fn test_user_stats() {
     client.create_post(
         &user1,
         &ForumCategory::General,
-        &String::from_str(&env, "Post"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "Test Post"),
+        &String::from_str(&env, "This is test content for user stats"),
         &Vec::new(&env),
         &String::from_str(&env, ""),
     );
 
     let stats = client.get_user_stats(&user1);
     assert_eq!(stats.posts_created, 1);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  Input Validation Tests
+// ══════════════════════════════════════════════════════════════════════
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_post_empty_title() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    client.create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "AB"),
+        &String::from_str(&env, "This is valid content"),
+        &Vec::new(&env),
+        &String::from_str(&env, ""),
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_post_short_content() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    client.create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "Valid Title"),
+        &String::from_str(&env, "Short"),
+        &Vec::new(&env),
+        &String::from_str(&env, ""),
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_post_too_many_tags() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    let mut tags = Vec::new(&env);
+    for i in 0..21u32 {
+        tags.push_back(String::from_str(&env, &std::format!("tag-{}", i)));
+    }
+
+    client.create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "Valid Title"),
+        &String::from_str(&env, "This is valid content for testing"),
+        &tags,
+        &String::from_str(&env, ""),
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_reply_short_content() {
+    let (env, admin, user1, user2, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    let post_id = client.create_post(
+        &user1,
+        &ForumCategory::General,
+        &String::from_str(&env, "Test Post"),
+        &String::from_str(&env, "This is valid test content"),
+        &Vec::new(&env),
+        &String::from_str(&env, ""),
+    );
+
+    client.create_reply(&user2, &post_id, &String::from_str(&env, "Short"), &0);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_event_invalid_time_range() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    client.create_event(
+        &user1,
+        &EventType::Workshop,
+        &String::from_str(&env, "Workshop Title"),
+        &String::from_str(&env, "Workshop description for testing"),
+        &2000,
+        &1000, // end before start
+        &50,
+        &true,
+        &25,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_proposal_zero_voting_duration() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    // Build reputation first
+    for _i in 0..10 {
+        client.create_post(
+            &user1,
+            &ForumCategory::General,
+            &String::from_str(&env, "Test Post"),
+            &String::from_str(&env, "This is test content for building reputation"),
+            &Vec::new(&env),
+            &String::from_str(&env, ""),
+        );
+    }
+    client.calculate_reputation(&user1);
+
+    client.create_proposal(
+        &user1,
+        &ProposalType::FeatureRequest,
+        &String::from_str(&env, "Proposal Title"),
+        &String::from_str(&env, "Proposal description with enough detail"),
+        &0, // zero voting duration
+        &10,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_register_mentor_too_many_expertise_areas() {
+    let (env, admin, user1, _, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    let mut expertise = Vec::new(&env);
+    for i in 0..11u32 {
+        expertise.push_back(String::from_str(&env, &std::format!("skill-{}", i)));
+    }
+
+    client.register_mentor(
+        &user1,
+        &expertise,
+        &MentorExpertise::Expert,
+        &5,
+        &String::from_str(&env, "Experienced developer with many skills"),
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_rate_session_out_of_range() {
+    let (env, admin, user1, user2, _) = create_test_env();
+    let client = setup_community(&env, &admin);
+
+    let mut expertise = Vec::new(&env);
+    expertise.push_back(String::from_str(&env, "Rust"));
+
+    client.register_mentor(
+        &user1,
+        &expertise,
+        &MentorExpertise::Expert,
+        &5,
+        &String::from_str(&env, "Experienced Rust developer"),
+    );
+
+    let request_id = client.request_mentorship(
+        &user2,
+        &user1,
+        &String::from_str(&env, "Smart Contracts"),
+        &String::from_str(&env, "Need help with Soroban development"),
+    );
+
+    client.accept_mentorship(&user1, &request_id);
+
+    let session_id = client.complete_session(
+        &user1,
+        &request_id,
+        &3600,
+        &String::from_str(&env, "Covered basics of Soroban development"),
+    );
+
+    client.rate_session(&user2, &session_id, &6); // > MAX_RATING of 5
 }

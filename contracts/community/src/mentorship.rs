@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::CommunityEvents;
 use crate::storage::CommunityStorage;
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct MentorshipManager;
 
@@ -16,6 +17,16 @@ impl MentorshipManager {
         max_mentees: u32,
         bio: String,
     ) -> Result<(), Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &bio, "bio", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_BIO_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_vec_size(
+            expertise_areas.len(), "expertise_areas", ValidationConfig::MAX_EXPERTISE_AREAS,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_range(max_mentees, "max_mentees", 1, ValidationConfig::MAX_MENTEES)
+            .map_err(|_| Error::InvalidInput)?;
+
         if env.storage().persistent().has(&CommunityKey::MentorProfile(mentor.clone())) {
             return Err(Error::AlreadyMentor);
         }
@@ -46,6 +57,14 @@ impl MentorshipManager {
         topic: String,
         message: String,
     ) -> Result<u64, Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &topic, "topic", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_soroban_string_length(
+            &message, "message", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_MESSAGE_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+
         let profile: MentorProfile = env
             .storage()
             .persistent()
@@ -194,9 +213,8 @@ impl MentorshipManager {
             return Err(Error::Unauthorized);
         }
 
-        if rating > 100 {
-            return Err(Error::InvalidInput);
-        }
+        CoreValidator::validate_range(rating, "rating", 1, ValidationConfig::MAX_RATING)
+            .map_err(|_| Error::InvalidInput)?;
 
         session.rating = rating;
         env.storage().persistent().set(&CommunityKey::MentorshipSession(session_id), &session);

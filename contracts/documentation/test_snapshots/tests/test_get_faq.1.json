@@ -40,10 +40,10 @@
                   "string": "faq-get"
                 },
                 {
-                  "string": "Q?"
+                  "string": "What is this question?"
                 },
                 {
-                  "string": "A."
+                  "string": "This is the answer to the FAQ"
                 },
                 {
                   "string": "cat"
@@ -314,7 +314,7 @@
                         "symbol": "answer"
                       },
                       "val": {
-                        "string": "A."
+                        "string": "This is the answer to the FAQ"
                       }
                     },
                     {
@@ -370,7 +370,7 @@
                         "symbol": "question"
                       },
                       "val": {
-                        "string": "Q?"
+                        "string": "What is this question?"
                       }
                     },
                     {

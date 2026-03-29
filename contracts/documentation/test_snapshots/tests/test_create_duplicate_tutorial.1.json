@@ -40,10 +40,10 @@
                   "string": "tut-dup"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -503,7 +503,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -547,7 +547,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

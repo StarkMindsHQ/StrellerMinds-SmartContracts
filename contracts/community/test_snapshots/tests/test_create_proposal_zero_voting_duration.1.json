@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 4,
+    "address": 5,
     "nonce": 0
   },
   "auth": [
@@ -11,7 +11,7 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
               "function_name": "initialize",
               "args": [
                 {
@@ -30,36 +30,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-guide"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "Guide"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -74,36 +68,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-tut"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "Tutorial"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -118,36 +106,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-api"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "ApiDoc"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -162,36 +144,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-ref"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "Reference"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -206,36 +182,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-faq"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "FAQ"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -250,36 +220,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-art"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "Article"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -294,36 +258,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-vid"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "Video"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -338,36 +296,30 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-              "function_name": "create_document",
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "dt-code"
-                },
-                {
-                  "string": "Title"
-                },
-                {
-                  "string": "This is test content for document types"
-                },
-                {
                   "vec": [
                     {
-                      "symbol": "CodeExample"
+                      "symbol": "General"
                     }
                   ]
                 },
                 {
-                  "string": "cat"
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
                 },
                 {
-                  "string": "en"
+                  "string": ""
                 }
               ]
             }
@@ -376,6 +328,83 @@
         }
       ]
     ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [],
     []
   ],
   "ledger": {
@@ -427,6 +456,39 @@
             "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
             "key": {
               "ledger_key_nonce": {
+                "nonce": 115220454072064130
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 115220454072064130
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
                 "nonce": 1033654523790656264
               }
             },
@@ -443,6 +505,39 @@
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 1033654523790656264
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 1194852393571756375
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 1194852393571756375
                   }
                 },
                 "durability": "temporary",
@@ -688,11 +783,18 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Admin"
+                  "symbol": "CategoryPosts"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
                 }
               ]
             },
@@ -705,56 +807,18 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Admin"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "CategoryDocs"
-                },
-                {
-                  "string": "cat"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "CategoryDocs"
+                      "symbol": "CategoryPosts"
                     },
                     {
-                      "string": "cat"
+                      "vec": [
+                        {
+                          "symbol": "General"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -762,28 +826,34 @@
                 "val": {
                   "vec": [
                     {
-                      "string": "dt-guide"
+                      "u64": 1
                     },
                     {
-                      "string": "dt-tut"
+                      "u64": 2
                     },
                     {
-                      "string": "dt-api"
+                      "u64": 3
                     },
                     {
-                      "string": "dt-ref"
+                      "u64": 4
                     },
                     {
-                      "string": "dt-faq"
+                      "u64": 5
                     },
                     {
-                      "string": "dt-art"
+                      "u64": 6
                     },
                     {
-                      "string": "dt-vid"
+                      "u64": 7
                     },
                     {
-                      "string": "dt-code"
+                      "u64": 8
+                    },
+                    {
+                      "u64": 9
+                    },
+                    {
+                      "u64": 10
                     }
                   ]
                 }
@@ -797,11 +867,11 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Config"
+                  "symbol": "ContributionCounter"
                 }
               ]
             },
@@ -814,74 +884,17 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Config"
+                      "symbol": "ContributionCounter"
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "admin"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "enable_analytics"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "enable_contributions"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "max_doc_size"
-                      },
-                      "val": {
-                        "u32": 100000
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "moderators"
-                      },
-                      "val": {
-                        "vec": []
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "require_review"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "supported_languages"
-                      },
-                      "val": {
-                        "vec": []
-                      }
-                    }
-                  ]
+                  "u64": 0
                 }
               }
             },
@@ -893,14 +906,11 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
-                },
-                {
-                  "string": "dt-api"
+                  "symbol": "EventCounter"
                 }
               ]
             },
@@ -913,14 +923,95 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "EventCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "MentorshipCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "MentorshipCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Post"
+                },
+                {
+                  "u64": 1
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-api"
+                      "u64": 1
                     }
                   ]
                 },
@@ -940,7 +1031,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -948,7 +1043,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -961,27 +1064,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-api"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "ApiDoc"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -989,17 +1072,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 1
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1008,7 +1101,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1026,7 +1119,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1039,15 +1132,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1065,14 +1158,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-art"
+                  "u64": 2
                 }
               ]
             },
@@ -1085,14 +1178,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-art"
+                      "u64": 2
                     }
                   ]
                 },
@@ -1112,7 +1205,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1120,7 +1217,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1133,27 +1238,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-art"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Article"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -1161,17 +1246,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 2
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1180,7 +1275,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1198,7 +1293,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1211,15 +1306,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1237,14 +1332,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-code"
+                  "u64": 3
                 }
               ]
             },
@@ -1257,14 +1352,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-code"
+                      "u64": 3
                     }
                   ]
                 },
@@ -1284,7 +1379,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1292,7 +1391,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1305,27 +1412,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-code"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "CodeExample"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -1333,17 +1420,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 3
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1352,7 +1449,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1370,7 +1467,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1383,15 +1480,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1409,14 +1506,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-faq"
+                  "u64": 4
                 }
               ]
             },
@@ -1429,14 +1526,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-faq"
+                      "u64": 4
                     }
                   ]
                 },
@@ -1456,7 +1553,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1464,7 +1565,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1477,27 +1586,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-faq"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "FAQ"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -1505,17 +1594,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 4
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1524,7 +1623,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1542,7 +1641,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1555,15 +1654,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1581,14 +1680,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-guide"
+                  "u64": 5
                 }
               ]
             },
@@ -1601,14 +1700,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-guide"
+                      "u64": 5
                     }
                   ]
                 },
@@ -1628,7 +1727,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1636,7 +1739,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1649,27 +1760,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-guide"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Guide"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -1677,17 +1768,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 5
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1696,7 +1797,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1714,7 +1815,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1727,15 +1828,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1753,14 +1854,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-ref"
+                  "u64": 6
                 }
               ]
             },
@@ -1773,14 +1874,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-ref"
+                      "u64": 6
                     }
                   ]
                 },
@@ -1800,7 +1901,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1808,7 +1913,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1821,27 +1934,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-ref"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Reference"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -1849,17 +1942,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 6
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -1868,7 +1971,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -1886,7 +1989,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -1899,15 +2002,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -1925,14 +2028,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-tut"
+                  "u64": 7
                 }
               ]
             },
@@ -1945,14 +2048,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-tut"
+                      "u64": 7
                     }
                   ]
                 },
@@ -1972,7 +2075,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -1980,7 +2087,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -1993,27 +2108,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-tut"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Tutorial"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -2021,17 +2116,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 7
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -2040,7 +2145,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -2058,7 +2163,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2071,15 +2176,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -2097,14 +2202,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Document"
+                  "symbol": "Post"
                 },
                 {
-                  "string": "dt-vid"
+                  "u64": 8
                 }
               ]
             },
@@ -2117,14 +2222,14 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Document"
+                      "symbol": "Post"
                     },
                     {
-                      "string": "dt-vid"
+                      "u64": 8
                     }
                   ]
                 },
@@ -2144,7 +2249,11 @@
                         "symbol": "category"
                       },
                       "val": {
-                        "string": "cat"
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
                       }
                     },
                     {
@@ -2152,7 +2261,15 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for document types"
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
                       }
                     },
                     {
@@ -2165,27 +2282,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "doc_id"
-                      },
-                      "val": {
-                        "string": "dt-vid"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "doc_type"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Video"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "helpful_count"
+                        "symbol": "downvotes"
                       },
                       "val": {
                         "u32": 0
@@ -2193,17 +2290,27 @@
                     },
                     {
                       "key": {
-                        "symbol": "language"
+                        "symbol": "id"
                       },
                       "val": {
-                        "string": "en"
+                        "u64": 8
                       }
                     },
                     {
                       "key": {
-                        "symbol": "parent_id"
+                        "symbol": "is_pinned"
                       },
-                      "val": "void"
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
                     },
                     {
                       "key": {
@@ -2212,7 +2319,7 @@
                       "val": {
                         "vec": [
                           {
-                            "symbol": "Draft"
+                            "symbol": "Active"
                           }
                         ]
                       }
@@ -2230,7 +2337,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Title"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2243,15 +2350,15 @@
                     },
                     {
                       "key": {
-                        "symbol": "version"
+                        "symbol": "upvotes"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 0
                       }
                     },
                     {
                       "key": {
-                        "symbol": "view_count"
+                        "symbol": "views"
                       },
                       "val": {
                         "u32": 0
@@ -2269,11 +2376,554 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "DocumentsByAuthor"
+                  "symbol": "Post"
+                },
+                {
+                  "u64": 9
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Post"
+                    },
+                    {
+                      "u64": 9
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "author"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "content"
+                      },
+                      "val": {
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "created_at"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "downvotes"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "u64": 9
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_pinned"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "status"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Active"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "tags"
+                      },
+                      "val": {
+                        "vec": []
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "title"
+                      },
+                      "val": {
+                        "string": "Test Post"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "updated_at"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "upvotes"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "views"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Post"
+                },
+                {
+                  "u64": 10
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Post"
+                    },
+                    {
+                      "u64": 10
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "author"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "category"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "General"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "content"
+                      },
+                      "val": {
+                        "string": "This is test content for building reputation"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "course_id"
+                      },
+                      "val": {
+                        "string": ""
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "created_at"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "downvotes"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "u64": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "is_pinned"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_count"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "status"
+                      },
+                      "val": {
+                        "vec": [
+                          {
+                            "symbol": "Active"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "tags"
+                      },
+                      "val": {
+                        "vec": []
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "title"
+                      },
+                      "val": {
+                        "string": "Test Post"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "updated_at"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "upvotes"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "views"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "PostCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "PostCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 10
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "ProposalCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "ProposalCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "ReplyCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "ReplyCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "ReportCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "ReportCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "SessionCounter"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "SessionCounter"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "UserPosts"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
@@ -2289,11 +2939,11 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "DocumentsByAuthor"
+                      "symbol": "UserPosts"
                     },
                     {
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
@@ -2304,28 +2954,34 @@
                 "val": {
                   "vec": [
                     {
-                      "string": "dt-guide"
+                      "u64": 1
                     },
                     {
-                      "string": "dt-tut"
+                      "u64": 2
                     },
                     {
-                      "string": "dt-api"
+                      "u64": 3
                     },
                     {
-                      "string": "dt-ref"
+                      "u64": 4
                     },
                     {
-                      "string": "dt-faq"
+                      "u64": 5
                     },
                     {
-                      "string": "dt-art"
+                      "u64": 6
                     },
                     {
-                      "string": "dt-vid"
+                      "u64": 7
                     },
                     {
-                      "string": "dt-code"
+                      "u64": 8
+                    },
+                    {
+                      "u64": 9
+                    },
+                    {
+                      "u64": 10
                     }
                   ]
                 }
@@ -2339,11 +2995,14 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": {
               "vec": [
                 {
-                  "symbol": "Initialized"
+                  "symbol": "UserStats"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 }
               ]
             },
@@ -2356,17 +3015,101 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": {
                   "vec": [
                     {
-                      "symbol": "Initialized"
+                      "symbol": "UserStats"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                     }
                   ]
                 },
                 "durability": "persistent",
                 "val": {
-                  "bool": true
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "contributions_made"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "events_attended"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "helpful_votes_received"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "joined_at"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "mentorship_sessions"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "posts_created"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "replies_given"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "reputation_score"
+                      },
+                      "val": {
+                        "u32": 100
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "solutions_provided"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "user"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -2378,124 +3121,7 @@
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "TotalContributions"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "TotalContributions"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "u64": 0
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "TotalDocuments"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "TotalDocuments"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "u64": 8
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "TotalViews"
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "TotalViews"
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "u64": 0
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
             "key": "ledger_key_contract_instance",
             "durability": "persistent"
           }
@@ -2506,7 +3132,7 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
                 "key": "ledger_key_contract_instance",
                 "durability": "persistent",
                 "val": {
@@ -2514,7 +3140,116 @@
                     "executable": {
                       "wasm": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
                     },
-                    "storage": null
+                    "storage": [
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "Admin"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                        }
+                      },
+                      {
+                        "key": {
+                          "vec": [
+                            {
+                              "symbol": "Config"
+                            }
+                          ]
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "symbol": "contribution_base_tokens"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 1000
+                                }
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "contribution_base_xp"
+                              },
+                              "val": {
+                                "u32": 100
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "event_attendance_xp"
+                              },
+                              "val": {
+                                "u32": 25
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "max_reports_per_day"
+                              },
+                              "val": {
+                                "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "mentor_session_xp"
+                              },
+                              "val": {
+                                "u32": 75
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "min_reputation_to_moderate"
+                              },
+                              "val": {
+                                "u32": 500
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "post_xp_reward"
+                              },
+                              "val": {
+                                "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "reply_xp_reward"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "solution_xp_reward"
+                              },
+                              "val": {
+                                "u32": 50
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "vote_weight_threshold"
+                              },
+                              "val": {
+                                "u32": 100
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }

@@ -43,7 +43,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for article"
                 },
                 {
                   "string": "cat"
@@ -377,7 +377,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for article"
                       }
                     },
                     {

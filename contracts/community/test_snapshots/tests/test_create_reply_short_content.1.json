@@ -47,7 +47,7 @@
                   "string": "Test Post"
                 },
                 {
-                  "string": "This is test content for user stats"
+                  "string": "This is valid test content"
                 },
                 {
                   "vec": []
@@ -376,7 +376,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "This is test content for user stats"
+                        "string": "This is valid test content"
                       }
                     },
                     {

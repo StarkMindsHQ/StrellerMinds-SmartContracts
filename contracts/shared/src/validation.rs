@@ -1,6 +1,6 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use soroban_sdk::{BytesN, Env};
+use soroban_sdk::{BytesN, Env, String as SorobanString};
 
 /// Configuration constants for metadata validation that can be reused across contracts
 pub struct ValidationConfig;
@@ -29,14 +29,29 @@ impl ValidationConfig {
         '\x16', '\x17', '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F', '\x7F',
     ];
 
-    // Maximum allowed special characters ratio (to prevent spam/malformed content)
-    pub const MAX_SPECIAL_CHAR_RATIO: f32 = 0.3;
-
     // Maximum consecutive identical characters
     pub const MAX_CONSECUTIVE_CHARS: usize = 5;
 
     // Maximum future time for expiry dates (100 years in seconds)
     pub const MAX_FUTURE_EXPIRY: u64 = 100 * 365 * 24 * 60 * 60;
+
+    // Content and collection limits
+    pub const MAX_CONTENT_LENGTH: u32 = 10_000;
+    pub const MAX_BIO_LENGTH: u32 = 500;
+    pub const MAX_MESSAGE_LENGTH: u32 = 2000;
+    pub const MAX_TAGS: u32 = 20;
+    pub const MAX_STEPS: u32 = 50;
+    pub const MAX_PARAMETERS: u32 = 30;
+    pub const MAX_EXPERTISE_AREAS: u32 = 10;
+
+    // Numeric range limits
+    pub const MAX_RATING: u32 = 5;
+    pub const MAX_PROGRESS: u32 = 100;
+    pub const MAX_MENTEES: u32 = 50;
+    pub const MAX_PARTICIPANTS: u32 = 10_000;
+    pub const MAX_QUERY_LIMIT: u32 = 100;
+    pub const MIN_VOTING_DURATION: u64 = 3600; // 1 hour
+    pub const MAX_VOTING_DURATION: u64 = 2_592_000; // 30 days
 }
 
 /// Validation error types for enhanced error reporting
@@ -71,6 +86,20 @@ pub enum ValidationError {
     },
     EmptyField {
         field: &'static str,
+    },
+    OutOfRange {
+        field: &'static str,
+        min: u32,
+        max: u32,
+        actual: u32,
+    },
+    CollectionTooLarge {
+        field: &'static str,
+        max_size: u32,
+        actual_size: u32,
+    },
+    InvalidTimeRange {
+        reason: &'static str,
     },
 }
 
@@ -138,8 +167,8 @@ impl CoreValidator {
             .filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace())
             .count();
 
-        let special_char_ratio = special_char_count as f32 / text.len() as f32;
-        if special_char_ratio > ValidationConfig::MAX_SPECIAL_CHAR_RATIO {
+        // Use integer math: special_count * 10 > total * 3 is equivalent to ratio > 0.3
+        if special_char_count * 10 > text.len() * 3 {
             return Err(ValidationError::ContentQuality {
                 reason: "Too many special characters",
             });
@@ -359,6 +388,75 @@ impl CoreValidator {
         Ok(())
     }
 
+    /// Validates a soroban_sdk::String field length (works directly with on-chain String type)
+    pub fn validate_soroban_string_length(
+        text: &SorobanString,
+        field_name: &'static str,
+        min_length: u32,
+        max_length: u32,
+    ) -> Result<(), ValidationError> {
+        let len = text.len();
+        if len < min_length {
+            return Err(ValidationError::FieldTooShort {
+                field: field_name,
+                min_length,
+                actual_length: len as usize,
+            });
+        }
+        if len > max_length {
+            return Err(ValidationError::FieldTooLong {
+                field: field_name,
+                max_length,
+                actual_length: len as usize,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validates a numeric value is within an allowed range
+    pub fn validate_range(
+        value: u32,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::OutOfRange {
+                field: field_name,
+                min,
+                max,
+                actual: value,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validates a collection does not exceed the maximum allowed size
+    pub fn validate_vec_size(
+        len: u32,
+        field_name: &'static str,
+        max_size: u32,
+    ) -> Result<(), ValidationError> {
+        if len > max_size {
+            return Err(ValidationError::CollectionTooLarge {
+                field: field_name,
+                max_size,
+                actual_size: len,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validates that start_time is before end_time
+    pub fn validate_time_range(start_time: u64, end_time: u64) -> Result<(), ValidationError> {
+        if start_time >= end_time {
+            return Err(ValidationError::InvalidTimeRange {
+                reason: "Start time must be before end time",
+            });
+        }
+        Ok(())
+    }
+
     /// Sanitizes text content for safe storage and display
     pub fn sanitize_text(text: &str) -> String {
         text.chars()
@@ -527,5 +625,55 @@ mod tests {
         assert!(!clean_text.contains('<'));
         assert!(!clean_text.contains('>'));
         assert!(!clean_text.contains('\''));
+    }
+
+    // ── New validator tests ──
+
+    #[test]
+    fn test_validate_range_success() {
+        assert!(CoreValidator::validate_range(50, "score", 0, 100).is_ok());
+        assert!(CoreValidator::validate_range(0, "score", 0, 100).is_ok());
+        assert!(CoreValidator::validate_range(100, "score", 0, 100).is_ok());
+    }
+
+    #[test]
+    fn test_validate_range_too_low() {
+        let result = CoreValidator::validate_range(0, "rating", 1, 5);
+        assert!(matches!(result, Err(ValidationError::OutOfRange { actual: 0, .. })));
+    }
+
+    #[test]
+    fn test_validate_range_too_high() {
+        let result = CoreValidator::validate_range(101, "progress", 0, 100);
+        assert!(matches!(result, Err(ValidationError::OutOfRange { actual: 101, .. })));
+    }
+
+    #[test]
+    fn test_validate_vec_size_success() {
+        assert!(CoreValidator::validate_vec_size(5, "tags", 20).is_ok());
+        assert!(CoreValidator::validate_vec_size(0, "tags", 20).is_ok());
+    }
+
+    #[test]
+    fn test_validate_vec_size_too_large() {
+        let result = CoreValidator::validate_vec_size(25, "tags", 20);
+        assert!(matches!(
+            result,
+            Err(ValidationError::CollectionTooLarge { actual_size: 25, .. })
+        ));
+    }
+
+    #[test]
+    fn test_validate_time_range_success() {
+        assert!(CoreValidator::validate_time_range(1000, 2000).is_ok());
+    }
+
+    #[test]
+    fn test_validate_time_range_invalid() {
+        let result = CoreValidator::validate_time_range(2000, 1000);
+        assert!(matches!(result, Err(ValidationError::InvalidTimeRange { .. })));
+
+        let result = CoreValidator::validate_time_range(1000, 1000);
+        assert!(matches!(result, Err(ValidationError::InvalidTimeRange { .. })));
     }
 }

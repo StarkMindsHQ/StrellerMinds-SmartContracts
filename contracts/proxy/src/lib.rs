@@ -5,11 +5,20 @@ pub struct Proxy;
 
 #[contractimpl]
 impl Proxy {
-    pub fn initialize(_env: Env, _admin: Address, _implementation: Address) -> Result<(), Error> {
+    pub fn initialize(env: Env, admin: Address, _implementation: Address) -> Result<(), Error> {
+        admin.require_auth();
+        if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&soroban_sdk::symbol_short!("admin"), &admin);
         Ok(())
     }
 
-    pub fn upgrade(_env: Env, _new_implementation: Address) -> Result<(), Error> {
+    pub fn upgrade(env: Env, new_implementation: Address) -> Result<(), Error> {
+        let admin: Address = env.storage().instance().get(&soroban_sdk::symbol_short!("admin"))
+            .expect("Not initialized");
+        admin.require_auth();
+        let _ = new_implementation;
         Ok(())
     }
 

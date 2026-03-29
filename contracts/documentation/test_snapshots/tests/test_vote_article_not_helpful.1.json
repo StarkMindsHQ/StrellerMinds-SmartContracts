@@ -40,10 +40,10 @@
                   "string": "art-down"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for article voting"
                 },
                 {
                   "string": "cat"
@@ -434,7 +434,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for article voting"
                       }
                     },
                     {
@@ -482,7 +482,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

@@ -5,6 +5,7 @@ use shared::event_schema::{
     CrossChainEventData, OracleUpdatedEvent, ProofGeneratedEvent, VerificationRequestedEvent,
 };
 use shared::{emit_access_control_event, emit_crosschain_event};
+use shared::validation::{CoreValidator, ValidationConfig};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 mod storage;
@@ -21,6 +22,7 @@ pub struct CrossChainCredentials;
 #[contractimpl]
 impl CrossChainCredentials {
     pub fn initialize(env: Env, admin: Address) {
+        admin.require_auth();
         if env.storage().instance().has(&DataKey::Admin) {
             panic!("Already initialized");
         }
@@ -42,6 +44,14 @@ impl CrossChainCredentials {
     ) -> String {
         let admin = get_admin(&env);
         admin.require_auth();
+
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &achievement, "achievement", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
+        ).expect("Invalid achievement");
+        CoreValidator::validate_soroban_string_length(
+            &metadata_hash, "metadata_hash", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_URI_LENGTH,
+        ).expect("Invalid metadata_hash");
 
         let credential_id = String::from_str(&env, "CRED");
         let credential = Credential {

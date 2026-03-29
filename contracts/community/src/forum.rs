@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::CommunityEvents;
 use crate::storage::CommunityStorage;
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct ForumManager;
 
@@ -17,6 +18,17 @@ impl ForumManager {
         tags: Vec<String>,
         course_id: String,
     ) -> Result<u64, Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_soroban_string_length(
+            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_vec_size(
+            tags.len(), "tags", ValidationConfig::MAX_TAGS,
+        ).map_err(|_| Error::InvalidInput)?;
+
         let post_id = CommunityStorage::increment_counter(env, CommunityKey::PostCounter);
         let now = env.ledger().timestamp();
 
@@ -78,6 +90,11 @@ impl ForumManager {
         content: String,
         parent_reply_id: u64,
     ) -> Result<u64, Error> {
+        // Validate content
+        CoreValidator::validate_soroban_string_length(
+            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+
         let mut post: ForumPost = env
             .storage()
             .persistent()

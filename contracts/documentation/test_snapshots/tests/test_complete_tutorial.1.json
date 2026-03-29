@@ -43,7 +43,7 @@
                   "string": "Tutorial"
                 },
                 {
-                  "string": "Desc"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -613,7 +613,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Desc"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {

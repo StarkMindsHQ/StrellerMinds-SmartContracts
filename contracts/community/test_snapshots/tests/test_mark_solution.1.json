@@ -47,7 +47,7 @@
                   "string": "Question"
                 },
                 {
-                  "string": "Content"
+                  "string": "I need help with this problem"
                 },
                 {
                   "vec": []
@@ -78,7 +78,7 @@
                   "u64": 1
                 },
                 {
-                  "string": "Answer"
+                  "string": "Here is the answer to your question"
                 },
                 {
                   "u64": 0
@@ -495,7 +495,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "I need help with this problem"
                       }
                     },
                     {
@@ -784,7 +784,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Answer"
+                        "string": "Here is the answer to your question"
                       }
                     },
                     {

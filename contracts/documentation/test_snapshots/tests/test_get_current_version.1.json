@@ -43,7 +43,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for documentation"
                 },
                 {
                   "vec": [
@@ -452,7 +452,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for documentation"
                       }
                     },
                     {

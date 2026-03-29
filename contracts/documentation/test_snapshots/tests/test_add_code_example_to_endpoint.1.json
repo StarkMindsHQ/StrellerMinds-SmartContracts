@@ -43,7 +43,7 @@
                   "string": "Endpoint"
                 },
                 {
-                  "string": "Desc"
+                  "string": "This is a test endpoint description"
                 },
                 {
                   "string": "POST"
@@ -378,7 +378,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Desc"
+                        "string": "This is a test endpoint description"
                       }
                     },
                     {

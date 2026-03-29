@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
 use crate::types::{GamificationKey, PeerEndorsement, PeerRecognition, RecognitionType};
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct SocialManager;
 
@@ -16,6 +17,11 @@ impl SocialManager {
         endorsee: &Address,
         skill: String,
     ) -> Result<(), Error> {
+        // Validate skill string
+        CoreValidator::validate_soroban_string_length(
+            &skill, "skill", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_COURSE_ID_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+
         if endorser == endorsee {
             return Err(Error::SelfEndorsement);
         }
@@ -84,6 +90,11 @@ impl SocialManager {
         recognition_type: RecognitionType,
         message: String,
     ) -> Result<(), Error> {
+        // Validate message
+        CoreValidator::validate_soroban_string_length(
+            &message, "message", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_MESSAGE_LENGTH,
+        ).map_err(|_| Error::InvalidInput)?;
+
         if from == to {
             return Err(Error::SelfEndorsement);
         }

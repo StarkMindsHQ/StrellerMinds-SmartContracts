@@ -40,10 +40,10 @@
                   "string": "ep-get"
                 },
                 {
-                  "string": "N"
+                  "string": "Endpoint Name"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test endpoint description"
                 },
                 {
                   "string": "GET"
@@ -235,7 +235,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test endpoint description"
                       }
                     },
                     {
@@ -259,7 +259,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "N"
+                        "string": "Endpoint Name"
                       }
                     },
                     {

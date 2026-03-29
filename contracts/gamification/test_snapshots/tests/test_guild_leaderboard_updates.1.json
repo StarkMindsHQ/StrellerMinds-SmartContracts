@@ -37,10 +37,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "string": "Alpha"
+                  "string": "Alpha Guild"
                 },
                 {
-                  "string": "desc"
+                  "string": "The alpha guild for leaderboard test"
                 },
                 {
                   "u32": 10
@@ -68,10 +68,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "string": "Beta"
+                  "string": "Beta Guild"
                 },
                 {
-                  "string": "desc"
+                  "string": "The beta guild for leaderboard test"
                 },
                 {
                   "u32": 10
@@ -5712,7 +5712,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "desc"
+                        "string": "The alpha guild for leaderboard test"
                       }
                     },
                     {
@@ -5760,7 +5760,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "Alpha"
+                        "string": "Alpha Guild"
                       }
                     },
                     {
@@ -5846,7 +5846,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "desc"
+                        "string": "The beta guild for leaderboard test"
                       }
                     },
                     {
@@ -5894,7 +5894,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "Beta"
+                        "string": "Beta Guild"
                       }
                     },
                     {
@@ -6007,7 +6007,7 @@
                             "symbol": "guild_name"
                           },
                           "val": {
-                            "string": "Alpha"
+                            "string": "Alpha Guild"
                           }
                         },
                         {
@@ -6051,7 +6051,7 @@
                             "symbol": "guild_name"
                           },
                           "val": {
-                            "string": "Beta"
+                            "string": "Beta Guild"
                           }
                         },
                         {

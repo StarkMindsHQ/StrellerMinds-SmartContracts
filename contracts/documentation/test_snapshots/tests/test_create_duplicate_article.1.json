@@ -40,10 +40,10 @@
                   "string": "art-dup"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for article"
                 },
                 {
                   "string": "cat"
@@ -376,7 +376,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for article"
                       }
                     },
                     {
@@ -424,7 +424,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

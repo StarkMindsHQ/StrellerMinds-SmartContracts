@@ -1,4 +1,8 @@
 #![no_std]
+extern crate alloc;
+
+pub mod validation;
+
 pub mod access_control {
     use soroban_sdk::{Address, Env};
 
@@ -61,31 +65,6 @@ pub mod error_handling {
     }
 }
 
-pub mod validation {
-    use soroban_sdk::{Env, Symbol};
-
-    pub fn validate_course_id(_env: &Env, _course_id: &Symbol) -> Result<(), soroban_sdk::Error> {
-        Ok(())
-    }
-
-    pub fn validate_symbol(_env: &Env, _symbol: &Symbol) -> Result<(), soroban_sdk::Error> {
-        Ok(())
-    }
-
-    pub fn validate_string(
-        _env: &Env,
-        _text: &str,
-    ) -> Result<soroban_sdk::String, soroban_sdk::Error> {
-        Ok(soroban_sdk::String::from_str(_env, _text))
-    }
-
-    pub fn sanitize_text(
-        _env: &Env,
-        _text: &str,
-    ) -> Result<soroban_sdk::String, soroban_sdk::Error> {
-        Ok(soroban_sdk::String::from_str(_env, _text))
-    }
-}
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;

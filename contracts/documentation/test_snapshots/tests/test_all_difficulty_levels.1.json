@@ -40,10 +40,10 @@
                   "string": "dl-beg"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -84,10 +84,10 @@
                   "string": "dl-int"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -128,10 +128,10 @@
                   "string": "dl-adv"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -172,10 +172,10 @@
                   "string": "dl-exp"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -733,7 +733,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -777,7 +777,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
@@ -863,7 +863,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -907,7 +907,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
@@ -993,7 +993,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -1037,7 +1037,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
@@ -1123,7 +1123,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -1167,7 +1167,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

@@ -43,7 +43,7 @@
                   "string": "Getting Started"
                 },
                 {
-                  "string": "Welcome"
+                  "string": "Welcome to the onboarding guide"
                 },
                 {
                   "vec": [
@@ -584,7 +584,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Welcome"
+                        "string": "Welcome to the onboarding guide"
                       }
                     },
                     {
