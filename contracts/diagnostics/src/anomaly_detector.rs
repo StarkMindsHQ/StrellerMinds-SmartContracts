@@ -863,7 +863,7 @@ impl AnomalyDetector {
             return 0.0;
         }
 
-        (variance.sqrt() / mean) * 100.0 // Coefficient of variation as percentage
+        (sqrt_f64(variance) / mean) * 100.0 // Coefficient of variation as percentage
     }
 
     fn analyze_performance_degradation_cause(
@@ -989,6 +989,18 @@ impl AnomalyDetector {
             TrendDirection::Stable
         }
     }
+}
+
+fn sqrt_f64(value: f64) -> f64 {
+    if value <= 0.0 {
+        return 0.0;
+    }
+
+    let mut estimate = if value >= 1.0 { value } else { 1.0 };
+    for _ in 0..12 {
+        estimate = 0.5 * (estimate + value / estimate);
+    }
+    estimate
 }
 
 #[cfg(all(test, feature = "testutils"))]
