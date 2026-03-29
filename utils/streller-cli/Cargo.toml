@@ -21,3 +21,14 @@ indicatif = "0.17"
 
 # For async execution
 tokio = { version = "1.37", features = ["full"] }
+
+# For debugging tools
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+colored = "2.1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
+
+# For testing utilities
+regex = "1.10"
+walkdir = "2.4"

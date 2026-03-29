@@ -1,3 +1,4 @@
+#![no_std]
 pub mod access_control {
     use soroban_sdk::{Address, Env};
 
@@ -93,3 +94,5 @@ pub mod gas_optimizer;
 /// The `validation` module above is a lightweight stub used by other contracts
 /// at the shared-crate boundary. This module exposes the complete validator.
 pub mod validation_core;
+#[cfg(test)]
+pub mod performance_tests;

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Certificate Priority Levels
@@ -60,7 +60,7 @@ pub struct ApprovalRecord {
     pub approver: Address,
     pub approved: bool,
     pub timestamp: u64,
-    pub signature_hash: Option<soroban_sdk::Bytes>,
+    pub signature_hash: Option<Bytes>,
     pub comments: String,
 }
 
@@ -126,7 +126,7 @@ pub struct Certificate {
     pub status: CertificateStatus,
     pub issuer: Address,
     pub version: u32,
-    pub blockchain_anchor: Option<soroban_sdk::Bytes>,
+    pub blockchain_anchor: Option<Bytes>,
     pub template_id: Option<String>,
     pub share_count: u32,
 }
