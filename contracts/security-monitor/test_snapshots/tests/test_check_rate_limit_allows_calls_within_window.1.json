@@ -6,6 +6,8 @@
   "auth": [
     [],
     [],
+    [],
+    [],
     []
   ],
   "ledger": {
@@ -31,7 +33,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "fraud"
+                  "symbol": "ratelimit"
                 }
               ]
             },
@@ -54,7 +56,7 @@
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                     },
                     {
-                      "symbol": "fraud"
+                      "symbol": "ratelimit"
                     }
                   ]
                 },
@@ -66,7 +68,7 @@
                         "symbol": "event_count"
                       },
                       "val": {
-                        "u32": 1
+                        "u32": 2
                       }
                     },
                     {
@@ -117,14 +119,6 @@
                       "wasm": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
                     },
                     "storage": [
-                      {
-                        "key": {
-                          "symbol": "ThreatNonce"
-                        },
-                        "val": {
-                          "u64": 1
-                        }
-                      },
                       {
                         "key": {
                           "vec": [
@@ -208,7 +202,7 @@
                                 "symbol": "rate_limit_per_window"
                               },
                               "val": {
-                                "u32": 100
+                                "u32": 2
                               }
                             },
                             {
@@ -216,7 +210,7 @@
                                 "symbol": "rate_limit_window"
                               },
                               "val": {
-                                "u64": 3600
+                                "u64": 60
                               }
                             }
                           ]
@@ -255,54 +249,5 @@
       ]
     ]
   },
-  "events": [
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "standard_event"
-              },
-              {
-                "symbol": "sec_mon"
-              },
-              {
-                "symbol": "security"
-              },
-              {
-                "symbol": "fraud_requested"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u32": 1
-                },
-                {
-                  "u64": 0
-                },
-                {
-                  "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                },
-                {
-                  "u32": 0
-                },
-                {
-                  "string": "security_event"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    }
-  ]
+  "events": []
 }

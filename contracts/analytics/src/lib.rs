@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod errors;
 
 use crate::errors::AnalyticsError;
