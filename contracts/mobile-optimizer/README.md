@@ -1,231 +1,152 @@
 # Mobile Optimizer Contract
 
-## Overview
-A comprehensive mobile optimization system designed to enhance the user experience on mobile devices by providing intelligent batching, offline capabilities, network adaptation, and gas optimization for blockchain interactions in educational platforms.
+## Purpose
 
-## Interface
+The Mobile Optimizer contract provides a comprehensive on-chain infrastructure for mobile-first interactions with the StrellerMinds platform. It tackles the unique challenges of mobile blockchain usage: unreliable networks, battery constraints, and the need for seamless offline-to-online transitions. The contract manages mobile session lifecycles (create, suspend, resume, end), batches multiple operations into single transactions to reduce gas costs, estimates gas for operations given current network quality, exposes quick interaction flows for common learning actions, manages offline operation queues with conflict resolution and sync, caches content for offline access, handles multi-device registration and state synchronization, orchestrates Progressive Web App (PWA) capabilities, and provides comprehensive analytics and network adaptation.
 
-### Session Management
-```rust
-// Create a new mobile session
-fn create_session(env: Env, user: Address, device_id: String, preferences: MobilePreferences) -> Result<String, MobileOptimizerError>
+## Architecture
 
-// Update mobile session
-fn update_session(env: Env, user: Address, session_id: String, preferences: MobilePreferences) -> Result<(), MobileOptimizerError>
+| Module | Description |
+|---|---|
+| `lib.rs` | Contract entry point — 50+ public functions organized across 15 domain sections |
+| `session_manager.rs` | `SessionManager` — session CRUD, suspend/resume, cross-device state sync, optimization analysis |
+| `batch_manager.rs` | `BatchManager` — batch creation, execution, and cancellation with configurable priority and strategy |
+| `gas_optimizer.rs` | `GasOptimizer` — per-operation gas estimation, mobile gas optimization tips |
+| `interaction_flows.rs` | `InteractionFlows` — quick mobile-optimized flows for enrollment, completion, and certificate viewing |
+| `network_manager.rs` | `NetworkManager` — network quality adaptation, bandwidth optimization, connection settings |
+| `offline_manager.rs` | `OfflineManager` — offline operation queuing, sync, conflict resolution, capability reporting |
+| `content_cache.rs` | `ContentCacheManager` — content caching with TTL management |
+| `content_manager.rs` | `ContentManager` — mobile content delivery management |
+| `notification_manager.rs` | `NotificationManager` — push notification and reminder scheduling |
+| `pwa_manager.rs` | `PwaManager` — PWA capability management and offline capability reporting |
+| `security_manager.rs` | `SecurityManager` — mobile security policies, biometric auth, device-level access control |
+| `battery_optimizer.rs` | `BatteryOptimizer` — battery-aware settings that reduce operation frequency on low charge |
+| `collaboration_manager.rs` | `CollaborationManager` — real-time collaborative learning session management |
+| `user_experience_manager.rs` | `UserExperienceManager` — UI preference and accessibility settings per user |
+| `analytics_monitor.rs` | `AnalyticsMonitor` — mobile-specific usage analytics collection |
+| `types.rs` | All `contracttype`-derived structs for mobile sessions, batches, preferences, network state, offline ops, device info, etc. |
+| `errors.rs` | `MobileOptimizerError` — 37 typed error variants |
 
-// Get mobile session information
-fn get_session(env: Env, user: Address, session_id: String) -> Result<MobileSession, MobileOptimizerError>
+## Public API
 
-// Update mobile preferences
-fn update_mobile_preferences(env: Env, user: Address, session_id: String, preferences: MobilePreferences) -> Result<(), MobileOptimizerError>
+| Function | Description | Auth Required |
+|---|---|---|
+| `initialize(admin)` | One-time setup; stores default config and counters | Admin |
+| `get_config()` | Returns the current optimizer configuration | None |
+| `update_config(admin, config)` | Replaces the optimizer configuration | Admin |
+| **Sessions** | | |
+| `create_session(user, device_id, preferences)` | Creates a new mobile session; returns session ID | User |
+| `get_session(user, session_id)` | Retrieves an existing session by ID | User |
+| `update_session(user, session_id, network_quality)` | Updates network quality on an active session | User |
+| `update_mobile_preferences(user, session_id, preferences)` | Updates mobile preferences on a session | User |
+| `suspend_session(user, session_id)` | Suspends an active session | User |
+| `resume_session(user, session_id, network_quality)` | Resumes a suspended session | User |
+| `end_session(user, session_id)` | Terminates an active session | User |
+| `get_session_stats(user)` | Returns aggregate session statistics for a user | User |
+| `optimize_session(user, session_id)` | Returns performance optimization recommendations for a session | User |
+| `sync_session_state(user, source_session_id, target_device_id)` | Clones a session's state to a new device | User |
+| **Batch Execution** | | |
+| `create_batch(user, operations, priority, strategy)` | Creates a batch of operations; returns batch ID | User |
+| `execute_batch(user, batch_id)` | Executes a pending batch; returns execution result | User |
+| `cancel_batch(user, batch_id)` | Cancels a pending batch before execution | User |
+| **Gas Optimization** | | |
+| `estimate_gas(operations, network_quality)` | Returns gas estimates for a list of operations | None |
+| `get_gas_tips()` | Returns mobile-specific gas optimization tips | None |
+| **Quick Interaction Flows** | | |
+| `quick_enroll(user, course_id, session_id)` | Mobile-optimized course enrollment flow | User |
+| `quick_complete_module(user, course_id, module_id, session_id)` | Mobile-optimized module completion flow | User |
+| `quick_view_certificate(user, certificate_id, session_id)` | Mobile-optimized certificate viewing flow | User |
+| **Network Management** | | |
+| `adapt_to_network(user, session_id, network_quality)` | Adapts session settings to current network conditions | User |
+| `get_network_stats(user, session_id)` | Returns network statistics for a session | User |
+| `optimize_bandwidth(user, session_id)` | Returns bandwidth optimization recommendations | User |
+| **Offline Operations** | | |
+| `queue_offline_operation(user, operation_type, data, priority)` | Queues an operation for later sync | User |
+| `sync_offline_operations(user)` | Syncs all queued offline operations to the network | User |
+| `get_offline_queue_status(user)` | Returns the current offline operation queue status | User |
+| `resolve_offline_conflicts(user, resolutions)` | Applies conflict resolutions for synced operations | User |
+| `get_offline_capabilities(user)` | Returns supported offline capabilities for the user | User |
+
+## Usage Example
+
 ```
+# 1. Admin initializes the contract
+mobile_optimizer.initialize(admin)
 
-### Batch Operations
-```rust
-// Create and execute a transaction batch
-fn execute_batch(env: Env, user: Address, operations: Vec<BatchOperation>, execution_strategy: ExecutionStrategy, session_id: String) -> Result<BatchExecutionResult, MobileOptimizerError>
-
-// Estimate gas for operations
-fn estimate_gas(env: Env, operations: Vec<BatchOperation>, network_quality: NetworkQuality, estimation_mode: GasEstimationMode) -> Result<Vec<GasEstimate>, MobileOptimizerError>
-
-// Get gas optimization suggestions
-fn get_gas_optimization_suggestions(env: Env, operations: Vec<BatchOperation>, network_quality: NetworkQuality) -> Result<Vec<GasOptimizationSuggestion>, MobileOptimizerError>
-```
-
-### Quick Interaction Flows
-```rust
-// Quick course enrollment flow
-fn quick_enroll_course(env: Env, user: Address, course_id: String, session_id: String) -> Result<MobileInteractionResult, MobileOptimizerError>
-
-// Quick progress update flow
-fn quick_update_progress(env: Env, user: Address, course_id: String, module_id: String, progress_percentage: u32, session_id: String) -> Result<MobileInteractionResult, MobileOptimizerError>
-
-// Quick certificate claim flow
-fn quick_claim_certificate(env: Env, user: Address, course_id: String, session_id: String) -> Result<MobileInteractionResult, MobileOptimizerError>
-```
-
-### Offline Management
-```rust
-// Queue operation for offline execution
-fn queue_offline_operation(env: Env, user: Address, device_id: String, operation: QueuedOperation) -> Result<(), MobileOptimizerError>
-
-// Sync offline operations
-fn sync_offline_operations(env: Env, user: Address, device_id: String) -> Result<OfflineSyncResult, MobileOptimizerError>
-
-// Get offline queue status
-fn get_offline_queue_status(env: Env, user: Address, device_id: String) -> Result<OfflineQueueStatus, MobileOptimizerError>
-
-// Resolve offline conflicts
-fn resolve_offline_conflicts(env: Env, user: Address, device_id: String, resolution_strategy: ConflictResolution, operation_resolutions: Vec<OperationResolution>) -> Result<ConflictResolutionResult, MobileOptimizerError>
-
-// Clean up completed offline operations
-fn cleanup_offline_operations(env: Env, user: Address, device_id: String) -> Result<u32, MobileOptimizerError>
-```
-
-### Analytics and Monitoring
-```rust
-// Get network statistics
-fn get_network_statistics(env: Env, user: Address, session_id: String) -> Result<NetworkStatistics, MobileOptimizerError>
-
-// Get mobile capabilities
-fn get_mobile_capabilities(env: Env) -> MobileCapabilities
-
-// Get mobile analytics
-fn get_mobile_analytics(env: Env, user: Address, session_id: String) -> Result<MobileAnalytics, MobileOptimizerError>
-```
-
-### Administrative Functions
-```rust
-// Update contract configuration (admin only)
-fn update_config(env: Env, admin: Address, config: MobileOptimizerConfig) -> Result<(), MobileOptimizerError>
-
-// Get contract configuration
-fn get_config(env: Env) -> Result<MobileOptimizerConfig, MobileOptimizerError>
-
-// Get contract statistics (admin only)
-fn get_contract_statistics(env: Env, admin: Address) -> Result<ContractStatistics, MobileOptimizerError>
-```
-
-## Events
-
-### Session Events
-- `session_created`: Emitted when a new mobile session is created
-- `session_updated`: Emitted when session preferences are updated
-- `session_expired`: Emitted when a session times out
-
-### Batch Operation Events
-- `batch_executed`: Emitted when a batch operation completes
-- `batch_failed`: Emitted when a batch operation fails
-- `gas_optimized`: Emitted when gas optimization is applied
-
-### Offline Events
-- `operation_queued`: Emitted when an operation is queued for offline execution
-- `offline_sync_completed`: Emitted when offline operations are synced
-- `conflict_resolved`: Emitted when offline conflicts are resolved
-
-### Network Events
-- `network_quality_changed`: Emitted when network quality is detected
-- `retry_strategy_updated`: Emitted when retry strategy is adapted
-
-## Configuration
-
-### Mobile Optimizer Configuration
-```rust
-pub struct MobileOptimizerConfig {
-    pub admin: Address,
-    pub max_batch_size: u32,
-    pub default_gas_limit: u64,
-    pub session_timeout_seconds: u64,
-    pub offline_queue_limit: u32,
-    pub network_timeout_ms: u32,
-    pub retry_attempts: u32,
-}
-```
-
-### Mobile Preferences
-```rust
-pub struct MobilePreferences {
-    pub data_saver_mode: bool,
-    pub offline_mode_enabled: bool,
-    pub auto_sync_enabled: bool,
-    pub preferred_batch_size: u32,
-    pub network_quality_threshold: NetworkQuality,
-}
-```
-
-### Network Quality Levels
-- `Excellent`: High-speed, stable connection
-- `Good`: Reliable connection with good performance
-- `Fair`: Moderate connection with some limitations
-- `Poor`: Slow or unstable connection
-- `Offline`: No network connectivity
-
-## Testing
-
-### Running Tests
-```bash
-# Run all tests for mobile-optimizer contract
-cargo test --package mobile-optimizer
-
-# Run specific test modules
-cargo test --package mobile-optimizer tests::test_session_management
-cargo test --package mobile-optimizer tests::test_batch_operations
-cargo test --package mobile-optimizer tests::test_offline_capabilities
-cargo test --package mobile-optimizer tests::test_network_adaptation
-```
-
-### Test Coverage
-- **Session Management Tests**: Mobile session creation and management
-- **Batch Operation Tests**: Transaction batching and optimization
-- **Offline Capability Tests**: Offline operation queuing and syncing
-- **Network Adaptation Tests**: Network quality detection and adaptation
-- **Gas Optimization Tests**: Gas estimation and optimization strategies
-- **Quick Flow Tests**: Streamlined interaction flows
-- **Analytics Tests**: Mobile analytics and statistics
-
-## Deployment
-
-### Prerequisites
-- Admin address for contract initialization
-- Network monitoring capabilities
-- Offline storage configuration
-
-### Deployment Steps
-1. Deploy the mobile-optimizer contract
-2. Initialize with admin address and configuration
-3. Set up network quality monitoring
-4. Configure offline capabilities
-5. Enable mobile session management
-6. Begin mobile optimization services
-
-### Environment Setup
-- Configure maximum batch sizes based on mobile constraints
-- Set up network timeout and retry parameters
-- Enable offline operation queuing
-- Configure gas optimization strategies
-- Set up mobile analytics collection
-
-## Usage Examples
-
-### Creating a Mobile Session
-```rust
-let preferences = MobilePreferences {
+# 2. User creates a session on their mobile device
+session_id = mobile_optimizer.create_session(student, "iPhone-14-ABC", {
     data_saver_mode: true,
     offline_mode_enabled: true,
-    auto_sync_enabled: true,
-    preferred_batch_size: 5,
-    network_quality_threshold: NetworkQuality::Fair,
-};
+    ...
+})
 
-let session_id = client.create_session(&user, &device_id, &preferences)?;
+# 3. Student goes offline — queue an operation for later sync
+mobile_optimizer.queue_offline_operation(student, "ModuleComplete", {course: "RUST101", module: "M1"}, Priority::Normal)
+
+# 4. When back online, sync queued operations
+sync_result = mobile_optimizer.sync_offline_operations(student)
+
+# 5. Student uses quick interaction flows for common actions
+enroll_result = mobile_optimizer.quick_enroll(student, "RUST101", session_id)
+
+# 6. Batch multiple operations to reduce gas
+batch_id = mobile_optimizer.create_batch(student, [op1, op2, op3], BatchPriority::Normal, ExecutionStrategy::Sequential)
+result = mobile_optimizer.execute_batch(student, batch_id)
+
+# 7. End session when done
+mobile_optimizer.end_session(student, session_id)
 ```
 
-### Executing Batch Operations
-```rust
-let operations = vec![
-    BatchOperation::CourseEnrollment { course_id: "BLOCKCHAIN101".to_string() },
-    BatchOperation::ProgressUpdate { course_id: "BLOCKCHAIN101".to_string(), module_id: "MODULE1".to_string(), progress: 50 },
-];
+## Errors
 
-let strategy = ExecutionStrategy::OptimizeForGas;
-let result = client.execute_batch(&user, &operations, &strategy, &session_id)?;
-```
+| Error | Code | Description |
+|---|---|---|
+| `NotInitialized` | 1 | Contract has not been initialized |
+| `AlreadyInitialized` | 2 | Contract has already been initialized |
+| `SessionCreationFailed` | 3 | Creating a new session failed |
+| `SessionUpdateFailed` | 4 | Updating an existing session failed |
+| `SessionNotFound` | 5 | No session found for the specified ID |
+| `SessionExpired` | 6 | Session has expired |
+| `BatchExecutionFailed` | 7 | Batch execution failed |
+| `BatchNotFound` | 8 | No batch found for the specified ID |
+| `BatchExpired` | 9 | Batch expired before execution completed |
+| `GasEstimationFailed` | 10 | Gas cost estimation failed |
+| `OptimizationFailed` | 11 | Optimization process failed to produce a result |
+| `InteractionFailed` | 12 | Quick interaction flow failed |
+| `OfflineOperationFailed` | 13 | Queuing or executing an offline operation failed |
+| `OfflineSyncFailed` | 14 | Syncing offline operations failed |
+| `OfflineQueueFull` | 15 | Offline operation queue is at capacity |
+| `ConflictResolutionFailed` | 16 | Resolving offline operation conflicts failed |
+| `PreferenceUpdateFailed` | 17 | Updating mobile preferences failed |
+| `AnalyticsNotAvailable` | 18 | Analytics data is not available |
+| `ConfigNotFound` | 19 | Optimizer configuration not found in storage |
+| `AdminNotSet` | 20 | Admin address not set in storage |
+| `UnauthorizedAdmin` | 21 | Caller is not the authorized admin |
+| `Unauthorized` | 22 | Caller is not authorized |
+| `CacheError` | 23 | Content cache read/write operation failed |
+| `CacheFull` | 24 | Content cache has reached its size limit |
+| `DeviceNotRegistered` | 25 | Device has not been registered for this user |
+| `MaxDevicesReached` | 26 | User has reached the maximum number of registered devices |
+| `SyncFailed` | 27 | Data synchronization operation failed |
+| `SecurityViolation` | 28 | A security policy violation was detected |
+| `BiometricAuthFailed` | 29 | Biometric authentication verification failed |
+| `AccountLocked` | 30 | Account is locked due to failed authentication attempts |
+| `NotificationError` | 31 | Push notification operation failed |
+| `PwaError` | 32 | Progressive Web App operation failed |
+| `InvalidInput` | 33 | Input value is invalid or out of range |
+| `InternalError` | 34 | Unexpected internal error |
+| `ContentError` | 35 | Content management operation failed |
+| `CollaborationError` | 36 | Collaboration feature operation failed |
+| `UserExperienceError` | 37 | User experience operation failed |
 
-### Offline Operation Management
-```rust
-let operation = QueuedOperation {
-    operation_type: OperationType::CourseEnrollment,
-    data: enrollment_data,
-    timestamp: env.ledger().timestamp(),
-};
+For cross-contract error conventions, see [ERROR_HANDLING.md](../../docs/ERROR_HANDLING.md).
 
-client.queue_offline_operation(&user, &device_id, &operation)?;
+## Integration
 
-// Later, when online
-let sync_result = client.sync_offline_operations(&user, &device_id)?;
-```
-
-## Related Docs
-- [Mobile Optimizer System](../docs/MOBILE_OPTIMIZER_SYSTEM.md)
-- [Gas Optimization Analysis](../docs/gas_optimization_analysis.md)
-- [Development Guide](../docs/development.md)
+| Contract | Interaction |
+|---|---|
+| `analytics` | Mobile session and interaction analytics feed the analytics contract |
+| `progress` | Quick completion flows trigger progress updates via the progress contract |
+| `certificate` | Quick certificate viewing flows query the certificate contract |
+| `gamification` | Mobile activity flows can trigger gamification activity records |
+| `security-monitor` | Biometric authentication and security policy checks interact with the security monitor |

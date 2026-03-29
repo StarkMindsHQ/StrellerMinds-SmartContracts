@@ -4,16 +4,19 @@ use soroban_sdk::contracterror;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum TokenError {
-    // Initialization (1-9)
+    /// Contract has already been initialized; `initialize` may only be called once.
     AlreadyInitialized = 1,
+    /// Contract has not been initialized; call `initialize` first.
     NotInitialized = 2,
-    // Authorization (10-19)
+    /// Caller does not have the required admin privileges.
     Unauthorized = 10,
-    // Validation (20-49)
+    /// Provided token amount is zero or otherwise invalid.
     InvalidAmount = 20,
+    /// Provided address is not a valid account address.
     InvalidAddress = 21,
-    // Business logic (80-199)
+    /// Sender does not hold enough tokens to complete the transfer.
     InsufficientBalance = 80,
+    /// Token transfer could not be completed.
     TransferFailed = 81,
 }
 

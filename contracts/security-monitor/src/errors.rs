@@ -5,52 +5,79 @@ use soroban_sdk::contracterror;
 #[repr(u32)]
 pub enum SecurityError {
     // Initialization errors
+    /// The contract has already been initialized and cannot be re-initialized.
     AlreadyInitialized = 1,
+    /// The contract has not been initialized yet.
     NotInitialized = 2,
 
     // Authorization errors
+    /// Caller is not authorized to perform this operation.
     Unauthorized = 3,
+    /// Caller lacks the required permission for the requested action.
     PermissionDenied = 4,
 
     // Configuration errors
+    /// One or more configuration fields contain invalid values.
     InvalidConfiguration = 5,
+    /// The provided alert or detection threshold is out of the allowed range.
     InvalidThreshold = 6,
+    /// The provided time window value is invalid or out of range.
     InvalidTimeWindow = 7,
 
     // Threat detection errors
+    /// No threat record found for the specified threat ID.
     ThreatNotFound = 10,
+    /// The supplied threat data failed validation.
     InvalidThreatData = 11,
+    /// A threat with the same identifier already exists.
     ThreatAlreadyExists = 12,
 
     // Circuit breaker errors
+    /// The circuit breaker is open and rejecting requests to the protected contract.
     CircuitBreakerOpen = 20,
+    /// No circuit breaker found for the specified contract identifier.
     CircuitBreakerNotFound = 21,
+    /// The requested state transition for the circuit breaker is not allowed.
     InvalidBreakerState = 22,
 
     // Rate limiting errors
+    /// The caller has exceeded the allowed request rate and must wait before retrying.
     RateLimitExceeded = 30,
+    /// The provided rate-limit configuration contains invalid values.
     InvalidRateLimitConfig = 31,
 
     // Event processing errors
+    /// Replaying a historical event sequence failed.
     EventReplayFailed = 40,
+    /// Applying event filter criteria failed.
     EventFilteringFailed = 41,
+    /// Not enough events available to complete the requested analysis.
     InsufficientEvents = 42,
 
     // Metrics errors
+    /// No metrics record found for the specified target.
     MetricsNotFound = 50,
+    /// The supplied metrics data failed validation.
     InvalidMetricsData = 51,
+    /// An error occurred while computing derived metrics values.
     MetricsCalculationFailed = 52,
 
     // Recommendation errors
+    /// No security recommendation found for the specified ID.
     RecommendationNotFound = 60,
+    /// The provided security recommendation contains invalid data.
     InvalidRecommendation = 61,
 
     // Storage errors
+    /// A storage read or write operation failed.
     StorageError = 70,
+    /// The requested data record was not found in storage.
     DataNotFound = 71,
 
     // General errors
+    /// The provided input value is invalid or out of range.
     InvalidInput = 80,
+    /// The requested operation failed to complete.
     OperationFailed = 81,
 }
 

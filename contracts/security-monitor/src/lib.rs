@@ -36,6 +36,19 @@ impl SecurityMonitor {
         Error::from_contract_error(3)
     }
 
+    /// Initialize the security monitor contract with an admin address and configuration.
+    ///
+    /// Must be called once before any other function. Sets the admin and stores the
+    /// initial security configuration.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that will hold administrative privileges.
+    /// * `config` - Initial security configuration parameters.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin, &config);
+    /// ```
     pub fn initialize(env: Env, admin: Address, config: SecurityConfig) -> Result<(), Error> {
         config.validate().map_err(|err| Error::from_contract_error(err as u32))?;
         SecurityStorage::set_admin(&env, &admin);
@@ -44,6 +57,18 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Scan a contract for active security threats within a given time window.
+    ///
+    /// Returns an empty list in the current implementation (placeholder for oracle integration).
+    ///
+    /// # Arguments
+    /// * `_contract` - Symbol identifier of the contract to scan.
+    /// * `_window_seconds` - How far back in time (in seconds) to look for threats.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let threats = client.scan_for_threats(&contract_symbol, &3600u64);
+    /// ```
     pub fn scan_for_threats(
         _env: Env,
         _contract: Symbol,
@@ -52,11 +77,32 @@ impl SecurityMonitor {
         Ok(Vec::new(&_env)) // Basic placeholder
     }
 
+    /// Retrieve a single threat record by its unique ID.
+    ///
+    /// # Arguments
+    /// * `threat_id` - 32-byte identifier of the threat to retrieve.
+    ///
+    /// # Errors
+    /// Returns a generic contract error (code `0`) if the threat is not found.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let threat = client.get_threat(&threat_id);
+    /// ```
     pub fn get_threat(env: Env, threat_id: ThreatId) -> Result<SecurityThreat, Error> {
         SecurityStorage::get_threat(&env, &threat_id).ok_or(Error::from_contract_error(0))
         // 0 = generic error placeholder
     }
 
+    /// Return all threat IDs associated with a specific contract.
+    ///
+    /// # Arguments
+    /// * `contract` - Symbol identifier of the contract whose threats should be listed.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let ids = client.get_contract_threats(&contract_symbol);
+    /// ```
     pub fn get_contract_threats(env: Env, contract: Symbol) -> ThreatIdList {
         SecurityStorage::get_contract_threats(&env, &contract)
     }
@@ -119,6 +165,19 @@ impl SecurityMonitor {
 
     // --- Advanced Features Implementation ---
 
+    /// Submit an asynchronous anomaly analysis request for a contract and return a request ID.
+    ///
+    /// Emits an event so an off-chain oracle can pick up the request. The oracle must
+    /// later call [`SecurityMonitor::callback_anomaly_analysis`] with the result.
+    ///
+    /// # Arguments
+    /// * `actor` - Address initiating the analysis request.
+    /// * `contract` - Symbol identifier of the contract to analyze.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let request_id = client.request_anomaly_analysis(&actor, &contract_symbol);
+    /// ```
     pub fn request_anomaly_analysis(
         env: Env,
         actor: Address,
@@ -132,6 +191,23 @@ impl SecurityMonitor {
         Ok(request_id)
     }
 
+    /// Deliver the result of an anomaly analysis back to the contract from an authorized oracle.
+    ///
+    /// Only an oracle address previously authorized in storage may call this function.
+    ///
+    /// # Arguments
+    /// * `oracle` - Address of the authorized oracle submitting the result.
+    /// * `request_id` - The request ID returned by [`SecurityMonitor::request_anomaly_analysis`].
+    /// * `is_anomalous` - Whether anomalous behavior was detected.
+    /// * `risk_score` - Numeric risk score computed by the oracle (0–100 scale).
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `oracle` is not authorized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.callback_anomaly_analysis(&oracle, &request_id, &true, &75u32);
+    /// ```
     pub fn callback_anomaly_analysis(
         env: Env,
         oracle: Address,
@@ -146,6 +222,19 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Submit an asynchronous biometric verification request and return a request ID.
+    ///
+    /// Emits an event so an off-chain oracle can perform the biometric check. The oracle
+    /// must later call [`SecurityMonitor::callback_biometrics_verification`] with the result.
+    ///
+    /// # Arguments
+    /// * `actor` - Address of the user requesting biometric verification.
+    /// * `_encrypted_payload` - Encrypted biometric payload for the oracle to verify.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let request_id = client.verify_biometrics(&user, &encrypted_payload);
+    /// ```
     pub fn verify_biometrics(
         env: Env,
         actor: Address,
@@ -160,6 +249,22 @@ impl SecurityMonitor {
         Ok(request_id)
     }
 
+    /// Deliver the result of a biometric verification back to the contract from an authorized oracle.
+    ///
+    /// Only an oracle address previously authorized in storage may call this function.
+    ///
+    /// # Arguments
+    /// * `oracle` - Address of the authorized oracle submitting the result.
+    /// * `request_id` - The request ID returned by [`SecurityMonitor::verify_biometrics`].
+    /// * `is_valid` - Whether biometric verification succeeded.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `oracle` is not authorized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.callback_biometrics_verification(&oracle, &request_id, &true);
+    /// ```
     pub fn callback_biometrics_verification(
         env: Env,
         oracle: Address,
@@ -173,6 +278,19 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Submit an asynchronous credential fraud-detection request and return a request ID.
+    ///
+    /// Emits an event so an off-chain oracle can verify the credential hash. The oracle
+    /// must later call [`SecurityMonitor::callback_credential_fraud`] with the result.
+    ///
+    /// # Arguments
+    /// * `actor` - Address initiating the fraud check.
+    /// * `_credential_hash` - 32-byte hash of the credential to verify.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let request_id = client.verify_credential_fraud(&actor, &credential_hash);
+    /// ```
     pub fn verify_credential_fraud(
         env: Env,
         actor: Address,
@@ -187,6 +305,22 @@ impl SecurityMonitor {
         Ok(request_id)
     }
 
+    /// Deliver the result of a credential fraud check back to the contract from an authorized oracle.
+    ///
+    /// Only an oracle address previously authorized in storage may call this function.
+    ///
+    /// # Arguments
+    /// * `oracle` - Address of the authorized oracle submitting the result.
+    /// * `request_id` - The request ID returned by [`SecurityMonitor::verify_credential_fraud`].
+    /// * `is_fraudulent` - Whether the credential was found to be fraudulent.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `oracle` is not authorized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.callback_credential_fraud(&oracle, &request_id, &false);
+    /// ```
     pub fn callback_credential_fraud(
         env: Env,
         oracle: Address,
@@ -200,6 +334,22 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Store or update a threat intelligence indicator provided by an admin.
+    ///
+    /// Requires the caller to be the registered admin. Emits an event after storing
+    /// the intelligence record.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin (must match the stored admin).
+    /// * `intel` - Threat intelligence record to store.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `admin` does not match the stored admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.update_threat_intelligence(&admin, &intel);
+    /// ```
     pub fn update_threat_intelligence(
         env: Env,
         admin: Address,
@@ -221,6 +371,25 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Update the risk score for a user, callable by the admin or an authorized oracle.
+    ///
+    /// Appends the given `risk_factor` to the user's risk factor list and records the
+    /// current ledger timestamp as the last update time.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the admin or an authorized oracle.
+    /// * `user` - Address of the user whose risk score is being updated.
+    /// * `score` - New absolute risk score value for the user.
+    /// * `risk_factor` - Symbol label describing the reason for the score change.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if the caller is neither the admin
+    /// nor an authorized oracle.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.update_user_risk_score(&admin, &user, &80u32, &Symbol::new(&env, "SuspiciousLogin"));
+    /// ```
     pub fn update_user_risk_score(
         env: Env,
         admin: Address,
@@ -247,10 +416,37 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Retrieve the current risk score record for a user, or `None` if no record exists.
+    ///
+    /// # Arguments
+    /// * `user` - Address of the user whose risk score is requested.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let risk = client.get_user_risk_score(&user);
+    /// ```
     pub fn get_user_risk_score(env: Env, user: Address) -> Option<UserRiskScore> {
         SecurityStorage::get_user_risk_score(&env, &user)
     }
 
+    /// Record the completion of a security training module for a user.
+    ///
+    /// Requires the caller to be the registered admin. Reduces the user's risk score by
+    /// 10 points (if the current score is at least 10) and emits the appropriate events.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin (must match the stored admin).
+    /// * `user` - Address of the user who completed the training module.
+    /// * `module` - Symbol identifying the completed training module.
+    /// * `score` - Score achieved by the user in the training module.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `admin` does not match the stored admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.record_security_training(&admin, &user, &Symbol::new(&env, "PhishingAwareness"), &90u32);
+    /// ```
     pub fn record_security_training(
         env: Env,
         admin: Address,
@@ -303,6 +499,23 @@ impl SecurityMonitor {
         Ok(())
     }
 
+    /// Generate and store a security incident report aggregating one or more threats.
+    ///
+    /// Requires the caller to be the registered admin. Creates an `IncidentReport` record
+    /// marked as resolved at the current ledger timestamp and emits an event.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin (must match the stored admin).
+    /// * `threat_ids` - List of 32-byte threat IDs to include in the report.
+    /// * `impact_summary` - Human-readable description of the incident's impact.
+    ///
+    /// # Errors
+    /// Returns contract error code `1` (unauthorized) if `admin` does not match the stored admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let incident_id = client.generate_incident_report(&admin, &threat_ids, &impact_summary);
+    /// ```
     pub fn generate_incident_report(
         env: Env,
         admin: Address,
