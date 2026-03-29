@@ -37,6 +37,7 @@ impl SecurityMonitor {
     }
 
     pub fn initialize(env: Env, admin: Address, config: SecurityConfig) -> Result<(), Error> {
+        config.validate().map_err(|err| Error::from_contract_error(err as u32))?;
         SecurityStorage::set_admin(&env, &admin);
         SecurityStorage::set_config(&env, &config);
         SecurityEvents::emit_initialized(&env, &admin);
