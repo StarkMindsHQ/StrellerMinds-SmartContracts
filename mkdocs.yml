@@ -16,3 +16,40 @@ markdown_extensions:
 
 plugins:
   - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Development Guide: development.md
+    - Deployment Guide: DEPLOYMENT.md
+  - User Guide: USER_GUIDE.md
+  - API Reference: API.md
+  - Architecture:
+    - High-Level Architecture: ARCHITECTURE.md
+    - Cross-Chain Architecture: CROSS_CHAIN_ARCHITECTURE.md
+    - Cross-Chain Deployment: CROSS_CHAIN_DEPLOYMENT.md
+    - Cross-Chain Implementation: CROSS_CHAIN_IMPLEMENTATION.md
+  - Systems:
+    - Advanced Search: ADVANCED_SEARCH_SYSTEM.md
+    - Diagnostics: DIAGNOSTICS_PLATFORM.md
+    - Diagnostics Integration: DIAGNOSTICS_PLATFORM_INTEGRATION_GUIDE.md
+    - Mobile Optimizer: MOBILE_OPTIMIZER_SYSTEM.md
+    - Multisig Certificates: MULTISIG_CERTIFICATE_SYSTEM.md
+    - Prerequisite System: PREREQUISITE_SYSTEM.md
+    - RBAC: RBAC_IMPLEMENTATION.md
+    - Reentrancy Protection: REENTRANCY_PROTECTION.md
+    - Token Rewards: TOKEN_INCENTIVE_SYSTEM.md
+    - Upgrade Framework: UPGRADE_FRAMEWORK.md
+  - Developer Reference:
+    - Code Style: CODE_STYLE.md
+    - Contributing: contributing.md
+    - Event Monitoring: event-monitoring.md
+    - Build Matrix: PER_CONTRACT_BUILD_MATRIX.md
+    - Metadata Update Guide: METADATA_UPDATE_GUIDE.md
+    - Metadata Validation: METADATA_VALIDATION.md
+  - Audits & Security:
+    - Security Overview: security.md
+    - Security Audit Checklist: security_audit_checklist.md
+    - Security Audit Report: SECURITY_AUDIT_REPORT.md
+    - Gas Optimization: gas-optimization.md
+    - Gas Analysis: gas_optimization_analysis.md
