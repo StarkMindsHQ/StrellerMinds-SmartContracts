@@ -1,6 +1,9 @@
 #![allow(clippy::enum_variant_names)]
 
+use shared::config::{ContractConfig, DeploymentEnv};
 use soroban_sdk::{contracttype, Address, BytesN, Map, String, Vec};
+
+use crate::errors::MobileOptimizerError;
 
 // ============================================================================
 // Core Transaction & Batch Types
@@ -254,6 +257,35 @@ pub struct MobileOptimizerConfig {
     pub cache_ttl_seconds: u64,
     pub max_devices_per_user: u32,
     pub analytics_retention_days: u32,
+}
+
+impl MobileOptimizerConfig {
+    pub fn for_env(admin: Address, profile: DeploymentEnv) -> Self {
+        let defaults = ContractConfig::mobile(profile);
+        Self {
+            admin,
+            max_batch_size: defaults.max_batch_size,
+            default_gas_limit: defaults.default_gas_limit,
+            session_timeout_seconds: defaults.session_timeout_seconds,
+            offline_queue_limit: defaults.offline_queue_limit,
+            network_timeout_ms: defaults.network_timeout_ms,
+            retry_attempts: defaults.retry_attempts,
+            cache_ttl_seconds: defaults.cache_ttl_seconds,
+            max_devices_per_user: defaults.max_devices_per_user,
+            analytics_retention_days: defaults.analytics_retention_days,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), MobileOptimizerError> {
+        if self.max_batch_size == 0
+            || self.session_timeout_seconds == 0
+            || self.offline_queue_limit == 0
+            || self.max_devices_per_user == 0
+        {
+            return Err(MobileOptimizerError::InvalidInput);
+        }
+        Ok(())
+    }
 }
 
 // ============================================================================

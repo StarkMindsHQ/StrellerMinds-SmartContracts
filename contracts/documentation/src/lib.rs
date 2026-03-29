@@ -24,6 +24,7 @@ use api_docs::ApiDocManager;
 use contributions::ContributionManager;
 use documents::DocumentManager;
 use knowledge::KnowledgeManager;
+use shared::config::DeploymentEnv;
 use storage::Storage;
 use translations::TranslationManager;
 use tutorials::TutorialManager;
@@ -46,15 +47,8 @@ impl DocumentationContract {
             return Err(Error::AlreadyInitialized);
         }
 
-        let config = DocumentationConfig {
-            admin: admin.clone(),
-            moderators: Vec::new(&env),
-            supported_languages: Vec::new(&env),
-            max_doc_size: 100000,
-            require_review: true,
-            enable_contributions: true,
-            enable_analytics: true,
-        };
+        let config = DocumentationConfig::for_env(admin.clone(), DeploymentEnv::Production);
+        config.validate()?;
 
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Config, &config);

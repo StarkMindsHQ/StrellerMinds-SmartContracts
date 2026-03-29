@@ -41,6 +41,7 @@ use offline_manager::{OfflineCapabilities, OfflineManager, OfflineQueueStatus, O
 use pwa_manager::{OfflineCapabilityReport, PwaManager};
 use security_manager::SecurityManager;
 use session_manager::{SessionManager, SessionOptimization, SessionStats};
+use shared::config::DeploymentEnv;
 use types::*;
 use user_experience_manager::UserExperienceManager;
 
@@ -61,18 +62,8 @@ impl MobileOptimizerContract {
             return Err(MobileOptimizerError::AlreadyInitialized);
         }
 
-        let config = MobileOptimizerConfig {
-            admin: admin.clone(),
-            max_batch_size: 10,
-            default_gas_limit: 1_000_000,
-            session_timeout_seconds: 3600,
-            offline_queue_limit: 100,
-            network_timeout_ms: 30000,
-            retry_attempts: 5,
-            cache_ttl_seconds: 86400,
-            max_devices_per_user: 5,
-            analytics_retention_days: 90,
-        };
+        let config = MobileOptimizerConfig::for_env(admin.clone(), DeploymentEnv::Production);
+        config.validate()?;
 
         env.storage().persistent().set(&DataKey::Config, &config);
         env.storage().persistent().set(&DataKey::Admin, &admin);
