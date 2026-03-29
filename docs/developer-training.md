@@ -2,7 +2,33 @@
 
 ## Overview
 
-This training guide helps developers get started with the StrellerMinds Smart Contracts project and effectively use the developer tools and workflows.
+This training guide helps developers get started with the StrellerMinds Smart Contracts project and effectively use the repo workflows to build, test, debug, and ship Soroban contracts safely.
+
+## Training Tracks
+
+### Track A: Contract Contributor (Onboarding)
+- Goal: build and test the full workspace, understand contract boundaries, land safe PRs
+- Target outcome: can make small changes with tests + clippy, follows repo conventions
+
+### Track B: Contract Maintainer
+- Goal: review PRs, enforce security and code quality, own incident/debug workflows
+- Target outcome: can debug failures end-to-end, understands authorization boundaries and invariants
+
+### Track C: Release Engineer
+- Goal: produce artifacts, run release checks, monitor pipeline and post-release health
+- Target outcome: can run the release workflow and interpret audits and metrics
+
+## Training Materials Library
+
+- Development workflow: [development.md](development.md)
+- Architecture overview: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Public API overview: [API.md](API.md)
+- Code style and conventions: [CODE_STYLE.md](CODE_STYLE.md)
+- Security baseline: [security.md](security.md), [SECURITY_TESTING.md](SECURITY_TESTING.md), [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md)
+- Release process: [RELEASE_MANAGEMENT.md](RELEASE_MANAGEMENT.md), [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+- Upgrade model: [UPGRADE_FRAMEWORK.md](UPGRADE_FRAMEWORK.md)
+- Tooling and CLI: [developer-tools.md](developer-tools.md)
+- Effectiveness measurement: [tool-effectiveness-review.md](tool-effectiveness-review.md)
 
 ## Training Modules
 
@@ -20,32 +46,17 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 
 #### Step-by-Step Instructions
 
-1. **Install Rust**
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source ~/.cargo/env
-   rustc --version
-   cargo --version
-   ```
-
-2. **Install Soroban CLI**
-   ```bash
-   cargo install soroban-cli
-   soroban version
-   ```
-
-3. **Install Docker**
-   - Download and install Docker Desktop
-   - Verify installation: `docker --version`
-   - Start Docker service
-
-4. **Clone Repository**
+1. **Clone Repository**
    ```bash
    git clone <repository-url>
    cd StrellerMinds-SmartContracts
    ```
 
-5. **Verify Setup**
+2. **Install prerequisites**
+   - Follow the repo development guide: [development.md](development.md)
+   - If you are on Windows, use WSL for the shell scripts and Docker workflow
+
+3. **Verify Setup**
    ```bash
    make check
    ```
@@ -54,6 +65,11 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 - Run the environment check
 - Fix any missing dependencies
 - Start the local development network
+  ```bash
+  make localnet-start
+  make localnet-status
+  make localnet-stop
+  ```
 
 #### Assessment
 - ✅ All prerequisite tools installed
@@ -74,7 +90,7 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 1. **Start the CLI**
    ```bash
    cd utils/streller-cli
-   cargo run --bin streller-cli
+   cargo run
    ```
 
 2. **Main Menu Navigation**
@@ -227,9 +243,9 @@ This training guide helps developers get started with the StrellerMinds Smart Co
    - Test Suite
 
 2. **Pipeline Commands**
-   - `make ci-test` - Simulate CI pipeline
-   - `make check-code` - Code quality checks
-   - `make dev-test` - Development workflow
+   - `make ci-test` - Fast CI-style checks (build + unit tests + quick E2E)
+   - `make check-code` - Formatting + strict linting
+   - `make dev-test` - Clean, build, and full E2E
 
 3. **Pipeline Monitoring**
    - Check GitHub Actions status
@@ -272,7 +288,6 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 
 1. **Daily Development**
    ```bash
-   make clean
    make build
    make unit-test
    ```
@@ -280,7 +295,7 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 2. **Before Commit**
    ```bash
    make check-code
-   make test
+   make unit-test
    ```
 
 3. **Before Deployment**
@@ -355,9 +370,12 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 ## Resources
 
 ### Documentation
-- [Developer Tools Documentation](developer-tools.md)
-- [API Documentation](api-docs.md)
-- [Contract Development Guide](contract-development.md)
+- [Developer Tools](developer-tools.md)
+- [Development Guide](development.md)
+- [Architecture](ARCHITECTURE.md)
+- [API](API.md)
+- [Security](security.md)
+- [Release Management](RELEASE_MANAGEMENT.md)
 
 ### Community
 - Discord Channel
@@ -368,6 +386,100 @@ This training guide helps developers get started with the StrellerMinds Smart Co
 - Issue Tracker
 - Office Hours
 - Code Reviews
+
+## Video Tutorials
+
+These are recording-ready outlines with demo steps that map directly to repo commands and docs. Host the videos outside the repository and link them from this section once published.
+
+### Video 1: Repo Tour and Contract Layout
+- Audience: new contributors
+- Outcome: can find a contract crate, its entrypoints, storage, events, and tests
+- Demo path: open `contracts/<name>/src/lib.rs`, `storage.rs`, `events.rs`, `types.rs`, then run a unit test for that crate
+
+### Video 2: Build and Test Loop (Fast Feedback)
+- Audience: contributors
+- Outcome: can iterate locally with a reliable, repeatable loop
+- Demo commands:
+  ```bash
+  make build
+  make unit-test
+  make check-code
+  ```
+
+### Video 3: Localnet + Quick E2E (Smoke Testing)
+- Audience: contributors and maintainers
+- Outcome: can use localnet lifecycle and run quick end-to-end checks
+- Demo commands:
+  ```bash
+  make localnet-start
+  make e2e-test-quick
+  make localnet-logs
+  make localnet-stop
+  ```
+
+### Video 4: Reading Events, Errors, and Storage Patterns
+- Audience: contributors
+- Outcome: can trace an entrypoint to storage mutations and emitted events
+- Demo path: pick one contract (e.g., `contracts/certificate/`), follow storage helpers, then run its tests and inspect snapshots
+
+### Video 5: Security in Practice (RBAC + Reentrancy)
+- Audience: maintainers
+- Outcome: can review authorization boundaries and threat mitigations
+- Reading set: [RBAC_IMPLEMENTATION.md](RBAC_IMPLEMENTATION.md), [REENTRANCY_PROTECTION.md](REENTRANCY_PROTECTION.md), [SECURITY_TESTING.md](SECURITY_TESTING.md)
+
+### Video 6: Release Workflow Walkthrough
+- Audience: release engineers
+- Outcome: can run pre-release validation and interpret the outputs
+- Reading set: [RELEASE_MANAGEMENT.md](RELEASE_MANAGEMENT.md), [RELEASE_PROCESS.md](RELEASE_PROCESS.md)
+
+## Workshops
+
+Workshops are designed to be facilitated, hands-on, and repeatable. Each workshop includes a short prep checklist, exercises, and a wrap-up review.
+
+### Workshop 1 (90–120 min): Build, Test, and Navigate a Contract
+- Prep checklist: Rust + Soroban CLI installed, Docker running, `make check` passes
+- Exercises:
+  - Run `make build` and explain where artifacts land
+  - Run `make unit-test` and identify at least one contract test module
+  - Pick one contract and map: entrypoints → storage → events → errors
+- Wrap-up: 10-minute recap of repo structure and what “done” means for a PR (tests + lint)
+
+### Workshop 2 (120 min): Localnet + E2E Debugging Loop
+- Prep checklist: ports 8000/6379 free, Docker healthy
+- Exercises:
+  - Start localnet and confirm status/logs
+  - Run `make e2e-test-quick`, then re-run with logs open to correlate failures
+  - Identify one E2E scenario and explain the contract interactions at a high level
+- Wrap-up: document one “common failure mode” and its fix in the team knowledge base
+
+### Workshop 3 (120–180 min): Security Review Lab
+- Prep checklist: read [security.md](security.md) and [SECURITY_TESTING.md](SECURITY_TESTING.md)
+- Exercises:
+  - For a selected contract, list all privileged entrypoints and the authorization model
+  - Identify the state that must never be corrupted and the invariants that protect it
+  - Run clippy in strict mode and explain one lint finding (real or simulated) and the fix
+- Wrap-up: produce a short review note following the project’s security checklist style
+
+## Training Delivery
+
+### Session Runbook
+- Before: pick a track, assign a facilitator, and select modules/workshops to deliver
+- During: keep a shared notes document for questions and follow-ups
+- After: capture action items (doc gaps, tooling friction, recurring failures) and file issues
+
+### Team Training Plan Template
+- Week 1: Modules 1–2 + Workshop 1
+- Week 2: Modules 3–4 + Workshop 2
+- Week 3: Modules 5–6 + Workshop 3 (maintainers/release engineers)
+
+### Skills Matrix Template
+- Fundamentals: build, unit tests, repo layout, basic Soroban concepts
+- Quality: formatting, clippy, snapshots/tests, CI expectations
+- Operations: localnet lifecycle, E2E debugging, releases (as applicable)
+
+## Training Effectiveness
+
+Use the measurement framework in [tool-effectiveness-review.md](tool-effectiveness-review.md) to evaluate training outcomes. Track onboarding time, PR cycle time, incident/debug resolution time, and survey-based confidence before and after training.
 
 ## Certification
 
