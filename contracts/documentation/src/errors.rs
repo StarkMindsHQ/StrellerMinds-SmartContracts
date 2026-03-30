@@ -4,18 +4,31 @@ use soroban_sdk::contracterror;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum DocumentationError {
+    /// Contract has not been initialized yet.
     NotInitialized = 1,
+    /// Contract has already been initialized and cannot be re-initialized.
     AlreadyInitialized = 2,
+    /// Caller does not have the required permissions to perform this action.
     Unauthorized = 3,
+    /// The requested document was not found in storage.
     DocumentNotFound = 4,
+    /// The document data is malformed or fails validation.
     InvalidDocument = 5,
+    /// The requested document version was not found.
     VersionNotFound = 6,
+    /// The requested community contribution was not found.
     ContributionNotFound = 7,
+    /// The contribution data is malformed or fails validation.
     InvalidContribution = 8,
+    /// The requested translation was not found.
     TranslationNotFound = 9,
+    /// The specified language code is not recognized or supported.
     InvalidLanguage = 10,
+    /// The document content exceeds the configured maximum size limit.
     DocumentTooLarge = 11,
+    /// The provided status transition is not valid for the current state.
     InvalidStatus = 12,
+    /// A document, translation, or contribution with this ID already exists.
     AlreadyExists = 13,
 }
 

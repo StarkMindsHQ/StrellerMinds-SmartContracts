@@ -4,15 +4,25 @@ use soroban_sdk::contracterror;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum SearchError {
+    /// Contract has already been initialized and cannot be re-initialized.
     AlreadyInitialized = 1,
+    /// Contract has not been initialized yet.
     NotInitialized = 2,
+    /// Caller does not have the required permissions to perform this action.
     Unauthorized = 3,
+    /// The provided search query is malformed or empty.
     InvalidQuery = 4,
+    /// The requested content item was not found in storage.
     ContentNotFound = 5,
+    /// The provided semantic or visual metadata is invalid or malformed.
     InvalidMetadata = 6,
+    /// The provided similarity or quality score is out of the valid range.
     InvalidScore = 7,
+    /// The conversation session has expired or does not exist.
     SessionExpired = 8,
+    /// The specified language code is not recognized or supported.
     InvalidLanguage = 9,
+    /// The oracle address is not in the authorized oracle list.
     OracleNotAuthorized = 10,
 }
 

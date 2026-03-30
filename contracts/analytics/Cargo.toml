@@ -23,3 +23,6 @@ soroban-sdk = { workspace = true, features = ["testutils"] }
 
 [features]
 testutils = ["soroban-sdk/testutils"]
+
+[package.metadata.docs.rs]
+all-features = true

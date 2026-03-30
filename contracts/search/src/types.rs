@@ -37,80 +37,113 @@ pub enum ExecutionFrequency {
 // OPTIONAL WRAPPER TYPES (Soroban doesn't support Option<T> in contracttype)
 // ============================================================================
 
+/// Optional wrapper for `DurationRange` (Soroban does not support `Option<T>` in `contracttype`).
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeDurationRange {
+    /// No duration range specified.
     None,
+    /// A duration range value is present.
     Some(DurationRange),
 }
 
+/// Optional wrapper for `PriceRange`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybePriceRange {
+    /// No price range specified.
     None,
+    /// A price range value is present.
     Some(PriceRange),
 }
 
+/// Optional wrapper for `RatingRange`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeRatingRange {
+    /// No rating range specified.
     None,
+    /// A rating range value is present.
     Some(RatingRange),
 }
 
+/// Optional wrapper for `DateRange`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeDateRange {
+    /// No date range specified.
     None,
+    /// A date range value is present.
     Some(DateRange),
 }
 
+/// Optional wrapper for `CompletionRange`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeCompletionRange {
+    /// No completion range specified.
     None,
+    /// A completion range value is present.
     Some(CompletionRange),
 }
 
+/// Optional wrapper for a boolean value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeBool {
+    /// No boolean value specified.
     None,
+    /// A boolean value is present.
     Some(bool),
 }
 
+/// Optional wrapper for `SortField`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeSortField {
+    /// No sort field specified.
     None,
+    /// A sort field value is present.
     Some(SortField),
 }
 
+/// Optional wrapper for `ExecutionFrequency`.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeExecutionFrequency {
+    /// No execution frequency specified.
     None,
+    /// An execution frequency value is present.
     Some(ExecutionFrequency),
 }
 
+/// Optional wrapper for a `u64` value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeU64 {
+    /// No u64 value specified.
     None,
+    /// A u64 value is present.
     Some(u64),
 }
 
+/// Optional wrapper for a `String` value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeString {
+    /// No string value specified.
     None,
+    /// A string value is present.
     Some(String),
 }
 
+/// Optional wrapper for an `Address` value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeAddress {
+    /// No address specified.
     None,
+    /// An address value is present.
     Some(Address),
 }
 

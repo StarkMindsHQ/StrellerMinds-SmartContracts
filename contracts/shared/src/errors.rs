@@ -7,30 +7,45 @@ use crate::error_codes::{ErrorCodeCategory, ErrorDescriptor, StandardizedError};
 #[repr(u32)]
 pub enum AccessControlError {
     // Initialization errors
+    /// The access control module has already been initialized.
     AlreadyInitialized = 1,
+    /// The access control module has not been initialized yet.
     NotInitialized = 2,
 
     // Authorization errors
+    /// Caller does not have the required authority to perform this action.
     Unauthorized = 3,
+    /// The specified role does not exist in the system.
     RoleNotFound = 4,
+    /// The caller's role does not grant the required permission.
     PermissionDenied = 5,
 
     // Role management errors
+    /// A role with this identifier has already been registered.
     RoleAlreadyExists = 6,
+    /// An admin cannot revoke their own role.
     CannotRevokeOwnRole = 7,
+    /// An admin cannot transfer their own role to another address.
     CannotTransferOwnRole = 8,
 
     // Permission errors
+    /// The provided permission identifier is not recognized.
     InvalidPermission = 9,
+    /// The requested permission has not been granted to the caller.
     PermissionNotGranted = 10,
 
     // Role hierarchy errors
+    /// The specified role hierarchy relationship is not valid.
     InvalidRoleHierarchy = 11,
+    /// A role cannot grant permissions to a higher-ranked role.
     CannotGrantHigherRole = 12,
 
     // Input validation errors
+    /// The provided address is invalid or zero.
     InvalidAddress = 13,
+    /// The provided role identifier is invalid or empty.
     InvalidRole = 14,
+    /// The requested role template was not found.
     TemplateNotFound = 15,
 }
 
