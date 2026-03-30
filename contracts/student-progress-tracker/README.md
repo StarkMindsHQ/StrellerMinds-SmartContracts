@@ -1,65 +1,72 @@
 # Student Progress Tracker Contract
 
-## Overview
-A specialized contract for tracking individual student progress through course modules. This contract provides granular progress tracking with percentage-based completion for each module, enabling detailed learning analytics and personalized educational experiences.
+## Purpose
 
-## Interface
+The Student Progress Tracker contract provides fine-grained, per-module progress tracking for students on the StrellerMinds platform. Unlike the `progress` contract which stores a single aggregate percentage per course, this contract stores a map of module completion percentages keyed by `(student, course_id)` — enabling detailed curriculum dashboards, adaptive learning paths, and per-module gating logic. All updates emit `ProgressUpdated` events consumed by analytics and gamification contracts.
 
-### Core Functions
-```rust
-// Initialize the contract with admin
-fn initialize(env: Env, admin: Address)
+## Architecture
 
-// Update student progress for a specific module
-fn update_progress(env: Env, student: Address, course_id: Symbol, module_id: Symbol, percent: u32)
+| Module | Description |
+|---|---|
+| `src/lib.rs` | Contract entrypoint — defines the `Progress` and `DataKey` types inline and exposes `initialize`, `update_progress`, `get_progress`, and `get_admin` |
+| `src/errors.rs` | `StudentProgressError` enum covering initialization state, authorization, admin state, and validation |
+| `src/gas_optimized.rs` | Gas-optimized batch update utilities |
+| `src/test.rs` | Unit test suite |
 
-// Result-based variant for callers that need explicit error handling
-fn update_progress_safe(
-  env: Env,
-  student: Address,
-  course_id: Symbol,
-  module_id: Symbol,
-  percent: u32,
-) -> Result<(), ProgressError>
+## Public API
 
-// Circuit breaker operations (admin)
-fn configure_circuit_breaker(
-  env: Env,
-  admin: Address,
-  failure_threshold: u32,
-  recovery_timeout_seconds: u64,
-  half_open_max_calls: u32,
-  half_open_success_threshold: u32,
-) -> Result<(), ProgressError>
+| Function | Description | Auth Required |
+|---|---|---|
+| `initialize(admin)` | One-time setup; sets the admin address in instance storage | Yes — `admin` must sign |
+| `update_progress(student, course_id, module_id, percent)` | Stores or updates the completion percentage (0–100) for a specific module within a course | Yes — `student` (or admin if student is admin) |
+| `get_progress(student, course_id)` | Returns a `Map<Symbol, u32>` of module IDs to completion percentages; empty map if none recorded | No |
+| `get_admin()` | Returns the stored admin address | No |
 
-fn report_operation_failure(env: Env, admin: Address) -> Result<(), ProgressError>
-fn reset_circuit_breaker(env: Env, admin: Address) -> Result<(), ProgressError>
-fn get_circuit_breaker_status(env: Env) -> CircuitBreakerStatus
+## Usage Example
 
-// Get student progress for a course
-fn get_progress(env: Env, student: Address, course_id: Symbol) -> Map<Symbol, u32>
+```text
+# Initialize
+tracker.initialize(admin_address)
 
-// Get admin address
-fn get_admin(env: Env) -> Address
+# Student completes 80% of module-1 in course rust-101
+tracker.update_progress(student_address, "rust-101", "module-1", 80)
+
+# Student finishes module-1 and starts module-2
+tracker.update_progress(student_address, "rust-101", "module-1", 100)
+tracker.update_progress(student_address, "rust-101", "module-2", 30)
+
+# Query all module progress for this student in rust-101
+progress_map = tracker.get_progress(student_address, "rust-101")
+# returns { "module-1": 100, "module-2": 30 }
 ```
 
-## Events
+## Errors
 
-### Progress Events
-- `progress_updated`: Emitted when student progress is updated
-  - Contains: student address, course_id, module_id, completion percentage
+For the full error code reference and conventions, see [ERROR_HANDLING.md](../../docs/ERROR_HANDLING.md).
 
-## Configuration
+| Code | Variant | Meaning |
+|---|---|---|
+| 1 | `AlreadyInitialized` | `initialize` has already been called |
+| 2 | `NotInitialized` | Contract has not been initialized yet |
+| 10 | `Unauthorized` | Caller does not have the required permissions |
+| 11 | `AdminNotSet` | Admin address is missing from storage (contract not initialized) |
+| 20 | `InvalidPercent` | Supplied completion percentage exceeds 100 |
 
-### Progress Tracking Configuration
-- **Module Progress**: Percentage-based completion (0-100%)
-- **Course Identification**: Symbol-based course IDs
-- **Student Identification**: Address-based student identification
-- **Admin Management**: Single admin address for contract management
+## Integration
 
-### Storage Structure
-- **Instance Storage**: Admin address
-- **Persistent Storage**: Student progress maps organized by (student, course_id)
+| Contract | Relationship |
+|---|---|
+| `progress` | Complementary contract storing single aggregate percentages per course; this contract handles per-module granularity |
+| `analytics` | Consumes `ProgressUpdated` events for module-level engagement and time-on-task reporting |
+| `gamification` | May read module completion maps to unlock module-specific achievements and XP rewards |
+| `shared` | Uses event schema macros (`emit_progress_event!`, `emit_access_control_event!`) |
+
+## Reliability: Circuit Breaker
+
+- `update_progress` is protected by a circuit breaker.
+- Breaker states: `Closed`, `Open`, `HalfOpen`.
+- Emitted monitoring topics: `config`, `failure`, `open`, `halfopen`, `closed`, `blocked`, `reset`.
+- Persisted failure increments are handled by explicit `report_operation_failure` calls from authorized operators.
 
 ## Testing
 
@@ -73,137 +80,3 @@ cargo test --package student-progress-tracker test::test_initialization
 cargo test --package student-progress-tracker test::test_progress_updates
 cargo test --package student-progress-tracker test::test_progress_retrieval
 ```
-
-### Test Coverage
-- **Initialization Tests**: Contract setup and admin configuration
-- **Progress Update Tests**: Module progress tracking functionality
-- **Progress Retrieval Tests**: Getting student progress data
-- **Authorization Tests**: Admin and student permission validation
-- **Edge Case Tests**: Boundary condition handling (0%, 100%, invalid percentages)
-
-## Deployment
-
-### Prerequisites
-- Admin address for contract initialization
-- Course structure definitions
-
-### Deployment Steps
-1. Deploy the student-progress-tracker contract
-2. Initialize with admin address
-3. Begin tracking student progress for courses
-4. Set up progress monitoring and analytics
-
-### Environment Setup
-- Set admin address for contract initialization
-- Define course and module structures
-- Configure progress tracking parameters
-- Set up event monitoring for progress updates
-
-## Usage Examples
-
-### Initializing the Contract
-```rust
-let admin = Address::generate(&env);
-client.initialize(&admin);
-```
-
-### Updating Student Progress
-```rust
-let student = Address::generate(&env);
-let course_id = Symbol::short("BLOCKCHAIN101");
-let module_id = Symbol::short("MODULE1");
-let progress_percent = 75u32; // 75% complete
-
-client.update_progress(&student, &course_id, &module_id, &progress_percent);
-```
-
-### Getting Student Progress
-```rust
-let progress_map = client.get_progress(&student, &course_id);
-// progress_map contains module_id -> percentage mappings
-```
-
-### Admin Operations
-```rust
-let admin_addr = client.get_admin();
-// Admin can update progress for any student
-client.update_progress(&admin, &course_id, &module_id, &100u32);
-```
-
-## Data Structures
-
-### Progress Storage
-- **Key**: `(student_address, course_id)`
-- **Value**: `Map<Symbol, u32>` (module_id -> completion_percentage)
-- **Range**: 0-100% completion per module
-
-### Event Data
-```rust
-// Progress update event structure
-(
-    symbol_short!("progress"),
-    (
-        symbol_short!("updated"),
-        student: Address,
-        course_id: Symbol,
-        module_id: Symbol,
-        percent: u32,
-    ),
-)
-```
-
-## Key Features
-
-### Granular Progress Tracking
-- **Module-Level Tracking**: Individual progress for each course module
-- **Percentage-Based**: Precise completion tracking (0-100%)
-- **Real-Time Updates**: Immediate progress updates with event emission
-
-### Flexible Authorization
-- **Student Self-Update**: Students can update their own progress
-- **Admin Override**: Admin can update progress for any student
-- **Authentication Required**: All operations require proper authorization
-
-### Efficient Storage
-- **Persistent Storage**: Progress data persists across contract calls
-- **Map-Based Organization**: Efficient lookup by student and course
-- **Symbol Optimization**: Uses Soroban symbols for efficient storage
-
-### Reliability Controls
-- **Circuit Breaker Protection**: Critical write operation is guarded by `Closed/Open/HalfOpen` states
-- **Operational Failure Reporting**: Admin can persist failures through `report_operation_failure`
-- **Recovery Paths**: Supports cooldown-based half-open probing and manual reset
-- **Monitoring Signals**: Emits `circuit` events for config/failure/open/halfopen/closed/blocked/reset
-
-## Integration Points
-
-### With Progress Contract
-- **Complementary Functionality**: This contract provides detailed module-level tracking
-- **Course-Level Aggregation**: Can aggregate module progress to course-level completion
-- **Analytics Integration**: Provides data for learning analytics
-
-### With Analytics Contract
-- **Detailed Data Source**: Provides granular progress data for analytics
-- **Performance Metrics**: Enables detailed performance tracking
-- **Learning Path Optimization**: Supports personalized learning recommendations
-
-### With Certificate Contract
-- **Completion Verification**: Provides progress data for certificate eligibility
-- **Prerequisite Checking**: Supports prerequisite validation based on progress
-
-## Error Handling
-
-### Input Validation
-- **Percentage Range**: Automatically validates 0-100% range
-- **Panic on Invalid**: Panics if percentage exceeds 100%
-- **Symbol Validation**: Ensures valid course and module symbols
-
-### Authorization Checks
-- **Student Authentication**: Students must authenticate to update their progress
-- **Admin Override**: Admin can update any student's progress
-- **Address Validation**: Ensures valid student and admin addresses
-
-## Related Docs
-- [Progress Contract](./progress/README.md)
-- [Analytics Contract](./analytics/README.md)
-- [Development Guide](../docs/development.md)

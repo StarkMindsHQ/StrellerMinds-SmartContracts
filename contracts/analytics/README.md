@@ -1,88 +1,42 @@
-# Course Progress Analytics Contract
+# Analytics Contract
 
-A comprehensive analytics system for tracking detailed learning progress, completion rates, and performance metrics in educational platforms.
+## Purpose
 
-## Overview
+The Analytics contract is the on-chain event ledger for learning session data on the StrellerMinds platform. It records the start and completion of individual study sessions identified by unique 32-byte session IDs, emitting structured events on each transition. These events feed off-chain pipelines and the platform's reporting dashboards, providing auditable evidence of learner engagement that complements the progress and student-progress-tracker contracts.
 
-The Analytics contract provides advanced learning analytics capabilities including:
+## Architecture
 
-- **Detailed Progress Tracking**: Session-level learning data with time tracking
-- **Performance Metrics**: Comprehensive calculation of student and course performance
-- **Completion Rate Analytics**: Course and module completion analysis
-- **Time-based Reports**: Daily, weekly, and monthly progress reports
-- **Achievement System**: Automated achievement detection and awarding
-- **Leaderboards**: Performance-based ranking systems
-- **Gas-optimized Storage**: Efficient data storage and retrieval
+| Module | Description |
+|---|---|
+| `src/lib.rs` | Contract entrypoint — exposes `initialize`, `record_session`, `complete_session`, `get_session`, and `get_admin`; emits `SessionRecorded` / `SessionCompleted` events via shared macros |
+| `src/errors.rs` | `AnalyticsError` enum covering initialization state, authorization, session validation, data quality, and oracle trust |
+| `src/gas_optimized.rs` | Gas-optimized batch session recording utilities |
 
-## Features
+## Public API
 
-### Core Analytics
-- Learning session recording and completion tracking
-- Real-time progress analytics calculation
-- Course-wide performance metrics
-- Module difficulty analysis
-- Student performance trends
+| Function | Description | Auth Required |
+|---|---|---|
+| `initialize(admin)` | One-time setup; records the admin address | No (open, call once) |
+| `record_session(user, session_id)` | Records the start of a 32-byte-identified learning session for `user`; emits `SessionRecorded` | Yes — `user` |
+| `complete_session(user, session_id)` | Marks a previously recorded session as complete; emits `SessionCompleted` | Yes — `user` |
+| `get_session(session_id)` | Returns the session data for a given session ID, or `None` | No |
+| `get_admin()` | Returns the admin address, or `None` if not initialized | No |
 
-### Reporting System
-- Custom time-period reports
-- Daily aggregated metrics
-- Weekly and monthly summaries
-- Completion trend analysis
-- Performance comparisons
+## Usage Example
 
-### Achievement System
-- Automatic achievement detection
-- Multiple achievement types (Completion, Streak, Excellence, etc.)
-- Achievement history tracking
-- Milestone notifications
+```text
+# Initialize
+analytics.initialize(admin_address)
 
-### Administrative Features
-- Configurable analytics parameters
-- Bulk data operations
-- Data cleanup utilities
-- Performance optimization tools
-- Circuit breaker configuration and incident recovery controls
+# Student starts a study session (session_id is a 32-byte unique identifier)
+session_id = generate_unique_session_id()
+analytics.record_session(student_address, session_id)
 
-## Contract Interface
+# Student finishes the session
+analytics.complete_session(student_address, session_id)
 
-### Core Functions
-
-```rust
-// Initialize the contract
-fn initialize(env: Env, admin: Address, config: AnalyticsConfig) -> Result<(), AnalyticsError>
-
-// Record a learning session
-fn record_session(env: Env, session: LearningSession) -> Result<(), AnalyticsError>
-
-// Complete a session with final metrics
-fn complete_session(
-    env: Env,
-    session_id: BytesN<32>,
-    end_time: u64,
-    final_score: Option<u32>,
-    completion_percentage: u32,
-) -> Result<(), AnalyticsError>
-
-// Get progress analytics for a student
-fn get_progress_analytics(
-    env: Env,
-    student: Address,
-    course_id: Symbol,
-) -> Result<ProgressAnalytics, AnalyticsError>
-
-// Circuit breaker management (admin)
-fn configure_circuit_breaker(
-    env: Env,
-    admin: Address,
-    failure_threshold: u32,
-    recovery_timeout_seconds: u64,
-    half_open_max_calls: u32,
-    half_open_success_threshold: u32,
-) -> Result<(), Error>
-
-fn report_operation_failure(env: Env, admin: Address) -> Result<(), Error>
-fn reset_circuit_breaker(env: Env, admin: Address) -> Result<(), Error>
-fn get_circuit_breaker_status(env: Env) -> CircuitBreakerStatus
+# Verify the session exists
+session_data = analytics.get_session(session_id)
 ```
 
 ## Reliability: Circuit Breaker
@@ -92,279 +46,41 @@ fn get_circuit_breaker_status(env: Env) -> CircuitBreakerStatus
 - Emitted monitoring topics: `config`, `failure`, `open`, `halfopen`, `closed`, `blocked`, `reset`.
 - Because reverted Soroban transactions roll back state, persisted failure increments are handled by explicit `report_operation_failure` calls from authorized operators.
 
-### Analytics Functions
+## Errors
 
-```rust
-// Get course-wide analytics
-fn get_course_analytics(env: Env, course_id: Symbol) -> Result<CourseAnalytics, AnalyticsError>
+For the full error code reference and conventions, see [ERROR_HANDLING.md](../../docs/ERROR_HANDLING.md).
 
-// Get module-specific analytics
-fn get_module_analytics(
-    env: Env,
-    course_id: Symbol,
-    module_id: Symbol,
-) -> Result<ModuleAnalytics, AnalyticsError>
+| Code | Variant | Meaning |
+|---|---|---|
+| 1 | `AlreadyInitialized` | `initialize` has already been called |
+| 2 | `NotInitialized` | Contract has not been initialized yet |
+| 3 | `Unauthorized` | Caller is not authorized |
+| 4 | `InvalidSessionData` | Session data is malformed or missing required fields |
+| 5 | `InvalidTimeRange` | Time range is invalid or out of order |
+| 6 | `InvalidScore` | Score value is out of valid bounds |
+| 7 | `InvalidPercentage` | Percentage value is outside 0–100 |
+| 8 | `SessionTooShort` | Session duration is below the minimum threshold |
+| 9 | `SessionTooLong` | Session duration exceeds the maximum threshold |
+| 10 | `SessionNotFound` | No session found for the given ID |
+| 11 | `StudentNotFound` | No data found for the given student address |
+| 12 | `CourseNotFound` | No data found for the given course ID |
+| 13 | `ModuleNotFound` | No data found for the given module ID |
+| 14 | `ReportNotFound` | No report found for the given ID |
+| 15 | `SessionAlreadyExists` | A session with this ID has already been recorded |
+| 16 | `SessionNotCompleted` | Operation requires the session to be in completed state |
+| 17 | `InsufficientData` | Not enough data to compute the requested result |
+| 18 | `InvalidBatchSize` | Batch size is zero or exceeds the allowed maximum |
+| 19 | `StorageError` | An internal storage read or write failed |
+| 20 | `InvalidConfiguration` | Contract configuration is missing or invalid |
+| 21 | `UnauthorizedOracle` | Oracle address is not registered as a trusted source |
+| 22 | `InvalidInsightData` | Insight data is malformed or missing required fields |
+| 23 | `InsightNotFound` | No insight record found for the given ID |
 
-// Generate leaderboard
-fn generate_leaderboard(
-    env: Env,
-    course_id: Symbol,
-    metric: LeaderboardMetric,
-    limit: u32,
-) -> Result<Vec<LeaderboardEntry>, AnalyticsError>
-```
+## Integration
 
-### Reporting Functions
-
-```rust
-// Generate progress report
-fn generate_progress_report(
-    env: Env,
-    student: Address,
-    course_id: Symbol,
-    period: ReportPeriod,
-    start_date: u64,
-    end_date: u64,
-) -> Result<ProgressReport, AnalyticsError>
-
-// Generate daily metrics
-fn generate_daily_metrics(
-    env: Env,
-    course_id: Symbol,
-    date: u64,
-) -> Result<AggregatedMetrics, AnalyticsError>
-```
-
-## Data Types
-
-### Learning Session
-```rust
-pub struct LearningSession {
-    pub session_id: BytesN<32>,
-    pub student: Address,
-    pub course_id: Symbol,
-    pub module_id: Symbol,
-    pub start_time: u64,
-    pub end_time: u64,
-    pub completion_percentage: u32,
-    pub time_spent: u64,
-    pub interactions: u32,
-    pub score: Option<u32>,
-    pub session_type: SessionType,
-}
-```
-
-### Progress Analytics
-```rust
-pub struct ProgressAnalytics {
-    pub student: Address,
-    pub course_id: Symbol,
-    pub total_modules: u32,
-    pub completed_modules: u32,
-    pub completion_percentage: u32,
-    pub total_time_spent: u64,
-    pub average_session_time: u64,
-    pub total_sessions: u32,
-    pub last_activity: u64,
-    pub first_activity: u64,
-    pub average_score: Option<u32>,
-    pub streak_days: u32,
-    pub performance_trend: PerformanceTrend,
-}
-```
-
-### Course Analytics
-```rust
-pub struct CourseAnalytics {
-    pub course_id: Symbol,
-    pub total_students: u32,
-    pub active_students: u32,
-    pub completion_rate: u32,
-    pub average_completion_time: u64,
-    pub average_score: Option<u32>,
-    pub dropout_rate: u32,
-    pub most_difficult_module: Option<Symbol>,
-    pub easiest_module: Option<Symbol>,
-    pub total_time_invested: u64,
-}
-```
-
-## Usage Examples
-
-### Recording a Learning Session
-
-```rust
-let session = LearningSession {
-    session_id: BytesN::from_array(&env, &[1u8; 32]),
-    student: student_address,
-    course_id: Symbol::new(&env, "RUST101"),
-    module_id: Symbol::new(&env, "module_1"),
-    start_time: env.ledger().timestamp(),
-    end_time: 0,
-    completion_percentage: 0,
-    time_spent: 0,
-    interactions: 0,
-    score: None,
-    session_type: SessionType::Study,
-};
-
-client.record_session(&session)?;
-```
-
-### Completing a Session
-
-```rust
-let end_time = env.ledger().timestamp() + 1800; // 30 minutes later
-let final_score = Some(85u32);
-let completion_percentage = 100u32;
-
-client.complete_session(
-    &session_id,
-    &end_time,
-    &final_score,
-    &completion_percentage,
-)?;
-```
-
-### Getting Analytics
-
-```rust
-// Student progress analytics
-let progress = client.get_progress_analytics(&student, &course_id)?;
-
-// Course analytics
-let course_stats = client.get_course_analytics(&course_id)?;
-
-// Generate leaderboard
-let leaderboard = client.generate_leaderboard(
-    &course_id,
-    &LeaderboardMetric::TotalScore,
-    &10,
-)?;
-```
-
-### Generating Reports
-
-```rust
-// Weekly progress report
-let report = client.generate_progress_report(
-    &student,
-    &course_id,
-    &ReportPeriod::Weekly,
-    &start_date,
-    &end_date,
-)?;
-
-// Daily metrics
-let metrics = client.generate_daily_metrics(&course_id, &date)?;
-```
-
-## Configuration
-
-### Analytics Configuration
-```rust
-pub struct AnalyticsConfig {
-    pub min_session_time: u64,        // Minimum valid session duration
-    pub max_session_time: u64,        // Maximum valid session duration
-    pub streak_threshold: u64,        // Time threshold for maintaining streaks
-    pub active_threshold: u64,        // Time threshold for active students
-    pub difficulty_thresholds: DifficultyThresholds,
-}
-```
-
-### Difficulty Thresholds
-```rust
-pub struct DifficultyThresholds {
-    pub easy_completion_rate: u32,    // >80% completion rate
-    pub medium_completion_rate: u32,  // 60-80% completion rate
-    pub hard_completion_rate: u32,    // 40-60% completion rate
-    // <40% is classified as VeryHard
-}
-```
-
-## Performance Optimization
-
-### Gas Optimization Features
-- Batch session processing (up to 50 sessions per transaction)
-- Aggregated daily metrics to reduce query complexity
-- Efficient storage patterns with persistent and instance storage
-- Configurable cleanup for old data
-
-### Storage Strategy
-- **Persistent Storage**: Session data, analytics, reports
-- **Instance Storage**: Configuration, admin settings
-- **Aggregated Data**: Daily metrics for efficient querying
-- **Indexed Access**: Student-course mappings for fast retrieval
-
-## Events
-
-The contract emits comprehensive events for all major operations:
-
-- `session_recorded`: New learning session started
-- `session_completed`: Learning session finished
-- `progress_updated`: Student progress analytics updated
-- `achievement_earned`: Student earned new achievement
-- `leaderboard_updated`: Course leaderboard recalculated
-- `report_generated`: Progress report created
-- `batch_processed`: Batch operation completed
-
-## Security Features
-
-- **Authorization**: All operations require proper authentication
-- **Input Validation**: Comprehensive validation of all input data
-- **Admin Controls**: Protected administrative functions
-- **Data Integrity**: Validation of session durations, scores, and percentages
-
-## Testing
-
-The contract includes comprehensive test suites:
-
-- **Unit Tests**: Individual function testing
-- **Integration Tests**: Complete workflow testing
-- **Performance Tests**: Gas optimization validation
-- **Edge Case Tests**: Boundary condition handling
-
-## Frontend Integration
-
-### Key Integration Points
-
-1. **Session Tracking**: Record learning sessions in real-time
-2. **Progress Display**: Show student progress analytics
-3. **Leaderboards**: Display course rankings
-4. **Reports**: Generate and display progress reports
-5. **Achievements**: Show earned achievements and milestones
-
-### API Patterns
-
-```javascript
-// Record session start
-await contract.record_session(sessionData);
-
-// Update session progress
-await contract.complete_session(sessionId, endTime, score, completion);
-
-// Get analytics
-const progress = await contract.get_progress_analytics(student, courseId);
-const courseStats = await contract.get_course_analytics(courseId);
-
-// Generate reports
-const report = await contract.generate_progress_report(
-    student, courseId, period, startDate, endDate
-);
-```
-
-## Deployment
-
-1. Deploy the contract with initial configuration
-2. Set up admin permissions
-3. Configure analytics parameters
-4. Initialize course data
-5. Begin session recording
-
-## Future Enhancements
-
-- Machine learning integration for predictive analytics
-- Advanced visualization data preparation
-- Real-time notifications and alerts
-- Integration with external learning management systems
-- Advanced reporting with custom metrics
+| Contract | Relationship |
+|---|---|
+| `progress` | Emits `ProgressUpdated` events that analytics pipelines correlate with session data |
+| `student-progress-tracker` | Emits `ProgressUpdated` events at module granularity for analytics aggregation |
+| `token` | Emits `TokensMinted` / `TokensTransferred` events that analytics may include in reward reports |
+| `shared` | Uses event schema macros (`emit_analytics_event!`, `emit_access_control_event!`) |

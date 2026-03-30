@@ -35,3 +35,7 @@ path = "tests/integration.rs"
 [[test]]
 name = "analytics_integration"
 path = "tests/analytics_integration.rs"
+
+[[test]]
+name = "scalability"
+path = "tests/scalability.rs"

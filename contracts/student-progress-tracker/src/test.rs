@@ -1,4 +1,5 @@
 use super::*;
+use crate::errors::StudentProgressError;
 use shared::circuit_breaker::CircuitState;
 use soroban_sdk::{
     symbol_short,
@@ -126,7 +127,6 @@ fn test_update_progress_admin_auth() {
 }
 
 #[test]
-#[should_panic(expected = "percentage cannot be more than 100")]
 fn test_update_progress_invalid_percentage() {
     let (env, client, admin, student) = setup_test_env();
 
@@ -146,7 +146,7 @@ fn test_update_progress_invalid_percentage() {
     let module_id = symbol_short!("MOD1");
     let invalid_percent = 150u32; // > 100
 
-    // Test that percentage > 100 panics
+    // Test that percentage > 100 returns InvalidPercent error
     env.mock_auths(&[MockAuth {
         address: &student,
         invoke: &MockAuthInvoke {
@@ -158,8 +158,8 @@ fn test_update_progress_invalid_percentage() {
         },
     }]);
 
-    // Should panic due to invalid percentage
-    client.update_progress(&student, &course_id, &module_id, &invalid_percent);
+    let result = client.try_update_progress(&student, &course_id, &module_id, &invalid_percent);
+    assert_eq!(result, Err(Ok(StudentProgressError::InvalidPercent)));
 }
 
 #[test]
@@ -450,12 +450,12 @@ fn test_update_progress_overwrites_existing() {
 }
 
 #[test]
-#[should_panic(expected = "admin not set")]
 fn test_get_admin_not_initialized() {
     let (_env, client, _admin, _student) = setup_test_env();
 
-    // Test getting admin before initialization (should panic)
-    client.get_admin();
+    // Test getting admin before initialization returns AdminNotSet error
+    let result = client.try_get_admin();
+    assert_eq!(result, Err(Ok(StudentProgressError::AdminNotSet)));
 }
 
 #[test]
