@@ -27,6 +27,20 @@ pub struct ProgressTracker;
 
 #[contractimpl]
 impl ProgressTracker {
+    /// Initializes the progress tracker and sets the admin address.
+    ///
+    /// Requires authorization from `admin`. Must be called once before any other function.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that will have administrative control.
+    ///
+    /// # Errors
+    /// Returns [`StudentProgressError::AlreadyInitialized`] if called more than once.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin);
+    /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), StudentProgressError> {
         admin.require_auth();
 
@@ -40,6 +54,24 @@ impl ProgressTracker {
         Ok(())
     }
 
+    /// Records or updates a student's module completion percentage for a course.
+    ///
+    /// Requires authorization from `student` (or admin if student is the admin).
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student whose progress is being updated.
+    /// * `course_id` - Symbol identifier for the course.
+    /// * `module_id` - Symbol identifier for the module within the course.
+    /// * `percent` - Completion percentage, must be in the range 0–100.
+    ///
+    /// # Errors
+    /// Returns [`StudentProgressError::InvalidPercent`] if `percent` is greater than 100.
+    /// Returns [`StudentProgressError::AdminNotSet`] if the contract has not been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.update_progress(&student, &course_id, &module_id, &80u32);
+    /// ```
     pub fn update_progress(
         env: Env,
         student: Address,
@@ -82,11 +114,32 @@ impl ProgressTracker {
         Ok(())
     }
 
+    /// Returns a map of module IDs to completion percentages for a student in a course.
+    ///
+    /// Returns an empty map if no progress has been recorded yet.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student to query.
+    /// * `course_id` - Symbol identifier for the course.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let progress_map = client.get_progress(&student, &course_id);
+    /// ```
     pub fn get_progress(env: Env, student: Address, course_id: Symbol) -> Map<Symbol, u32> {
         let key = DataKey::Progress(student, course_id);
         env.storage().persistent().get(&key).unwrap_or(Map::new(&env))
     }
 
+    /// Returns the admin address stored during initialization.
+    ///
+    /// # Errors
+    /// Returns [`StudentProgressError::AdminNotSet`] if the contract has not been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let admin = client.get_admin();
+    /// ```
     pub fn get_admin(env: Env) -> Result<Address, StudentProgressError> {
         env.storage().instance().get(&DataKey::Admin).ok_or(StudentProgressError::AdminNotSet)
     }

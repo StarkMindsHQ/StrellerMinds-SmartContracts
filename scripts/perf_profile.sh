@@ -51,7 +51,7 @@ run_test_timing() {   # run_test_timing <label> <cargo_args...>
 
     # milliseconds (handle systems without %N)
     if [[ "${#start}" -gt 10 ]]; then
-        elapsed_ms=$(( (end - start) / 1_000_000 ))
+        elapsed_ms=$(( (end - start) / 1000000 ))
     else
         elapsed_ms=$(( (end - start) * 1000 ))
     fi

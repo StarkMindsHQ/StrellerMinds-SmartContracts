@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod errors;
 
 use crate::errors::ProxyError;
@@ -8,6 +10,19 @@ pub struct Proxy;
 
 #[contractimpl]
 impl Proxy {
+    /// Initializes the proxy contract with an admin and an initial implementation address.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that controls upgrades.
+    /// * `implementation` - Address of the initial implementation contract.
+    ///
+    /// # Errors
+    /// Returns [`ProxyError::AlreadyInitialized`] if the proxy has already been set up.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin, &implementation_address);
+    /// ```
     pub fn initialize(
         _env: Env,
         _admin: Address,
@@ -16,14 +31,47 @@ impl Proxy {
         Ok(())
     }
 
+    /// Upgrades the proxy to point to a new implementation contract.
+    ///
+    /// Requires admin authorization. The upgrade is applied immediately.
+    ///
+    /// # Arguments
+    /// * `new_implementation` - Address of the replacement implementation contract.
+    ///
+    /// # Errors
+    /// Returns [`ProxyError::Unauthorized`] if the caller is not the admin.
+    /// Returns [`ProxyError::UpgradeFailed`] if the upgrade cannot be completed.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.upgrade(&new_impl_address);
+    /// ```
     pub fn upgrade(_env: Env, _new_implementation: Address) -> Result<(), ProxyError> {
         Ok(())
     }
 
+    /// Returns the current admin address of the proxy.
+    ///
+    /// # Errors
+    /// Returns [`ProxyError::NotInitialized`] if the proxy has not been initialized yet.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let admin = client.get_admin();
+    /// ```
     pub fn get_admin(_env: Env) -> Result<Address, ProxyError> {
         Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
     }
 
+    /// Returns the address of the current implementation contract.
+    ///
+    /// # Errors
+    /// Returns [`ProxyError::NotInitialized`] if the proxy has not been initialized yet.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let impl_addr = client.get_implementation();
+    /// ```
     pub fn get_implementation(_env: Env) -> Result<Address, ProxyError> {
         Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
     }

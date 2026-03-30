@@ -23,3 +23,6 @@ dlmalloc = { version = "0.2", features = ["global"] }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+
+[package.metadata.docs.rs]
+all-features = true
