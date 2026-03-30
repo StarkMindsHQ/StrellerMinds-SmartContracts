@@ -12,3 +12,6 @@ shared = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+
+[package.metadata.docs.rs]
+all-features = true

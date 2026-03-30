@@ -55,7 +55,7 @@ impl OfflineManager {
 
         let mut updated_ops = Vec::new(env);
         for op in queue.queued_operations.iter() {
-            let mut o = op.clone();
+            let mut o: QueuedOperation = op.clone();
             match Self::sync_single_operation(env, &o) {
                 Ok(()) => {
                     o.status = QueuedOperationStatus::Synced;
@@ -149,7 +149,7 @@ impl OfflineManager {
         let mut updated_ops = Vec::new(env);
 
         for op in queue.queued_operations.iter() {
-            let mut o = op.clone();
+            let mut o: QueuedOperation = op.clone();
             if o.status == QueuedOperationStatus::Conflict {
                 match resolution_strategy {
                     ConflictResolution::ServerWins | ConflictResolution::Abort => {

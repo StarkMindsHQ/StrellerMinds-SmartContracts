@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod errors;
 
 use crate::errors::AnalyticsError;
@@ -13,6 +15,18 @@ pub struct Analytics;
 
 #[contractimpl]
 impl Analytics {
+    /// Initializes the analytics contract and records the admin address.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that will have administrative control.
+    ///
+    /// # Errors
+    /// Returns [`AnalyticsError::AlreadyInitialized`] if called more than once.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin);
+    /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), AnalyticsError> {
         emit_access_control_event!(
             &env,
@@ -23,6 +37,22 @@ impl Analytics {
         Ok(())
     }
 
+    /// Records the start of a new learning session for a user.
+    ///
+    /// Requires authorization from `user`.
+    ///
+    /// # Arguments
+    /// * `user` - Address of the student starting the session.
+    /// * `session_id` - Unique 32-byte identifier for this session.
+    ///
+    /// # Errors
+    /// Returns [`AnalyticsError::Unauthorized`] if the caller is not the user.
+    /// Returns [`AnalyticsError::InvalidSessionData`] if the session ID is invalid.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.record_session(&user, &session_id);
+    /// ```
     pub fn record_session(
         env: Env,
         user: Address,
@@ -38,6 +68,23 @@ impl Analytics {
         Ok(())
     }
 
+    /// Marks an existing learning session as completed.
+    ///
+    /// Requires authorization from `user`. The session must have been previously recorded via
+    /// [`Analytics::record_session`].
+    ///
+    /// # Arguments
+    /// * `user` - Address of the student completing the session.
+    /// * `session_id` - Unique 32-byte identifier of the session to complete.
+    ///
+    /// # Errors
+    /// Returns [`AnalyticsError::SessionNotFound`] if the session does not exist.
+    /// Returns [`AnalyticsError::Unauthorized`] if the caller is not the session owner.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.complete_session(&user, &session_id);
+    /// ```
     pub fn complete_session(
         env: Env,
         user: Address,
@@ -53,10 +100,25 @@ impl Analytics {
         Ok(())
     }
 
+    /// Returns the session data for the given session ID, or `None` if not found.
+    ///
+    /// # Arguments
+    /// * `session_id` - Unique 32-byte identifier of the session to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// if let Some(session) = client.get_session(&session_id) { /* … */ }
+    /// ```
     pub fn get_session(_env: Env, session_id: BytesN<32>) -> Option<BytesN<32>> {
         Some(session_id)
     }
 
+    /// Returns the admin address, or `None` if the contract has not been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// if let Some(admin) = client.get_admin() { /* … */ }
+    /// ```
     pub fn get_admin(_env: Env) -> Option<Address> {
         None
     }

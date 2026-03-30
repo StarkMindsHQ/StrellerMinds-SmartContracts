@@ -112,10 +112,13 @@ pub enum SubmittedAnswerValue {
     Code(String),
 }
 
+/// A single submitted answer paired with its question identifier.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct SubmittedAnswer {
+    /// Identifier of the question being answered.
     pub question_id: u64,
+    /// The submitted answer value.
     pub value: SubmittedAnswerValue,
 }
 
