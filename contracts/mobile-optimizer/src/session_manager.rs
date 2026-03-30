@@ -5,6 +5,14 @@ use crate::types::*;
 pub struct SessionManager;
 
 impl SessionManager {
+    fn session_timeout_seconds(env: &Env) -> u64 {
+        env.storage()
+            .persistent()
+            .get::<DataKey, MobileOptimizerConfig>(&DataKey::Config)
+            .map(|config| config.session_timeout_seconds)
+            .unwrap_or(3600)
+    }
+
     pub fn create_session(
         env: &Env,
         user: Address,
@@ -19,7 +27,7 @@ impl SessionManager {
             device_id,
             created_at: env.ledger().timestamp(),
             last_activity: env.ledger().timestamp(),
-            expires_at: env.ledger().timestamp() + 86400,
+            expires_at: env.ledger().timestamp() + Self::session_timeout_seconds(env),
             network_quality: NetworkQuality::Good,
             cached_data: Map::new(env),
             pending_operations: Vec::new(env),
@@ -171,7 +179,7 @@ impl SessionManager {
             device_id: target_device_id,
             created_at: env.ledger().timestamp(),
             last_activity: env.ledger().timestamp(),
-            expires_at: env.ledger().timestamp() + 86400,
+            expires_at: env.ledger().timestamp() + Self::session_timeout_seconds(env),
             network_quality: NetworkQuality::Good,
             cached_data: source.cached_data.clone(),
             pending_operations: source.pending_operations.clone(),

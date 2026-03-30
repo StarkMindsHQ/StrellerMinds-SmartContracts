@@ -9,6 +9,7 @@ pub mod access_control {
     pub struct AccessControl;
 
     impl AccessControl {
+        /// Initialize the access control module with the given admin address.
         pub fn initialize(_env: &Env, _admin: &Address) -> Result<(), soroban_sdk::Error> {
             Ok(())
         }
@@ -21,6 +22,7 @@ pub mod reentrancy_guard {
     pub struct ReentrancyLock;
 
     impl ReentrancyLock {
+        /// Create a new reentrancy lock bound to the given environment.
         pub fn new(_env: &Env) -> Self {
             Self
         }
@@ -43,6 +45,7 @@ pub mod roles {
     }
 
     impl Permission {
+        /// Create a new default Permission instance.
         pub fn new() -> Self {
             Self
         }
@@ -59,15 +62,19 @@ pub mod error_handling {
     }
 
     impl CircuitBreakerState {
+        /// Create a new default CircuitBreakerState instance.
         pub fn new() -> Self {
             Self
         }
     }
 }
 
+pub mod config;
+pub mod error_codes;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+pub mod monitoring;
 
 #[cfg(test)]
 pub mod performance_tests;

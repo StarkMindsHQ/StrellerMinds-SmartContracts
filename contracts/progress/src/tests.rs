@@ -6,7 +6,7 @@
 //! - Gas-optimized `PackedProgress` bit-packing operations
 //! - Batch-update throughput benchmark
 
-use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env, Vec};
 
 use crate::{gas_optimized::PackedProgress, Progress, ProgressClient};
 
@@ -228,9 +228,13 @@ fn test_record_progress_bulk_50_updates_within_budget() {
 fn test_record_progress_20_students_concurrent_simulation() {
     let (env, client, _) = setup();
     let course_id = symbol_short!("PERF2");
-    let students: Vec<Address> = (0..20).map(|_| Address::generate(&env)).collect();
-    for student in &students {
-        client.record_progress(student, &course_id, &100u32);
+    let mut students = Vec::new(&env);
+    for _ in 0..20 {
+        students.push_back(Address::generate(&env));
+    }
+    for i in 0..students.len() {
+        let student = students.get(i).unwrap();
+        client.record_progress(&student, &course_id, &100u32);
     }
 }
 

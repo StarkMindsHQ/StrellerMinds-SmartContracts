@@ -8,7 +8,7 @@ This project maintains compatibility with the following versions:
 |-----------|---------|-------|
 | Rust Toolchain | stable | See `rust-toolchain.toml` for exact configuration |
 | Soroban SDK | 22.0.0 | Defined in workspace `Cargo.toml` |
-| Soroban CLI | Latest compatible with SDK 22.0.0 | Install via `cargo install soroban-cli` |
+| Soroban CLI | 21.5.0 | Pinned to the repo bootstrap/install workflow |
 | Stellar Strkey | 0.0.7 | Workspace dependency |
 | Ed25519 Dalek | 2.0.0 | Workspace dependency |
 | Rand | 0.8.5 | Workspace dependency |
@@ -33,7 +33,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 2. Install Soroban CLI:
 ```bash
-cargo install --locked soroban-cli
+cargo install --locked soroban-cli --version 21.5.0
 ```
 
 3. Add WebAssembly target:
@@ -250,6 +250,25 @@ cat docs/gas_optimization_analysis.md
 
 ```
 
+### Performance Benchmarking
+
+The repository also includes a lightweight benchmark and regression profile for
+critical contracts:
+
+```bash
+# Generate a timing report for the benchmark suites
+./scripts/perf_profile.sh --report target/perf_report.json
+
+# Save a fresh local baseline
+./scripts/perf_profile.sh --baseline
+
+# Compare the current run against a saved baseline
+./scripts/perf_profile.sh --compare target/perf_baseline.json
+```
+
+The CI pipeline runs this profiler and uploads `target/perf_report.json` as an
+artifact so performance drift can be tracked over time.
+
 ## Deployment
 
 
@@ -354,4 +373,3 @@ StrellerMinds-SmartContracts/
 3. Update documentation for new features
 4. Follow existing code patterns and RBAC integration
 5. Add appropriate tests for new functionality
-

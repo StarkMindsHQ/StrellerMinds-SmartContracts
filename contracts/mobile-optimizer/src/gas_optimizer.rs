@@ -48,7 +48,7 @@ impl GasOptimizer {
     ) -> Result<BatchGasOptimization, MobileOptimizerError> {
         let mut total_original = 0u64;
         let mut total_optimized = 0u64;
-        let mut all_suggestions = Vec::new(env);
+        let mut all_suggestions: Vec<OptimizationSuggestion> = Vec::new(env);
 
         for operation in operations.iter() {
             let estimate = Self::estimate_operation_gas(env, &operation, network_quality)?;

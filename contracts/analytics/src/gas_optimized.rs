@@ -80,7 +80,7 @@ pub fn record_event_optimized(env: &Env, learner: &Address, event_type: u32, val
         symbol_short!("analytics"),
         learner.clone(),
         AnalyticsEventData::MetricsUpdated(MetricsUpdatedEvent {
-            metric_id: Symbol::new(env, &event_type.to_string()),
+            metric_id: metric_id_symbol(env, event_type),
             new_value: value,
         })
     );
@@ -133,4 +133,13 @@ pub fn get_metrics(env: &Env) -> PackedMetrics {
 
 pub fn refresh_storage_ttls(env: &Env) {
     env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, 535_680);
+}
+
+fn metric_id_symbol(env: &Env, event_type: u32) -> Symbol {
+    match event_type {
+        0 => symbol_short!("views"),
+        1 => symbol_short!("complete"),
+        2 => symbol_short!("score"),
+        _ => Symbol::new(env, "unknown"),
+    }
 }

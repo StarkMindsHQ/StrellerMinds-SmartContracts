@@ -1,0 +1,44 @@
+groups:
+  - name: strellerminds-contracts
+    interval: 30s
+    rules:
+      - alert: ContractFailureRateHigh
+        expr: |
+          sum(rate(strellerminds_contract_failures_total[5m])) by (contract)
+          /
+          clamp_min(sum(rate(strellerminds_contract_calls_total[5m])) by (contract), 1)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: contracts
+        annotations:
+          summary: Contract failure rate is above 5%
+          description: Investigate recent execution errors, RPC health, and deployment drift.
+      - alert: ContractLatencyHigh
+        expr: max(strellerminds_contract_latency_ms) by (contract) > 750
+        for: 15m
+        labels:
+          severity: warning
+          service: contracts
+        annotations:
+          summary: Contract latency exceeded threshold
+          description: Recent contract execution latency is above the acceptable steady-state budget.
+      - alert: InfraBacklogGrowing
+        expr: max(strellerminds_infra_backlog) by (pipeline) > 100
+        for: 10m
+        labels:
+          severity: critical
+          service: infra
+        annotations:
+          summary: Off-chain backlog is growing
+          description: Indexers or event processors are accumulating pending work faster than they drain it.
+      - alert: LedgerLagDetected
+        expr: max(strellerminds_ledger_lag_seconds) > 120
+        for: 5m
+        labels:
+          severity: critical
+          service: infra
+        annotations:
+          summary: Ledger lag exceeded 120 seconds
+          description: RPC, ingestion, or exporter components may be behind the current ledger.
