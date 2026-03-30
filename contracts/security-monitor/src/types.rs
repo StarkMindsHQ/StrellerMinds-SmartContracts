@@ -1,4 +1,11 @@
+use shared::config::{ContractConfig, DeploymentEnv};
 use soroban_sdk::{contracttype, Address, BytesN, String, Symbol, Vec};
+
+/// Common aliases used across the security monitor to keep repetitive Soroban
+/// collection and identifier types readable.
+pub type ThreatId = BytesN<32>;
+pub type ThreatIdList = Vec<ThreatId>;
+pub type RiskFactorList = Vec<Symbol>;
 
 /// Security threat severity levels
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -45,7 +52,7 @@ pub enum MitigationAction {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SecurityThreat {
-    pub threat_id: BytesN<32>,
+    pub threat_id: ThreatId,
     pub threat_type: ThreatType,
     pub threat_level: ThreatLevel,
     pub detected_at: u64,
@@ -133,17 +140,35 @@ pub struct SecurityConfig {
 
 impl SecurityConfig {
     pub fn default_config() -> Self {
+        Self::for_env(DeploymentEnv::Production)
+    }
+
+    pub fn for_env(profile: DeploymentEnv) -> Self {
+        let defaults = ContractConfig::security(profile);
         Self {
-            burst_detection_threshold: 100, // 100 events
-            burst_window_seconds: 60,       // in 60 seconds
-            error_rate_threshold: 10,       // 10% error rate
-            actor_anomaly_threshold: 10,    // 10x normal behavior
-            circuit_breaker_threshold: 5,   // 5 failures
-            circuit_breaker_timeout: 300,   // 5 minutes
-            auto_mitigation_enabled: true,
-            rate_limit_per_window: 100, // 100 events
-            rate_limit_window: 3600,    // per hour
+            burst_detection_threshold: defaults.burst_detection_threshold,
+            burst_window_seconds: defaults.burst_window_seconds,
+            error_rate_threshold: defaults.error_rate_threshold,
+            actor_anomaly_threshold: defaults.actor_anomaly_threshold,
+            circuit_breaker_threshold: defaults.circuit_breaker_threshold,
+            circuit_breaker_timeout: defaults.circuit_breaker_timeout,
+            auto_mitigation_enabled: defaults.auto_mitigation_enabled,
+            rate_limit_per_window: defaults.rate_limit_per_window,
+            rate_limit_window: defaults.rate_limit_window,
         }
+    }
+
+    pub fn validate(&self) -> Result<(), crate::errors::SecurityError> {
+        if self.burst_detection_threshold == 0
+            || self.burst_window_seconds == 0
+            || self.circuit_breaker_threshold == 0
+            || self.rate_limit_per_window == 0
+            || self.rate_limit_window == 0
+        {
+            return Err(crate::errors::SecurityError::InvalidConfiguration);
+        }
+
+        Ok(())
     }
 }
 
@@ -181,19 +206,29 @@ pub struct SecurityRecommendation {
 pub enum SecurityDataKey {
     Config,
     Admin,
-    Threat(BytesN<32>),                // threat_id
-    ContractThreats(Symbol),           // contract -> Vec<BytesN<32>>
-    SecurityMetrics(Symbol, u64),      // (contract, window_id)
-    CircuitBreaker(Symbol, Symbol),    // (contract, function)
-    ActorEventCount(Address, u64),     // (actor, window_id)
-    ContractEventBaseline(Symbol),     // contract -> baseline metrics
-    Recommendation(BytesN<32>),        // recommendation_id
-    ThreatRecommendations(BytesN<32>), // threat_id -> Vec<BytesN<32>>
-    UserRiskScore(Address),            // user -> risk score data
-    ThreatIntelligence(Symbol),        // indicator_type -> intel data
-    TrainingStatus(Address),           // user -> training status
-    IncidentReport(BytesN<32>),        // incident_id
-    Oracle(Address),                   // Authorized oracle
+    Threat(ThreatId),                // threat_id
+    ContractThreats(Symbol),         // contract -> ThreatIdList
+    SecurityMetrics(Symbol, u64),    // (contract, window_id)
+    CircuitBreaker(Symbol, Symbol),  // (contract, function)
+    ActorEventCount(Address, u64),   // (actor, window_id)
+    ActorRateLimit(Address, Symbol), // (actor, contract)
+    ContractEventBaseline(Symbol),   // contract -> baseline metrics
+    Recommendation(ThreatId),        // recommendation_id
+    ThreatRecommendations(ThreatId), // threat_id -> ThreatIdList
+    UserRiskScore(Address),          // user -> risk score data
+    ThreatIntelligence(Symbol),      // indicator_type -> intel data
+    TrainingStatus(Address),         // user -> training status
+    IncidentReport(ThreatId),        // incident_id
+    Oracle(Address),                 // Authorized oracle
+}
+
+/// Persistent tracking for an actor's current rate-limit bucket.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct RateLimitState {
+    pub window_started_at: u64,
+    pub event_count: u32,
+    pub last_attempt_at: u64,
 }
 
 /// User Risk Score tracking
@@ -202,7 +237,7 @@ pub enum SecurityDataKey {
 pub struct UserRiskScore {
     pub score: u32, // 0-100, where 100 is maximum risk
     pub last_updated: u64,
-    pub risk_factors: Vec<Symbol>, // e.g., "FailedLogin", "AnomalousBehavior"
+    pub risk_factors: RiskFactorList, // e.g., "FailedLogin", "AnomalousBehavior"
 }
 
 /// Threat Intelligence data
@@ -220,9 +255,9 @@ pub struct ThreatIntelligence {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub struct IncidentReport {
-    pub incident_id: BytesN<32>,
+    pub incident_id: ThreatId,
     pub timestamp: u64,
-    pub threat_ids: Vec<BytesN<32>>,
+    pub threat_ids: ThreatIdList,
     pub impact_summary: String,
     pub actions_taken: Vec<MitigationAction>,
     pub status: Symbol, // e.g., "Open", "Mitigated", "Resolved"
