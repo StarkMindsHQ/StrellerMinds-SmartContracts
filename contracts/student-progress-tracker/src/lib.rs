@@ -131,7 +131,7 @@ impl ProgressTracker {
         }
 
         let admin: Address =
-            env.storage().instance().get(&DataKey::Admin).ok_or(ProgressError::NotInitialized)?
+            env.storage().instance().get(&DataKey::Admin).ok_or(ProgressError::NotInitialized)?;
         if student != admin {
             student.require_auth();
         } else {

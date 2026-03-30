@@ -17,8 +17,8 @@ pub struct CircuitBreakerConfig {
     pub half_open_success_threshold: u32,
 }
 
-impl CircuitBreakerConfig {
-    pub fn default() -> Self {
+impl Default for CircuitBreakerConfig {
+    fn default() -> Self {
         Self {
             failure_threshold: 3,
             recovery_timeout_seconds: 300,

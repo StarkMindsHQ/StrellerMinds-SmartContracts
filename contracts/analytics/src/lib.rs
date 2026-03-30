@@ -81,7 +81,7 @@ impl Analytics {
         env: Env,
         user: Address,
         session_id: BytesN<32>,
-    ) -> Result<(), AnalyticsError> {
+    ) -> Result<(), Error> {
         user.require_auth();
         Self::ensure_operational(&env)?;
 
@@ -128,7 +128,7 @@ impl Analytics {
         env: Env,
         user: Address,
         session_id: BytesN<32>,
-    ) -> Result<(), AnalyticsError> {
+    ) -> Result<(), Error> {
         user.require_auth();
         Self::ensure_operational(&env)?;
 
@@ -343,7 +343,6 @@ impl Analytics {
     }
 }
 
-pub mod errors;
 pub mod gas_optimized;
 
 #[cfg(test)]
