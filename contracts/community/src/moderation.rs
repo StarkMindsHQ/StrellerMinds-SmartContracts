@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::CommunityEvents;
 use crate::storage::CommunityStorage;
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct ModerationManager;
 
@@ -29,6 +30,15 @@ impl ModerationManager {
         reason: ReportReason,
         description: String,
     ) -> Result<u64, Error> {
+        // Validate description
+        CoreValidator::validate_soroban_string_length(
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+
         // Check daily report limit
         let now = env.ledger().timestamp();
         let _day_bucket = now / 86_400;

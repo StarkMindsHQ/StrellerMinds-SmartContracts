@@ -30,6 +30,7 @@ pub enum DocumentationError {
     InvalidStatus = 12,
     /// A document, translation, or contribution with this ID already exists.
     AlreadyExists = 13,
+    RateLimitExceeded = 14,
 }
 
 /// Backward-compatible alias used by internal modules.
@@ -51,6 +52,7 @@ impl DocumentationError {
             Self::DocumentTooLarge => "DOC-011",
             Self::InvalidStatus => "DOC-012",
             Self::AlreadyExists => "DOC-013",
+            Self::RateLimitExceeded => "DOC-014",
         }
     }
 
@@ -78,6 +80,7 @@ impl DocumentationError {
             Self::AlreadyInitialized | Self::AlreadyExists => {
                 "Reuse the existing resource instead of creating a duplicate"
             }
+            Self::RateLimitExceeded => "Wait for the rate limit window to reset before retrying",
         }
     }
 }

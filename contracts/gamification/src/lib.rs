@@ -15,6 +15,7 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 pub use errors::Error;
@@ -29,6 +30,23 @@ use reputation::ReputationManager;
 use seasons::SeasonManager;
 use social::SocialManager;
 use storage::GamificationStorage;
+
+const RL_OP_ACTIVITY: u64 = 1;
+const RL_OP_RECOGNITION: u64 = 2;
+
+fn check_rate_limit(
+    env: &Env,
+    user: &Address,
+    operation: u64,
+    config: &RateLimitConfig,
+) -> Result<(), Error> {
+    let is_admin = GamificationStorage::require_admin(env, user).is_ok();
+    if is_admin {
+        return Ok(());
+    }
+    enforce_rate_limit(env, &GamificationKey::RateLimit(user.clone(), operation), config)
+        .map_err(|_| Error::RateLimitExceeded)
+}
 
 #[contract]
 pub struct Gamification;
@@ -60,6 +78,9 @@ impl Gamification {
             max_endorsements_per_day: 5,
             guild_max_members: 50,
             leaderboard_size: 50,
+            rate_limit_activity: 100,
+            rate_limit_recognition: 10,
+            rate_limit_window: 86_400,
         };
         env.storage().instance().set(&GamificationKey::Config, &config);
 
@@ -95,6 +116,16 @@ impl Gamification {
         activity: ActivityRecord,
     ) -> Result<Vec<u64>, GamificationError> {
         user.require_auth();
+        let cfg = GamificationStorage::get_config(&env);
+        check_rate_limit(
+            &env,
+            &user,
+            RL_OP_ACTIVITY,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_activity,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         AchievementManager::process_activity(&env, &user, &activity)
     }
 
@@ -523,6 +554,16 @@ impl Gamification {
         message: String,
     ) -> Result<(), GamificationError> {
         from.require_auth();
+        let cfg = GamificationStorage::get_config(&env);
+        check_rate_limit(
+            &env,
+            &from,
+            RL_OP_RECOGNITION,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_recognition,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         SocialManager::recognize(&env, &from, &to, recognition_type, message)
     }
 
