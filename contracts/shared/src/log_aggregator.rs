@@ -99,11 +99,7 @@ impl LogAggregator {
     }
 
     fn save_stats(env: &Env, stats: &LogStats) {
-        env.storage()
-            .temporary()
-            .set::<Symbol, LogStats>(&LOG_STATS_KEY, stats);
-        env.storage()
-            .temporary()
-            .extend_ttl(&LOG_STATS_KEY, LOG_STATS_TTL / 2, LOG_STATS_TTL);
+        env.storage().temporary().set::<Symbol, LogStats>(&LOG_STATS_KEY, stats);
+        env.storage().temporary().extend_ttl(&LOG_STATS_KEY, LOG_STATS_TTL / 2, LOG_STATS_TTL);
     }
 }

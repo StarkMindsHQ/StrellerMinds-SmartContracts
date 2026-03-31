@@ -99,8 +99,8 @@ pub mod error_codes;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
-pub mod logger;
 pub mod log_aggregator;
+pub mod logger;
 pub mod monitoring;
 
 #[cfg(any(test, feature = "testutils"))]

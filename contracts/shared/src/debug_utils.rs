@@ -22,11 +22,7 @@ impl DebugUtils {
         let exists_temp = env.storage().temporary().has(&key_val3);
 
         env.events().publish(
-            (
-                Symbol::new(env, "DEBUG"),
-                contract_name,
-                Symbol::new(env, "inspect"),
-            ),
+            (Symbol::new(env, "DEBUG"), contract_name, Symbol::new(env, "inspect")),
             (key_name, exists_persistent, exists_instance, exists_temp),
         );
     }
@@ -37,11 +33,7 @@ impl DebugUtils {
         let sequence = env.ledger().sequence();
 
         env.events().publish(
-            (
-                Symbol::new(env, "DEBUG"),
-                contract_name,
-                Symbol::new(env, "ledger"),
-            ),
+            (Symbol::new(env, "DEBUG"), contract_name, Symbol::new(env, "ledger")),
             (timestamp, sequence),
         );
     }

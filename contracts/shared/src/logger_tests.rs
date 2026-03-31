@@ -115,13 +115,7 @@ mod tests {
                 correlation_id: Some(42),
             };
             let payload = soroban_sdk::String::from_str(&env, "extra data");
-            Logger::log(
-                &env,
-                LogLevel::Info,
-                &ctx,
-                symbol_short!("detail"),
-                Some(payload),
-            );
+            Logger::log(&env, LogLevel::Info, &ctx, symbol_short!("detail"), Some(payload));
 
             assert!(env.events().all().len() > events_before);
         });

@@ -49,25 +49,17 @@ impl Logger {
     /// Initialize logging with a minimum log level.
     /// Call this once during contract initialization.
     pub fn init(env: &Env, min_level: LogLevel) {
-        env.storage()
-            .instance()
-            .set::<Symbol, u32>(&LOG_LEVEL_KEY, &(min_level as u32));
+        env.storage().instance().set::<Symbol, u32>(&LOG_LEVEL_KEY, &(min_level as u32));
     }
 
     /// Update the minimum log level at runtime.
     pub fn set_level(env: &Env, min_level: LogLevel) {
-        env.storage()
-            .instance()
-            .set::<Symbol, u32>(&LOG_LEVEL_KEY, &(min_level as u32));
+        env.storage().instance().set::<Symbol, u32>(&LOG_LEVEL_KEY, &(min_level as u32));
     }
 
     /// Read the current minimum log level. Defaults to `Info` if not set.
     pub fn get_level(env: &Env) -> LogLevel {
-        let raw: u32 = env
-            .storage()
-            .instance()
-            .get::<Symbol, u32>(&LOG_LEVEL_KEY)
-            .unwrap_or(1); // default Info
+        let raw: u32 = env.storage().instance().get::<Symbol, u32>(&LOG_LEVEL_KEY).unwrap_or(1); // default Info
         match raw {
             0 => LogLevel::Debug,
             1 => LogLevel::Info,
@@ -105,12 +97,7 @@ impl Logger {
 
         // Publish with structured topics for off-chain filtering
         env.events().publish(
-            (
-                Symbol::new(env, "LOG"),
-                ctx.contract_name.clone(),
-                level,
-                ctx.function_name.clone(),
-            ),
+            (Symbol::new(env, "LOG"), ctx.contract_name.clone(), level, ctx.function_name.clone()),
             (timestamp, message, payload, ctx.correlation_id),
         );
 
@@ -122,19 +109,20 @@ impl Logger {
     }
 
     /// Emit a simple log without full context (backward-compatible convenience).
-    pub fn log_simple(env: &Env, level: LogLevel, context: Symbol, message: String, payload: String) {
+    pub fn log_simple(
+        env: &Env,
+        level: LogLevel,
+        context: Symbol,
+        message: String,
+        payload: String,
+    ) {
         if !Self::should_log(env, level) {
             return;
         }
         let timestamp = env.ledger().timestamp();
         env.events().publish(
             (Symbol::new(env, "LOG"), context, level),
-            LogEntry {
-                level,
-                message,
-                timestamp,
-                payload,
-            },
+            LogEntry { level, message, timestamp, payload },
         );
     }
 
@@ -145,12 +133,7 @@ impl Logger {
         }
         let timestamp = env.ledger().timestamp();
         env.events().publish(
-            (
-                Symbol::new(env, "LOG"),
-                Symbol::new(env, "metric"),
-                LogLevel::Metric,
-                metric_name,
-            ),
+            (Symbol::new(env, "LOG"), Symbol::new(env, "metric"), LogLevel::Metric, metric_name),
             (timestamp, value),
         );
     }
