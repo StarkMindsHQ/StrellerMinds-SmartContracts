@@ -40,10 +40,10 @@
                   "string": "ep-dup"
                 },
                 {
-                  "string": "N"
+                  "string": "Endpoint Name"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test endpoint description"
                 },
                 {
                   "string": "GET"
@@ -234,7 +234,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test endpoint description"
                       }
                     },
                     {
@@ -258,7 +258,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "N"
+                        "string": "Endpoint Name"
                       }
                     },
                     {
@@ -378,7 +378,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -394,7 +394,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {

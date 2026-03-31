@@ -1,4 +1,5 @@
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 use soroban_sdk::{Address, Env, String, Vec};
 
 pub struct TutorialManager;
@@ -15,6 +16,27 @@ impl TutorialManager {
         steps: Vec<TutorialStep>,
         prerequisites: Vec<String>,
     ) -> Result<Tutorial, Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
+        CoreValidator::validate_soroban_string_length(
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
+        CoreValidator::validate_vec_size(steps.len(), "steps", ValidationConfig::MAX_STEPS)
+            .map_err(|_| Error::InvalidDocument)?;
+        if estimated_time == 0 {
+            return Err(Error::InvalidDocument);
+        }
+
         if env.storage().persistent().has(&DataKey::Tutorial(tutorial_id.clone())) {
             return Err(Error::AlreadyExists);
         }

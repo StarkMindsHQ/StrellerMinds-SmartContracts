@@ -244,7 +244,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -260,7 +260,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {

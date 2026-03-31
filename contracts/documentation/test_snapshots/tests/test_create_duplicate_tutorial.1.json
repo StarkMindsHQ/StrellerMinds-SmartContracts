@@ -40,10 +40,10 @@
                   "string": "tut-dup"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -261,7 +261,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -277,7 +277,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {
@@ -527,7 +527,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -571,7 +571,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

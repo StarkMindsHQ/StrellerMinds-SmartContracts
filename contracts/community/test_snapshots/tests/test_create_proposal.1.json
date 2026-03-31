@@ -44,48 +44,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -120,48 +82,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -196,48 +120,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -272,48 +158,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -348,10 +196,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -386,10 +234,162 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Test Post"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Test Post"
+                },
+                {
+                  "string": "This is test content for building reputation"
                 },
                 {
                   "vec": []
@@ -428,7 +428,7 @@
                   "string": "New Feature"
                 },
                 {
-                  "string": "Add new functionality"
+                  "string": "Add new functionality to the platform"
                 },
                 {
                   "u64": 86400
@@ -1156,7 +1156,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1232,7 +1232,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1330,7 +1330,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1406,7 +1406,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1504,7 +1504,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1580,7 +1580,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1678,7 +1678,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1754,7 +1754,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1852,7 +1852,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1928,7 +1928,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -2026,7 +2026,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for building reputation"
                       }
                     },
                     {
@@ -2102,7 +2102,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2200,7 +2200,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for building reputation"
                       }
                     },
                     {
@@ -2276,7 +2276,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2374,7 +2374,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for building reputation"
                       }
                     },
                     {
@@ -2450,7 +2450,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2548,7 +2548,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for building reputation"
                       }
                     },
                     {
@@ -2624,7 +2624,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2722,7 +2722,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for building reputation"
                       }
                     },
                     {
@@ -2798,7 +2798,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Test Post"
                       }
                     },
                     {
@@ -2923,7 +2923,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Add new functionality"
+                        "string": "Add new functionality to the platform"
                       }
                     },
                     {

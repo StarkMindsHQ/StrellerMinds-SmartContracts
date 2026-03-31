@@ -44,48 +44,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -120,48 +82,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -196,48 +120,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -272,48 +158,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
-                },
-                {
-                  "vec": []
-                },
-                {
-                  "string": ""
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
-              "function_name": "create_post",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                },
-                {
-                  "vec": [
-                    {
-                      "symbol": "General"
-                    }
-                  ]
-                },
-                {
-                  "string": "Post"
-                },
-                {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -348,10 +196,10 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -386,10 +234,162 @@
                   ]
                 },
                 {
-                  "string": "Post"
+                  "string": "Post title"
                 },
                 {
-                  "string": "Content"
+                  "string": "Post content."
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Post title"
+                },
+                {
+                  "string": "Post content."
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Post title"
+                },
+                {
+                  "string": "Post content."
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Post title"
+                },
+                {
+                  "string": "Post content."
+                },
+                {
+                  "vec": []
+                },
+                {
+                  "string": ""
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "function_name": "create_post",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                },
+                {
+                  "vec": [
+                    {
+                      "symbol": "General"
+                    }
+                  ]
+                },
+                {
+                  "string": "Post title"
+                },
+                {
+                  "string": "Post content."
                 },
                 {
                   "vec": []
@@ -1041,7 +1041,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1117,7 +1117,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1215,7 +1215,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1291,7 +1291,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1389,7 +1389,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1465,7 +1465,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1563,7 +1563,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1639,7 +1639,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1737,7 +1737,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1813,7 +1813,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -1911,7 +1911,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -1987,7 +1987,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -2085,7 +2085,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -2161,7 +2161,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -2259,7 +2259,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -2335,7 +2335,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -2433,7 +2433,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -2509,7 +2509,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {
@@ -2607,7 +2607,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "Post content."
                       }
                     },
                     {
@@ -2683,7 +2683,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Post"
+                        "string": "Post title"
                       }
                     },
                     {

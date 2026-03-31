@@ -43,7 +43,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for article"
                 },
                 {
                   "string": "cat"
@@ -252,7 +252,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -268,7 +268,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {
@@ -401,7 +401,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for article"
                       }
                     },
                     {

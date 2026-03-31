@@ -6,6 +6,7 @@ use types::{ChainId, CredentialStatus};
 #[test]
 fn test_initialize() {
     let env = Env::default();
+    env.mock_all_auths();
     let contract_id = env.register(CrossChainCredentials, ());
     let client = CrossChainCredentialsClient::new(&env, &contract_id);
 

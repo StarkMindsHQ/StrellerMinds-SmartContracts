@@ -44,10 +44,10 @@
                   ]
                 },
                 {
-                  "string": "Webinar"
+                  "string": "Webinar Session"
                 },
                 {
-                  "string": "Description"
+                  "string": "A webinar about blockchain technology"
                 },
                 {
                   "u64": 1000
@@ -301,7 +301,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Description"
+                        "string": "A webinar about blockchain technology"
                       }
                     },
                     {
@@ -381,7 +381,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Webinar"
+                        "string": "Webinar Session"
                       }
                     },
                     {

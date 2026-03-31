@@ -40,10 +40,10 @@
                   "string": "faq-dup"
                 },
                 {
-                  "string": "Q"
+                  "string": "What is this FAQ about?"
                 },
                 {
-                  "string": "A"
+                  "string": "This is the answer to the test FAQ question"
                 },
                 {
                   "string": "cat"
@@ -251,7 +251,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -267,7 +267,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {
@@ -337,7 +337,7 @@
                         "symbol": "answer"
                       },
                       "val": {
-                        "string": "A"
+                        "string": "This is the answer to the test FAQ question"
                       }
                     },
                     {
@@ -393,7 +393,7 @@
                         "symbol": "question"
                       },
                       "val": {
-                        "string": "Q"
+                        "string": "What is this FAQ about?"
                       }
                     },
                     {

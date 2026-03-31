@@ -8,6 +8,7 @@ use shared::event_schema::{
     CredentialReactivatedEvent, CredentialRevokedEvent, CredentialSuspendedEvent,
     CrossChainEventData, OracleUpdatedEvent, ProofGeneratedEvent, VerificationRequestedEvent,
 };
+use shared::validation::{CoreValidator, ValidationConfig};
 use shared::{emit_access_control_event, emit_crosschain_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
@@ -37,6 +38,7 @@ impl CrossChainCredentials {
     /// client.initialize(&admin);
     /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), CrossChainError> {
+        admin.require_auth();
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(CrossChainError::AlreadyInitialized);
         }
@@ -75,6 +77,22 @@ impl CrossChainCredentials {
     ) -> String {
         let admin = get_admin(&env);
         admin.require_auth();
+
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &achievement,
+            "achievement",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .expect("Invalid achievement");
+        CoreValidator::validate_soroban_string_length(
+            &metadata_hash,
+            "metadata_hash",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_URI_LENGTH,
+        )
+        .expect("Invalid metadata_hash");
 
         let credential_id = String::from_str(&env, "CRED");
         let credential = Credential {

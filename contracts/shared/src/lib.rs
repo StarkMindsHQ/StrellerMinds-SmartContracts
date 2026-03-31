@@ -1,4 +1,7 @@
 #![no_std]
+
+pub mod validation;
+
 pub mod access_control {
     use soroban_sdk::{Address, Env};
 
@@ -65,35 +68,6 @@ pub mod error_handling {
     }
 }
 
-pub mod validation {
-    use soroban_sdk::{Env, Symbol};
-
-    /// Validate that a course ID symbol is well-formed and non-empty.
-    pub fn validate_course_id(_env: &Env, _course_id: &Symbol) -> Result<(), soroban_sdk::Error> {
-        Ok(())
-    }
-
-    /// Validate that a generic symbol value is well-formed.
-    pub fn validate_symbol(_env: &Env, _symbol: &Symbol) -> Result<(), soroban_sdk::Error> {
-        Ok(())
-    }
-
-    /// Validate and convert a raw string slice into a Soroban `String`.
-    pub fn validate_string(
-        _env: &Env,
-        _text: &str,
-    ) -> Result<soroban_sdk::String, soroban_sdk::Error> {
-        Ok(soroban_sdk::String::from_str(_env, _text))
-    }
-
-    /// Sanitize a raw string slice and return it as a Soroban `String`.
-    pub fn sanitize_text(
-        _env: &Env,
-        _text: &str,
-    ) -> Result<soroban_sdk::String, soroban_sdk::Error> {
-        Ok(soroban_sdk::String::from_str(_env, _text))
-    }
-}
 pub mod config;
 pub mod error_codes;
 pub mod event_schema;

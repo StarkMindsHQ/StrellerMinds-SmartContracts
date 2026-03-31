@@ -37,10 +37,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "string": "G1"
+                  "string": "Guild One"
                 },
                 {
-                  "string": "First guild"
+                  "string": "The first test guild for validation"
                 },
                 {
                   "u32": 10
@@ -68,10 +68,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "string": "G2"
+                  "string": "Guild Two"
                 },
                 {
-                  "string": "Second guild"
+                  "string": "The second test guild for validation"
                 },
                 {
                   "u32": 10
@@ -5584,7 +5584,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "First guild"
+                        "string": "The first test guild for validation"
                       }
                     },
                     {
@@ -5632,7 +5632,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "G1"
+                        "string": "Guild One"
                       }
                     },
                     {
@@ -5718,7 +5718,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Second guild"
+                        "string": "The second test guild for validation"
                       }
                     },
                     {
@@ -5766,7 +5766,7 @@
                         "symbol": "name"
                       },
                       "val": {
-                        "string": "G2"
+                        "string": "Guild Two"
                       }
                     },
                     {
@@ -5879,7 +5879,7 @@
                             "symbol": "guild_name"
                           },
                           "val": {
-                            "string": "G2"
+                            "string": "Guild Two"
                           }
                         },
                         {
@@ -5923,7 +5923,7 @@
                             "symbol": "guild_name"
                           },
                           "val": {
-                            "string": "G1"
+                            "string": "Guild One"
                           }
                         },
                         {

@@ -40,10 +40,10 @@
                   "string": "faq-get"
                 },
                 {
-                  "string": "Q?"
+                  "string": "What is this question?"
                 },
                 {
-                  "string": "A."
+                  "string": "This is the answer to the FAQ"
                 },
                 {
                   "string": "cat"
@@ -252,7 +252,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -268,7 +268,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {
@@ -338,7 +338,7 @@
                         "symbol": "answer"
                       },
                       "val": {
-                        "string": "A."
+                        "string": "This is the answer to the FAQ"
                       }
                     },
                     {
@@ -394,7 +394,7 @@
                         "symbol": "question"
                       },
                       "val": {
-                        "string": "Q?"
+                        "string": "What is this question?"
                       }
                     },
                     {

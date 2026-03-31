@@ -40,10 +40,10 @@
                   "string": "ctr-0"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for counters"
                 },
                 {
                   "vec": [
@@ -84,10 +84,10 @@
                   "string": "ctr-1"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for counters"
                 },
                 {
                   "vec": [
@@ -128,10 +128,10 @@
                   "string": "ctr-2"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for counters"
                 },
                 {
                   "vec": [
@@ -607,7 +607,7 @@
                         "symbol": "rate_limit_contribution"
                       },
                       "val": {
-                        "u32": 5
+                        "u32": 20
                       }
                     },
                     {
@@ -623,7 +623,7 @@
                         "symbol": "rate_limit_window"
                       },
                       "val": {
-                        "u64": 86400
+                        "u64": 3600
                       }
                     },
                     {
@@ -953,7 +953,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for counters"
                       }
                     },
                     {
@@ -1031,7 +1031,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
@@ -1125,7 +1125,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for counters"
                       }
                     },
                     {
@@ -1203,7 +1203,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
@@ -1297,7 +1297,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for counters"
                       }
                     },
                     {
@@ -1375,7 +1375,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {
