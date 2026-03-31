@@ -465,6 +465,9 @@ impl DocumentationConfig {
             require_review: defaults.require_review,
             enable_contributions: defaults.enable_contributions,
             enable_analytics: defaults.enable_analytics,
+            rate_limit_create_doc: 10,
+            rate_limit_contribution: 20,
+            rate_limit_window: 3_600,
         }
     }
 

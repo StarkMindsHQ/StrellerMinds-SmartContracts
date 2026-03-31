@@ -124,6 +124,7 @@ impl CertificateError {
             Self::ShareLimitReached => "CERT-070",
             Self::InvalidInput => "CERT-080",
             Self::InternalError => "CERT-099",
+            Self::RateLimitExceeded => "CERT-090",
         }
     }
 

@@ -52,6 +52,7 @@ impl DocumentationError {
             Self::DocumentTooLarge => "DOC-011",
             Self::InvalidStatus => "DOC-012",
             Self::AlreadyExists => "DOC-013",
+            Self::RateLimitExceeded => "DOC-014",
         }
     }
 
@@ -78,6 +79,9 @@ impl DocumentationError {
             }
             Self::AlreadyInitialized | Self::AlreadyExists => {
                 "Reuse the existing resource instead of creating a duplicate"
+            }
+            Self::RateLimitExceeded => {
+                "Wait for the rate limit window to reset before retrying"
             }
         }
     }

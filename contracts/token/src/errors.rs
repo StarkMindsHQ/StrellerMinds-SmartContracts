@@ -31,6 +31,7 @@ impl TokenError {
             Self::InvalidAddress => "TKN-021",
             Self::InsufficientBalance => "TKN-080",
             Self::TransferFailed => "TKN-081",
+            Self::RateLimitExceeded => "TKN-100",
         }
     }
 
@@ -43,6 +44,7 @@ impl TokenError {
             Self::InvalidAddress => "Provided token address is invalid",
             Self::InsufficientBalance => "Account balance is too low for this transfer",
             Self::TransferFailed => "Token transfer could not be completed",
+            Self::RateLimitExceeded => "Rate limit exceeded for this operation",
         }
     }
 
@@ -63,6 +65,7 @@ impl TokenError {
             Self::TransferFailed => {
                 "Check balances, approvals, and contract state, then retry the transfer"
             }
+            Self::RateLimitExceeded => "Wait for the rate limit window to reset before retrying",
         }
     }
 }
