@@ -76,6 +76,9 @@ pub enum CommunityError {
     AlreadyVotedOnProposal = 62,
     /// The user does not have enough voting power to participate.
     InsufficientVotingPower = 63,
+
+    // Rate limiting errors
+    RateLimitExceeded = 70,
 }
 
 /// Backward-compatible alias used by internal submodules.

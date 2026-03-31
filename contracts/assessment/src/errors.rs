@@ -47,4 +47,7 @@ pub enum AssessmentError {
     // Integrity / security
     /// The caller is not the admin or a registered security monitor contract.
     SecurityIntegrationMissing = 40,
+
+    // Rate limiting
+    RateLimitExceeded = 50,
 }

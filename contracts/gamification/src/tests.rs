@@ -793,6 +793,65 @@ fn test_guild_leaderboard_updates() {
     assert_eq!(board.get(0).unwrap().guild_id, g1, "guild 1 should lead");
 }
 
+// ─── Rate Limiting Tests ──────────────────────────────────────────────────────
+
+#[test]
+fn test_recognize_peer_rate_limit() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // 10 recognitions should succeed (daily limit)
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great help!"),
+        );
+    }
+
+    // 11th should fail
+    let result = client.try_recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "One too many"),
+    );
+    assert!(result.is_err(), "11th recognition in same day should be rate limited");
+}
+
+#[test]
+fn test_recognize_peer_rate_limit_resets() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great!"),
+        );
+    }
+
+    // Advance to next day
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000 + 86_400);
+
+    // Should succeed again
+    client.recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "Next day!"),
+    );
+}
+
 // ─── Error Scenario Tests ─────────────────────────────────────────────────────
 
 #[test]
