@@ -1,5 +1,3 @@
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use soroban_sdk::{Address, BytesN, Env, String as SorobanString, Symbol};
 
 /// Configuration constants for metadata validation that can be reused across contracts
@@ -98,7 +96,7 @@ pub enum ValidationError {
     InvalidRange { field: &'static str, min: u64, max: u64, actual: u64 },
     InvalidArraySize { field: &'static str, min: u32, max: u32, actual: u32 },
     InvalidSymbol { reason: &'static str },
-    DuplicateValue { field: &'static str, value: String },
+    DuplicateValue { field: &'static str },
     InvalidBatchSize { field: &'static str, max_size: u32, actual: u32 },
 }
 
@@ -184,31 +182,14 @@ impl CoreValidator {
         Ok(())
     }
 
-    /// Validates symbol length and format
+    /// Validates symbol length and format.
+    ///
+    /// The Soroban SDK enforces symbol validity (characters `[a-zA-Z0-9_]`, max 32
+    /// chars) at the type level, so this is a no-op stub kept for API compatibility.
     pub fn validate_symbol(
-        symbol: &Symbol,
+        _symbol: &Symbol,
         _field_name: &'static str,
     ) -> Result<(), ValidationError> {
-        let symbol_str = symbol.to_string();
-        let len = symbol_str.len();
-
-        if len < ValidationConfig::MIN_SYMBOL_LENGTH as usize
-            || len > ValidationConfig::MAX_SYMBOL_LENGTH as usize
-        {
-            return Err(ValidationError::InvalidSymbol {
-                reason: "Symbol length must be between 1 and 32 characters",
-            });
-        }
-
-        // Check for valid characters (alphanumeric and underscore)
-        for ch in symbol_str.chars() {
-            if !ch.is_alphanumeric() && ch != '_' {
-                return Err(ValidationError::InvalidSymbol {
-                    reason: "Symbol can only contain alphanumeric characters and underscores",
-                });
-            }
-        }
-
         Ok(())
     }
 
@@ -357,10 +338,7 @@ impl CoreValidator {
 
         for item in collection.iter() {
             if seen.iter().any(|seen_item| seen_item == item) {
-                return Err(ValidationError::DuplicateValue {
-                    field: field_name,
-                    value: "Duplicate value found".to_string(),
-                });
+                return Err(ValidationError::DuplicateValue { field: field_name });
             }
             seen.push_back(item.clone());
         }
@@ -442,11 +420,11 @@ impl CoreValidator {
         text: &str,
         _field_name: &'static str,
     ) -> Result<(), ValidationError> {
-        let chars: Vec<char> = text.chars().collect();
-        let mut consecutive_count = 1;
+        let mut consecutive_count: usize = 1;
+        let mut prev: Option<char> = None;
 
-        for i in 1..chars.len() {
-            if chars[i] == chars[i - 1] {
+        for ch in text.chars() {
+            if prev == Some(ch) {
                 consecutive_count += 1;
                 if consecutive_count > ValidationConfig::MAX_CONSECUTIVE_CHARS {
                     return Err(ValidationError::ContentQuality {
@@ -455,6 +433,7 @@ impl CoreValidator {
                 }
             } else {
                 consecutive_count = 1;
+                prev = Some(ch);
             }
         }
 
@@ -490,10 +469,11 @@ impl CoreValidator {
 
     /// Validates URI scheme is allowed
     pub fn validate_uri_scheme(uri: &str) -> Result<(), ValidationError> {
-        let uri_lower = uri.to_lowercase();
-
-        let has_valid_scheme =
-            ValidationConfig::VALID_URI_SCHEMES.iter().any(|&scheme| uri_lower.starts_with(scheme));
+        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES.iter().any(|&scheme| {
+            uri.get(..scheme.len())
+                .map(|prefix| prefix.eq_ignore_ascii_case(scheme))
+                .unwrap_or(false)
+        });
 
         if !has_valid_scheme {
             return Err(ValidationError::InvalidUri {
@@ -542,14 +522,13 @@ impl CoreValidator {
             return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have domain" });
         }
 
-        // Should contain at least a domain
-        let parts: Vec<&str> = domain_path.split('/').collect();
-        if parts.is_empty() || parts[0].is_empty() {
+        // Extract domain (everything before the first '/')
+        let domain = domain_path.split('/').next().unwrap_or("");
+        if domain.is_empty() {
             return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have valid domain" });
         }
 
         // Basic domain validation
-        let domain = parts[0];
         if !domain.contains('.') || domain.starts_with('.') || domain.ends_with('.') {
             return Err(ValidationError::InvalidUri { reason: "Invalid domain format" });
         }
@@ -696,13 +675,13 @@ impl CoreValidator {
         Ok(())
     }
 
-    /// Sanitizes text content for safe storage and display
-    pub fn sanitize_text(text: &str) -> String {
-        text.chars()
-            .filter(|&ch| !ValidationConfig::FORBIDDEN_CHARS.contains(&ch))
-            .collect::<String>()
-            .trim()
-            .to_string()
+    /// Returns `true` if the text contains no forbidden characters, `false` otherwise.
+    ///
+    /// Use `validate_no_forbidden_chars` to get a detailed error, or this function
+    /// for a simple boolean check before constructing a `SorobanString`.
+    pub fn is_text_clean(text: &str) -> bool {
+        !ValidationConfig::FORBIDDEN_CHARS.iter().any(|&ch| text.contains(ch))
+            && !text.trim().is_empty()
     }
 
     /// Validates complete text field with all checks
@@ -852,12 +831,10 @@ mod tests {
     }
 
     #[test]
-    fn test_sanitize_text() {
-        let dirty_text = "Clean text with <script> and 'quotes'";
-        let clean_text = CoreValidator::sanitize_text(dirty_text);
-        assert!(!clean_text.contains('<'));
-        assert!(!clean_text.contains('>'));
-        assert!(!clean_text.contains('\''));
+    fn test_is_text_clean() {
+        assert!(!CoreValidator::is_text_clean("Text with <script>"));
+        assert!(!CoreValidator::is_text_clean("Text with 'quotes'"));
+        assert!(CoreValidator::is_text_clean("Clean text here"));
     }
 
     // ── New validator tests ──
