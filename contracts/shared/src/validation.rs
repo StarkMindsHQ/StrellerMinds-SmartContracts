@@ -1,6 +1,6 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use soroban_sdk::{BytesN, Env, String as SorobanString};
+use soroban_sdk::{Address, BytesN, Env, String as SorobanString, Symbol};
 
 /// Configuration constants for metadata validation that can be reused across contracts
 pub struct ValidationConfig;
@@ -52,6 +52,32 @@ impl ValidationConfig {
     pub const MAX_QUERY_LIMIT: u32 = 100;
     pub const MIN_VOTING_DURATION: u64 = 3600; // 1 hour
     pub const MAX_VOTING_DURATION: u64 = 2_592_000; // 30 days
+
+    // Numeric validation limits
+    pub const MIN_SCORE: u32 = 0;
+    pub const MAX_SCORE: u32 = 1000;
+    pub const MIN_ATTEMPTS: u32 = 1;
+    pub const MAX_ATTEMPTS: u32 = 10;
+    pub const MIN_TIME_LIMIT: u64 = 60; // 1 minute
+    pub const MAX_TIME_LIMIT: u64 = 7 * 24 * 60 * 60; // 7 days
+    pub const MIN_DIFFICULTY: u32 = 1;
+    pub const MAX_DIFFICULTY: u32 = 10;
+    pub const MIN_REPUTATION: u32 = 0;
+    pub const MAX_REPUTATION: u32 = 1_000_000;
+    pub const MIN_TOKEN_AMOUNT: u64 = 0;
+    pub const MAX_TOKEN_AMOUNT: u64 = 1_000_000_000_000_000_000; // 1 quadrillion
+
+    // Array and collection limits
+    pub const MAX_ARRAY_SIZE: u32 = 1000;
+    pub const MAX_QUESTION_OPTIONS: u32 = 10;
+    pub const MAX_ANSWERS_PER_SUBMISSION: u32 = 100;
+    pub const MAX_TAGS_PER_POST: u32 = 10;
+    pub const MAX_PARTICIPANTS_PER_EVENT: u32 = 10000;
+    pub const MAX_BATCH_OPERATIONS: u32 = 50;
+
+    // Symbol validation limits
+    pub const MAX_SYMBOL_LENGTH: u32 = 32;
+    pub const MIN_SYMBOL_LENGTH: u32 = 1;
 }
 
 /// Validation error types for enhanced error reporting
@@ -101,12 +127,289 @@ pub enum ValidationError {
     InvalidTimeRange {
         reason: &'static str,
     },
+    InvalidAddress {
+        reason: &'static str,
+    },
+    InvalidRange {
+        field: &'static str,
+        min: u64,
+        max: u64,
+        actual: u64,
+    },
+    InvalidArraySize {
+        field: &'static str,
+        min: u32,
+        max: u32,
+        actual: u32,
+    },
+    InvalidSymbol {
+        reason: &'static str,
+    },
+    DuplicateValue {
+        field: &'static str,
+        value: String,
+    },
+    InvalidBatchSize {
+        field: &'static str,
+        max_size: u32,
+        actual: u32,
+    },
 }
 
 /// Core validation utilities that can be reused across different contracts
 pub struct CoreValidator;
 
 impl CoreValidator {
+    /// Validates address — the Soroban SDK guarantees address validity at the type level,
+    /// so this is a no-op stub kept for API compatibility.
+    pub fn validate_address(_address: &Address, _field_name: &'static str) -> Result<(), ValidationError> {
+        Ok(())
+    }
+
+    /// Validates address with env — the Soroban SDK guarantees address validity at the type level,
+    /// so this is a no-op stub kept for API compatibility.
+    pub fn validate_address_with_env(_env: &Env, _address: &Address, _field_name: &'static str) -> Result<(), ValidationError> {
+        Ok(())
+    }
+
+    /// Validates numeric range (u64 values)
+    pub fn validate_u64_range(
+        value: u64,
+        field_name: &'static str,
+        min: u64,
+        max: u64,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::InvalidRange {
+                field: field_name,
+                min,
+                max,
+                actual: value,
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Validates u32 numeric range
+    pub fn validate_u32_range(
+        value: u32,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::InvalidRange {
+                field: field_name,
+                min: min as u64,
+                max: max as u64,
+                actual: value as u64,
+            });
+        }
+        
+        Ok(())
+    }
+
+    /// Validates array/collection size
+    pub fn validate_array_size<T>(
+        collection: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        let size = collection.len() as u32;
+        
+        if size < min || size > max {
+            return Err(ValidationError::InvalidArraySize {
+                field: field_name,
+                min,
+                max,
+                actual: size,
+            });
+        }
+        
+        Ok(())
+    }
+
+    /// Validates symbol length and format
+    pub fn validate_symbol(symbol: &Symbol, field_name: &'static str) -> Result<(), ValidationError> {
+        let symbol_str = symbol.to_string();
+        let len = symbol_str.len();
+        
+        if len < ValidationConfig::MIN_SYMBOL_LENGTH as usize || len > ValidationConfig::MAX_SYMBOL_LENGTH as usize {
+            return Err(ValidationError::InvalidSymbol {
+                reason: "Symbol length must be between 1 and 32 characters",
+            });
+        }
+        
+        // Check for valid characters (alphanumeric and underscore)
+        for ch in symbol_str.chars() {
+            if !ch.is_alphanumeric() && ch != '_' {
+                return Err(ValidationError::InvalidSymbol {
+                    reason: "Symbol can only contain alphanumeric characters and underscores",
+                });
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Validates batch operation size
+    pub fn validate_batch_size(
+        batch_size: u32,
+        field_name: &'static str,
+        max_size: u32,
+    ) -> Result<(), ValidationError> {
+        if batch_size > max_size {
+            return Err(ValidationError::InvalidBatchSize {
+                field: field_name,
+                max_size,
+                actual: batch_size,
+            });
+        }
+        
+        Ok(())
+    }
+
+    /// Validates score range
+    pub fn validate_score(score: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            score,
+            "score",
+            ValidationConfig::MIN_SCORE,
+            ValidationConfig::MAX_SCORE,
+        )
+    }
+
+    /// validates attempts range
+    pub fn validate_attempts(attempts: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            attempts,
+            "attempts",
+            ValidationConfig::MIN_ATTEMPTS,
+            ValidationConfig::MAX_ATTEMPTS,
+        )
+    }
+
+    /// Validates time limit range
+    pub fn validate_time_limit(time_limit: u64) -> Result<(), ValidationError> {
+        Self::validate_u64_range(
+            time_limit,
+            "time_limit",
+            ValidationConfig::MIN_TIME_LIMIT,
+            ValidationConfig::MAX_TIME_LIMIT,
+        )
+    }
+
+    /// Validates difficulty range
+    pub fn validate_difficulty(difficulty: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            difficulty,
+            "difficulty",
+            ValidationConfig::MIN_DIFFICULTY,
+            ValidationConfig::MAX_DIFFICULTY,
+        )
+    }
+
+    /// Validates reputation range
+    pub fn validate_reputation(reputation: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            reputation,
+            "reputation",
+            ValidationConfig::MIN_REPUTATION,
+            ValidationConfig::MAX_REPUTATION,
+        )
+    }
+
+    /// Validates token amount range
+    pub fn validate_token_amount(amount: u64) -> Result<(), ValidationError> {
+        Self::validate_u64_range(
+            amount,
+            "token_amount",
+            ValidationConfig::MIN_TOKEN_AMOUNT,
+            ValidationConfig::MAX_TOKEN_AMOUNT,
+        )
+    }
+
+    /// Validates question options array
+    pub fn validate_question_options<T>(
+        options: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            options,
+            field_name,
+            2, // Minimum 2 options for choice questions
+            ValidationConfig::MAX_QUESTION_OPTIONS,
+        )
+    }
+
+    /// Validates submission answers array
+    pub fn validate_submission_answers<T>(
+        answers: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            answers,
+            field_name,
+            1, // Minimum 1 answer
+            ValidationConfig::MAX_ANSWERS_PER_SUBMISSION,
+        )
+    }
+
+    /// Validates post tags array
+    pub fn validate_post_tags<T>(
+        tags: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            tags,
+            field_name,
+            0, // Tags are optional
+            ValidationConfig::MAX_TAGS_PER_POST,
+        )
+    }
+
+    /// Validates event participants array
+    pub fn validate_event_participants<T>(
+        participants: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            participants,
+            field_name,
+            1, // Minimum 1 participant
+            ValidationConfig::MAX_PARTICIPANTS_PER_EVENT,
+        )
+    }
+
+    /// Validates no duplicate values in collection
+    pub fn validate_no_duplicates<T>(
+        env: &Env,
+        collection: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError>
+    where
+        T: soroban_sdk::IntoVal<Env, soroban_sdk::Val>
+            + soroban_sdk::TryFromVal<Env, soroban_sdk::Val>
+            + Clone
+            + PartialEq,
+    {
+        let mut seen: soroban_sdk::Vec<T> = soroban_sdk::Vec::new(env);
+
+        for item in collection.iter() {
+            if seen.iter().any(|seen_item| seen_item == item) {
+                return Err(ValidationError::DuplicateValue {
+                    field: field_name,
+                    value: "Duplicate value found".to_string(),
+                });
+            }
+            seen.push_back(item.clone());
+        }
+
+        Ok(())
+    }
+
     /// Validates string field length constraints
     pub fn validate_string_length(
         text: &str,
