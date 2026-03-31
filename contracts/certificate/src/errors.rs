@@ -84,6 +84,9 @@ pub enum CertificateError {
     InvalidInput = 80,
     /// An unexpected internal error occurred.
     InternalError = 99,
+
+    // Rate limiting
+    RateLimitExceeded = 90,
 }
 
 impl CertificateError {
@@ -121,6 +124,7 @@ impl CertificateError {
             Self::ShareLimitReached => "CERT-070",
             Self::InvalidInput => "CERT-080",
             Self::InternalError => "CERT-099",
+            Self::RateLimitExceeded => "CERT-090",
         }
     }
 

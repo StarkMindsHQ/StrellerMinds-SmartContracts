@@ -54,6 +54,7 @@ pub enum GamificationError {
     SeasonNotEnded = 24,
     /// The user does not have enough XP to perform the requested action.
     InsufficientXP = 25,
+    RateLimitExceeded = 26,
 }
 
 /// Backward-compatible alias used by internal submodules.

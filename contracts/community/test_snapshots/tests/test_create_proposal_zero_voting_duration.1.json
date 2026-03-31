@@ -410,7 +410,7 @@
   "ledger": {
     "protocol_version": 22,
     "sequence_number": 0,
-    "timestamp": 0,
+    "timestamp": 172800,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
     "base_reserve": 0,
     "min_persistent_entry_ttl": 4096,
@@ -1059,7 +1059,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1127,7 +1127,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1233,7 +1233,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1301,7 +1301,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1407,7 +1407,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1475,7 +1475,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1581,7 +1581,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1649,7 +1649,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1755,7 +1755,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1823,7 +1823,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -1929,7 +1929,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -1997,7 +1997,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2103,7 +2103,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2171,7 +2171,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2277,7 +2277,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2345,7 +2345,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2451,7 +2451,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2519,7 +2519,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2625,7 +2625,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2693,7 +2693,7 @@
                         "symbol": "updated_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 172800
                       }
                     },
                     {
@@ -2791,6 +2791,74 @@
                 "durability": "persistent",
                 "val": {
                   "u64": 0
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "RateLimit"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "u64": 1
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "RateLimit"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                    },
+                    {
+                      "u64": 1
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "bucket"
+                      },
+                      "val": {
+                        "u64": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "count"
+                      },
+                      "val": {
+                        "u32": 5
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -3058,7 +3126,7 @@
                         "symbol": "joined_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 86400
                       }
                     },
                     {
@@ -3220,6 +3288,54 @@
                               },
                               "val": {
                                 "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_contribution"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_post"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_proposal"
+                              },
+                              "val": {
+                                "u32": 2
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_reply"
+                              },
+                              "val": {
+                                "u32": 20
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_vote"
+                              },
+                              "val": {
+                                "u32": 50
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_window"
+                              },
+                              "val": {
+                                "u64": 86400
                               }
                             },
                             {

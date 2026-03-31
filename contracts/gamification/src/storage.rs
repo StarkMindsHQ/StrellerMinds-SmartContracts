@@ -34,6 +34,9 @@ impl GamificationStorage {
             max_endorsements_per_day: 5,
             guild_max_members: 50,
             leaderboard_size: 50,
+            rate_limit_activity: 100,
+            rate_limit_recognition: 10,
+            rate_limit_window: 86_400,
         })
     }
 
