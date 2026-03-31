@@ -114,12 +114,7 @@ impl Token {
     pub fn health_check(env: Env) -> ContractHealthReport {
         let initialized = env.storage().instance().has(&symbol_short!("admin"));
         let mut report = Monitor::build_health_report(&env, symbol_short!("token"), initialized);
-        Monitor::add_metric(
-            &mut report,
-            symbol_short!("uptime"),
-            1,
-            env.ledger().timestamp(),
-        );
+        Monitor::add_metric(&mut report, symbol_short!("uptime"), 1, env.ledger().timestamp());
         Monitor::emit_health_check(&env, &report);
         report
     }

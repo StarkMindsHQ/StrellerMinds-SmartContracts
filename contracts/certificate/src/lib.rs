@@ -1254,8 +1254,7 @@ impl CertificateContract {
 
     pub fn health_check(env: Env) -> ContractHealthReport {
         let initialized = storage::is_initialized(&env);
-        let report =
-            Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
+        let report = Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
         Monitor::emit_health_check(&env, &report);
         report
     }

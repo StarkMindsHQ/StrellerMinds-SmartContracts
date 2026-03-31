@@ -82,11 +82,8 @@ impl Monitor {
         contract_id: Symbol,
         initialized: bool,
     ) -> ContractHealthReport {
-        let status = if initialized {
-            ContractHealthStatus::Healthy
-        } else {
-            ContractHealthStatus::Unknown
-        };
+        let status =
+            if initialized { ContractHealthStatus::Healthy } else { ContractHealthStatus::Unknown };
 
         ContractHealthReport {
             contract_id,
@@ -107,32 +104,34 @@ impl Monitor {
             ContractHealthStatus::Unknown => Symbol::new(env, "unknown"),
         };
 
-        let event_data = EventData::Monitoring(MonitoringEventData::HealthCheck(
-            HealthCheckEventData {
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::HealthCheck(HealthCheckEventData {
                 contract_id: report.contract_id.clone(),
                 status: report.status as u32,
                 timestamp: report.timestamp,
                 details,
-            },
-        ));
+            }));
 
-        StandardEvent::new(env, report.contract_id.clone(), env.current_contract_address(), event_data)
-            .emit(env);
+        StandardEvent::new(
+            env,
+            report.contract_id.clone(),
+            env.current_contract_address(),
+            event_data,
+        )
+        .emit(env);
     }
 
     /// Emit a metric event for off-chain indexing.
     pub fn emit_metric(env: &Env, contract_id: Symbol, name: Symbol, value: i128) {
-        let event_data = EventData::Monitoring(MonitoringEventData::MetricRecorded(
-            MetricRecordedEventData {
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::MetricRecorded(MetricRecordedEventData {
                 contract_id: contract_id.clone(),
                 metric_name: name,
                 value,
                 timestamp: env.ledger().timestamp(),
-            },
-        ));
+            }));
 
-        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data)
-            .emit(env);
+        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data).emit(env);
     }
 
     /// Emit an alert event when a threshold is breached.
@@ -144,32 +143,28 @@ impl Monitor {
         current_value: i128,
         threshold_value: i128,
     ) {
-        let event_data = EventData::Monitoring(MonitoringEventData::AlertTriggered(
-            AlertTriggeredEventData {
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::AlertTriggered(AlertTriggeredEventData {
                 contract_id: contract_id.clone(),
                 alert_level: level,
                 metric_name,
                 current_value,
                 threshold_value,
-            },
-        ));
+            }));
 
-        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data)
-            .emit(env);
+        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data).emit(env);
     }
 
     /// Emit an alert-resolved event.
     pub fn emit_alert_resolved(env: &Env, contract_id: Symbol, metric_name: Symbol) {
-        let event_data = EventData::Monitoring(MonitoringEventData::AlertResolved(
-            AlertResolvedEventData {
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::AlertResolved(AlertResolvedEventData {
                 contract_id: contract_id.clone(),
                 metric_name,
                 resolved_at: env.ledger().timestamp(),
-            },
-        ));
+            }));
 
-        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data)
-            .emit(env);
+        StandardEvent::new(env, contract_id, env.current_contract_address(), event_data).emit(env);
     }
 
     /// Evaluate alert rules against a set of metrics.
@@ -229,11 +224,7 @@ impl Monitor {
         timestamp: u64,
     ) {
         if report.custom_metrics.len() < MAX_CUSTOM_METRICS {
-            report.custom_metrics.push_back(MetricSnapshot {
-                name,
-                value,
-                timestamp,
-            });
+            report.custom_metrics.push_back(MetricSnapshot { name, value, timestamp });
         }
     }
 }
@@ -272,11 +263,8 @@ impl Monitoring {
     }
 
     pub fn set_gauge(env: &Env, name: &Symbol, value: i128) -> MetricSnapshot {
-        let snapshot = MetricSnapshot {
-            name: name.clone(),
-            value,
-            timestamp: env.ledger().timestamp(),
-        };
+        let snapshot =
+            MetricSnapshot { name: name.clone(), value, timestamp: env.ledger().timestamp() };
 
         env.storage().persistent().set(&MonitoringKey::Gauge(name.clone()), &snapshot);
         Self::emit_metric_event(env, name, "gauge", value);
@@ -391,11 +379,8 @@ impl Monitoring {
         key: &MonitoringKey,
         value: i128,
     ) -> MetricSnapshot {
-        let snapshot = MetricSnapshot {
-            name: name.clone(),
-            value,
-            timestamp: env.ledger().timestamp(),
-        };
+        let snapshot =
+            MetricSnapshot { name: name.clone(), value, timestamp: env.ledger().timestamp() };
 
         env.storage().persistent().set(key, &snapshot);
         Self::emit_metric_event(env, name, "gauge", value);
