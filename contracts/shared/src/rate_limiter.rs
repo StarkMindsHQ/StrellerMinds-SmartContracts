@@ -24,6 +24,7 @@ pub struct RateLimitState {
 ///
 /// The caller is responsible for loading/storing the state.
 /// Returns `Ok(new_state)` if the call is allowed, or `Err(())` if the limit is exceeded.
+#[allow(clippy::result_unit_err)]
 pub fn check_and_increment(
     current_timestamp: u64,
     state: Option<RateLimitState>,
@@ -40,20 +41,17 @@ pub fn check_and_increment(
         return Err(());
     }
 
-    Ok(RateLimitState {
-        count: count + 1,
-        bucket: current_bucket,
-    })
+    Ok(RateLimitState { count: count + 1, bucket: current_bucket })
 }
 
 /// Convenience wrapper: enforces a rate limit using persistent storage.
 ///
 /// Reads the current `RateLimitState` from `storage_key`, checks the limit,
 /// and writes back the updated state. Returns `Ok(())` if allowed, `Err(())` if exceeded.
+#[allow(clippy::result_unit_err)]
 pub fn enforce_rate_limit<K>(env: &Env, storage_key: &K, config: &RateLimitConfig) -> Result<(), ()>
 where
-    K: soroban_sdk::IntoVal<Env, soroban_sdk::Val>
-        + soroban_sdk::TryFromVal<Env, soroban_sdk::Val>,
+    K: soroban_sdk::IntoVal<Env, soroban_sdk::Val> + soroban_sdk::TryFromVal<Env, soroban_sdk::Val>,
 {
     let current_timestamp = env.ledger().timestamp();
     let state: Option<RateLimitState> = env.storage().persistent().get(storage_key);
@@ -73,10 +71,7 @@ pub fn emit_rate_limit_event(
     limit: u32,
 ) {
     env.events().publish(
-        (
-            Symbol::new(env, "rate_limit"),
-            Symbol::new(env, "exceeded"),
-        ),
+        (Symbol::new(env, "rate_limit"), Symbol::new(env, "exceeded")),
         (user.clone(), operation.clone(), count, limit),
     );
 }
@@ -87,10 +82,7 @@ mod tests {
 
     #[test]
     fn test_first_call_succeeds() {
-        let config = RateLimitConfig {
-            max_calls: 5,
-            window_seconds: 86_400,
-        };
+        let config = RateLimitConfig { max_calls: 5, window_seconds: 86_400 };
         let result = check_and_increment(1_000_000, None, &config);
         assert!(result.is_ok());
         let state = result.unwrap();
@@ -100,10 +92,7 @@ mod tests {
 
     #[test]
     fn test_calls_within_limit_succeed() {
-        let config = RateLimitConfig {
-            max_calls: 3,
-            window_seconds: 86_400,
-        };
+        let config = RateLimitConfig { max_calls: 3, window_seconds: 86_400 };
         let ts = 1_000_000u64;
         let bucket = ts / 86_400;
 
@@ -120,10 +109,7 @@ mod tests {
 
     #[test]
     fn test_call_exceeding_limit_fails() {
-        let config = RateLimitConfig {
-            max_calls: 2,
-            window_seconds: 86_400,
-        };
+        let config = RateLimitConfig { max_calls: 2, window_seconds: 86_400 };
         let ts = 1_000_000u64;
 
         let state = check_and_increment(ts, None, &config).unwrap();
@@ -134,10 +120,7 @@ mod tests {
 
     #[test]
     fn test_new_window_resets_count() {
-        let config = RateLimitConfig {
-            max_calls: 2,
-            window_seconds: 86_400,
-        };
+        let config = RateLimitConfig { max_calls: 2, window_seconds: 86_400 };
         let ts = 1_000_000u64;
 
         let state = check_and_increment(ts, None, &config).unwrap();
@@ -176,10 +159,7 @@ mod tests {
 
     #[test]
     fn test_max_calls_one() {
-        let config = RateLimitConfig {
-            max_calls: 1,
-            window_seconds: 86_400,
-        };
+        let config = RateLimitConfig { max_calls: 1, window_seconds: 86_400 };
         let ts = 1_000_000u64;
 
         let state = check_and_increment(ts, None, &config).unwrap();

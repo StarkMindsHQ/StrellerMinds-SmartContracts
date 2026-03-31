@@ -34,7 +34,12 @@ use storage::GamificationStorage;
 const RL_OP_ACTIVITY: u64 = 1;
 const RL_OP_RECOGNITION: u64 = 2;
 
-fn check_rate_limit(env: &Env, user: &Address, operation: u64, config: &RateLimitConfig) -> Result<(), Error> {
+fn check_rate_limit(
+    env: &Env,
+    user: &Address,
+    operation: u64,
+    config: &RateLimitConfig,
+) -> Result<(), Error> {
     let is_admin = GamificationStorage::require_admin(env, user).is_ok();
     if is_admin {
         return Ok(());
@@ -112,7 +117,15 @@ impl Gamification {
     ) -> Result<Vec<u64>, GamificationError> {
         user.require_auth();
         let cfg = GamificationStorage::get_config(&env);
-        check_rate_limit(&env, &user, RL_OP_ACTIVITY, &RateLimitConfig { max_calls: cfg.rate_limit_activity, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &user,
+            RL_OP_ACTIVITY,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_activity,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         AchievementManager::process_activity(&env, &user, &activity)
     }
 
@@ -542,7 +555,15 @@ impl Gamification {
     ) -> Result<(), GamificationError> {
         from.require_auth();
         let cfg = GamificationStorage::get_config(&env);
-        check_rate_limit(&env, &from, RL_OP_RECOGNITION, &RateLimitConfig { max_calls: cfg.rate_limit_recognition, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &from,
+            RL_OP_RECOGNITION,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_recognition,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         SocialManager::recognize(&env, &from, &to, recognition_type, message)
     }
 

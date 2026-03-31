@@ -203,7 +203,7 @@ pub enum DataKey {
     StudentAssessmentSubmissions(Address, u64), // (student, assessment_id)
     Schedule(u64),
     Accommodation(Address),
-    Adaptive(Address, u64), // (student, assessment_id)
+    Adaptive(Address, u64),  // (student, assessment_id)
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // AssessmentRateLimits
 }

@@ -39,7 +39,12 @@ const RL_OP_REPORT: u64 = 4;
 const RL_OP_PROPOSAL: u64 = 5;
 const RL_OP_CONTRIBUTION: u64 = 6;
 
-fn check_rate_limit(env: &Env, user: &Address, operation: u64, config: &RateLimitConfig) -> Result<(), Error> {
+fn check_rate_limit(
+    env: &Env,
+    user: &Address,
+    operation: u64,
+    config: &RateLimitConfig,
+) -> Result<(), Error> {
     let is_admin = CommunityStorage::require_admin(env, user).is_ok();
     if is_admin {
         return Ok(());
@@ -153,7 +158,15 @@ impl Community {
     ) -> Result<u64, CommunityError> {
         author.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &author, RL_OP_POST, &RateLimitConfig { max_calls: cfg.rate_limit_post, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &author,
+            RL_OP_POST,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_post,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         ForumManager::create_post(&env, &author, category, title, content, tags, course_id)
     }
 
@@ -183,7 +196,15 @@ impl Community {
     ) -> Result<u64, CommunityError> {
         author.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &author, RL_OP_REPLY, &RateLimitConfig { max_calls: cfg.rate_limit_reply, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &author,
+            RL_OP_REPLY,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_reply,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         ForumManager::create_reply(&env, &author, post_id, content, parent_reply_id)
     }
 
@@ -241,7 +262,15 @@ impl Community {
     ) -> Result<(), CommunityError> {
         voter.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &voter, RL_OP_VOTE, &RateLimitConfig { max_calls: cfg.rate_limit_vote, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &voter,
+            RL_OP_VOTE,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_vote,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         ForumManager::vote_post(&env, &voter, post_id, upvote)
     }
 
@@ -485,7 +514,15 @@ impl Community {
     ) -> Result<u64, CommunityError> {
         contributor.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &contributor, RL_OP_CONTRIBUTION, &RateLimitConfig { max_calls: cfg.rate_limit_contribution, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &contributor,
+            RL_OP_CONTRIBUTION,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_contribution,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         KnowledgeManager::submit_contribution(
             &env,
             &contributor,
@@ -808,7 +845,15 @@ impl Community {
     ) -> Result<u64, CommunityError> {
         reporter.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &reporter, RL_OP_REPORT, &RateLimitConfig { max_calls: cfg.max_reports_per_day, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &reporter,
+            RL_OP_REPORT,
+            &RateLimitConfig {
+                max_calls: cfg.max_reports_per_day,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         ModerationManager::report_content(
             &env,
             &reporter,
@@ -893,7 +938,15 @@ impl Community {
     ) -> Result<u64, CommunityError> {
         proposer.require_auth();
         let cfg = CommunityStorage::get_config(&env);
-        check_rate_limit(&env, &proposer, RL_OP_PROPOSAL, &RateLimitConfig { max_calls: cfg.rate_limit_proposal, window_seconds: cfg.rate_limit_window })?;
+        check_rate_limit(
+            &env,
+            &proposer,
+            RL_OP_PROPOSAL,
+            &RateLimitConfig {
+                max_calls: cfg.rate_limit_proposal,
+                window_seconds: cfg.rate_limit_window,
+            },
+        )?;
         GovernanceManager::create_proposal(
             &env,
             &proposer,

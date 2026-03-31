@@ -35,13 +35,23 @@ use versions::VersionManager;
 const RL_OP_CREATE_DOC: u64 = 1;
 const RL_OP_CONTRIBUTION: u64 = 2;
 
-fn check_rate_limit_doc(env: &Env, user: &Address, operation: u64, max_calls: u32, window: u64) -> Result<(), Error> {
+fn check_rate_limit_doc(
+    env: &Env,
+    user: &Address,
+    operation: u64,
+    max_calls: u32,
+    window: u64,
+) -> Result<(), Error> {
     let admin: Option<Address> = env.storage().persistent().get(&DataKey::Admin);
     if admin.as_ref() == Some(user) {
         return Ok(());
     }
-    enforce_rate_limit(env, &DataKey::RateLimit(user.clone(), operation), &RateLimitConfig { max_calls, window_seconds: window })
-        .map_err(|_| Error::RateLimitExceeded)
+    enforce_rate_limit(
+        env,
+        &DataKey::RateLimit(user.clone(), operation),
+        &RateLimitConfig { max_calls, window_seconds: window },
+    )
+    .map_err(|_| Error::RateLimitExceeded)
 }
 
 #[contract]
@@ -139,8 +149,15 @@ impl DocumentationContract {
         language: String,
     ) -> Result<Document, Error> {
         author.require_auth();
-        let doc_cfg: DocumentationConfig = env.storage().persistent().get(&DataKey::Config).ok_or(Error::NotInitialized)?;
-        check_rate_limit_doc(&env, &author, RL_OP_CREATE_DOC, doc_cfg.rate_limit_create_doc, doc_cfg.rate_limit_window)?;
+        let doc_cfg: DocumentationConfig =
+            env.storage().persistent().get(&DataKey::Config).ok_or(Error::NotInitialized)?;
+        check_rate_limit_doc(
+            &env,
+            &author,
+            RL_OP_CREATE_DOC,
+            doc_cfg.rate_limit_create_doc,
+            doc_cfg.rate_limit_window,
+        )?;
         DocumentManager::create_document(
             &env, doc_id, title, content, doc_type, category, &author, tags, language,
         )
@@ -660,8 +677,15 @@ impl DocumentationContract {
         content: String,
     ) -> Result<Contribution, Error> {
         contributor.require_auth();
-        let doc_cfg: DocumentationConfig = env.storage().persistent().get(&DataKey::Config).ok_or(Error::NotInitialized)?;
-        check_rate_limit_doc(&env, &contributor, RL_OP_CONTRIBUTION, doc_cfg.rate_limit_contribution, doc_cfg.rate_limit_window)?;
+        let doc_cfg: DocumentationConfig =
+            env.storage().persistent().get(&DataKey::Config).ok_or(Error::NotInitialized)?;
+        check_rate_limit_doc(
+            &env,
+            &contributor,
+            RL_OP_CONTRIBUTION,
+            doc_cfg.rate_limit_contribution,
+            doc_cfg.rate_limit_window,
+        )?;
         ContributionManager::submit_contribution(
             &env,
             contribution_id,

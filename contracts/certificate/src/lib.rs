@@ -12,10 +12,10 @@ use errors::CertificateError;
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 use types::{
-    CertDataKey, CertRateLimitConfig, AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
-    CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
-    MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig, MultiSigRequestStatus,
-    RevocationRecord, ShareRecord, TemplateField,
+    AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
+    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
+    MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
+    MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -131,10 +131,7 @@ impl CertificateContract {
         storage::set_initialized(&env);
         env.storage().instance().set(
             &CertDataKey::RateLimitCfg,
-            &CertRateLimitConfig {
-                max_requests_per_day: 10,
-                window_seconds: 86_400,
-            },
+            &CertRateLimitConfig { max_requests_per_day: 10, window_seconds: 86_400 },
         );
         Ok(())
     }
@@ -245,14 +242,19 @@ impl CertificateContract {
         requester.require_auth();
         // Admin bypass: only rate limit non-admins
         if requester != storage::get_admin(&env) {
-            let rl: CertRateLimitConfig = env.storage().instance()
-                .get(&CertDataKey::RateLimitCfg)
-                .unwrap_or(CertRateLimitConfig { max_requests_per_day: 10, window_seconds: 86_400 });
+            let rl: CertRateLimitConfig =
+                env.storage().instance().get(&CertDataKey::RateLimitCfg).unwrap_or(
+                    CertRateLimitConfig { max_requests_per_day: 10, window_seconds: 86_400 },
+                );
             enforce_rate_limit(
                 &env,
                 &CertDataKey::RateLimit(requester.clone(), RL_OP_MULTISIG_REQUEST),
-                &RateLimitConfig { max_calls: rl.max_requests_per_day, window_seconds: rl.window_seconds },
-            ).map_err(|_| CertificateError::RateLimitExceeded)?;
+                &RateLimitConfig {
+                    max_calls: rl.max_requests_per_day,
+                    window_seconds: rl.window_seconds,
+                },
+            )
+            .map_err(|_| CertificateError::RateLimitExceeded)?;
         }
 
         let config = storage::get_multisig_config(&env, &params.course_id)

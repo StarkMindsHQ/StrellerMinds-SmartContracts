@@ -80,9 +80,7 @@ impl DocumentationError {
             Self::AlreadyInitialized | Self::AlreadyExists => {
                 "Reuse the existing resource instead of creating a duplicate"
             }
-            Self::RateLimitExceeded => {
-                "Wait for the rate limit window to reset before retrying"
-            }
+            Self::RateLimitExceeded => "Wait for the rate limit window to reset before retrying",
         }
     }
 }

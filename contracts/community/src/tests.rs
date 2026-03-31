@@ -458,12 +458,7 @@ fn test_rate_limits_independent_per_operation() {
 
     // Replies should still work (different operation)
     let post_id = 1;
-    client.create_reply(
-        &user1,
-        &post_id,
-        &String::from_str(&env, "Reply"),
-        &0,
-    );
+    client.create_reply(&user1, &post_id, &String::from_str(&env, "Reply"), &0);
 }
 
 // ══════════════════════════════════════════════════════════════════════

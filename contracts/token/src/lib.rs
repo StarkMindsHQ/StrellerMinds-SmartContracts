@@ -93,7 +93,8 @@ impl Token {
             &env,
             &TokenDataKey::RateLimit(to.clone(), RL_OP_MINT),
             &RateLimitConfig { max_calls: rl.max_mints_per_day, window_seconds: rl.window_seconds },
-        ).map_err(|_| TokenError::RateLimitExceeded)?;
+        )
+        .map_err(|_| TokenError::RateLimitExceeded)?;
         emit_token_event!(
             &env,
             symbol_short!("token"),
@@ -126,8 +127,12 @@ impl Token {
         enforce_rate_limit(
             &env,
             &TokenDataKey::RateLimit(from.clone(), RL_OP_TRANSFER),
-            &RateLimitConfig { max_calls: rl.max_transfers_per_day, window_seconds: rl.window_seconds },
-        ).map_err(|_| TokenError::RateLimitExceeded)?;
+            &RateLimitConfig {
+                max_calls: rl.max_transfers_per_day,
+                window_seconds: rl.window_seconds,
+            },
+        )
+        .map_err(|_| TokenError::RateLimitExceeded)?;
         emit_token_event!(
             &env,
             symbol_short!("token"),

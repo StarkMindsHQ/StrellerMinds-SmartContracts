@@ -214,7 +214,6 @@ impl Assessment {
         Ok(())
     }
 
-
     pub fn set_integration(
         env: Env,
         admin: Address,
@@ -715,8 +714,12 @@ impl Assessment {
         enforce_rate_limit(
             &env,
             &DataKey::RateLimit(student.clone(), RL_OP_START_SUBMISSION),
-            &RateLimitConfig { max_calls: rl.max_submissions_per_day, window_seconds: rl.window_seconds },
-        ).map_err(|_| AssessmentError::RateLimitExceeded)?;
+            &RateLimitConfig {
+                max_calls: rl.max_submissions_per_day,
+                window_seconds: rl.window_seconds,
+            },
+        )
+        .map_err(|_| AssessmentError::RateLimitExceeded)?;
         let meta = get_assessment(&env, assessment_id)?;
         if !meta.published {
             return Err(AssessmentError::AssessmentNotPublished);
@@ -797,8 +800,12 @@ impl Assessment {
         enforce_rate_limit(
             &env,
             &DataKey::RateLimit(student.clone(), RL_OP_SUBMIT_ANSWERS),
-            &RateLimitConfig { max_calls: rl.max_answers_per_day, window_seconds: rl.window_seconds },
-        ).map_err(|_| AssessmentError::RateLimitExceeded)?;
+            &RateLimitConfig {
+                max_calls: rl.max_answers_per_day,
+                window_seconds: rl.window_seconds,
+            },
+        )
+        .map_err(|_| AssessmentError::RateLimitExceeded)?;
         let mut submission = get_submission(&env, &submission_id)?;
         if submission.student != student {
             return Err(AssessmentError::Unauthorized);
