@@ -24,15 +24,28 @@ impl EventManager {
     ) -> Result<u64, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_soroban_string_length(
-            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_time_range(start_time, end_time)
             .map_err(|_| Error::InvalidInput)?;
-        CoreValidator::validate_range(max_participants, "max_participants", 1, ValidationConfig::MAX_PARTICIPANTS)
-            .map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_range(
+            max_participants,
+            "max_participants",
+            1,
+            ValidationConfig::MAX_PARTICIPANTS,
+        )
+        .map_err(|_| Error::InvalidInput)?;
 
         let event_id = CommunityStorage::increment_counter(env, CommunityKey::EventCounter);
         let now = env.ledger().timestamp();

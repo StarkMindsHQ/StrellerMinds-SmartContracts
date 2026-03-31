@@ -21,11 +21,19 @@ impl GuildManager {
     ) -> Result<u64, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &name, "name", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &name,
+            "name",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_soroban_string_length(
-            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
 
         // Must not already be in a guild
         let profile = GamificationStorage::get_profile(env, creator);

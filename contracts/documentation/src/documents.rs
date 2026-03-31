@@ -19,14 +19,21 @@ impl DocumentManager {
     ) -> Result<Document, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
         CoreValidator::validate_soroban_string_length(
-            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
-        CoreValidator::validate_vec_size(
-            tags.len(), "tags", ValidationConfig::MAX_TAGS,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &content,
+            "content",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_CONTENT_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
+        CoreValidator::validate_vec_size(tags.len(), "tags", ValidationConfig::MAX_TAGS)
+            .map_err(|_| Error::InvalidDocument)?;
 
         if env.storage().persistent().has(&DataKey::Document(doc_id.clone())) {
             return Err(Error::AlreadyExists);

@@ -52,7 +52,10 @@ impl Proxy {
     /// client.upgrade(&new_impl_address);
     /// ```
     pub fn upgrade(env: Env, new_implementation: Address) -> Result<(), ProxyError> {
-        let admin: Address = env.storage().instance().get(&soroban_sdk::symbol_short!("admin"))
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&soroban_sdk::symbol_short!("admin"))
             .expect("Not initialized");
         admin.require_auth();
         let _ = new_implementation;

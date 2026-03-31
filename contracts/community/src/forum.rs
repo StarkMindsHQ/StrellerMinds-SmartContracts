@@ -20,14 +20,21 @@ impl ForumManager {
     ) -> Result<u64, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_soroban_string_length(
-            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
-        CoreValidator::validate_vec_size(
-            tags.len(), "tags", ValidationConfig::MAX_TAGS,
-        ).map_err(|_| Error::InvalidInput)?;
+            &content,
+            "content",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_CONTENT_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_vec_size(tags.len(), "tags", ValidationConfig::MAX_TAGS)
+            .map_err(|_| Error::InvalidInput)?;
 
         let post_id = CommunityStorage::increment_counter(env, CommunityKey::PostCounter);
         let now = env.ledger().timestamp();
@@ -92,8 +99,12 @@ impl ForumManager {
     ) -> Result<u64, Error> {
         // Validate content
         CoreValidator::validate_soroban_string_length(
-            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &content,
+            "content",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_CONTENT_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
 
         let mut post: ForumPost = env
             .storage()

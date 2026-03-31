@@ -83,77 +83,23 @@ impl ValidationConfig {
 /// Validation error types for enhanced error reporting
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValidationError {
-    FieldTooShort {
-        field: &'static str,
-        min_length: u32,
-        actual_length: usize,
-    },
-    FieldTooLong {
-        field: &'static str,
-        max_length: u32,
-        actual_length: usize,
-    },
-    InvalidCharacters {
-        field: &'static str,
-        forbidden_char: char,
-    },
-    InvalidFormat {
-        field: &'static str,
-        reason: &'static str,
-    },
-    InvalidUri {
-        reason: &'static str,
-    },
-    InvalidDate {
-        reason: &'static str,
-    },
-    ContentQuality {
-        reason: &'static str,
-    },
-    EmptyField {
-        field: &'static str,
-    },
-    OutOfRange {
-        field: &'static str,
-        min: u32,
-        max: u32,
-        actual: u32,
-    },
-    CollectionTooLarge {
-        field: &'static str,
-        max_size: u32,
-        actual_size: u32,
-    },
-    InvalidTimeRange {
-        reason: &'static str,
-    },
-    InvalidAddress {
-        reason: &'static str,
-    },
-    InvalidRange {
-        field: &'static str,
-        min: u64,
-        max: u64,
-        actual: u64,
-    },
-    InvalidArraySize {
-        field: &'static str,
-        min: u32,
-        max: u32,
-        actual: u32,
-    },
-    InvalidSymbol {
-        reason: &'static str,
-    },
-    DuplicateValue {
-        field: &'static str,
-        value: String,
-    },
-    InvalidBatchSize {
-        field: &'static str,
-        max_size: u32,
-        actual: u32,
-    },
+    FieldTooShort { field: &'static str, min_length: u32, actual_length: usize },
+    FieldTooLong { field: &'static str, max_length: u32, actual_length: usize },
+    InvalidCharacters { field: &'static str, forbidden_char: char },
+    InvalidFormat { field: &'static str, reason: &'static str },
+    InvalidUri { reason: &'static str },
+    InvalidDate { reason: &'static str },
+    ContentQuality { reason: &'static str },
+    EmptyField { field: &'static str },
+    OutOfRange { field: &'static str, min: u32, max: u32, actual: u32 },
+    CollectionTooLarge { field: &'static str, max_size: u32, actual_size: u32 },
+    InvalidTimeRange { reason: &'static str },
+    InvalidAddress { reason: &'static str },
+    InvalidRange { field: &'static str, min: u64, max: u64, actual: u64 },
+    InvalidArraySize { field: &'static str, min: u32, max: u32, actual: u32 },
+    InvalidSymbol { reason: &'static str },
+    DuplicateValue { field: &'static str, value: String },
+    InvalidBatchSize { field: &'static str, max_size: u32, actual: u32 },
 }
 
 /// Core validation utilities that can be reused across different contracts
@@ -162,13 +108,20 @@ pub struct CoreValidator;
 impl CoreValidator {
     /// Validates address — the Soroban SDK guarantees address validity at the type level,
     /// so this is a no-op stub kept for API compatibility.
-    pub fn validate_address(_address: &Address, _field_name: &'static str) -> Result<(), ValidationError> {
+    pub fn validate_address(
+        _address: &Address,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
         Ok(())
     }
 
     /// Validates address with env — the Soroban SDK guarantees address validity at the type level,
     /// so this is a no-op stub kept for API compatibility.
-    pub fn validate_address_with_env(_env: &Env, _address: &Address, _field_name: &'static str) -> Result<(), ValidationError> {
+    pub fn validate_address_with_env(
+        _env: &Env,
+        _address: &Address,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
         Ok(())
     }
 
@@ -206,7 +159,7 @@ impl CoreValidator {
                 actual: value as u64,
             });
         }
-        
+
         Ok(())
     }
 
@@ -217,8 +170,8 @@ impl CoreValidator {
         min: u32,
         max: u32,
     ) -> Result<(), ValidationError> {
-        let size = collection.len() as u32;
-        
+        let size = collection.len();
+
         if size < min || size > max {
             return Err(ValidationError::InvalidArraySize {
                 field: field_name,
@@ -227,21 +180,26 @@ impl CoreValidator {
                 actual: size,
             });
         }
-        
+
         Ok(())
     }
 
     /// Validates symbol length and format
-    pub fn validate_symbol(symbol: &Symbol, field_name: &'static str) -> Result<(), ValidationError> {
+    pub fn validate_symbol(
+        symbol: &Symbol,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
         let symbol_str = symbol.to_string();
         let len = symbol_str.len();
-        
-        if len < ValidationConfig::MIN_SYMBOL_LENGTH as usize || len > ValidationConfig::MAX_SYMBOL_LENGTH as usize {
+
+        if len < ValidationConfig::MIN_SYMBOL_LENGTH as usize
+            || len > ValidationConfig::MAX_SYMBOL_LENGTH as usize
+        {
             return Err(ValidationError::InvalidSymbol {
                 reason: "Symbol length must be between 1 and 32 characters",
             });
         }
-        
+
         // Check for valid characters (alphanumeric and underscore)
         for ch in symbol_str.chars() {
             if !ch.is_alphanumeric() && ch != '_' {
@@ -250,7 +208,7 @@ impl CoreValidator {
                 });
             }
         }
-        
+
         Ok(())
     }
 
@@ -267,7 +225,7 @@ impl CoreValidator {
                 actual: batch_size,
             });
         }
-        
+
         Ok(())
     }
 
@@ -465,16 +423,12 @@ impl CoreValidator {
         }
 
         // Check for excessive special characters
-        let special_char_count = text
-            .chars()
-            .filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace())
-            .count();
+        let special_char_count =
+            text.chars().filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace()).count();
 
         // Use integer math: special_count * 10 > total * 3 is equivalent to ratio > 0.3
         if special_char_count * 10 > text.len() * 3 {
-            return Err(ValidationError::ContentQuality {
-                reason: "Too many special characters",
-            });
+            return Err(ValidationError::ContentQuality { reason: "Too many special characters" });
         }
 
         // Check for repeated characters (potential spam)
@@ -538,9 +492,8 @@ impl CoreValidator {
     pub fn validate_uri_scheme(uri: &str) -> Result<(), ValidationError> {
         let uri_lower = uri.to_lowercase();
 
-        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES
-            .iter()
-            .any(|&scheme| uri_lower.starts_with(scheme));
+        let has_valid_scheme =
+            ValidationConfig::VALID_URI_SCHEMES.iter().any(|&scheme| uri_lower.starts_with(scheme));
 
         if !has_valid_scheme {
             return Err(ValidationError::InvalidUri {
@@ -555,9 +508,7 @@ impl CoreValidator {
     pub fn validate_uri_format(uri: &str) -> Result<(), ValidationError> {
         // Should not contain spaces
         if uri.contains(' ') {
-            return Err(ValidationError::InvalidUri {
-                reason: "URI cannot contain spaces",
-            });
+            return Err(ValidationError::InvalidUri { reason: "URI cannot contain spaces" });
         }
 
         // Should not have consecutive slashes after scheme
@@ -588,25 +539,19 @@ impl CoreValidator {
     /// Validates HTTPS URI domain structure
     fn validate_https_uri(domain_path: &str) -> Result<(), ValidationError> {
         if domain_path.is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have domain",
-            });
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have domain" });
         }
 
         // Should contain at least a domain
         let parts: Vec<&str> = domain_path.split('/').collect();
         if parts.is_empty() || parts[0].is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have valid domain",
-            });
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have valid domain" });
         }
 
         // Basic domain validation
         let domain = parts[0];
         if !domain.contains('.') || domain.starts_with('.') || domain.ends_with('.') {
-            return Err(ValidationError::InvalidUri {
-                reason: "Invalid domain format",
-            });
+            return Err(ValidationError::InvalidUri { reason: "Invalid domain format" });
         }
 
         Ok(())
@@ -623,9 +568,7 @@ impl CoreValidator {
 
         // Should contain only alphanumeric characters
         if !hash.chars().all(|c| c.is_alphanumeric()) {
-            return Err(ValidationError::InvalidUri {
-                reason: "IPFS hash must be alphanumeric",
-            });
+            return Err(ValidationError::InvalidUri { reason: "IPFS hash must be alphanumeric" });
         }
 
         Ok(())
@@ -683,9 +626,7 @@ impl CoreValidator {
         // Check if all bytes are zero (invalid certificate ID)
         let bytes = certificate_id.to_array();
         if bytes.iter().all(|&b| b == 0) {
-            return Err(ValidationError::EmptyField {
-                field: "certificate_id",
-            });
+            return Err(ValidationError::EmptyField { field: "certificate_id" });
         }
 
         Ok(())
@@ -724,12 +665,7 @@ impl CoreValidator {
         max: u32,
     ) -> Result<(), ValidationError> {
         if value < min || value > max {
-            return Err(ValidationError::OutOfRange {
-                field: field_name,
-                min,
-                max,
-                actual: value,
-            });
+            return Err(ValidationError::OutOfRange { field: field_name, min, max, actual: value });
         }
         Ok(())
     }
@@ -838,10 +774,7 @@ mod tests {
     #[test]
     fn test_validate_forbidden_chars() {
         let result = CoreValidator::validate_no_forbidden_chars("Text with <script>", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::InvalidCharacters { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::InvalidCharacters { .. })));
     }
 
     #[test]
@@ -853,10 +786,7 @@ mod tests {
     #[test]
     fn test_validate_text_quality_too_many_special_chars() {
         let result = CoreValidator::validate_text_quality("!@#$%^&*()", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::ContentQuality { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::ContentQuality { .. })));
     }
 
     #[test]
@@ -960,10 +890,7 @@ mod tests {
     #[test]
     fn test_validate_vec_size_too_large() {
         let result = CoreValidator::validate_vec_size(25, "tags", 20);
-        assert!(matches!(
-            result,
-            Err(ValidationError::CollectionTooLarge { actual_size: 25, .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::CollectionTooLarge { actual_size: 25, .. })));
     }
 
     #[test]

@@ -18,14 +18,25 @@ impl ApiDocManager {
     ) -> Result<ApiEndpoint, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &name, "name", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &name,
+            "name",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
         CoreValidator::validate_soroban_string_length(
-            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
         CoreValidator::validate_vec_size(
-            parameters.len(), "parameters", ValidationConfig::MAX_PARAMETERS,
-        ).map_err(|_| Error::InvalidDocument)?;
+            parameters.len(),
+            "parameters",
+            ValidationConfig::MAX_PARAMETERS,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
 
         if env.storage().persistent().has(&DataKey::ApiEndpoint(endpoint_id.clone())) {
             return Err(Error::AlreadyExists);

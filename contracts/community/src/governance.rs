@@ -20,13 +20,21 @@ impl GovernanceManager {
     ) -> Result<u64, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_soroban_string_length(
-            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
-        if voting_duration < ValidationConfig::MIN_VOTING_DURATION
-            || voting_duration > ValidationConfig::MAX_VOTING_DURATION
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+        if !(ValidationConfig::MIN_VOTING_DURATION..=ValidationConfig::MAX_VOTING_DURATION)
+            .contains(&voting_duration)
         {
             return Err(Error::InvalidInput);
         }

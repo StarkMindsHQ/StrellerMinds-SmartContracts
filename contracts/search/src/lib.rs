@@ -296,8 +296,13 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
-        CoreValidator::validate_range(completion_score, "completion_score", 0, ValidationConfig::MAX_PROGRESS)
-            .map_err(|_| Error::InvalidQuery)?;
+        CoreValidator::validate_range(
+            completion_score,
+            "completion_score",
+            0,
+            ValidationConfig::MAX_PROGRESS,
+        )
+        .map_err(|_| Error::InvalidQuery)?;
 
         LearningPathOptimizer::complete_step(&env, user, step_id, completion_score);
         Ok(())

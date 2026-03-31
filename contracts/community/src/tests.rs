@@ -106,7 +106,12 @@ fn test_mark_solution() {
         &String::from_str(&env, ""),
     );
 
-    let reply_id = client.create_reply(&user2, &post_id, &String::from_str(&env, "Here is the answer to your question"), &0);
+    let reply_id = client.create_reply(
+        &user2,
+        &post_id,
+        &String::from_str(&env, "Here is the answer to your question"),
+        &0,
+    );
 
     client.mark_solution(&user1, &post_id, &reply_id);
 
@@ -414,8 +419,9 @@ fn test_create_post_too_many_tags() {
     let client = setup_community(&env, &admin);
 
     let mut tags = Vec::new(&env);
-    for i in 0..21u32 {
-        tags.push_back(String::from_str(&env, &std::format!("tag-{}", i)));
+    let tag = String::from_str(&env, "tag");
+    for _ in 0..21u32 {
+        tags.push_back(tag.clone());
     }
 
     client.create_post(
@@ -501,8 +507,9 @@ fn test_register_mentor_too_many_expertise_areas() {
     let client = setup_community(&env, &admin);
 
     let mut expertise = Vec::new(&env);
-    for i in 0..11u32 {
-        expertise.push_back(String::from_str(&env, &std::format!("skill-{}", i)));
+    let skill = String::from_str(&env, "skill");
+    for _ in 0..11u32 {
+        expertise.push_back(skill.clone());
     }
 
     client.register_mentor(

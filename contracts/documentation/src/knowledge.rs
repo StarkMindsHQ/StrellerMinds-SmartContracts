@@ -16,14 +16,21 @@ impl KnowledgeManager {
     ) -> Result<KnowledgeArticle, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &title, "title", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
         CoreValidator::validate_soroban_string_length(
-            &content, "content", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
-        CoreValidator::validate_vec_size(
-            tags.len(), "tags", ValidationConfig::MAX_TAGS,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &content,
+            "content",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_CONTENT_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
+        CoreValidator::validate_vec_size(tags.len(), "tags", ValidationConfig::MAX_TAGS)
+            .map_err(|_| Error::InvalidDocument)?;
 
         if env.storage().persistent().has(&DataKey::KnowledgeArticle(article_id.clone())) {
             return Err(Error::AlreadyExists);
@@ -60,11 +67,19 @@ impl KnowledgeManager {
     ) -> Result<FAQ, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &question, "question", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &question,
+            "question",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
         CoreValidator::validate_soroban_string_length(
-            &answer, "answer", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_CONTENT_LENGTH,
-        ).map_err(|_| Error::InvalidDocument)?;
+            &answer,
+            "answer",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_CONTENT_LENGTH,
+        )
+        .map_err(|_| Error::InvalidDocument)?;
 
         if env.storage().persistent().has(&DataKey::FAQ(faq_id.clone())) {
             return Err(Error::AlreadyExists);

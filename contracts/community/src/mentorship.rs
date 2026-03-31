@@ -19,11 +19,18 @@ impl MentorshipManager {
     ) -> Result<(), Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &bio, "bio", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_BIO_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &bio,
+            "bio",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_BIO_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_vec_size(
-            expertise_areas.len(), "expertise_areas", ValidationConfig::MAX_EXPERTISE_AREAS,
-        ).map_err(|_| Error::InvalidInput)?;
+            expertise_areas.len(),
+            "expertise_areas",
+            ValidationConfig::MAX_EXPERTISE_AREAS,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_range(max_mentees, "max_mentees", 1, ValidationConfig::MAX_MENTEES)
             .map_err(|_| Error::InvalidInput)?;
 
@@ -59,11 +66,19 @@ impl MentorshipManager {
     ) -> Result<u64, Error> {
         // Validate inputs
         CoreValidator::validate_soroban_string_length(
-            &topic, "topic", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_TITLE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &topic,
+            "topic",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
         CoreValidator::validate_soroban_string_length(
-            &message, "message", ValidationConfig::MIN_TITLE_LENGTH, ValidationConfig::MAX_MESSAGE_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &message,
+            "message",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_MESSAGE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
 
         let profile: MentorProfile = env
             .storage()

@@ -32,8 +32,12 @@ impl ModerationManager {
     ) -> Result<u64, Error> {
         // Validate description
         CoreValidator::validate_soroban_string_length(
-            &description, "description", ValidationConfig::MIN_DESCRIPTION_LENGTH, ValidationConfig::MAX_DESCRIPTION_LENGTH,
-        ).map_err(|_| Error::InvalidInput)?;
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
 
         // Check daily report limit
         let now = env.ledger().timestamp();
