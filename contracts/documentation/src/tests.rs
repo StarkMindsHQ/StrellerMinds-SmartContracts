@@ -102,7 +102,7 @@ fn test_create_duplicate_document() {
     let tags = Vec::new(&env);
     let doc_id = String::from_str(&env, "doc-dup");
     let title = String::from_str(&env, "Title");
-    let content = String::from_str(&env, "Content");
+    let content = String::from_str(&env, "This is test content for documentation");
     let category = String::from_str(&env, "cat");
     let lang = String::from_str(&env, "en");
 
@@ -141,7 +141,7 @@ fn test_get_document() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Article,
         &String::from_str(&env, "general"),
         &tags,
@@ -175,7 +175,7 @@ fn test_update_document_title() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Old Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -239,7 +239,7 @@ fn test_publish_document() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -264,7 +264,7 @@ fn test_view_document_increments_count() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -292,7 +292,7 @@ fn test_mark_helpful() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -316,8 +316,8 @@ fn test_get_documents_by_category() {
     client.create_document(
         &user1,
         &String::from_str(&env, "d1"),
-        &String::from_str(&env, "T1"),
-        &String::from_str(&env, "C1"),
+        &String::from_str(&env, "Title One"),
+        &String::from_str(&env, "This is the first test content"),
         &DocumentType::Guide,
         &cat,
         &tags,
@@ -326,8 +326,8 @@ fn test_get_documents_by_category() {
     client.create_document(
         &user1,
         &String::from_str(&env, "d2"),
-        &String::from_str(&env, "T2"),
-        &String::from_str(&env, "C2"),
+        &String::from_str(&env, "Title Two"),
+        &String::from_str(&env, "This is the second test content"),
         &DocumentType::Article,
         &cat,
         &tags,
@@ -349,8 +349,8 @@ fn test_get_documents_by_author() {
     client.create_document(
         &user1,
         &String::from_str(&env, "a1"),
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for author query"),
         &DocumentType::Guide,
         &cat,
         &tags,
@@ -359,8 +359,8 @@ fn test_get_documents_by_author() {
     client.create_document(
         &user2,
         &String::from_str(&env, "a2"),
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for author query"),
         &DocumentType::Guide,
         &cat,
         &tags,
@@ -421,7 +421,7 @@ fn test_create_multiple_versions() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -463,7 +463,7 @@ fn test_get_version() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -497,7 +497,7 @@ fn test_get_current_version() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for documentation"),
         &DocumentType::Guide,
         &String::from_str(&env, "cat"),
         &tags,
@@ -556,16 +556,16 @@ fn test_create_duplicate_article() {
     client.create_article(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for article"),
         &String::from_str(&env, "cat"),
         &tags,
     );
     client.create_article(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for article"),
         &String::from_str(&env, "cat"),
         &tags,
     );
@@ -601,16 +601,16 @@ fn test_create_duplicate_faq() {
     client.create_faq(
         &user1,
         &id,
-        &String::from_str(&env, "Q"),
-        &String::from_str(&env, "A"),
+        &String::from_str(&env, "What is this FAQ about?"),
+        &String::from_str(&env, "This is the answer to the test FAQ question"),
         &String::from_str(&env, "cat"),
         &1,
     );
     client.create_faq(
         &user1,
         &id,
-        &String::from_str(&env, "Q"),
-        &String::from_str(&env, "A"),
+        &String::from_str(&env, "What is this FAQ about?"),
+        &String::from_str(&env, "This is the answer to the test FAQ question"),
         &String::from_str(&env, "cat"),
         &2,
     );
@@ -627,8 +627,8 @@ fn test_vote_article_helpful() {
     client.create_article(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for article voting"),
         &String::from_str(&env, "cat"),
         &tags,
     );
@@ -651,8 +651,8 @@ fn test_vote_article_not_helpful() {
     client.create_article(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "C"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is test content for article voting"),
         &String::from_str(&env, "cat"),
         &tags,
     );
@@ -676,7 +676,7 @@ fn test_get_article() {
         &user1,
         &id,
         &String::from_str(&env, "Title"),
-        &String::from_str(&env, "Content"),
+        &String::from_str(&env, "This is test content for article"),
         &String::from_str(&env, "cat"),
         &tags,
     );
@@ -695,8 +695,8 @@ fn test_get_faq() {
     client.create_faq(
         &user1,
         &id,
-        &String::from_str(&env, "Q?"),
-        &String::from_str(&env, "A."),
+        &String::from_str(&env, "What is this question?"),
+        &String::from_str(&env, "This is the answer to the FAQ"),
         &String::from_str(&env, "cat"),
         &0,
     );
@@ -751,8 +751,8 @@ fn test_create_duplicate_api_endpoint() {
     client.create_api_endpoint(
         &admin,
         &id,
-        &String::from_str(&env, "N"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Endpoint Name"),
+        &String::from_str(&env, "This is a test endpoint description"),
         &String::from_str(&env, "GET"),
         &String::from_str(&env, "/path"),
         &params,
@@ -762,8 +762,8 @@ fn test_create_duplicate_api_endpoint() {
     client.create_api_endpoint(
         &admin,
         &id,
-        &String::from_str(&env, "N"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Endpoint Name"),
+        &String::from_str(&env, "This is a test endpoint description"),
         &String::from_str(&env, "GET"),
         &String::from_str(&env, "/path"),
         &params,
@@ -784,7 +784,7 @@ fn test_add_code_example_to_endpoint() {
         &admin,
         &ep_id,
         &String::from_str(&env, "Endpoint"),
-        &String::from_str(&env, "Desc"),
+        &String::from_str(&env, "This is a test endpoint description"),
         &String::from_str(&env, "POST"),
         &String::from_str(&env, "/api/data"),
         &params,
@@ -817,8 +817,8 @@ fn test_get_api_endpoint() {
     client.create_api_endpoint(
         &admin,
         &id,
-        &String::from_str(&env, "N"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Endpoint Name"),
+        &String::from_str(&env, "This is a test endpoint description"),
         &String::from_str(&env, "GET"),
         &String::from_str(&env, "/p"),
         &params,
@@ -890,8 +890,8 @@ fn test_create_duplicate_tutorial() {
     client.create_tutorial(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is a test tutorial description"),
         &DifficultyLevel::Beginner,
         &10,
         &steps,
@@ -900,8 +900,8 @@ fn test_create_duplicate_tutorial() {
     client.create_tutorial(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is a test tutorial description"),
         &DifficultyLevel::Beginner,
         &10,
         &steps,
@@ -922,7 +922,7 @@ fn test_complete_tutorial() {
         &user1,
         &id,
         &String::from_str(&env, "Tutorial"),
-        &String::from_str(&env, "Desc"),
+        &String::from_str(&env, "This is a test tutorial description"),
         &DifficultyLevel::Intermediate,
         &60,
         &steps,
@@ -948,8 +948,8 @@ fn test_get_tutorial() {
     client.create_tutorial(
         &user1,
         &id,
-        &String::from_str(&env, "T"),
-        &String::from_str(&env, "D"),
+        &String::from_str(&env, "Test Title"),
+        &String::from_str(&env, "This is a test tutorial description"),
         &DifficultyLevel::Advanced,
         &120,
         &steps,
@@ -1314,8 +1314,8 @@ fn test_total_counters_increment() {
         client.create_document(
             &user1,
             &String::from_str(&env, id_str),
-            &String::from_str(&env, "T"),
-            &String::from_str(&env, "C"),
+            &String::from_str(&env, "Test Title"),
+            &String::from_str(&env, "This is test content for counters"),
             &DocumentType::Article,
             &String::from_str(&env, "cat"),
             &tags,
@@ -1372,7 +1372,7 @@ fn test_all_document_types() {
             &user1,
             &String::from_str(&env, id),
             &String::from_str(&env, "Title"),
-            &String::from_str(&env, "Content"),
+            &String::from_str(&env, "This is test content for document types"),
             doc_type,
             &cat,
             &tags,
@@ -1407,8 +1407,8 @@ fn test_all_difficulty_levels() {
         let tut = client.create_tutorial(
             &user1,
             &String::from_str(&env, id),
-            &String::from_str(&env, "T"),
-            &String::from_str(&env, "D"),
+            &String::from_str(&env, "Test Title"),
+            &String::from_str(&env, "This is a test tutorial description"),
             level,
             &60,
             &steps,
@@ -1521,7 +1521,7 @@ fn test_multi_language_documentation() {
         &user1,
         &doc_id,
         &String::from_str(&env, "Getting Started"),
-        &String::from_str(&env, "Welcome"),
+        &String::from_str(&env, "Welcome to the onboarding guide"),
         &DocumentType::Guide,
         &String::from_str(&env, "onboarding"),
         &tags,

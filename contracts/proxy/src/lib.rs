@@ -24,10 +24,15 @@ impl Proxy {
     /// client.initialize(&admin, &implementation_address);
     /// ```
     pub fn initialize(
-        _env: Env,
-        _admin: Address,
+        env: Env,
+        admin: Address,
         _implementation: Address,
     ) -> Result<(), ProxyError> {
+        admin.require_auth();
+        if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&soroban_sdk::symbol_short!("admin"), &admin);
         Ok(())
     }
 
@@ -46,7 +51,14 @@ impl Proxy {
     /// ```ignore
     /// client.upgrade(&new_impl_address);
     /// ```
-    pub fn upgrade(_env: Env, _new_implementation: Address) -> Result<(), ProxyError> {
+    pub fn upgrade(env: Env, new_implementation: Address) -> Result<(), ProxyError> {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&soroban_sdk::symbol_short!("admin"))
+            .expect("Not initialized");
+        admin.require_auth();
+        let _ = new_implementation;
         Ok(())
     }
 

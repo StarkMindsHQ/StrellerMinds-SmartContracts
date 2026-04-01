@@ -3,6 +3,8 @@
 
 use shared::monitoring::{ContractHealthReport, Monitor};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
+use shared::validation::{CoreValidator, ValidationConfig};
+use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 pub mod errors;
 
@@ -104,6 +106,8 @@ impl AdvancedSearchContract {
     ) -> Result<Vec<Recommendation>, Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(RecommendationEngine::generate_recommendations(&env, user, limit))
     }
@@ -239,6 +243,10 @@ impl AdvancedSearchContract {
         limit: u32,
     ) -> Result<Vec<String>, Error> {
         Self::require_initialized(&env)?;
+        CoreValidator::validate_range(min_score, "min_score", 0, ValidationConfig::MAX_PROGRESS)
+            .map_err(|_| Error::InvalidQuery)?;
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(VisualSearch::find_visually_similar(&env, content_id, min_score, limit))
     }
@@ -290,6 +298,13 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(
+            completion_score,
+            "completion_score",
+            0,
+            ValidationConfig::MAX_PROGRESS,
+        )
+        .map_err(|_| Error::InvalidQuery)?;
 
         LearningPathOptimizer::complete_step(&env, user, step_id, completion_score);
         Ok(())

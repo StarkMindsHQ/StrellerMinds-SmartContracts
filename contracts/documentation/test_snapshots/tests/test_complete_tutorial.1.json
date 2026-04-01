@@ -43,7 +43,7 @@
                   "string": "Tutorial"
                 },
                 {
-                  "string": "Desc"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -368,6 +368,30 @@
                     },
                     {
                       "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "require_review"
                       },
                       "val": {
@@ -613,7 +637,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Desc"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {

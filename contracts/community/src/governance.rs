@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::CommunityEvents;
 use crate::storage::CommunityStorage;
 use crate::types::*;
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct GovernanceManager;
 
@@ -17,6 +18,30 @@ impl GovernanceManager {
         voting_duration: u64,
         min_votes_required: u32,
     ) -> Result<u64, Error> {
+        // Validate inputs
+        CoreValidator::validate_soroban_string_length(
+            &title,
+            "title",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_TITLE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+        CoreValidator::validate_soroban_string_length(
+            &description,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+        if !(ValidationConfig::MIN_VOTING_DURATION..=ValidationConfig::MAX_VOTING_DURATION)
+            .contains(&voting_duration)
+        {
+            return Err(Error::InvalidInput);
+        }
+        if min_votes_required == 0 {
+            return Err(Error::InvalidInput);
+        }
+
         // Check if user has sufficient reputation
         let stats: UserCommunityStats = env
             .storage()

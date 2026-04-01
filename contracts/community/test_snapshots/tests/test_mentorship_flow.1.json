@@ -157,7 +157,7 @@
                   "u64": 1
                 },
                 {
-                  "u32": 95
+                  "u32": 5
                 }
               ]
             }
@@ -838,7 +838,7 @@
                         "symbol": "rating"
                       },
                       "val": {
-                        "u32": 95
+                        "u32": 5
                       }
                     },
                     {
@@ -1338,6 +1338,54 @@
                               },
                               "val": {
                                 "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_contribution"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_post"
+                              },
+                              "val": {
+                                "u32": 5
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_proposal"
+                              },
+                              "val": {
+                                "u32": 2
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_reply"
+                              },
+                              "val": {
+                                "u32": 20
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_vote"
+                              },
+                              "val": {
+                                "u32": 50
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_window"
+                              },
+                              "val": {
+                                "u64": 86400
                               }
                             },
                             {

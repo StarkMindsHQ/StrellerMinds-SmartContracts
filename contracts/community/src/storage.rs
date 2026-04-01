@@ -41,6 +41,12 @@ impl CommunityStorage {
             min_reputation_to_moderate: 500,
             max_reports_per_day: 10,
             vote_weight_threshold: 100,
+            rate_limit_post: 5,
+            rate_limit_reply: 20,
+            rate_limit_vote: 50,
+            rate_limit_proposal: 2,
+            rate_limit_contribution: 5,
+            rate_limit_window: 86_400,
         })
     }
 

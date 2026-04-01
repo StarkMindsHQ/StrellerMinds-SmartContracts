@@ -448,6 +448,10 @@ pub struct DocumentationConfig {
     pub enable_contributions: bool,
     /// Whether view and engagement analytics are collected.
     pub enable_analytics: bool,
+    // Rate limits (max calls per rate_limit_window)
+    pub rate_limit_create_doc: u32,
+    pub rate_limit_contribution: u32,
+    pub rate_limit_window: u64,
 }
 
 impl DocumentationConfig {
@@ -461,6 +465,9 @@ impl DocumentationConfig {
             require_review: defaults.require_review,
             enable_contributions: defaults.enable_contributions,
             enable_analytics: defaults.enable_analytics,
+            rate_limit_create_doc: 10,
+            rate_limit_contribution: 20,
+            rate_limit_window: 3_600,
         }
     }
 
@@ -518,6 +525,7 @@ pub enum DataKey {
     TotalViews,
     /// Running total of contributions submitted.
     TotalContributions,
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
 }
 
 // ============================================================================
