@@ -610,6 +610,13 @@ pub struct CommunityConfig {
     pub max_reports_per_day: u32,
     /// Minimum reputation score required for a user's governance vote to carry weight.
     pub vote_weight_threshold: u32,
+    // Rate limits (max calls per window_seconds)
+    pub rate_limit_post: u32,
+    pub rate_limit_reply: u32,
+    pub rate_limit_vote: u32,
+    pub rate_limit_proposal: u32,
+    pub rate_limit_contribution: u32,
+    pub rate_limit_window: u64,
 }
 
 // ───────────────────────────────────────────────
@@ -712,4 +719,7 @@ pub enum CommunityKey {
     ActiveProposals,
     /// Vote record for a specific user on a specific proposal.
     ProposalVote(Address, u64),
+
+    // Rate Limiting
+    RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
 }

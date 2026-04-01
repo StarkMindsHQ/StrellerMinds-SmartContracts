@@ -40,10 +40,10 @@
                   "string": "tut-get"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "D"
+                  "string": "This is a test tutorial description"
                 },
                 {
                   "vec": [
@@ -255,6 +255,30 @@
                       },
                       "val": {
                         "vec": []
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
                       }
                     },
                     {
@@ -504,7 +528,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "D"
+                        "string": "This is a test tutorial description"
                       }
                     },
                     {
@@ -548,7 +572,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

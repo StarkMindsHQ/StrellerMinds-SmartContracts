@@ -43,7 +43,7 @@
                   "string": "Endpoint"
                 },
                 {
-                  "string": "Desc"
+                  "string": "This is a test endpoint description"
                 },
                 {
                   "string": "POST"
@@ -378,7 +378,7 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "Desc"
+                        "string": "This is a test endpoint description"
                       }
                     },
                     {
@@ -515,6 +515,30 @@
                       },
                       "val": {
                         "vec": []
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
                       }
                     },
                     {
