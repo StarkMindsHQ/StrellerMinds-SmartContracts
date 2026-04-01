@@ -12,9 +12,10 @@ All development for StrellerMinds smart contracts must follow these security pri
 
 ## Security Review Process
 
-1. All PRs must undergo security review before merging.
-2. Static analysis tools must be run on all code.
-3. Test coverage must include security-focused test cases.
+1. All PRs must undergo security review before merging — see [SECURITY_REVIEW_PROCESS.md](SECURITY_REVIEW_PROCESS.md) for the full four-gate process.
+2. Run `bash scripts/security_audit.sh` locally before pushing any contract change.
+3. Static analysis tools must be run on all code (`cargo clippy -D warnings`).
+4. Test coverage must include security-focused test cases (see Gate 3 in the review process doc).
 
 ## Release Verification
 

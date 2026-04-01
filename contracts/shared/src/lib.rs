@@ -81,6 +81,10 @@ pub mod rate_limiter;
 #[cfg(any(test, feature = "testutils"))]
 pub mod debug_utils;
 
+/// Full validation implementation with security tests.
+/// The `validation` module above is a lightweight stub used by other contracts
+/// at the shared-crate boundary. This module exposes the complete validator.
+pub mod validation_core;
 #[cfg(test)]
 mod logger_tests;
 
