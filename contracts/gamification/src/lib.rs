@@ -15,8 +15,8 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
-use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub use errors::Error;

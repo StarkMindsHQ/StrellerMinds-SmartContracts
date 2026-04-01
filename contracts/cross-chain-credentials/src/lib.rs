@@ -8,8 +8,8 @@ use shared::event_schema::{
     CredentialReactivatedEvent, CredentialRevokedEvent, CredentialSuspendedEvent,
     CrossChainEventData, OracleUpdatedEvent, ProofGeneratedEvent, VerificationRequestedEvent,
 };
-use shared::validation::{CoreValidator, ValidationConfig};
 use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::validation::{CoreValidator, ValidationConfig};
 use shared::{emit_access_control_event, emit_crosschain_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 

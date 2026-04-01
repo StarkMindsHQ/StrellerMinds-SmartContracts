@@ -1,8 +1,8 @@
 #![no_std]
 #![allow(dead_code)]
 
-use shared::validation::{CoreValidator, ValidationConfig};
 use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::validation::{CoreValidator, ValidationConfig};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub mod errors;
