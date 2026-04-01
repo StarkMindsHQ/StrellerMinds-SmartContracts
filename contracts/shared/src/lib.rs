@@ -85,4 +85,6 @@ pub mod debug_utils;
 mod logger_tests;
 
 #[cfg(test)]
+pub mod monitoring_tests;
+#[cfg(test)]
 pub mod performance_tests;

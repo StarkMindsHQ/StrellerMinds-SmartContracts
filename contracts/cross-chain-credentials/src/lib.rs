@@ -8,6 +8,7 @@ use shared::event_schema::{
     CredentialReactivatedEvent, CredentialRevokedEvent, CredentialSuspendedEvent,
     CrossChainEventData, OracleUpdatedEvent, ProofGeneratedEvent, VerificationRequestedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::validation::{CoreValidator, ValidationConfig};
 use shared::{emit_access_control_event, emit_crosschain_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
@@ -488,6 +489,13 @@ impl CrossChainCredentials {
     /// ```
     pub fn is_oracle(env: Env, oracle: Address) -> bool {
         is_oracle(&env, &oracle)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Admin);
+        let report = Monitor::build_health_report(&env, symbol_short!("creds"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 

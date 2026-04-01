@@ -10,6 +10,8 @@
 
 use soroban_sdk::{contracterror, contracttype, Address, Env, Symbol, Vec};
 
+use crate::monitoring::AlertRule;
+
 // ============================================================================
 // Error Classification and Severity Levels
 // ============================================================================
@@ -1035,18 +1037,27 @@ pub struct AlertConfig {
     pub time_window: u64,
     /// Admin address for escalation
     pub admin: Address,
+    /// Per-metric alert rules for threshold monitoring
+    pub alert_rules: Vec<AlertRule>,
 }
 
 impl AlertConfig {
     /// Create default alert configuration
-    pub fn new(admin: Address) -> Self {
+    pub fn new(env: &Env, admin: Address) -> Self {
         Self {
             enabled: true,
             min_level: AlertLevel::Warning,
             error_threshold: 5,
             time_window: 300, // 5 minutes
             admin,
+            alert_rules: Vec::new(env),
         }
+    }
+
+    /// Builder method to add custom alert rules
+    pub fn with_rules(mut self, rules: Vec<AlertRule>) -> Self {
+        self.alert_rules = rules;
+        self
     }
 }
 
@@ -1409,10 +1420,36 @@ impl HealthCheck {
         }
     }
 
-    /// Emit health status event
+    /// Emit health status event using the standardized monitoring schema.
     pub fn emit_health_status(env: &Env, result: &HealthCheckResult) {
-        let topics = (Symbol::new(env, "health_check"), result.status as u32);
-        env.events().publish(topics, result.timestamp);
+        use crate::event_schema::{
+            EventData, HealthCheckEventData, MonitoringEventData, StandardEvent,
+        };
+        use soroban_sdk::symbol_short;
+
+        let status_sym = match result.status {
+            HealthStatus::Healthy => Symbol::new(env, "healthy"),
+            HealthStatus::Degraded => Symbol::new(env, "degraded"),
+            HealthStatus::Unhealthy => Symbol::new(env, "unhealthy"),
+            HealthStatus::Unknown => Symbol::new(env, "unknown"),
+        };
+
+        let event_data = EventData::Monitoring(MonitoringEventData::HealthCheck(
+            HealthCheckEventData {
+                contract_id: symbol_short!("system"),
+                status: result.status as u32,
+                timestamp: result.timestamp,
+                details: status_sym,
+            },
+        ));
+
+        StandardEvent::new(
+            env,
+            symbol_short!("system"),
+            env.current_contract_address(),
+            event_data,
+        )
+        .emit(env);
     }
 }
 
@@ -1561,7 +1598,7 @@ mod tests {
     fn test_error_monitor_initialization() {
         let env = Env::default();
         let admin = Address::generate(&env);
-        let config = AlertConfig::new(admin);
+        let config = AlertConfig::new(&env, admin);
 
         ErrorMonitor::initialize(&env, &config);
 
@@ -1602,7 +1639,7 @@ mod tests {
         CircuitBreaker::initialize(&env, &operation_id, &config);
 
         let admin = Address::generate(&env);
-        ErrorMonitor::initialize(&env, &AlertConfig::new(admin));
+        ErrorMonitor::initialize(&env, &AlertConfig::new(&env, admin));
 
         let mut features = Vec::new(&env);
         features.push_back(Symbol::new(&env, "feature1"));

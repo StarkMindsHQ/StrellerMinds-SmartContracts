@@ -14,8 +14,11 @@ use types::*;
 #[cfg(test)]
 mod test;
 
+use shared::monitoring::{ContractHealthReport, Monitor};
 use soroban_sdk::xdr::ToXdr;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec};
+use soroban_sdk::{
+    contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec,
+};
 
 const RL_OP_START_SUBMISSION: u64 = 1;
 const RL_OP_SUBMIT_ANSWERS: u64 = 2;
@@ -979,5 +982,12 @@ impl Assessment {
         }
 
         result
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Admin);
+        let report = Monitor::build_health_report(&env, symbol_short!("assess"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }

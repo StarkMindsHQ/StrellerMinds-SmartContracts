@@ -7,6 +7,7 @@ use shared::event_schema::{
     AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
     SessionRecordedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_analytics_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env};
 
@@ -121,6 +122,13 @@ impl Analytics {
     /// ```
     pub fn get_admin(_env: Env) -> Option<Address> {
         None
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let report = Monitor::build_health_report(&env, symbol_short!("analytics"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 pub mod gas_optimized;

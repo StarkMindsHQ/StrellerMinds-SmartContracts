@@ -8,6 +8,7 @@ use shared::event_schema::{
     TokensTransferredEvent,
 };
 use shared::logger::{LogLevel, Logger};
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{emit_access_control_event, emit_token_event, log_info};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
@@ -168,6 +169,14 @@ impl Token {
     /// ```
     pub fn balance(_env: Env, _account: Address) -> Result<u64, TokenError> {
         Ok(0)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let mut report = Monitor::build_health_report(&env, symbol_short!("token"), initialized);
+        Monitor::add_metric(&mut report, symbol_short!("uptime"), 1, env.ledger().timestamp());
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 pub mod gas_optimized;

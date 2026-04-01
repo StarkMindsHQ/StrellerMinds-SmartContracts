@@ -10,6 +10,7 @@ mod test;
 
 use errors::CertificateError;
 use shared::logger::{LogLevel, Logger};
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Vec};
@@ -1289,5 +1290,12 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = storage::is_initialized(&env);
+        let report = Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
