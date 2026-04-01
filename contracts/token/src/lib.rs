@@ -7,8 +7,9 @@ use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, TokenEventData, TokensMintedEvent,
     TokensTransferredEvent,
 };
+use shared::logger::{LogLevel, Logger};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
-use shared::{emit_access_control_event, emit_token_event};
+use shared::{emit_access_control_event, emit_token_event, log_info};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
 
 #[contracttype]
@@ -64,6 +65,9 @@ impl Token {
                 window_seconds: 86_400,
             },
         );
+        Logger::init(&env, LogLevel::Info);
+        log_info!(&env, symbol_short!("token"), symbol_short!("init_ok"));
+
         emit_access_control_event!(
             &env,
             symbol_short!("token"),
@@ -95,6 +99,8 @@ impl Token {
             &RateLimitConfig { max_calls: rl.max_mints_per_day, window_seconds: rl.window_seconds },
         )
         .map_err(|_| TokenError::RateLimitExceeded)?;
+        log_info!(&env, symbol_short!("token"), symbol_short!("mint"));
+
         emit_token_event!(
             &env,
             symbol_short!("token"),
@@ -133,6 +139,8 @@ impl Token {
             },
         )
         .map_err(|_| TokenError::RateLimitExceeded)?;
+        log_info!(&env, symbol_short!("token"), symbol_short!("transfer"));
+
         emit_token_event!(
             &env,
             symbol_short!("token"),

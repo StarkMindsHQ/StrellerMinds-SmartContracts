@@ -73,8 +73,16 @@ pub mod error_codes;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+pub mod log_aggregator;
+pub mod logger;
 pub mod monitoring;
 pub mod rate_limiter;
+
+#[cfg(any(test, feature = "testutils"))]
+pub mod debug_utils;
+
+#[cfg(test)]
+mod logger_tests;
 
 #[cfg(test)]
 pub mod performance_tests;
