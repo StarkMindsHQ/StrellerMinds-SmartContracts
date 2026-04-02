@@ -40,10 +40,10 @@
                   "string": "art-dup"
                 },
                 {
-                  "string": "T"
+                  "string": "Test Title"
                 },
                 {
-                  "string": "C"
+                  "string": "This is test content for article"
                 },
                 {
                   "string": "cat"
@@ -248,6 +248,30 @@
                     },
                     {
                       "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "require_review"
                       },
                       "val": {
@@ -376,7 +400,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "C"
+                        "string": "This is test content for article"
                       }
                     },
                     {
@@ -424,7 +448,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "T"
+                        "string": "Test Title"
                       }
                     },
                     {

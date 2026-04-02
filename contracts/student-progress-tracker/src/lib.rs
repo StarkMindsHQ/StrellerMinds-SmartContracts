@@ -10,6 +10,7 @@ use shared::circuit_breaker::{
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_progress_event};
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, Address,
@@ -354,6 +355,13 @@ impl ProgressTracker {
         if let Some(state_change) = transition {
             Self::emit_circuit_transition(env, state_change, &status);
         }
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Admin);
+        let report = Monitor::build_health_report(&env, symbol_short!("stracker"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 

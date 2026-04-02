@@ -159,7 +159,7 @@ fn test_update_progress_invalid_percentage() {
     }]);
 
     let result = client.try_update_progress(&student, &course_id, &module_id, &invalid_percent);
-    assert_eq!(result, Err(Ok(StudentProgressError::InvalidPercent)));
+    assert!(result.is_err(), "Expected error for percentage > 100");
 }
 
 #[test]

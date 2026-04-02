@@ -11,6 +11,7 @@ use shared::event_schema::{
     AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
     SessionRecordedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_analytics_event};
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Error, Symbol,
@@ -77,11 +78,7 @@ impl Analytics {
     /// ```ignore
     /// client.record_session(&user, &session_id);
     /// ```
-    pub fn record_session(
-        env: Env,
-        user: Address,
-        session_id: BytesN<32>,
-    ) -> Result<(), Error> {
+    pub fn record_session(env: Env, user: Address, session_id: BytesN<32>) -> Result<(), Error> {
         user.require_auth();
         Self::ensure_operational(&env)?;
 
@@ -124,11 +121,7 @@ impl Analytics {
     /// ```ignore
     /// client.complete_session(&user, &session_id);
     /// ```
-    pub fn complete_session(
-        env: Env,
-        user: Address,
-        session_id: BytesN<32>,
-    ) -> Result<(), Error> {
+    pub fn complete_session(env: Env, user: Address, session_id: BytesN<32>) -> Result<(), Error> {
         user.require_auth();
         Self::ensure_operational(&env)?;
 
@@ -340,6 +333,13 @@ impl Analytics {
         if let Some(state_change) = transition {
             Self::emit_circuit_transition(env, state_change, &status);
         }
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let report = Monitor::build_health_report(&env, symbol_short!("analytics"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 

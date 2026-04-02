@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
 use crate::types::{Challenge, GamificationKey, UserChallenge};
+use shared::validation::CoreValidator;
 
 pub struct ChallengeManager;
 
@@ -119,6 +120,10 @@ impl ChallengeManager {
         challenge_id: u64,
         progress: u32,
     ) -> Result<bool, Error> {
+        // Validate progress range
+        CoreValidator::validate_range(progress, "progress", 0, 10_000)
+            .map_err(|_| Error::InvalidInput)?;
+
         let challenge: Challenge = env
             .storage()
             .persistent()

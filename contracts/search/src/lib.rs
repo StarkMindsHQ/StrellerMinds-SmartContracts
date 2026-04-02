@@ -1,7 +1,9 @@
 #![no_std]
 #![allow(dead_code)]
 
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::validation::{CoreValidator, ValidationConfig};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub mod errors;
 
@@ -103,6 +105,8 @@ impl AdvancedSearchContract {
     ) -> Result<Vec<Recommendation>, Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(RecommendationEngine::generate_recommendations(&env, user, limit))
     }
@@ -238,6 +242,10 @@ impl AdvancedSearchContract {
         limit: u32,
     ) -> Result<Vec<String>, Error> {
         Self::require_initialized(&env)?;
+        CoreValidator::validate_range(min_score, "min_score", 0, ValidationConfig::MAX_PROGRESS)
+            .map_err(|_| Error::InvalidQuery)?;
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(VisualSearch::find_visually_similar(&env, content_id, min_score, limit))
     }
@@ -289,6 +297,13 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(
+            completion_score,
+            "completion_score",
+            0,
+            ValidationConfig::MAX_PROGRESS,
+        )
+        .map_err(|_| Error::InvalidQuery)?;
 
         LearningPathOptimizer::complete_step(&env, user, step_id, completion_score);
         Ok(())
@@ -477,6 +492,15 @@ impl AdvancedSearchContract {
         env.storage().persistent().remove(&key);
 
         Ok(())
+    }
+
+    // ==================== Health Check ====================
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Initialized);
+        let report = Monitor::build_health_report(&env, symbol_short!("search"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 
     // ==================== Helper Functions ====================
