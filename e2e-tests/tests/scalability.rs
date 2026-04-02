@@ -27,7 +27,7 @@ fn test_batch_scalability() {
     for _user in users.iter() {
         processed_events += 1;
         // Mocking some state update or computation
-        let _perm = Permission::new();
+        let _perm = Permission::ViewProgress;
     }
 
     assert_eq!(processed_events, num_users);

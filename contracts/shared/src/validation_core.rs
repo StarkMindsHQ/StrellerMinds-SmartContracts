@@ -1,5 +1,5 @@
-use std::string::{String, ToString};
-use std::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 use soroban_sdk::{BytesN, Env};
 
@@ -43,36 +43,14 @@ impl ValidationConfig {
 /// Validation error types for enhanced error reporting
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValidationError {
-    FieldTooShort {
-        field: &'static str,
-        min_length: u32,
-        actual_length: usize,
-    },
-    FieldTooLong {
-        field: &'static str,
-        max_length: u32,
-        actual_length: usize,
-    },
-    InvalidCharacters {
-        field: &'static str,
-        forbidden_char: char,
-    },
-    InvalidFormat {
-        field: &'static str,
-        reason: &'static str,
-    },
-    InvalidUri {
-        reason: &'static str,
-    },
-    InvalidDate {
-        reason: &'static str,
-    },
-    ContentQuality {
-        reason: &'static str,
-    },
-    EmptyField {
-        field: &'static str,
-    },
+    FieldTooShort { field: &'static str, min_length: u32, actual_length: usize },
+    FieldTooLong { field: &'static str, max_length: u32, actual_length: usize },
+    InvalidCharacters { field: &'static str, forbidden_char: char },
+    InvalidFormat { field: &'static str, reason: &'static str },
+    InvalidUri { reason: &'static str },
+    InvalidDate { reason: &'static str },
+    ContentQuality { reason: &'static str },
+    EmptyField { field: &'static str },
 }
 
 /// Core validation utilities that can be reused across different contracts
@@ -134,16 +112,12 @@ impl CoreValidator {
         }
 
         // Check for excessive special characters
-        let special_char_count = text
-            .chars()
-            .filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace())
-            .count();
+        let special_char_count =
+            text.chars().filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace()).count();
 
         let special_char_ratio = special_char_count as f32 / text.len() as f32;
         if special_char_ratio > ValidationConfig::MAX_SPECIAL_CHAR_RATIO {
-            return Err(ValidationError::ContentQuality {
-                reason: "Too many special characters",
-            });
+            return Err(ValidationError::ContentQuality { reason: "Too many special characters" });
         }
 
         // Check for repeated characters (potential spam)
@@ -207,9 +181,8 @@ impl CoreValidator {
     pub fn validate_uri_scheme(uri: &str) -> Result<(), ValidationError> {
         let uri_lower = uri.to_lowercase();
 
-        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES
-            .iter()
-            .any(|&scheme| uri_lower.starts_with(scheme));
+        let has_valid_scheme =
+            ValidationConfig::VALID_URI_SCHEMES.iter().any(|&scheme| uri_lower.starts_with(scheme));
 
         if !has_valid_scheme {
             return Err(ValidationError::InvalidUri {
@@ -224,9 +197,7 @@ impl CoreValidator {
     pub fn validate_uri_format(uri: &str) -> Result<(), ValidationError> {
         // Should not contain spaces
         if uri.contains(' ') {
-            return Err(ValidationError::InvalidUri {
-                reason: "URI cannot contain spaces",
-            });
+            return Err(ValidationError::InvalidUri { reason: "URI cannot contain spaces" });
         }
 
         // Should not have consecutive slashes after scheme
@@ -257,25 +228,19 @@ impl CoreValidator {
     /// Validates HTTPS URI domain structure
     fn validate_https_uri(domain_path: &str) -> Result<(), ValidationError> {
         if domain_path.is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have domain",
-            });
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have domain" });
         }
 
         // Should contain at least a domain
         let parts: Vec<&str> = domain_path.split('/').collect();
         if parts.is_empty() || parts[0].is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have valid domain",
-            });
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have valid domain" });
         }
 
         // Basic domain validation
         let domain = parts[0];
         if !domain.contains('.') || domain.starts_with('.') || domain.ends_with('.') {
-            return Err(ValidationError::InvalidUri {
-                reason: "Invalid domain format",
-            });
+            return Err(ValidationError::InvalidUri { reason: "Invalid domain format" });
         }
 
         Ok(())
@@ -292,9 +257,7 @@ impl CoreValidator {
 
         // Should contain only alphanumeric characters
         if !hash.chars().all(|c| c.is_alphanumeric()) {
-            return Err(ValidationError::InvalidUri {
-                reason: "IPFS hash must be alphanumeric",
-            });
+            return Err(ValidationError::InvalidUri { reason: "IPFS hash must be alphanumeric" });
         }
 
         Ok(())
@@ -352,9 +315,7 @@ impl CoreValidator {
         // Check if all bytes are zero (invalid certificate ID)
         let bytes = certificate_id.to_array();
         if bytes.iter().all(|&b| b == 0) {
-            return Err(ValidationError::EmptyField {
-                field: "certificate_id",
-            });
+            return Err(ValidationError::EmptyField { field: "certificate_id" });
         }
 
         Ok(())
@@ -412,6 +373,8 @@ impl CoreValidator {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use super::*;
     use soroban_sdk::testutils::Ledger;
     use soroban_sdk::{BytesN, Env};
@@ -438,10 +401,7 @@ mod tests {
     #[test]
     fn test_validate_forbidden_chars() {
         let result = CoreValidator::validate_no_forbidden_chars("Text with <script>", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::InvalidCharacters { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::InvalidCharacters { .. })));
     }
 
     #[test]
@@ -453,10 +413,7 @@ mod tests {
     #[test]
     fn test_validate_text_quality_too_many_special_chars() {
         let result = CoreValidator::validate_text_quality("!@#$%^&*()", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::ContentQuality { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::ContentQuality { .. })));
     }
 
     #[test]
@@ -643,7 +600,8 @@ mod tests {
     #[test]
     fn security_high_special_char_ratio_rejected() {
         // >30% special chars
-        let result = CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
+        let result =
+            CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
         assert!(result.is_err(), "High special-char ratio must be rejected");
     }
 
