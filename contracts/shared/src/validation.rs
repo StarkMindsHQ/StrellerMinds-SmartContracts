@@ -883,4 +883,162 @@ mod tests {
         let result = CoreValidator::validate_time_range(1000, 1000);
         assert!(matches!(result, Err(ValidationError::InvalidTimeRange { .. })));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Security Tests: Input Injection & Boundary Attacks
+    // ─────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn security_xss_script_tag_rejected() {
+        let result =
+            CoreValidator::validate_no_forbidden_chars("<script>alert(1)</script>", "field");
+        assert!(result.is_err(), "XSS script tag must be rejected");
+    }
+
+    #[test]
+    fn security_xss_img_onerror_rejected() {
+        let result =
+            CoreValidator::validate_no_forbidden_chars("<img src=x onerror=alert(1)>", "field");
+        assert!(result.is_err(), "XSS img onerror must be rejected");
+    }
+
+    #[test]
+    fn security_null_byte_injection_rejected() {
+        let payload = "valid\x00injection";
+        let result = CoreValidator::validate_no_forbidden_chars(payload, "field");
+        assert!(result.is_err(), "Null byte injection must be rejected");
+    }
+
+    #[test]
+    fn security_control_chars_rejected() {
+        // Control chars \x01-\x08 are forbidden
+        for byte in [0x01u8, 0x02, 0x03, 0x07, 0x08] {
+            let payload = alloc::format!("valid{}text", byte as char);
+            let result = CoreValidator::validate_no_forbidden_chars(&payload, "field");
+            assert!(result.is_err(), "Control char 0x{:02X} must be rejected", byte);
+        }
+    }
+
+    #[test]
+    fn security_http_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("http://insecure.example.com/cert");
+        assert!(result.is_err(), "Plain HTTP URI must be rejected");
+    }
+
+    #[test]
+    fn security_javascript_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("javascript:alert(1)");
+        assert!(result.is_err(), "JavaScript URI must be rejected");
+    }
+
+    #[test]
+    fn security_data_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("data:text/html,<h1>test</h1>");
+        assert!(result.is_err(), "Data URI must be rejected");
+    }
+
+    #[test]
+    fn security_empty_string_rejected() {
+        let result = CoreValidator::validate_string_length("", "field", 1, 100);
+        assert!(result.is_err(), "Empty string must be rejected");
+    }
+
+    #[test]
+    fn security_oversized_input_rejected() {
+        let oversized: alloc::string::String = "a".repeat(1001);
+        let result = CoreValidator::validate_string_length(
+            &oversized,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        );
+        assert!(result.is_err(), "Input exceeding max length must be rejected");
+    }
+
+    #[test]
+    fn security_expiry_in_past_rejected() {
+        let env = Env::default();
+        env.ledger().set_timestamp(1_000_000);
+        let result = CoreValidator::validate_expiry_date(&env, 500_000);
+        assert!(result.is_err(), "Past expiry must be rejected");
+    }
+
+    #[test]
+    fn security_expiry_too_far_future_rejected() {
+        let env = Env::default();
+        env.ledger().set_timestamp(1_000_000);
+        let far_future = 1_000_000u64 + ValidationConfig::MAX_FUTURE_EXPIRY + 1;
+        let result = CoreValidator::validate_expiry_date(&env, far_future);
+        assert!(result.is_err(), "Expiry beyond 100 years must be rejected");
+    }
+
+    #[test]
+    fn security_zero_cert_id_rejected() {
+        let env = Env::default();
+        let zero_id = BytesN::from_array(&env, &[0u8; 32]);
+        let result = CoreValidator::validate_certificate_id(&zero_id);
+        assert!(result.is_err(), "All-zero certificate ID must be rejected");
+    }
+
+    #[test]
+    fn security_excessive_repetition_rejected() {
+        // >5 consecutive identical chars — spam pattern
+        let spam = "aaaaaaa";
+        let result = CoreValidator::validate_text_quality(spam, "field");
+        assert!(result.is_err(), "Excessive character repetition must be rejected");
+    }
+
+    #[test]
+    fn security_whitespace_only_rejected() {
+        let result = CoreValidator::validate_text_quality("     ", "field");
+        assert!(result.is_err(), "Whitespace-only content must be rejected");
+    }
+
+    #[test]
+    fn security_high_special_char_ratio_rejected() {
+        // >30% special chars
+        let result = CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
+        assert!(result.is_err(), "High special-char ratio must be rejected");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Security Tests: Integer Arithmetic Safety
+    // ─────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn security_u64_saturating_add_no_overflow() {
+        assert_eq!(u64::MAX.saturating_add(1), u64::MAX);
+    }
+
+    #[test]
+    fn security_u64_saturating_sub_no_underflow() {
+        assert_eq!(0u64.saturating_sub(1), 0);
+    }
+
+    #[test]
+    fn security_u32_saturating_add_no_overflow() {
+        assert_eq!(u32::MAX.saturating_add(1), u32::MAX);
+    }
+
+    #[test]
+    fn security_u32_saturating_sub_no_underflow() {
+        assert_eq!(0u32.saturating_sub(1), 0);
+    }
+
+    #[test]
+    fn security_percentage_calc_no_overflow() {
+        // score * 100 / max_score — common grading pattern
+        let score: u64 = u64::MAX / 100;
+        let max_score: u64 = u64::MAX / 100;
+        let pct = score.saturating_mul(100).saturating_div(max_score.max(1));
+        assert!(pct <= 100, "Percentage must not exceed 100");
+    }
+
+    #[test]
+    fn security_batch_size_max_constant_enforced() {
+        // Documents the invariant: batch operations must check against MAX_BATCH_SIZE
+        assert_eq!(ValidationConfig::MAX_BATCH_SIZE, 100);
+        let oversized: u32 = ValidationConfig::MAX_BATCH_SIZE + 1;
+        assert!(oversized > ValidationConfig::MAX_BATCH_SIZE);
+    }
 }

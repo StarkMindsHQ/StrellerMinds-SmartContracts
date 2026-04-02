@@ -1,3 +1,4 @@
+use shared::monitoring::ContractHealthStatus;
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Vec};
 
 use crate::{
@@ -856,4 +857,27 @@ fn test_certificate_priority_levels() {
     assert_eq!(CertificatePriority::Premium.required_approvals(), 2);
     assert_eq!(CertificatePriority::Enterprise.required_approvals(), 3);
     assert_eq!(CertificatePriority::Institutional.required_approvals(), 5);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 17. Health Check
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_health_check_returns_healthy() {
+    let (_env, client, _admin) = setup_env();
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Healthy);
+    assert!(report.initialized);
+}
+
+#[test]
+fn test_health_check_before_init() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(CertificateContract, ());
+    let client = CertificateContractClient::new(&env, &contract_id);
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Unknown);
+    assert!(!report.initialized);
 }

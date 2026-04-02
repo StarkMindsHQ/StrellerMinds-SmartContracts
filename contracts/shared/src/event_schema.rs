@@ -53,6 +53,7 @@ pub enum EventCategory {
     CrossChain,
     Search,
     Failure,
+    Monitoring,
 }
 
 /// Standardized event data types
@@ -85,6 +86,7 @@ pub enum EventData {
     CrossChain(CrossChainEventData),
     Search(SearchEventData),
     Err(ErrorEventData),
+    Monitoring(MonitoringEventData),
 }
 
 // Access Control Event Structs
@@ -1348,6 +1350,49 @@ pub enum SearchEventData {
     OracleManagement(OracleManagementEvent),
 }
 
+// Monitoring Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct HealthCheckEventData {
+    pub contract_id: Symbol,
+    pub status: u32,
+    pub timestamp: u64,
+    pub details: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MetricRecordedEventData {
+    pub contract_id: Symbol,
+    pub metric_name: Symbol,
+    pub value: i128,
+    pub timestamp: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AlertTriggeredEventData {
+    pub contract_id: Symbol,
+    pub alert_level: u32,
+    pub metric_name: Symbol,
+    pub current_value: i128,
+    pub threshold_value: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AlertResolvedEventData {
+    pub contract_id: Symbol,
+    pub metric_name: Symbol,
+    pub resolved_at: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum MonitoringEventData {
+    HealthCheck(HealthCheckEventData),
+    MetricRecorded(MetricRecordedEventData),
+    AlertTriggered(AlertTriggeredEventData),
+    AlertResolved(AlertResolvedEventData),
+}
+
 impl StandardEvent {
     /// Create a new standard event
     pub fn new(env: &Env, contract: Symbol, actor: Address, event_data: EventData) -> Self {
@@ -1423,6 +1468,7 @@ impl StandardEvent {
             EventData::CrossChain(_) => "crosschain",
             EventData::Search(_) => "search",
             EventData::Err(_) => "failure",
+            EventData::Monitoring(_) => "monitoring",
         }
     }
 
@@ -1596,6 +1642,12 @@ impl StandardEvent {
                 ErrorEventData::InvalidInput(_) => "invalid_input",
                 ErrorEventData::SystemError(_) => "system_error",
             },
+            EventData::Monitoring(data) => match data {
+                MonitoringEventData::HealthCheck(_) => "health_check",
+                MonitoringEventData::MetricRecorded(_) => "metric_recorded",
+                MonitoringEventData::AlertTriggered(_) => "alert_triggered",
+                MonitoringEventData::AlertResolved(_) => "alert_resolved",
+            },
         }
     }
 
@@ -1620,6 +1672,7 @@ impl StandardEvent {
             EventData::CrossChain(_) => String::from_str(env, "crosschain_event"),
             EventData::Search(_) => String::from_str(env, "search_event"),
             EventData::Err(_) => String::from_str(env, "error_event"),
+            EventData::Monitoring(_) => String::from_str(env, "monitoring_event"),
         }
     }
 }
@@ -1828,6 +1881,19 @@ macro_rules! emit_error_event {
             $contract,
             $actor,
             $crate::event_schema::EventData::Err($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_monitoring_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Monitoring($data),
         )
         .emit($env)
     };

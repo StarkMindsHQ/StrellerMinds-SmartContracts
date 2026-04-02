@@ -6,6 +6,7 @@ use crate::errors::ProgressError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_progress_event};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, Vec};
 
@@ -111,6 +112,13 @@ impl Progress {
     /// ```
     pub fn get_student_courses(_env: Env, _student: Address) -> Vec<Symbol> {
         Vec::new(&_env)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let report = Monitor::build_health_report(&env, symbol_short!("progress"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 pub mod gas_optimized;

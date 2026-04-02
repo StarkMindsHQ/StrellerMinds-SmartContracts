@@ -73,8 +73,22 @@ pub mod error_codes;
 pub mod event_schema;
 pub mod event_utils;
 pub mod gas_optimizer;
+pub mod log_aggregator;
+pub mod logger;
 pub mod monitoring;
 pub mod rate_limiter;
 
+#[cfg(any(test, feature = "testutils"))]
+pub mod debug_utils;
+
+/// Full validation implementation with security tests.
+/// The `validation` module above is a lightweight stub used by other contracts
+/// at the shared-crate boundary. This module exposes the complete validator.
+pub mod validation_core;
+#[cfg(test)]
+mod logger_tests;
+
+#[cfg(test)]
+pub mod monitoring_tests;
 #[cfg(test)]
 pub mod performance_tests;

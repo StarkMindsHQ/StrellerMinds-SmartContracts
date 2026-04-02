@@ -1,8 +1,9 @@
 #![no_std]
 #![allow(dead_code)]
 
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::validation::{CoreValidator, ValidationConfig};
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub mod errors;
 
@@ -491,6 +492,15 @@ impl AdvancedSearchContract {
         env.storage().persistent().remove(&key);
 
         Ok(())
+    }
+
+    // ==================== Health Check ====================
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Initialized);
+        let report = Monitor::build_health_report(&env, symbol_short!("search"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 
     // ==================== Helper Functions ====================

@@ -15,8 +15,9 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
 
 pub use errors::CommunityError;
 pub use errors::Error;
@@ -1118,5 +1119,12 @@ impl Community {
     /// ```
     pub fn get_config(env: Env) -> CommunityConfig {
         CommunityStorage::get_config(&env)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = CommunityStorage::is_initialized(&env);
+        let report = Monitor::build_health_report(&env, symbol_short!("communit"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
