@@ -1,0 +1,310 @@
+# LLVM Coverage configuration for StrellerMinds Smart Contracts
+
+[workspace]
+# Enable workspace-wide coverage
+enabled = true
+
+# Include all packages in workspace
+include = [
+    "assessment",
+    "community",
+    "certificate", 
+    "analytics",
+    "shared",
+    "e2e-tests",
+]
+
+[coverage]
+# Coverage options
+exclude_functions = [
+    "test_.*",
+    ".*test.*",
+    "bench_.*",
+    ".*bench.*",
+]
+
+exclude_lines = [
+    "debug_assert!",
+    "cfg\\(test\\)",
+    "cfg\\(feature = \"test\"\\)",
+    "#\\[cfg\\(test\\)\\]",
+    "unreachable!",
+    "panic!",
+    "todo!",
+    "unimplemented!",
+]
+
+exclude_paths = [
+    "tests/",
+    "benches/",
+    "examples/",
+    "target/",
+    "build.rs",
+    "**/tests/**",
+    "**/benches/**",
+    "**/examples/**",
+]
+
+[output]
+# Output formats
+formats = [
+    "Html",
+    "Lcov", 
+    "Json",
+    "Summary",
+]
+
+# Output directory
+directory = "target/llvm-cov"
+
+# Generate reports even if no tests
+always_report = true
+
+# Show summary
+show_summary = true
+
+# Show uncovered regions
+show_uncovered = true
+
+[html]
+# HTML report options
+open_browser = false
+show_line_numbers = true
+show_functions = true
+show_branches = true
+highlight_uncovered = true
+
+[lcov]
+# LCOV options
+merge_paths = true
+path_mapping = true
+
+[json]
+# JSON options
+pretty_print = true
+include_summary = true
+include_functions = true
+include_branches = true
+
+[thresholds]
+# Coverage thresholds (80% minimum as required)
+line = 80.0
+function = 85.0
+branch = 75.0
+condition = 70.0
+
+# Fail if below threshold
+fail_under = true
+
+[tests]
+# Test configuration
+include_tests = true
+include_benches = false
+
+# Test discovery
+discover_tests = true
+
+# Test execution
+threads = 0  # Use all available threads
+timeout = 300  # 5 minutes timeout
+
+[features]
+# Feature configuration
+all_features = true
+default_features = true
+
+# Additional features for testing
+features = [
+    "test-utils",
+    "mock",
+    "property-tests",
+]
+
+[environment]
+# Environment variables for tests
+# Example: "RUST_LOG=debug"
+
+[reporting]
+# Reporting options
+show_missing_lines = true
+show_missing_functions = true
+show_missing_branches = true
+
+# Group by package
+group_by_package = true
+
+# Sort by coverage percentage
+sort_by_coverage = true
+
+[validation]
+# Validation rules
+min_coverage = 80.0
+min_functions = 85.0
+min_branches = 75.0
+
+# Check for uncovered main functions
+check_main = true
+
+# Check for uncovered test helpers
+check_test_helpers = false
+
+[contracts]
+# Contract-specific coverage settings
+
+[contracts.assessment]
+# Assessment contract specific settings
+min_coverage = 85.0
+include_integration = true
+include_unit = true
+
+[contracts.community]
+# Community contract specific settings
+min_coverage = 80.0
+include_integration = true
+include_unit = true
+
+[contracts.certificate]
+# Certificate contract specific settings
+min_coverage = 80.0
+include_integration = true
+include_unit = true
+
+[contracts.analytics]
+# Analytics contract specific settings
+min_coverage = 75.0
+include_integration = true
+include_unit = true
+
+[contracts.shared]
+# Shared library specific settings
+min_coverage = 90.0
+include_integration = true
+include_unit = true
+
+[contracts.e2e-tests]
+# E2E tests specific settings
+min_coverage = 70.0
+include_integration = true
+include_unit = true
+
+[integration]
+# Integration test coverage
+include_e2e = true
+include_contract_interaction = true
+include_cross_contract = true
+
+# Integration test patterns
+integration_patterns = [
+    "integration_test",
+    "e2e_test",
+    "contract_interaction",
+    "cross_contract",
+]
+
+[property_tests]
+# Property-based testing
+include_proptest = true
+include_quickcheck = true
+
+# Property test patterns
+property_patterns = [
+    "prop_.*",
+    "quickcheck_.*",
+    "property_.*",
+]
+
+[edge_cases]
+# Edge case testing
+include_boundary_tests = true
+include_limit_tests = true
+include_error_tests = true
+
+# Edge case patterns
+edge_case_patterns = [
+    "edge_case",
+    "boundary",
+    "limit",
+    "max_value",
+    "min_value",
+    "zero_value",
+    "empty",
+    "full",
+]
+
+[error_scenarios]
+# Error scenario testing
+include_error_tests = true
+include_panic_tests = true
+include_failure_tests = true
+
+# Error test patterns
+error_patterns = [
+    "error",
+    "panic",
+    "failure",
+    "invalid",
+    "malformed",
+    "corrupt",
+]
+
+[performance]
+# Performance testing
+include_benchmarks = true
+include_regression_tests = true
+
+# Performance test patterns
+performance_patterns = [
+    "bench",
+    "perf",
+    "performance",
+    "regression",
+]
+
+[security]
+# Security testing
+include_security_tests = true
+include_validation_tests = true
+
+# Security test patterns
+security_patterns = [
+    "security",
+    "validation",
+    "input_validation",
+    "xss",
+    "injection",
+    "overflow",
+    "underflow",
+]
+
+[quality]
+# Code quality metrics
+include_complexity = true
+include_maintainability = true
+include_documentation = true
+
+# Quality thresholds
+max_complexity = 10
+min_documentation = 70.0
+
+[reporting]
+# Report generation
+generate_summary = true
+generate_detailed = true
+generate_trend = true
+
+# Report formats
+summary_format = "markdown"
+detailed_format = "html"
+trend_format = "json"
+
+[notifications]
+# Notification settings
+notify_on_failure = true
+notify_on_regression = true
+notify_on_improvement = false
+
+# Notification methods
+notification_methods = [
+    "console",
+    "file",
+]
