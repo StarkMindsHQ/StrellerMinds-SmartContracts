@@ -997,7 +997,8 @@ mod tests {
     #[test]
     fn security_high_special_char_ratio_rejected() {
         // >30% special chars
-        let result = CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
+        let result =
+            CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
         assert!(result.is_err(), "High special-char ratio must be rejected");
     }
 

@@ -169,10 +169,7 @@ mod tests {
         .expect("gas measurement should succeed");
 
         assert!(measurement.success);
-        assert_eq!(
-            measurement.operation_name,
-            String::from_str(&env, "test_operation")
-        );
+        assert_eq!(measurement.operation_name, String::from_str(&env, "test_operation"));
         assert!(measurement.estimated_instructions > 0);
     }
 

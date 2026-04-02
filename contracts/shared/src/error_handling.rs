@@ -273,9 +273,7 @@ impl CircuitBreaker {
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
         env.storage().instance().set(&config_key, config);
-        env.storage()
-            .instance()
-            .set(&state_key, &CircuitBreakerState::new());
+        env.storage().instance().set(&state_key, &CircuitBreakerState::new());
     }
 
     /// Check if a request can proceed through the circuit breaker
@@ -283,17 +281,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         let current_time = env.ledger().timestamp();
 
@@ -330,17 +322,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         state.total_successes += 1;
 
@@ -376,17 +362,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         state.total_failures += 1;
         state.failure_count += 1;
@@ -425,10 +405,7 @@ impl CircuitBreaker {
         operation_id: &Symbol,
     ) -> Result<CircuitBreakerState, RecoveryError> {
         let state_key = CircuitBreakerKey::State(operation_id.clone());
-        env.storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)
+        env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)
     }
 
     /// Force reset the circuit breaker (admin only)
@@ -439,9 +416,7 @@ impl CircuitBreaker {
             return Err(RecoveryError::NotInitialized);
         }
 
-        env.storage()
-            .instance()
-            .set(&state_key, &CircuitBreakerState::new());
+        env.storage().instance().set(&state_key, &CircuitBreakerState::new());
 
         Self::emit_circuit_reset(env, operation_id);
         Ok(())
@@ -449,11 +424,7 @@ impl CircuitBreaker {
 
     // Event emission helpers
     fn emit_circuit_opened(env: &Env, operation_id: &Symbol, failure_count: u32) {
-        let topics = (
-            Symbol::new(env, "circuit_opened"),
-            operation_id.clone(),
-            failure_count,
-        );
+        let topics = (Symbol::new(env, "circuit_opened"), operation_id.clone(), failure_count);
         env.events().publish(topics, ());
     }
 
@@ -605,24 +576,18 @@ impl RetryMechanism {
         let config_key = RetryKey::Config(operation_id.clone());
         let context_key = RetryKey::Context(operation_id.clone());
 
-        let config: RetryConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: RetryConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
         // Check for existing context
         let mut context: RetryContext =
-            env.storage()
-                .instance()
-                .get(&context_key)
-                .unwrap_or(RetryContext {
-                    attempt: 0,
-                    next_retry_at: 0,
-                    operation_id: operation_id.clone(),
-                    exhausted: false,
-                    last_error: 0,
-                });
+            env.storage().instance().get(&context_key).unwrap_or(RetryContext {
+                attempt: 0,
+                next_retry_at: 0,
+                operation_id: operation_id.clone(),
+                exhausted: false,
+                last_error: 0,
+            });
 
         if context.exhausted {
             return Err(RecoveryError::MaxRetriesExceeded);
@@ -694,20 +659,12 @@ impl RetryMechanism {
 
     // Event emission helpers
     fn emit_retry_scheduled(env: &Env, operation_id: &Symbol, attempt: u32, delay: u64) {
-        let topics = (
-            Symbol::new(env, "retry_scheduled"),
-            operation_id.clone(),
-            attempt,
-        );
+        let topics = (Symbol::new(env, "retry_scheduled"), operation_id.clone(), attempt);
         env.events().publish(topics, delay);
     }
 
     fn emit_retries_exhausted(env: &Env, operation_id: &Symbol, attempts: u32) {
-        let topics = (
-            Symbol::new(env, "retries_exhausted"),
-            operation_id.clone(),
-            attempts,
-        );
+        let topics = (Symbol::new(env, "retries_exhausted"), operation_id.clone(), attempts);
         env.events().publish(topics, ());
     }
 
@@ -873,10 +830,8 @@ impl RecoverySystem {
         let workflow_key = RecoveryKey::Workflow(context.context_id.clone());
 
         // Check if recovery already in progress
-        if let Some(existing) = env
-            .storage()
-            .instance()
-            .get::<RecoveryKey, RecoveryWorkflow>(&workflow_key)
+        if let Some(existing) =
+            env.storage().instance().get::<RecoveryKey, RecoveryWorkflow>(&workflow_key)
         {
             if existing.state == RecoveryState::InProgress {
                 return Err(RecoveryError::RecoveryInProgress);
@@ -966,11 +921,7 @@ impl RecoverySystem {
             .get(&workflow_key)
             .ok_or(RecoveryError::InvalidRecoveryState)?;
 
-        workflow.state = if success {
-            RecoveryState::Completed
-        } else {
-            RecoveryState::Failed
-        };
+        workflow.state = if success { RecoveryState::Completed } else { RecoveryState::Failed };
 
         env.storage().instance().set(&workflow_key, &workflow);
 
@@ -987,20 +938,12 @@ impl RecoverySystem {
 
     // Event emission helpers
     fn emit_recovery_started(env: &Env, workflow_id: &Symbol, action: RecoveryAction) {
-        let topics = (
-            Symbol::new(env, "recovery_started"),
-            workflow_id.clone(),
-            action as u32,
-        );
+        let topics = (Symbol::new(env, "recovery_started"), workflow_id.clone(), action as u32);
         env.events().publish(topics, ());
     }
 
     fn emit_recovery_completed(env: &Env, workflow_id: &Symbol, success: bool) {
-        let topics = (
-            Symbol::new(env, "recovery_completed"),
-            workflow_id.clone(),
-            success,
-        );
+        let topics = (Symbol::new(env, "recovery_completed"), workflow_id.clone(), success);
         env.events().publish(topics, ());
     }
 }
@@ -1083,9 +1026,7 @@ pub struct ErrorMonitor;
 impl ErrorMonitor {
     /// Initialize monitoring configuration
     pub fn initialize(env: &Env, config: &AlertConfig) {
-        env.storage()
-            .instance()
-            .set(&RecoveryKey::AlertConfig, config);
+        env.storage().instance().set(&RecoveryKey::AlertConfig, config);
     }
 
     /// Log an error and check for alerting
@@ -1182,27 +1123,18 @@ impl ErrorMonitor {
 
     /// Update alert configuration
     pub fn update_config(env: &Env, config: &AlertConfig) {
-        env.storage()
-            .instance()
-            .set(&RecoveryKey::AlertConfig, config);
+        env.storage().instance().set(&RecoveryKey::AlertConfig, config);
     }
 
     // Event emission helpers
     fn emit_error_logged(env: &Env, entry: &ErrorLogEntry) {
-        let topics = (
-            Symbol::new(env, "error_logged"),
-            entry.operation_id.clone(),
-            entry.error_code,
-        );
+        let topics =
+            (Symbol::new(env, "error_logged"), entry.operation_id.clone(), entry.error_code);
         env.events().publish(topics, entry.severity as u32);
     }
 
     fn emit_alert(env: &Env, operation_id: &Symbol, level: AlertLevel, error_count: u32) {
-        let topics = (
-            Symbol::new(env, "alert_triggered"),
-            operation_id.clone(),
-            level as u32,
-        );
+        let topics = (Symbol::new(env, "alert_triggered"), operation_id.clone(), level as u32);
         env.events().publish(topics, error_count);
     }
 }
@@ -1257,9 +1189,7 @@ impl GracefulDegradation {
             degradable_features,
             degraded_features: Vec::new(env),
         };
-        env.storage()
-            .instance()
-            .set(&DegradationKey::Config, &config);
+        env.storage().instance().set(&DegradationKey::Config, &config);
     }
 
     /// Check if a feature is currently degraded
@@ -1285,9 +1215,7 @@ impl GracefulDegradation {
 
         if !config.degraded_features.contains(feature) {
             config.degraded_features.push_back(feature.clone());
-            env.storage()
-                .instance()
-                .set(&DegradationKey::Config, &config);
+            env.storage().instance().set(&DegradationKey::Config, &config);
 
             Self::emit_feature_degraded(env, feature);
         }
@@ -1310,9 +1238,7 @@ impl GracefulDegradation {
 
         if let Some(idx) = index_to_remove {
             config.degraded_features.remove(idx);
-            env.storage()
-                .instance()
-                .set(&DegradationKey::Config, &config);
+            env.storage().instance().set(&DegradationKey::Config, &config);
 
             Self::emit_feature_restored(env, feature);
         }
@@ -1434,14 +1360,13 @@ impl HealthCheck {
             HealthStatus::Unknown => Symbol::new(env, "unknown"),
         };
 
-        let event_data = EventData::Monitoring(MonitoringEventData::HealthCheck(
-            HealthCheckEventData {
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::HealthCheck(HealthCheckEventData {
                 contract_id: symbol_short!("system"),
                 status: result.status as u32,
                 timestamp: result.timestamp,
                 details: status_sym,
-            },
-        ));
+            }));
 
         StandardEvent::new(
             env,
@@ -1464,13 +1389,8 @@ mod tests {
         let env = Env::default();
         let context_id = Symbol::new(&env, "test_op");
 
-        let context = ErrorContext::new(
-            &env,
-            100,
-            ErrorSeverity::High,
-            ErrorCategory::Network,
-            context_id,
-        );
+        let context =
+            ErrorContext::new(&env, 100, ErrorSeverity::High, ErrorCategory::Network, context_id);
 
         assert_eq!(context.error_code, 100);
         assert_eq!(context.severity, ErrorSeverity::High);
