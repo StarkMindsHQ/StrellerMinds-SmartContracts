@@ -51,5 +51,6 @@ nav:
     - Security Overview: security.md
     - Security Audit Checklist: security_audit_checklist.md
     - Security Audit Report: SECURITY_AUDIT_REPORT.md
+    - Dependency Policy: DEPENDENCY_POLICY.md
     - Gas Optimization: gas-optimization.md
     - Gas Analysis: gas_optimization_analysis.md
