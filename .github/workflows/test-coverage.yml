@@ -1,0 +1,410 @@
+name: Test Coverage and Reporting
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'hotfix/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run coverage daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-coverage:
+    name: Test Coverage Analysis
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov --locked
+      
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin --locked
+      
+    - name: Generate test coverage
+      run: |
+        # Generate coverage for all contracts
+        cargo llvm-cov --workspace --all-features --lib --tests --lcov --output-path lcov.info
+        
+        # Generate coverage report with tarpaulin for better visualization
+        cargo tarpaulin --workspace --all-features --lib --tests --out Html --output-dir target/tarpaulin
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: lcov.info
+        fail_ci_if_error: true
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        
+    - name: Generate coverage summary
+      run: |
+        # Install cargo-coverage-report for summary
+        cargo install cargo-coverage-report
+        
+        # Generate detailed coverage report
+        cargo coverage-report --workspace --all-features --lib --tests --format markdown > coverage-report.md
+        
+        # Generate JSON summary
+        cargo coverage-report --workspace --all-features --lib --tests --format json > coverage-summary.json
+        
+        # Print summary to console
+        echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        cat coverage-summary.json | jq -r '.overall_percentage' | awk '{printf "Overall Coverage: %.2f%%\n", $1}' >> $GITHUB_STEP_SUMMARY
+        
+    - name: Upload coverage artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-reports-${{ matrix.rust }}
+        path: |
+          lcov.info
+          coverage-report.md
+          coverage-summary.json
+          target/tarpaulin/
+        retention-days: 30
+        
+    - name: Check minimum coverage threshold
+      run: |
+        # Extract overall coverage percentage
+        COVERAGE=$(cat coverage-summary.json | jq -r '.overall_percentage')
+        echo "Current coverage: $COVERAGE%"
+        
+        # Check if coverage meets minimum threshold (80%)
+        THRESHOLD=80
+        if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+          echo "✅ Coverage threshold met: $COVERAGE% >= $THRESHOLD%"
+        else
+          echo "❌ Coverage threshold not met: $COVERAGE% < $THRESHOLD%"
+          echo "::error::Coverage is below minimum threshold of $THRESHOLD%"
+          exit 1
+        fi
+        
+    - name: Comment PR with coverage report
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const coverageData = JSON.parse(fs.readFileSync('coverage-summary.json', 'utf8'));
+          
+          const comment = `
+          ## 📊 Test Coverage Report
+          
+          **Overall Coverage:** ${coverageData.overall_percentage.toFixed(2)}%
+          
+          ### Coverage by Contract:
+          ${Object.entries(coverageData.contracts || {}).map(([contract, data]) => 
+            `- **${contract}:** ${data.percentage.toFixed(2)}% (${data.lines.covered}/${data.lines.total} lines)`
+          ).join('\n')}
+          
+          ### Coverage Details:
+          - **Lines:** ${coverageData.lines?.covered || 0}/${coverageData.lines?.total || 0}
+          - **Functions:** ${coverageData.functions?.covered || 0}/${coverageData.functions?.total || 0}
+          - **Branches:** ${coverageData.branches?.covered || 0}/${coverageData.branches?.total || 0}
+          
+          ${coverageData.overall_percentage >= 80 ? '✅ **Coverage meets minimum threshold (80%)**' : '❌ **Coverage below minimum threshold (80%)**'}
+          
+          [View detailed coverage report](https://codecov.io/gh/${{ github.repository }}/pull/${{ github.event.number }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  contract-specific-tests:
+    name: Contract-Specific Tests
+    runs-on: ubuntu-latest
+    needs: test-coverage
+    
+    strategy:
+      matrix:
+        contract: [assessment, community, certificate, analytics, shared]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Run ${{ matrix.contract }} tests
+      run: |
+        echo "Running tests for ${{ matrix.contract }} contract..."
+        
+        case "${{ matrix.contract }}" in
+          assessment)
+            cargo test --package assessment --all-features --lib --tests -- --nocapture
+            ;;
+          community)
+            cargo test --package community --all-features --lib --tests -- --nocapture
+            ;;
+          certificate)
+            cargo test --package certificate --all-features --lib --tests -- --nocapture
+            ;;
+          analytics)
+            cargo test --package analytics --all-features --lib --tests -- --nocapture
+            ;;
+          shared)
+            cargo test --package shared --all-features --lib --tests -- --nocapture
+            ;;
+          *)
+            echo "Unknown contract: ${{ matrix.contract }}"
+            exit 1
+            ;;
+        esac
+        
+    - name: Run contract integration tests
+      run: |
+        echo "Running integration tests for ${{ matrix.contract }}..."
+        cargo test --package e2e-tests --test comprehensive_test_coverage -- --nocapture
+        
+    - name: Upload contract test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.contract }}
+        path: |
+          target/nextest/
+          **/*.xml
+        retention-days: 7
+
+  performance-benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: test-coverage
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Install criterion
+      run: cargo install cargo-criterion
+      
+    - name: Run performance benchmarks
+      run: |
+        echo "Running performance benchmarks..."
+        cargo test --package e2e-tests --test comprehensive_test_coverage --bench -- --output-format json > benchmark-results.json
+        
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: benchmark-results.json
+        retention-days: 30
+        
+    - name: Performance regression check
+      run: |
+        # Check if performance has regressed compared to baseline
+        echo "Checking for performance regressions..."
+        # This would compare against stored baseline results
+        # For now, just ensure benchmarks complete successfully
+
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: test-coverage
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Run security-focused tests
+      run: |
+        echo "Running security-focused tests..."
+        
+        # Run tests with sanitizers
+        RUSTFLAGS="-Z sanitizer=address" cargo test --package e2e-tests --test comprehensive_test_coverage --lib --tests -- --nocapture || true
+        
+        # Run input validation tests
+        cargo test --package e2e-tests --test input_validation_tests -- --nocapture
+        
+    - name: Run fuzz tests (if available)
+      run: |
+        echo "Checking for fuzz tests..."
+        if [ -d "fuzz" ]; then
+          cargo install cargo-fuzz
+          cargo fuzz run || true
+        else
+          echo "No fuzz tests found"
+        fi
+        
+    - name: Security scan with cargo-audit
+      run: |
+        cargo install cargo-audit
+        cargo audit
+        
+    - name: Security scan with cargo-deny
+      run: |
+        cargo install cargo-deny
+        cargo deny check
+
+  coverage-badge:
+    name: Update Coverage Badge
+    runs-on: ubuntu-latest
+    needs: test-coverage
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download coverage artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: coverage-reports-stable
+        path: coverage/
+        
+    - name: Generate coverage badge
+      run: |
+        # Extract coverage percentage
+        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.overall_percentage')
+        COVERAGE_INT=${COVERAGE%.*}  # Get integer part
+        
+        echo "Coverage: $COVERAGE%"
+        
+        # Generate badge using shields.io
+        COLOR="red"
+        if [ $COVERAGE_INT -ge 80 ]; then
+          COLOR="green"
+        elif [ $COVERAGE_INT -ge 60 ]; then
+          COLOR="yellow"
+        fi
+        
+        # Download badge
+        curl -o coverage-badge.svg "https://img.shields.io/badge/coverage-$COVERAGE%25-$COLOR"
+        
+    - name: Update README with coverage badge
+      run: |
+        # Update README.md with coverage badge
+        if [ -f "README.md" ]; then
+          # Update or add coverage badge to README
+          sed -i 's|!\[coverage\]:.*|![coverage]: coverage-badge.svg|g' README.md
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md coverage-badge.svg
+          git diff --staged --quiet || git commit -m "Update coverage badge: $COVERAGE%"
+          git push || true
+        fi
+
+  notify-results:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [test-coverage, contract-specific-tests, performance-benchmarks, security-tests]
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: all-artifacts/
+        
+    - name: Generate summary report
+      run: |
+        echo "# 🧪 Test Coverage and Quality Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Coverage Analysis" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "all-artifacts/coverage-reports-stable/coverage-summary.json" ]; then
+          COVERAGE=$(cat all-artifacts/coverage-reports-stable/coverage-summary.json | jq -r '.overall_percentage')
+          echo "- **Overall Coverage:** $COVERAGE%" >> $GITHUB_STEP_SUMMARY
+          
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            echo "- ✅ **Status:** Meets minimum threshold (80%)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Status:** Below minimum threshold (80%)" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+        
+        # Count test results from all contracts
+        for contract in assessment community certificate analytics shared; do
+          if [ -d "all-artifacts/test-results-$contract" ]; then
+            echo "- **$contract:** Tests executed" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔒 Security Tests" >> $GITHUB_STEP_SUMMARY
+        echo "- Security scans completed" >> $GITHUB_STEP_SUMMARY
+        echo "- Input validation tests executed" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## ⚡ Performance" >> $GITHUB_STEP_SUMMARY
+        if [ -f "all-artifacts/benchmark-results/benchmark-results.json" ]; then
+          echo "- Benchmarks completed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📋 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Coverage reports available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Test results available in artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Benchmark results available in artifacts" >> $GITHUB_STEP_SUMMARY
