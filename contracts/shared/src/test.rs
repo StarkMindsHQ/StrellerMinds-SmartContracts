@@ -1,16 +1,13 @@
-#![cfg(test)]
-
 use crate::{
     access_control::AccessControl,
     errors::AccessControlError,
-    roles::{Role, RoleLevel, Permission},
     permissions::RolePermissions,
-    storage::AccessControlStorage,
-    events::AccessControlEvents,
     reentrancy_guard::{ReentrancyGuard, ReentrancyLock},
+    roles::{Permission, RoleLevel},
+    storage::AccessControlStorage,
 };
 use soroban_sdk::{
-    testutils::{Address as _, MockAuth, MockAuthInvoke, Ledger},
+    testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
     vec, Address, Env, IntoVal, Vec,
 };
 
@@ -77,9 +74,9 @@ fn test_grant_role() {
 fn test_grant_custom_role() {
     let (env, admin, user1, _) = setup_test();
 
-      let mut custom_permissions = Vec::new(&env);
-      custom_permissions.push_back(Permission::IssueCertificate);
-      custom_permissions.push_back(Permission::ViewProgress);
+    let mut custom_permissions = Vec::new(&env);
+    custom_permissions.push_back(Permission::IssueCertificate);
+    custom_permissions.push_back(Permission::ViewProgress);
 
     env.mock_auths(&[MockAuth {
         address: &admin,
@@ -129,7 +126,8 @@ fn test_revoke_role() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Revoke role
     env.mock_auths(&[MockAuth {
@@ -164,7 +162,8 @@ fn test_transfer_role() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Transfer role from user1 to user2
     env.mock_auths(&[MockAuth {
@@ -204,7 +203,8 @@ fn test_permission_checks() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Test permission checks
     assert!(AccessControl::has_permission(&env, &user1, &Permission::IssueCertificate));
@@ -245,7 +245,8 @@ fn test_role_hierarchy() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user2, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user2, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Admin should be able to grant Instructor role
     env.mock_auths(&[MockAuth {
@@ -253,11 +254,16 @@ fn test_role_hierarchy() {
         invoke: &MockAuthInvoke {
             contract: &Address::generate(&env),
             fn_name: "grant_role",
-            args: vec![&env, Address::generate(&env).to_val(), RoleLevel::Instructor.to_u32().into_val(&env)],
+            args: vec![
+                &env,
+                Address::generate(&env).to_val(),
+                RoleLevel::Instructor.to_u32().into_val(&env),
+            ],
             sub_invokes: &[],
         },
     }]);
-    let result = AccessControl::grant_role(&env, &user1, &Address::generate(&env), RoleLevel::Instructor);
+    let result =
+        AccessControl::grant_role(&env, &user1, &Address::generate(&env), RoleLevel::Instructor);
     assert!(result.is_ok());
 
     // Instructor should not be able to grant Admin role
@@ -266,11 +272,16 @@ fn test_role_hierarchy() {
         invoke: &MockAuthInvoke {
             contract: &Address::generate(&env),
             fn_name: "grant_role",
-            args: vec![&env, Address::generate(&env).to_val(), RoleLevel::Admin.to_u32().into_val(&env)],
+            args: vec![
+                &env,
+                Address::generate(&env).to_val(),
+                RoleLevel::Admin.to_u32().into_val(&env),
+            ],
             sub_invokes: &[],
         },
     }]);
-    let result = AccessControl::grant_role(&env, &user2, &Address::generate(&env), RoleLevel::Admin);
+    let result =
+        AccessControl::grant_role(&env, &user2, &Address::generate(&env), RoleLevel::Admin);
     assert_eq!(result, Err(AccessControlError::CannotGrantHigherRole));
 }
 
@@ -288,7 +299,8 @@ fn test_self_revocation_prevention() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Try to revoke own role (should fail)
     env.mock_auths(&[MockAuth {
@@ -331,7 +343,8 @@ fn test_permission_granting() {
         },
     }]);
 
-    let result = AccessControl::grant_permission(&env, &admin, &user1, Permission::IssueCertificate);
+    let result =
+        AccessControl::grant_permission(&env, &admin, &user1, Permission::IssueCertificate);
     assert!(result.is_ok());
 
     // Verify permission was granted
@@ -352,7 +365,8 @@ fn test_permission_revoking() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Revoke a permission
     env.mock_auths(&[MockAuth {
@@ -365,7 +379,8 @@ fn test_permission_revoking() {
         },
     }]);
 
-    let result = AccessControl::revoke_permission(&env, &admin, &user1, &Permission::IssueCertificate);
+    let result =
+        AccessControl::revoke_permission(&env, &admin, &user1, &Permission::IssueCertificate);
     assert!(result.is_ok());
 
     // Verify permission was revoked
@@ -386,7 +401,8 @@ fn test_role_history() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Revoke role
     env.mock_auths(&[MockAuth {
@@ -425,7 +441,8 @@ fn test_require_permission_modifiers() {
             sub_invokes: &[],
         },
     }]);
-    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor).expect("should grant role");
+    AccessControl::grant_role(&env, &admin, &user1, RoleLevel::Instructor)
+        .expect("should grant role");
 
     // Test require_permission
     let result = AccessControl::require_permission(&env, &user1, &Permission::IssueCertificate);
@@ -457,7 +474,7 @@ fn test_require_permission_modifiers() {
 
 #[test]
 fn test_change_admin() {
-    let (env, admin, user1, _) = setup_test();
+    let (env, admin, _user1, _) = setup_test();
     let new_admin = Address::generate(&env);
 
     // Change admin
@@ -537,11 +554,11 @@ fn test_default_role_permissions() {
 #[test]
 fn test_reentrancy_guard_basic() {
     let env = Env::default();
-    
+
     // First call should succeed
     ReentrancyGuard::enter(&env);
     ReentrancyGuard::exit(&env);
-    
+
     // Second call should also succeed after exit
     ReentrancyGuard::enter(&env);
     ReentrancyGuard::exit(&env);
@@ -551,10 +568,10 @@ fn test_reentrancy_guard_basic() {
 #[should_panic(expected = "ReentrancyGuard: reentrant call")]
 fn test_reentrancy_guard_prevents_reentrancy() {
     let env = Env::default();
-    
+
     // First call should succeed
     ReentrancyGuard::enter(&env);
-    
+
     // Second call should panic
     ReentrancyGuard::enter(&env);
 }
@@ -562,14 +579,14 @@ fn test_reentrancy_guard_prevents_reentrancy() {
 #[test]
 fn test_reentrancy_lock_raii() {
     let env = Env::default();
-    
+
     // Test RAII-style guard
     {
         let _lock = ReentrancyLock::new(&env);
         // Lock should be active here
         assert!(env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
     }
-    
+
     // Lock should be automatically released when _lock goes out of scope
     assert!(!env.storage().instance().has(&soroban_sdk::symbol_short!("REENTRANT")));
 }
@@ -578,10 +595,10 @@ fn test_reentrancy_lock_raii() {
 #[should_panic(expected = "ReentrancyGuard: reentrant call")]
 fn test_reentrancy_lock_prevents_reentrancy() {
     let env = Env::default();
-    
+
     // First lock should succeed
     let _lock1 = ReentrancyLock::new(&env);
-    
+
     // Second lock should panic
     let _lock2 = ReentrancyLock::new(&env);
 }
@@ -589,13 +606,13 @@ fn test_reentrancy_lock_prevents_reentrancy() {
 #[test]
 fn test_reentrancy_guard_multiple_enter_exit() {
     let env = Env::default();
-    
+
     // Multiple enter/exit cycles should work
     for _ in 0..5 {
         ReentrancyGuard::enter(&env);
         ReentrancyGuard::exit(&env);
     }
-    
+
     // Should be able to enter again after all exits
     ReentrancyGuard::enter(&env);
     ReentrancyGuard::exit(&env);
@@ -604,11 +621,11 @@ fn test_reentrancy_guard_multiple_enter_exit() {
 #[test]
 fn test_reentrancy_guard_exit_without_enter() {
     let env = Env::default();
-    
+
     // Exit without enter should not panic (just remove non-existent key)
     ReentrancyGuard::exit(&env);
-    
+
     // Should still be able to enter after
     ReentrancyGuard::enter(&env);
     ReentrancyGuard::exit(&env);
-} 
+}

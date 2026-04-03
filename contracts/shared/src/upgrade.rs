@@ -16,12 +16,7 @@ pub struct VersionInfo {
 
 impl VersionInfo {
     pub fn new(major: u32, minor: u32, patch: u32, timestamp: u64) -> Self {
-        Self {
-            major,
-            minor,
-            patch,
-            timestamp,
-        }
+        Self { major, minor, patch, timestamp }
     }
 
     /// Check if this version is compatible with target version
@@ -91,52 +86,33 @@ pub struct UpgradeUtils;
 impl UpgradeUtils {
     /// Initialize upgrade system
     pub fn initialize(env: &Env, initial_version: &VersionInfo) {
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::StorageVersion, initial_version);
+        env.storage().instance().set(&UpgradeKey::StorageVersion, initial_version);
 
         let mut history: Vec<VersionInfo> = Vec::new(env);
         history.push_back(initial_version.clone());
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::VersionHistory, &history);
+        env.storage().instance().set(&UpgradeKey::VersionHistory, &history);
 
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::EmergencyPaused, &false);
+        env.storage().instance().set(&UpgradeKey::EmergencyPaused, &false);
     }
 
     /// Get current storage version
     pub fn get_current_version(env: &Env) -> VersionInfo {
-        env.storage()
-            .instance()
-            .get(&UpgradeKey::StorageVersion)
-            .unwrap()
+        env.storage().instance().get(&UpgradeKey::StorageVersion).unwrap()
     }
 
     /// Set storage version (used during migrations)
     pub fn set_storage_version(env: &Env, version: &VersionInfo) {
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::StorageVersion, version);
+        env.storage().instance().set(&UpgradeKey::StorageVersion, version);
 
-        let mut history: Vec<VersionInfo> = env
-            .storage()
-            .instance()
-            .get(&UpgradeKey::VersionHistory)
-            .unwrap();
+        let mut history: Vec<VersionInfo> =
+            env.storage().instance().get(&UpgradeKey::VersionHistory).unwrap();
         history.push_back(version.clone());
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::VersionHistory, &history);
+        env.storage().instance().set(&UpgradeKey::VersionHistory, &history);
     }
 
     /// Get version history
     pub fn get_version_history(env: &Env) -> Vec<VersionInfo> {
-        env.storage()
-            .instance()
-            .get(&UpgradeKey::VersionHistory)
-            .unwrap()
+        env.storage().instance().get(&UpgradeKey::VersionHistory).unwrap()
     }
 
     /// Check if migration is needed for target version
@@ -217,26 +193,18 @@ impl UpgradeUtils {
 
     /// Set emergency pause
     pub fn set_emergency_pause(env: &Env, paused: bool) {
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::EmergencyPaused, &paused);
+        env.storage().instance().set(&UpgradeKey::EmergencyPaused, &paused);
     }
 
     /// Check if emergency pause is active
     pub fn is_emergency_paused(env: &Env) -> bool {
-        env.storage()
-            .instance()
-            .get(&UpgradeKey::EmergencyPaused)
-            .unwrap_or(false)
+        env.storage().instance().get(&UpgradeKey::EmergencyPaused).unwrap_or(false)
     }
 
     /// Validate that emergency pause is not active
     pub fn validate_not_paused(env: &Env) -> Result<(), String> {
         if Self::is_emergency_paused(env) {
-            Err(String::from_str(
-                env,
-                "Contract is currently paused due to emergency",
-            ))
+            Err(String::from_str(env, "Contract is currently paused due to emergency"))
         } else {
             Ok(())
         }
@@ -274,9 +242,7 @@ impl GovernanceUpgrade {
         };
 
         env.storage().temporary().set(&proposal_id, &proposal);
-        env.storage()
-            .temporary()
-            .extend_ttl(&proposal_id, 1000000, 1000000);
+        env.storage().temporary().extend_ttl(&proposal_id, 1000000, 1000000);
         Ok(proposal_id)
     }
 
@@ -302,13 +268,9 @@ impl GovernanceUpgrade {
         }
 
         env.storage().temporary().set(proposal_id, &proposal);
-        env.storage()
-            .temporary()
-            .extend_ttl(proposal_id, 1000000, 1000000);
+        env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
         env.storage().temporary().set(&vote_key, &true);
-        env.storage()
-            .temporary()
-            .extend_ttl(&vote_key, 1000000, 1000000);
+        env.storage().temporary().extend_ttl(&vote_key, 1000000, 1000000);
 
         Ok(proposal.vote_count)
     }
@@ -330,22 +292,14 @@ impl GovernanceUpgrade {
 
         if proposal.vote_count >= proposal.required_votes {
             // Set pending upgrade
-            env.storage()
-                .instance()
-                .set(&UpgradeKey::PendingUpgrade, &proposal.new_implementation);
-            env.storage()
-                .instance()
-                .set(&UpgradeKey::UpgradeProposer, &proposal.proposer);
+            env.storage().instance().set(&UpgradeKey::PendingUpgrade, &proposal.new_implementation);
+            env.storage().instance().set(&UpgradeKey::UpgradeProposer, &proposal.proposer);
 
             // Mark as executed
             let mut updated_proposal = proposal.clone();
             updated_proposal.executed = true;
-            env.storage()
-                .temporary()
-                .set(proposal_id, &updated_proposal);
-            env.storage()
-                .temporary()
-                .extend_ttl(proposal_id, 1000000, 1000000);
+            env.storage().temporary().set(proposal_id, &updated_proposal);
+            env.storage().temporary().extend_ttl(proposal_id, 1000000, 1000000);
 
             Ok(Some(proposal.new_implementation))
         } else {
@@ -355,19 +309,14 @@ impl GovernanceUpgrade {
 
     /// Set upgrade timelock
     pub fn set_upgrade_timelock(env: &Env, unlock_timestamp: u64) {
-        env.storage()
-            .instance()
-            .set(&UpgradeKey::UpgradeTimelock, &unlock_timestamp);
+        env.storage().instance().set(&UpgradeKey::UpgradeTimelock, &unlock_timestamp);
     }
 
     /// Check if upgrade timelock has expired
     pub fn is_upgrade_unlocked(env: &Env) -> bool {
         let current_time = env.ledger().timestamp();
-        let unlock_time: u64 = env
-            .storage()
-            .instance()
-            .get(&UpgradeKey::UpgradeTimelock)
-            .unwrap_or(current_time);
+        let unlock_time: u64 =
+            env.storage().instance().get(&UpgradeKey::UpgradeTimelock).unwrap_or(current_time);
         current_time >= unlock_time
     }
 
@@ -482,10 +431,7 @@ mod tests {
 
         let history = UpgradeUtils::get_version_history(&env);
         assert_eq!(history.len(), 1);
-        assert_eq!(
-            history.get(0).expect("should have initial version"),
-            initial_version
-        );
+        assert_eq!(history.get(0).expect("should have initial version"), initial_version);
     }
 
     #[test]
