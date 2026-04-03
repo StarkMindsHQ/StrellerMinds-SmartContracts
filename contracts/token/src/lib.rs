@@ -180,4 +180,6 @@ impl Token {
     }
 }
 pub mod gas_optimized;
+#[cfg(test)]
+pub mod property_tests;
 pub mod benchmarks;
