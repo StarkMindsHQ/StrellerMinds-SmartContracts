@@ -1,0 +1,80 @@
+{
+  "title": "StrellerMinds Contract Observability",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["soroban", "smart-contracts", "monitoring"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Contract Calls",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_contract_calls_total[5m])) by (contract)",
+          "legendFormat": "{{contract}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Failure Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_contract_failures_total[5m])) by (contract)",
+          "legendFormat": "{{contract}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Latest Contract Latency",
+      "targets": [
+        {
+          "expr": "max(strellerminds_contract_latency_ms) by (contract)",
+          "legendFormat": "{{contract}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Infrastructure Backlog",
+      "targets": [
+        {
+          "expr": "max(strellerminds_infra_backlog) by (pipeline)",
+          "legendFormat": "{{pipeline}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Ledger Lag",
+      "targets": [
+        {
+          "expr": "max(strellerminds_ledger_lag_seconds)"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "RPC Error Budget Burn",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_rpc_failures_total[30m])) / clamp_min(sum(rate(strellerminds_rpc_calls_total[30m])), 1)"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 }
+    }
+  ]
+}

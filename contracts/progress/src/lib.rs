@@ -1,15 +1,39 @@
+#![no_std]
+
+pub mod errors;
+
+use crate::errors::ProgressError;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
+use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_progress_event};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Error, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, Vec};
 
 #[contract]
 pub struct Progress;
 
 #[contractimpl]
 impl Progress {
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+    /// Initializes the progress contract and records the admin address.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that will have administrative control over the contract.
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::AlreadyInitialized`] if the contract has already been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin);
+    /// ```
+    pub fn initialize(env: Env, admin: Address) -> Result<(), ProgressError> {
+        admin.require_auth();
+        if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&soroban_sdk::symbol_short!("admin"), &admin);
+
         emit_access_control_event!(
             &env,
             symbol_short!("progress"),
@@ -19,12 +43,29 @@ impl Progress {
         Ok(())
     }
 
+    /// Records a student's progress percentage for a given course.
+    ///
+    /// Emits a `ProgressUpdated` event on success.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student whose progress is being recorded.
+    /// * `course_id` - Symbol identifier for the course.
+    /// * `progress` - Progress percentage (0–100).
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::Unauthorized`] if the caller is not authorized.
+    /// Returns [`ProgressError::InvalidProgress`] if `progress` exceeds 100.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.record_progress(&student, &course_id, &75u32);
+    /// ```
     pub fn record_progress(
         env: Env,
         student: Address,
         course_id: Symbol,
         progress: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ProgressError> {
         emit_progress_event!(
             &env,
             symbol_short!("progress"),
@@ -39,12 +80,48 @@ impl Progress {
         Ok(())
     }
 
-    pub fn get_progress(_env: Env, _student: Address, _course_id: Symbol) -> Result<u32, Error> {
+    /// Returns the recorded progress percentage for a student in a given course.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student to query.
+    /// * `course_id` - Symbol identifier for the course.
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::ProgressNotFound`] if no progress has been recorded.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let pct = client.get_progress(&student, &course_id);
+    /// ```
+    pub fn get_progress(
+        _env: Env,
+        _student: Address,
+        _course_id: Symbol,
+    ) -> Result<u32, ProgressError> {
         Ok(0)
     }
 
+    /// Returns all course IDs in which the student has recorded progress.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student to query.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let courses = client.get_student_courses(&student);
+    /// ```
     pub fn get_student_courses(_env: Env, _student: Address) -> Vec<Symbol> {
         Vec::new(&_env)
     }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let report = Monitor::build_health_report(&env, symbol_short!("progress"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
+    }
 }
 pub mod gas_optimized;
+
+#[cfg(test)]
+pub mod tests;

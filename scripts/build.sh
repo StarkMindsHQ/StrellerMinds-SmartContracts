@@ -64,19 +64,25 @@ fi
 
 for contract in "${contracts[@]}"; do
   contract_name=$(basename "$contract")
+  wasm_basename="${contract_name//-/_}"
+  wasm_path="target/wasm32-unknown-unknown/release/$contract_name.wasm"
+  if [ ! -f "$wasm_path" ]; then
+    wasm_path="target/wasm32-unknown-unknown/release/$wasm_basename.wasm"
+  fi
+  optimized_wasm_path="target/wasm32-unknown-unknown/release/$wasm_basename.optimized.wasm"
   echo -e "${YELLOW}Building $contract_name contract...${NC}"
   start_time=$(date +%s)
 
   if cargo build --target wasm32-unknown-unknown --release -p "$contract_name" 2>&1 | tee -a "$LOGFILE"; then
-    if [ -f "target/wasm32-unknown-unknown/release/$contract_name.wasm" ]; then
-      echo -e "${YELLOW}Optimizing $contract_name.wasm...${NC}"
-      if soroban contract optimize --wasm "target/wasm32-unknown-unknown/release/$contract_name.wasm" --wasm-out "target/wasm32-unknown-unknown/release/$contract_name.optimized.wasm" 2>&1 | tee -a "$LOGFILE"; then
+    if [ -f "$wasm_path" ]; then
+      echo -e "${YELLOW}Optimizing $(basename "$wasm_path")...${NC}"
+      if soroban contract optimize --wasm "$wasm_path" --wasm-out "$optimized_wasm_path" 2>&1 | tee -a "$LOGFILE"; then
         echo -e "${GREEN}Optimization succeeded for $contract_name${NC}"
         success_contracts+=("$contract_name")
       else
         echo -e "${YELLOW}Warning: 'soroban contract optimize' failed for $contract_name. Attempting fallback with 'wasm-opt -Oz'...${NC}"
         if command -v wasm-opt &> /dev/null; then
-          if wasm-opt -Oz "target/wasm32-unknown-unknown/release/$contract_name.wasm" -o "target/wasm32-unknown-unknown/release/$contract_name.optimized.wasm" 2>&1 | tee -a "$LOGFILE"; then
+          if wasm-opt -Oz "$wasm_path" -o "$optimized_wasm_path" 2>&1 | tee -a "$LOGFILE"; then
             echo -e "${GREEN}Fallback optimization succeeded for $contract_name${NC}"
             success_contracts+=("$contract_name")
           else

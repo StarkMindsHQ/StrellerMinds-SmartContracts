@@ -21,3 +21,6 @@ shared = { path = "../shared" }
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
 proptest = { workspace = true }
+
+[package.metadata.docs.rs]
+all-features = true

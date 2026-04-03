@@ -16,12 +16,16 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
+shared = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
 
 [features]
 testutils = ["soroban-sdk/testutils"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [[bin]]
 name = "mobile-optimizer"

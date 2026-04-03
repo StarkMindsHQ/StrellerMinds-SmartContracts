@@ -233,3 +233,54 @@ The implementation follows security best practices and provides a solid foundati
 - [x] Security testing passed
 - [x] Documentation complete
 - [x] Ready for deployment
+
+---
+
+## Security Testing Framework (Added)
+
+### Overview
+
+A comprehensive automated security testing framework has been implemented in
+`contracts/shared/src/validation_core.rs` covering the following attack categories:
+
+### Test Categories
+
+| Category | Tests | Status |
+|---|---|---|
+| XSS / Injection | Script tags, img onerror, null bytes, control chars | ✅ 21 passing |
+| URI Security | HTTP rejected, javascript: rejected, data: rejected | ✅ passing |
+| Integer Safety | u64/u32 overflow, underflow, percentage overflow | ✅ passing |
+| Input Boundaries | Empty string, oversized input, min/max length | ✅ passing |
+| Expiry Validation | Past dates, far-future dates, valid dates | ✅ passing |
+| Content Quality | Spam repetition, whitespace-only, special char ratio | ✅ passing |
+| Batch DoS Guards | Zero-size batch, oversized batch constants | ✅ passing |
+| Certificate IDs | All-zero ID rejected | ✅ passing |
+
+### Running Security Tests
+
+```bash
+# Security tests only
+cargo test -p shared --lib -- validation_core::tests::security
+
+# Full test suite
+cargo test --workspace --lib
+
+# Full audit (CVE scan + static analysis + tests)
+bash scripts/security_audit.sh
+```
+
+### Security Review Process
+
+All contract changes must follow the four-gate review process documented in
+`docs/SECURITY_REVIEW_PROCESS.md`.
+
+### Identified Gaps & Remediation Status
+
+| Gap | Severity | Status |
+|---|---|---|
+| No automated security test suite | High | ✅ Resolved — 21 security tests added |
+| No security audit script | Medium | ✅ Resolved — `scripts/security_audit.sh` added |
+| No documented review process | Medium | ✅ Resolved — `docs/SECURITY_REVIEW_PROCESS.md` added |
+| `validation_core.rs` not in module tree | Medium | ✅ Resolved — wired into `lib.rs` as `validation_core` |
+| Inconsistent validation adoption | Medium | Open — requires per-contract audit |
+| No third-party audit | High | Open — recommended before mainnet |

@@ -1,177 +1,88 @@
 # Cross-Chain Credentials Contract
 
-## Overview
+## Purpose
 
-The Cross-Chain Credentials contract enables secure verification of educational achievements across multiple blockchain networks (Stellar, Ethereum, Polygon, BSC) while maintaining privacy, security, and interoperability standards.
-
-## Features
-
-- **Multi-Chain Support**: Verify credentials across Stellar, Ethereum, Polygon, and BSC
-- **Decentralized Oracle Network**: Multiple oracles validate credential authenticity
-- **Privacy-Preserving**: Zero-knowledge proofs for credential sharing
-- **Credential Lifecycle**: Issue, revoke, suspend, and reactivate credentials
-- **Transcript Generation**: Aggregate student achievements across chains
-- **Atomic Verification**: Cross-chain proof generation and validation
+The Cross-Chain Credentials contract enables StrellerMinds learning achievements to be recognized across multiple blockchains. It issues, manages, and verifies credentials on Stellar while generating cryptographic proofs that external chains (Ethereum, Polygon, BSC) can consume. An oracle system bridges the trust gap between chains, and a full transcript API lets any party generate a verifiable record of all credentials earned by a student.
 
 ## Architecture
 
-### Core Components
+| Module | Description |
+|---|---|
+| `src/lib.rs` | Contract entrypoint — full credential lifecycle (issue, revoke, suspend, reactivate, verify) plus oracle management, transcript generation, and verification request handling |
+| `src/errors.rs` | `CrossChainError` enum covering initialization state, authorization, credential look-up, and status-based business logic |
+| `src/types.rs` | Core data types: `Credential`, `CredentialStatus`, `ChainId`, `CrossChainProof`, `OracleAttestation`, `VerificationRequest`, `Transcript` |
+| `src/storage.rs` | `DataKey` enum and storage accessor helpers (`get_admin`, `is_oracle`, `add_oracle`, `set_admin`) |
 
-1. **Credential Management**: Issue and manage educational credentials
-2. **Cross-Chain Verification**: Generate proofs for multi-chain validation
-3. **Oracle Network**: Decentralized attestation system
-4. **ZK Proofs**: Privacy-preserving credential sharing
-5. **Transcript Builder**: Aggregate student achievements
+## Public API
 
-## Interface
+| Function | Description | Auth Required |
+|---|---|---|
+| `initialize(admin)` | One-time setup; stores the admin address | No (open, call once) |
+| `issue_credential(student, achievement, metadata_hash, chain_id)` | Issues a new `Active` credential to `student`; returns the credential ID | Yes — admin |
+| `revoke_credential(credential_id)` | Permanently marks a credential as `Revoked` | Yes — admin |
+| `suspend_credential(credential_id)` | Temporarily marks a credential as `Suspended` | Yes — admin |
+| `reactivate_credential(credential_id)` | Restores a `Suspended` credential to `Active` | Yes — admin |
+| `get_credential(credential_id)` | Returns the full `Credential` struct | No |
+| `verify_cross_chain(credential_id, target_chain)` | Generates and stores a `CrossChainProof` for an active credential | No |
+| `get_proof(credential_id)` | Returns the stored `CrossChainProof` for a credential | No |
+| `request_verification(credential_id, chain_id, requester)` | Submits a `VerificationRequest`; returns the request ID | No |
+| `get_verification_request(request_id)` | Returns the `VerificationRequest` record | No |
+| `generate_transcript(student)` | Builds a `Transcript` from all credentials issued to `student` | No |
+| `get_student_credentials(student)` | Returns all credential IDs issued to `student` | No |
+| `add_oracle(oracle)` | Registers a trusted oracle address | Yes — admin |
+| `remove_oracle(oracle)` | Removes an oracle from the trusted list | Yes — admin |
+| `is_oracle(oracle)` | Returns `true` if `oracle` is a registered trusted oracle | No |
 
-### Initialization
+## Usage Example
 
-```rust
-fn initialize(env: Env, admin: Address)
+```text
+# Initialize
+cross_chain.initialize(admin_address)
+
+# Admin issues a credential to a student for completing a Rust course
+cred_id = cross_chain.issue_credential(
+    student_address,
+    "Rust Fundamentals — Certificate of Completion",
+    metadata_hash,
+    ChainId::Ethereum
+)
+
+# Anyone requests cross-chain verification targeting Polygon
+proof = cross_chain.verify_cross_chain(cred_id, ChainId::Polygon)
+
+# Retrieve the generated proof later
+proof = cross_chain.get_proof(cred_id)
+
+# Generate the student's full academic transcript
+transcript = cross_chain.generate_transcript(student_address)
+
+# Admin temporarily suspends a credential pending review
+cross_chain.suspend_credential(cred_id)
+
+# After review, reactivate the credential
+cross_chain.reactivate_credential(cred_id)
 ```
 
-### Credential Operations
+## Errors
 
-```rust
-fn issue_credential(env: Env, student: Address, achievement: String, metadata_hash: String, chain_id: ChainId) -> String
-fn revoke_credential(env: Env, credential_id: String)
-fn suspend_credential(env: Env, credential_id: String)
-fn reactivate_credential(env: Env, credential_id: String)
-fn get_credential(env: Env, credential_id: String) -> Credential
-```
+For the full error code reference and conventions, see [ERROR_HANDLING.md](../../docs/ERROR_HANDLING.md).
 
-### Cross-Chain Verification
+| Code | Variant | Meaning |
+|---|---|---|
+| 1 | `AlreadyInitialized` | `initialize` has already been called |
+| 2 | `NotInitialized` | Contract has not been initialized yet |
+| 10 | `Unauthorized` | Caller is not the admin |
+| 50 | `CredentialNotFound` | No credential exists with the supplied ID |
+| 51 | `ProofNotFound` | No cross-chain proof has been generated for this credential |
+| 52 | `VerificationRequestNotFound` | No verification request found for the supplied request ID |
+| 80 | `CredentialNotActive` | Credential must be in `Active` status to perform this operation |
+| 81 | `CredentialRevoked` | Credential has been permanently revoked |
+| 82 | `CredentialSuspended` | Credential is temporarily suspended |
 
-```rust
-fn verify_cross_chain(env: Env, credential_id: String, target_chain: ChainId) -> CrossChainProof
-fn submit_oracle_attestation(env: Env, credential_id: String, chain_id: ChainId, is_valid: bool)
-fn get_proof(env: Env, credential_id: String) -> CrossChainProof
-```
+## Integration
 
-### Verification Requests
-
-```rust
-fn request_verification(env: Env, credential_id: String, chain_id: ChainId) -> String
-fn get_verification_request(env: Env, request_id: String) -> VerificationRequest
-```
-
-### Transcript & Aggregation
-
-```rust
-fn generate_transcript(env: Env, student: Address) -> Transcript
-fn get_student_credentials(env: Env, student: Address) -> Vec<String>
-```
-
-### Oracle Management
-
-```rust
-fn add_oracle(env: Env, oracle: Address)
-fn remove_oracle(env: Env, oracle: Address)
-fn is_oracle(env: Env, oracle: Address) -> bool
-```
-
-## Data Types
-
-### ChainId
-```rust
-enum ChainId {
-    Stellar,
-    Ethereum,
-    Polygon,
-    BSC,
-}
-```
-
-### Credential
-```rust
-struct Credential {
-    id: String,
-    student: Address,
-    issuer: Address,
-    achievement: String,
-    issued_at: u64,
-    chain_id: ChainId,
-    status: CredentialStatus,
-    metadata_hash: String,
-}
-```
-
-### CrossChainProof
-```rust
-struct CrossChainProof {
-    credential_id: String,
-    source_chain: ChainId,
-    target_chain: ChainId,
-    proof_hash: String,
-    verified_at: u64,
-}
-```
-
-## Usage Examples
-
-### Issue a Credential
-
-```rust
-let credential_id = contract.issue_credential(
-    &student_address,
-    &String::from_str(&env, "Blockchain Fundamentals"),
-    &String::from_str(&env, "ipfs://QmHash..."),
-    &ChainId::Stellar
-);
-```
-
-### Verify Cross-Chain
-
-```rust
-let proof = contract.verify_cross_chain(
-    &credential_id,
-    &ChainId::Ethereum
-);
-```
-
-### Generate Student Transcript
-
-```rust
-let transcript = contract.generate_transcript(&student_address);
-```
-
-## Security Features
-
-- **Role-Based Access Control**: Admin-only credential management
-- **Oracle Authorization**: Only registered oracles can submit attestations
-- **Status Management**: Credentials can be revoked or suspended
-- **Privacy Preservation**: ZK proofs for selective disclosure
-
-## Testing
-
-Run tests:
-```bash
-cargo test -p cross-chain-credentials
-```
-
-## Deployment
-
-Build the contract:
-```bash
-cargo build --release --target wasm32-unknown-unknown -p cross-chain-credentials
-```
-
-Deploy:
-```bash
-./scripts/deploy.sh --network testnet --contract cross-chain-credentials --wasm target/wasm32-unknown-unknown/release/cross_chain_credentials.wasm
-```
-
-## Standards Compliance
-
-- ISO/IEC 24760: Identity management framework
-- W3C Verifiable Credentials Data Model
-- Cross-chain interoperability standards
-
-## Future Enhancements
-
-- Multi-signature credential issuance
-- Credential marketplace integration
-- Employer verification API
-- Advanced ZK proof schemes (zk-SNARKs)
-- Credential expiration and renewal
+| Contract | Relationship |
+|---|---|
+| `certificate` | Stellar-native certificate issuance; cross-chain-credentials extends portability to other chains |
+| `analytics` | Consumes `CredentialIssued` and `ProofGenerated` events for credentialing metrics |
+| `shared` | Uses RBAC helpers, event schema macros (`emit_crosschain_event!`, `emit_access_control_event!`) |

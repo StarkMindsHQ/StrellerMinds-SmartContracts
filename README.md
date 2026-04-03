@@ -65,6 +65,48 @@ This script will automatically:
 
 - `STELLAR_SECRET_KEY` - Your Stellar secret key for deployment
 
+## 📦 Release Management
+
+This project features a comprehensive release automation system for producing production-ready smart contract artifacts.
+
+### Quick Release Commands
+
+```bash
+# Validate release readiness
+./scripts/pre-release-validation.sh v1.2.3
+
+# Create automated release
+./scripts/release.sh -y v1.2.3
+
+# Run release tests
+./scripts/release-test.sh all
+
+# Collect release metrics
+./scripts/release-monitor.sh
+
+# Conduct post-release review
+./scripts/post-release-review.sh v1.2.3
+```
+
+### Release Documentation
+
+- **[Quick Start Guide](RELEASE_QUICK_START.md)** - Fast reference for common tasks
+- **[Release Management](docs/RELEASE_MANAGEMENT.md)** - Complete management guide
+- **[Process Documentation](docs/RELEASE_PROCESS.md)** - Standardized procedures
+- **[Implementation Summary](RELEASE_IMPLEMENTATION_SUMMARY.md)** - System overview
+
+### Release Workflow
+
+1. **Pre-Release Validation** → Comprehensive checks before release
+2. **Automated Testing** → Full test suite execution
+3. **Build & Optimize** → WASM compilation and optimization
+4. **Artifact Generation** → SBOM, checksums, signing
+5. **GitHub Release** → Automated release creation
+6. **Monitoring** → Metrics collection and analysis
+7. **Post-Release Review** → Retrospective and improvement
+
+For detailed information, see the [Release Management Guide](docs/RELEASE_MANAGEMENT.md).
+
 ## 🛠️ Getting Started
 
 ### Installation
@@ -356,6 +398,8 @@ StrellerMinds-SmartContracts/
 ### Contribution Resources
 - **[Contributing Guidelines](docs/contributing.md)** - Detailed contribution process
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
+- **[Community Guidelines](COMMUNITY_GUIDELINES.md)** - How we engage and keep the project healthy
+- **[Governance and Triage](.github/GOVERNANCE.md)** - Maintainer process and review expectations
 - **[Release Process](docs/RELEASE_PROCESS.md)** - How releases are managed
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - High-level system design
 

@@ -30,7 +30,7 @@ yarn-error.log
 # Python
 **/__pycache__/
 **/*.egg-info/
-**/*.pyc
+**/*.py
 .pytest_cache/
 venv/
 .venv/

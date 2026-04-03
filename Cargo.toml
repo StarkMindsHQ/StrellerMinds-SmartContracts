@@ -10,6 +10,20 @@ rand = "0.8.5"
 proptest = "1.4.0"
 shared = { path = "contracts/shared" }
 
+# Testing dependencies
+proptest = "1.0.0"
+quickcheck = "1.0.0"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Coverage and analysis
+cargo-llvm-cov = "0.5"
+cargo-tarpaulin = "0.27"
+cargo-coverage-report = "0.2"
+
+# Security and audit
+cargo-audit = "0.17"
+cargo-deny = "0.13"
+
 [profile.release]
 opt-level = "z"
 overflow-checks = true

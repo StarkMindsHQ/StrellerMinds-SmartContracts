@@ -588,10 +588,15 @@ impl PredictiveEngine {
             return 0.0;
         }
         let mean = Self::calculate_average_load(data) as f64;
-        let variance =
-            data.iter().map(|m| (m.transaction_count as f64 - mean).powi(2)).sum::<f64>()
-                / data.len() as f64;
-        variance.sqrt() / mean
+        let variance = data
+            .iter()
+            .map(|m| {
+                let diff = m.transaction_count as f64 - mean;
+                diff * diff
+            })
+            .sum::<f64>()
+            / data.len() as f64;
+        sqrt_f64(variance) / mean
     }
 
     // Additional prediction functions
@@ -748,6 +753,18 @@ impl PredictiveEngine {
         }
         ((predicted_gas - current_gas) * 100 / current_gas) as u32
     }
+}
+
+fn sqrt_f64(value: f64) -> f64 {
+    if value <= 0.0 {
+        return 0.0;
+    }
+
+    let mut estimate = if value >= 1.0 { value } else { 1.0 };
+    for _ in 0..12 {
+        estimate = 0.5 * (estimate + value / estimate);
+    }
+    estimate
 }
 
 // Additional types for predictive analytics
