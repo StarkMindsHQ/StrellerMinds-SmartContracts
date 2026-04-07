@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::incentives::IncentiveManager;
-    use crate::types::{IncentiveDataKey, TokenomicsConfig, StreakData};
+    use crate::types::{IncentiveDataKey, StreakData, TokenomicsConfig};
     use proptest::prelude::*;
     use soroban_sdk::{testutils::Address as _, Address, Env, String};
 
+    #[allow(dead_code)]
     fn setup_env() -> (Env, Address) {
         let env = Env::default();
         let admin = Address::generate(&env);
@@ -21,12 +22,12 @@ mod tests {
             env.mock_all_auths();
             let admin = Address::generate(&env);
             let user = Address::generate(&env);
-            
+
             // Initialize
             IncentiveManager::initialize(&env, &admin).unwrap();
-            
+
             // Setup streak
-            let mut streak_data = StreakData {
+            let streak_data = StreakData {
                 user: user.clone(),
                 current_streak: streak_days,
                 max_streak: streak_days,
@@ -47,17 +48,17 @@ mod tests {
                 expected = expected * 125 / 100;
             }
 
-            let bonus = (streak_days + 1) * config.streak_bonus_rate / 10000; // +1 because update_user_streak is called inside reward_course_completion
+            let _bonus = (streak_days + 1) * config.streak_bonus_rate / 10000; // +1 because update_user_streak is called inside reward_course_completion
             // Wait, streak_multiplier is calculated BEFORE update_user_streak in reward_course_completion
             // Let's re-verify incentives.rs:
             // 78: let streak_multiplier = Self::get_streak_multiplier(env, user);
             // 98: Self::update_user_streak(env, user)?;
-            
+
             let bonus_calc = streak_days * config.streak_bonus_rate / 10000;
             let streak_multiplier = (100 + bonus_calc).min(config.max_streak_multiplier);
-            
+
             expected = expected * streak_multiplier as i128 / 100;
-            
+
             // Event multiplier is 100 by default
             assert_eq!(reward, expected, "Reward mismatch for percentage {} and streak {}", completion_percentage, streak_days);
         }
@@ -73,7 +74,7 @@ mod tests {
             let admin = Address::generate(&env);
             let from = Address::generate(&env);
             let to = Address::generate(&env);
-            
+
             // Mint initial balances
             crate::gas_optimized::mint_optimized(&env, &admin, &from, initial_from);
             crate::gas_optimized::mint_optimized(&env, &admin, &to, initial_to);

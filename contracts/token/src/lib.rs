@@ -1,6 +1,8 @@
 #![no_std]
 
 pub mod errors;
+pub mod incentives;
+pub mod types;
 
 use crate::errors::TokenError;
 use shared::event_schema::{
@@ -179,7 +181,7 @@ impl Token {
         report
     }
 }
+pub mod benchmarks;
 pub mod gas_optimized;
 #[cfg(test)]
 pub mod property_tests;
-pub mod benchmarks;

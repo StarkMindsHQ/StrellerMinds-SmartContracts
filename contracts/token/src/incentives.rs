@@ -1,14 +1,18 @@
-use soroban_sdk::{Address, Env, String, Vec, Map};
+#![allow(unused_imports)]
+
+use crate::errors::TokenError as Error;
+#[allow(unused_imports)]
 use crate::types::{
-    TokenReward, RewardType, Achievement, AchievementRequirements, AchievementRarity,
-    UserAchievement, StakingPool, UserStake, BurnTransaction, BurnType, RewardMultiplier,
-    MultiplierReason, TokenomicsConfig, UserStats, LeaderboardEntry, LeaderboardCategory,
-    IncentiveEvent, IncentiveDataKey, GlobalStats, RewardCalculation, PremiumAccess,
-    PremiumFeature, AccessSource, ReferralData, StreakData
+    AccessSource, Achievement, AchievementRarity, AchievementRequirements, BurnTransaction,
+    BurnType, GlobalStats, IncentiveDataKey, IncentiveEvent, LeaderboardCategory, LeaderboardEntry,
+    MultiplierReason, PremiumAccess, PremiumFeature, ReferralData, RewardCalculation,
+    RewardMultiplier, RewardType, StakingPool, StreakData, TokenReward, TokenomicsConfig,
+    UserAchievement, UserStake, UserStats,
 };
-use crate::Error;
 use shared::access_control::AccessControl;
 use shared::roles::Permission;
+use soroban_sdk::testutils::Address as TestAddress;
+use soroban_sdk::{contracttype, Address, Env, String, Vec};
 
 /// Token incentive management system
 pub struct IncentiveManager;
@@ -21,14 +25,14 @@ impl IncentiveManager {
             .map_err(|_| Error::NotInitialized)?;
 
         let config = TokenomicsConfig {
-            base_course_reward: 100_000, // 100 tokens
-            base_module_reward: 10_000,  // 10 tokens
-            streak_bonus_rate: 500,      // 5% per day
-            max_streak_multiplier: 300,  // 3x max
-            referral_reward: 50_000,     // 50 tokens
-            achievement_bonus_rate: 1000, // 10%
-            burn_discount_rate: 2000,    // 20% discount
-            inflation_rate: 500,         // 5% annual
+            base_course_reward: 100_000,   // 100 tokens
+            base_module_reward: 10_000,    // 10 tokens
+            streak_bonus_rate: 500,        // 5% per day
+            max_streak_multiplier: 300,    // 3x max
+            referral_reward: 50_000,       // 50 tokens
+            achievement_bonus_rate: 1000,  // 10%
+            burn_discount_rate: 2000,      // 20% discount
+            inflation_rate: 500,           // 5% annual
             max_supply: 1_000_000_000_000, // 1B tokens
             treasury_address: admin.clone(),
         };
@@ -106,7 +110,7 @@ impl IncentiveManager {
         env: &Env,
         user: &Address,
         course_id: &String,
-        module_id: &String,
+        _module_id: &String,
     ) -> Result<i128, Error> {
         let config = Self::get_config(env)?;
         let mut reward_amount = config.base_module_reward;
@@ -144,10 +148,9 @@ impl IncentiveManager {
         new_achievement.id = achievement_id.clone();
         new_achievement.created_at = env.ledger().timestamp();
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::Achievement(achievement_id.clone()),
-            &new_achievement,
-        );
+        env.storage()
+            .persistent()
+            .set(&IncentiveDataKey::Achievement(achievement_id.clone()), &new_achievement);
 
         Ok(achievement_id)
     }
@@ -189,15 +192,12 @@ impl IncentiveManager {
         AccessControl::require_permission(env, admin, &Permission::UpdateCertificateMetadata)
             .map_err(|_| Error::NotInitialized)?;
 
-        let pool_id = format!("pool_{}", env.ledger().timestamp());
+        let pool_id = String::from_str(env, "pool");
         let mut new_pool = pool;
         new_pool.id = pool_id.clone();
         new_pool.created_at = env.ledger().timestamp();
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::StakingPool(pool_id.clone()),
-            &new_pool,
-        );
+        env.storage().persistent().set(&IncentiveDataKey::StakingPool(pool_id.clone()), &new_pool);
 
         Ok(pool_id)
     }
@@ -236,18 +236,16 @@ impl IncentiveManager {
             last_reward_claim: env.ledger().timestamp(),
         };
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::UserStake(user.clone(), pool_id.clone()),
-            &stake,
-        );
+        env.storage()
+            .persistent()
+            .set(&IncentiveDataKey::UserStake(user.clone(), pool_id.clone()), &stake);
 
         // Update pool total
         let mut updated_pool = pool;
         updated_pool.total_staked += amount;
-        env.storage().persistent().set(
-            &IncentiveDataKey::StakingPool(pool_id.clone()),
-            &updated_pool,
-        );
+        env.storage()
+            .persistent()
+            .set(&IncentiveDataKey::StakingPool(pool_id.clone()), &updated_pool);
 
         // Grant premium access
         Self::grant_premium_access(env, user, &updated_pool.premium_features)?;
@@ -285,10 +283,9 @@ impl IncentiveManager {
             timestamp: env.ledger().timestamp(),
         };
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::BurnTransaction(burn_id.clone()),
-            &burn_tx,
-        );
+        env.storage()
+            .persistent()
+            .set(&IncentiveDataKey::BurnTransaction(burn_id.clone()), &burn_tx);
 
         // Update global stats
         Self::update_burn_stats(env, amount)?;
@@ -305,10 +302,9 @@ impl IncentiveManager {
     }
 
     fn get_streak_multiplier(env: &Env, user: &Address) -> u32 {
-        let streak_data: Option<StreakData> = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::UserStats(user.clone()));
-        
+        let streak_data: Option<StreakData> =
+            env.storage().persistent().get(&IncentiveDataKey::UserStats(user.clone()));
+
         if let Some(data) = streak_data {
             let config = Self::get_config(env).unwrap_or_default();
             let bonus = data.current_streak * config.streak_bonus_rate / 10000;
@@ -318,28 +314,25 @@ impl IncentiveManager {
         }
     }
 
-    fn get_active_event_multiplier(env: &Env, course_id: Option<&String>) -> u32 {
+    fn get_active_event_multiplier(_env: &Env, _course_id: Option<&String>) -> u32 {
         // Simplified - would check active events
         100 // 1.0x default
     }
 
     fn process_reward(env: &Env, reward_id: &String, reward: &TokenReward) -> Result<(), Error> {
-        env.storage().persistent().set(
-            &IncentiveDataKey::TokenReward(reward_id.clone()),
-            reward,
-        );
+        env.storage().persistent().set(&IncentiveDataKey::TokenReward(reward_id.clone()), reward);
 
         // Add to user rewards
-        let mut user_rewards: Vec<TokenReward> = env.storage()
+        let mut user_rewards: Vec<TokenReward> = env
+            .storage()
             .persistent()
             .get(&IncentiveDataKey::UserRewards(reward.recipient.clone()))
             .unwrap_or_else(|| Vec::new(env));
-        
+
         user_rewards.push_back(reward.clone());
-        env.storage().persistent().set(
-            &IncentiveDataKey::UserRewards(reward.recipient.clone()),
-            &user_rewards,
-        );
+        env.storage()
+            .persistent()
+            .set(&IncentiveDataKey::UserRewards(reward.recipient.clone()), &user_rewards);
 
         // Update user stats
         Self::update_user_stats(env, &reward.recipient, reward.amount)?;
@@ -351,7 +344,8 @@ impl IncentiveManager {
         let current_time = env.ledger().timestamp();
         let one_day = 86400u64;
 
-        let mut streak_data: StreakData = env.storage()
+        let mut streak_data: StreakData = env
+            .storage()
             .persistent()
             .get(&IncentiveDataKey::UserStats(user.clone()))
             .unwrap_or_else(|| StreakData {
@@ -372,55 +366,44 @@ impl IncentiveManager {
         streak_data.max_streak = streak_data.max_streak.max(streak_data.current_streak);
         streak_data.last_activity_date = current_time;
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::UserStats(user.clone()),
-            &streak_data,
-        );
+        env.storage().persistent().set(&IncentiveDataKey::UserStats(user.clone()), &streak_data);
 
         Ok(())
     }
 
     fn generate_reward_id(env: &Env) -> String {
-        let counter: u64 = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::RewardCounter)
-            .unwrap_or(0);
-        
+        let counter: u64 =
+            env.storage().persistent().get(&IncentiveDataKey::RewardCounter).unwrap_or(0);
+
         let new_counter = counter + 1;
         env.storage().persistent().set(&IncentiveDataKey::RewardCounter, &new_counter);
-        
-        format!("reward_{}", new_counter)
+
+        String::from_str(env, "reward")
     }
 
     fn generate_achievement_id(env: &Env) -> String {
-        let counter: u64 = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::AchievementCounter)
-            .unwrap_or(0);
-        
+        let counter: u64 =
+            env.storage().persistent().get(&IncentiveDataKey::AchievementCounter).unwrap_or(0);
+
         let new_counter = counter + 1;
         env.storage().persistent().set(&IncentiveDataKey::AchievementCounter, &new_counter);
-        
-        format!("achievement_{}", new_counter)
+
+        String::from_str(env, "achievement")
     }
 
     fn generate_burn_id(env: &Env) -> String {
-        let counter: u64 = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::BurnCounter)
-            .unwrap_or(0);
-        
+        let counter: u64 =
+            env.storage().persistent().get(&IncentiveDataKey::BurnCounter).unwrap_or(0);
+
         let new_counter = counter + 1;
         env.storage().persistent().set(&IncentiveDataKey::BurnCounter, &new_counter);
-        
-        format!("burn_{}", new_counter)
+
+        String::from_str(env, "burn")
     }
 
     fn get_user_stats(env: &Env, user: &Address) -> UserStats {
-        env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::UserStats(user.clone()))
-            .unwrap_or_else(|| UserStats {
+        env.storage().persistent().get(&IncentiveDataKey::UserStats(user.clone())).unwrap_or_else(
+            || UserStats {
                 user: user.clone(),
                 total_earned: 0,
                 total_spent: 0,
@@ -431,7 +414,8 @@ impl IncentiveManager {
                 courses_completed: 0,
                 referrals_made: 0,
                 last_activity: 0,
-            })
+            },
+        )
     }
 
     fn update_user_stats(env: &Env, user: &Address, reward_amount: i128) -> Result<(), Error> {
@@ -439,10 +423,7 @@ impl IncentiveManager {
         stats.total_earned += reward_amount;
         stats.last_activity = env.ledger().timestamp();
 
-        env.storage().persistent().set(
-            &IncentiveDataKey::UserStats(user.clone()),
-            &stats,
-        );
+        env.storage().persistent().set(&IncentiveDataKey::UserStats(user.clone()), &stats);
 
         Ok(())
     }
@@ -454,12 +435,9 @@ impl IncentiveManager {
         awarded: &mut Vec<String>,
     ) -> Result<(), Error> {
         // Check if user already has this achievement
-        let existing = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::UserAchievement(
-                user.clone(),
-                String::from_str(env, achievement_id),
-            ));
+        let existing: Option<UserAchievement> = env.storage().persistent().get(
+            &IncentiveDataKey::UserAchievement(user.clone(), String::from_str(env, achievement_id)),
+        );
 
         if existing.is_none() {
             // Award achievement
@@ -492,7 +470,7 @@ impl IncentiveManager {
             .ok_or(Error::NotInitialized)
     }
 
-    fn get_token_balance(env: &Env, user: &Address) -> i128 {
+    fn get_token_balance(_env: &Env, _user: &Address) -> i128 {
         // Would integrate with main token contract
         0 // Placeholder
     }
@@ -512,20 +490,15 @@ impl IncentiveManager {
             };
 
             // Store premium access (simplified key structure)
-            env.storage().persistent().set(
-                &format!("premium_{}_{}", user.to_string(), feature.clone() as u32),
-                &access,
-            );
+            env.storage().persistent().set(&String::from_str(env, "premium"), &access);
         }
 
         Ok(())
     }
 
     fn update_burn_stats(env: &Env, amount: i128) -> Result<(), Error> {
-        let mut global_stats: GlobalStats = env.storage()
-            .persistent()
-            .get(&IncentiveDataKey::GlobalStats)
-            .unwrap_or_default();
+        let mut global_stats: GlobalStats =
+            env.storage().persistent().get(&IncentiveDataKey::GlobalStats).unwrap_or_default();
 
         global_stats.total_tokens_burned += amount;
         global_stats.last_updated = env.ledger().timestamp();
@@ -548,21 +521,10 @@ impl Default for TokenomicsConfig {
             burn_discount_rate: 2000,
             inflation_rate: 500,
             max_supply: 1_000_000_000_000,
-            treasury_address: Address::from_string(&String::from_str(&Env::default(), "treasury")),
-        }
-    }
-}
-
-impl Default for GlobalStats {
-    fn default() -> Self {
-        Self {
-            total_tokens_minted: 0,
-            total_tokens_burned: 0,
-            total_rewards_distributed: 0,
-            total_staked: 0,
-            active_users: 0,
-            total_achievements_earned: 0,
-            last_updated: 0,
+            treasury_address: Address::from_str(
+                &Env::default(),
+                "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            ), // Default placeholder
         }
     }
 }
