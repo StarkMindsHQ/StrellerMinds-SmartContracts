@@ -138,7 +138,7 @@ jobs:
 
       - name: Set up Cosign
         if: ${{ secrets.COSIGN_PRIVATE_KEY != '' }}
-        uses: sigstore/cosign-installer@v3.7.0
+        uses: sigstore/cosign-installer@v4.1.1
 
       - name: Sign artifacts with Cosign
         if: ${{ secrets.COSIGN_PRIVATE_KEY != '' }}
