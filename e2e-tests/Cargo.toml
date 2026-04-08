@@ -26,7 +26,7 @@ rand = "0.8"
 
 # Optional: For more advanced testing scenarios
 futures = "0.3"
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.20", features = ["v4"] }
 
 [[test]]
 name = "integration"
