@@ -411,7 +411,7 @@ pub enum IncentiveDataKey {
 }
 
 /// Platform-wide aggregate statistics for the token incentive system.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 #[contracttype]
 pub struct GlobalStats {
     /// Total tokens ever minted across the platform.
