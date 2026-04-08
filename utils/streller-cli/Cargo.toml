@@ -17,7 +17,7 @@ run_script = "0.11"
 console = "0.15"
 
 # For progress bars (useful for long deployments)
-indicatif = "0.17"
+indicatif = "0.18"
 
 # For async execution
 tokio = { version = "1.37", features = ["full"] }
