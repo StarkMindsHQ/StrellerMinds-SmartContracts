@@ -59,7 +59,7 @@ jobs:
         cargo tarpaulin --workspace --all-features --lib --tests --out Html --output-dir target/tarpaulin
         
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v6
       with:
         files: lcov.info
         fail_ci_if_error: true
