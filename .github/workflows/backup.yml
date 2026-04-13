@@ -30,7 +30,7 @@ jobs:
           ./scripts/backup_verify.sh "${{ steps.backup.outputs.backup_dir }}"
 
       - name: Upload backup artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backup-${{ github.run_id }}
           path: backups/

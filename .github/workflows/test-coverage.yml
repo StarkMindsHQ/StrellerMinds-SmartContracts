@@ -82,7 +82,7 @@ jobs:
         cat coverage-summary.json | jq -r '.overall_percentage' | awk '{printf "Overall Coverage: %.2f%%\n", $1}' >> $GITHUB_STEP_SUMMARY
         
     - name: Upload coverage artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: coverage-reports-${{ matrix.rust }}
         path: |
@@ -204,7 +204,7 @@ jobs:
         cargo test --package e2e-tests --test comprehensive_test_coverage -- --nocapture
         
     - name: Upload contract test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results-${{ matrix.contract }}
@@ -247,7 +247,7 @@ jobs:
         cargo test --package e2e-tests --test comprehensive_test_coverage --bench -- --output-format json > benchmark-results.json
         
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: benchmark-results
         path: benchmark-results.json

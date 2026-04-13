@@ -31,7 +31,7 @@ jobs:
         run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace --exclude e2e-tests
 
       - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: github.ref == 'refs/heads/main'
         with:
           name: rustdoc
