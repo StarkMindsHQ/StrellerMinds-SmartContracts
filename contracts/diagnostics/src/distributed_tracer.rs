@@ -365,8 +365,8 @@ impl DistributedTracer {
     /// Identify optimization opportunities from trace data
     fn identify_optimization_opportunities(env: &Env, trace_analysis: &mut TraceAnalysis) {
         let mut opportunities = Vec::new(env);
-
-        // Check for redundant operations
+        
+        // Check for redundant operations (simplified: if span count is very high)
         if trace_analysis.span_count > 50 {
             opportunities.push_back(String::from_str(
                 env,
@@ -393,8 +393,8 @@ impl DistributedTracer {
 
         // Check for error-prone operations
         let mut error_count = 0;
-        for i in 0..trace_analysis.call_graph.len() {
-            if !trace_analysis.call_graph.get(i).unwrap().success {
+        for call in trace_analysis.call_graph.iter() {
+            if !call.success {
                 error_count += 1;
             }
         }
@@ -412,8 +412,8 @@ impl DistributedTracer {
     /// Analyze errors in the trace
     fn analyze_errors(env: &Env, trace_analysis: &mut TraceAnalysis) {
         let mut failed_count = 0;
-        for i in 0..trace_analysis.call_graph.len() {
-            if !trace_analysis.call_graph.get(i).unwrap().success {
+        for call in trace_analysis.call_graph.iter() {
+            if !call.success {
                 failed_count += 1;
             }
         }

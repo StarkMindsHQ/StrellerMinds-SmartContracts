@@ -40,42 +40,34 @@ impl AnomalyDetector {
         }
 
         // Detect different types of anomalies
-        let perf_anomalies = Self::detect_performance_degradation(env, &metrics_data);
-        for i in 0..perf_anomalies.len() {
-            anomalies.push_back(perf_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_performance_degradation(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let mem_anomalies = Self::detect_memory_leaks(env, &metrics_data);
-        for i in 0..mem_anomalies.len() {
-            anomalies.push_back(mem_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_memory_leaks(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let gas_anomalies = Self::detect_gas_spikes(env, &metrics_data);
-        for i in 0..gas_anomalies.len() {
-            anomalies.push_back(gas_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_gas_spikes(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let error_anomalies = Self::detect_error_rate_spikes(env, &metrics_data);
-        for i in 0..error_anomalies.len() {
-            anomalies.push_back(error_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_error_rate_spikes(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let throughput_anomalies = Self::detect_throughput_drops(env, &metrics_data);
-        for i in 0..throughput_anomalies.len() {
-            anomalies.push_back(throughput_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_throughput_drops(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let latency_anomalies = Self::detect_latency_increases(env, &metrics_data);
-        for i in 0..latency_anomalies.len() {
-            anomalies.push_back(latency_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_latency_increases(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
-        let pattern_anomalies = Self::detect_unusual_patterns(env, &metrics_data);
-        for i in 0..pattern_anomalies.len() {
-            anomalies.push_back(pattern_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_unusual_patterns(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
         let state_anomalies =
             Self::detect_state_inconsistencies(env, contract_address, &metrics_data);
-        for i in 0..state_anomalies.len() {
-            anomalies.push_back(state_anomalies.get(i).unwrap());
+        for anomaly in state_anomalies {
+            anomalies.push_back(anomaly);
         }
-        let resource_anomalies = Self::detect_resource_exhaustion(env, &metrics_data);
-        for i in 0..resource_anomalies.len() {
-            anomalies.push_back(resource_anomalies.get(i).unwrap());
+        for anomaly in Self::detect_resource_exhaustion(env, &metrics_data) {
+            anomalies.push_back(anomaly);
         }
 
         // Store detected anomalies
@@ -104,23 +96,24 @@ impl AnomalyDetector {
         let recent_avg = Self::calculate_recent_average_execution_time(metrics_data, 3);
         let historical_avg = Self::calculate_historical_average_execution_time(metrics_data);
 
+        let latest = match metrics_data.last() {
+            Some(m) => m,
+            None => return anomalies,
+        };
+
         // Check for significant degradation (>50% increase)
         if recent_avg > historical_avg * 15 / 10 {
             // 50% increase threshold
             anomalies.push_back(AnomalyEvent {
                 anomaly_id: Self::generate_anomaly_id(env),
-                contract_address: metrics_data
-                    .get(metrics_data.len() - 1)
-                    .unwrap()
-                    .contract_address
-                    .clone(),
+                contract_address: latest.contract_address.clone(),
                 anomaly_type: AnomalyType::PerformanceDegradation,
                 severity: if recent_avg > historical_avg * 2 {
                     RiskLevel::Critical
                 } else {
                     RiskLevel::High
                 },
-                detected_at: metrics_data.get(metrics_data.len() - 1).unwrap().timestamp,
+                detected_at: latest.timestamp,
                 description: String::from_str(
                     env,
                     "Performance degraded: execution time increased significantly",
@@ -814,7 +807,7 @@ impl AnomalyDetector {
         if actual_count == 0 {
             0
         } else {
-            total / actual_count
+            total.checked_div(actual_count).unwrap_or(0)
         }
     }
 

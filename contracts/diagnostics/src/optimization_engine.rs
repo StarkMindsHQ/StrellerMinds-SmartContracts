@@ -354,7 +354,7 @@ impl OptimizationEngine {
         let mut recommendations = Vec::new(env);
 
         let read_write_ratio = if metrics.storage_writes > 0 {
-            metrics.storage_reads / metrics.storage_writes
+            metrics.storage_reads.checked_div(metrics.storage_writes).unwrap_or(metrics.storage_reads)
         } else {
             metrics.storage_reads
         };
@@ -751,8 +751,7 @@ impl OptimizationEngine {
         let mut medium_priority = Vec::new(env);
         let mut low_priority = Vec::new(env);
 
-        for i in 0..recommendations.len() {
-            let r = recommendations.get(i).unwrap();
+        for r in recommendations.iter() {
             match r.priority {
                 Priority::Critical | Priority::High => high_priority.push_back(r.clone()),
                 Priority::Medium => medium_priority.push_back(r.clone()),

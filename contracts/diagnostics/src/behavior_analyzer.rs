@@ -353,21 +353,17 @@ impl BehaviorAnalyzer {
         // Pattern-based suggestions
         for pattern in patterns.iter() {
             match pattern.pattern_type {
-                PatternType::SessionDuration => {
-                    if pattern.impact_on_learning == ImpactLevel::Negative {
-                        suggestions.push_back(String::from_str(
-                            env,
-                            "Optimize session duration for better learning outcomes",
-                        ));
-                    }
+                PatternType::SessionDuration if pattern.impact_on_learning == ImpactLevel::Negative => {
+                    suggestions.push_back(String::from_str(
+                        env,
+                        "Optimize session duration for better learning outcomes",
+                    ));
                 }
-                PatternType::LoginTiming => {
-                    if pattern.confidence > 80 {
-                        suggestions.push_back(String::from_str(
-                            env,
-                            "Maintain consistent learning schedule",
-                        ));
-                    }
+                PatternType::LoginTiming if pattern.confidence > 80 => {
+                    suggestions.push_back(String::from_str(
+                        env,
+                        "Maintain consistent learning schedule",
+                    ));
                 }
                 _ => {}
             }
@@ -478,7 +474,7 @@ impl BehaviorAnalyzer {
 
         let total_interactions = interactions.len();
         let consumption_rate =
-            if total_interactions > 0 { (content_views * 100) / total_interactions } else { 0 };
+            if total_interactions > 0 { (content_views * 100).checked_div(total_interactions).unwrap_or(0) } else { 0 };
 
         BehaviorPattern {
             pattern_type: PatternType::ContentConsumption,
@@ -500,11 +496,15 @@ impl BehaviorAnalyzer {
             .count() as u32;
 
         let time_span = if interactions.len() > 1 {
-            interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp
+            let last_interaction = interactions.last().map(|i| i.timestamp).unwrap_or(0);
+            let first_interaction = interactions.first().map(|i| i.timestamp).unwrap_or(0);
+            last_interaction.saturating_sub(first_interaction)
         } else {
             1
         };
 
+        // Avoid division by zero if time_span is 0, though it's set to 1 above if len <= 1
+        // This ensures pacing_rate is 0 if time_span is 0, which is safe.
         let pacing_rate = if time_span > 0 { assessments * 86400 / time_span as u32 } else { 0 };
 
         BehaviorPattern {
@@ -525,7 +525,7 @@ impl BehaviorAnalyzer {
         let successful = interactions.iter().filter(|i| i.success).count() as u32;
         let total = interactions.len();
         if total > 0 {
-            (successful * 100) / total
+            (successful * 100).checked_div(total).unwrap_or(0)
         } else {
             0
         }
@@ -560,14 +560,18 @@ impl BehaviorAnalyzer {
         }
 
         let mid = scores.len() / 2;
+        if mid == 0 || scores.len().saturating_sub(mid) == 0 {
+            return 50; // Not enough data for comparison
+        }
+
         let mut first_sum = 0u32;
         let mut second_sum = 0u32;
 
-        for i in 0..mid {
-            first_sum += scores.get(i).unwrap();
+        for score in scores.slice(0..mid).iter() {
+            first_sum += score;
         }
-        for i in mid..scores.len() {
-            second_sum += scores.get(i).unwrap();
+        for score in scores.slice(mid..scores.len()).iter() {
+            second_sum += score;
         }
 
         let first_avg = first_sum / mid;
@@ -614,17 +618,17 @@ impl BehaviorAnalyzer {
         let mut first_count = 0u32;
         let mut last_count = 0u32;
 
-        for i in 0..first_third_end {
-            first_sum += scores.get(i).unwrap();
+        for score in scores.slice(0..first_third_end).iter() {
+            first_sum += score;
             first_count += 1;
         }
-        for i in last_third_start..scores.len() {
-            last_sum += scores.get(i).unwrap();
+        for score in scores.slice(last_third_start..scores.len()).iter() {
+            last_sum += score;
             last_count += 1;
         }
 
-        let first_avg = if first_count > 0 { first_sum / first_count } else { 0 };
-        let last_avg = if last_count > 0 { last_sum / last_count } else { 0 };
+        let first_avg = if first_count > 0 { first_sum.checked_div(first_count).unwrap_or(0) } else { 0 };
+        let last_avg = if last_count > 0 { last_sum.checked_div(last_count).unwrap_or(0) } else { 0 };
 
         if last_avg > first_avg + 5 {
             EffectivenessTrend::Improving
@@ -663,8 +667,9 @@ impl BehaviorAnalyzer {
         }
 
         let time_span =
-            interactions.last().unwrap().timestamp - interactions.first().unwrap().timestamp;
-        let weeks = (time_span / (7 * 86400)).max(1);
+            interactions.last().map(|i| i.timestamp).unwrap_or(0).saturating_sub(
+                interactions.first().map(|i| i.timestamp).unwrap_or(0));
+        let weeks = (time_span / (7 * 86400)).max(1); // Ensure at least 1 week to avoid division by zero
 
         login_count / weeks as u32
     }
@@ -677,7 +682,7 @@ impl BehaviorAnalyzer {
 
         let total = interactions.len();
         if total > 0 {
-            (content_interactions * 100) / total
+            (content_interactions * 100).checked_div(total).unwrap_or(0)
         } else {
             0
         }
@@ -685,8 +690,8 @@ impl BehaviorAnalyzer {
 
     fn calculate_completion_velocity_from_interactions(interactions: &Vec<UserInteraction>) -> u32 {
         let mut completions = 0u32;
-        for i in 0..interactions.len() {
-            if interactions.get(i).unwrap().success {
+        for interaction in interactions.iter() {
+            if interaction.success {
                 completions += 1;
             }
         }
@@ -695,8 +700,8 @@ impl BehaviorAnalyzer {
             return 0;
         }
 
-        let first_ts = interactions.get(0).unwrap().timestamp;
-        let last_ts = interactions.get(interactions.len() - 1).unwrap().timestamp;
+        let first_ts = interactions.first().map(|i| i.timestamp).unwrap_or(0);
+        let last_ts = interactions.last().map(|i| i.timestamp).unwrap_or(0);
         let time_span = last_ts - first_ts;
         let days = (time_span / 86400).max(1);
 
@@ -717,9 +722,9 @@ impl BehaviorAnalyzer {
 
         // Calculate days between logins
         let mut gaps = Vec::new(env);
-        for i in 1..login_interactions.len() {
-            let current = login_interactions.get(i).unwrap();
-            let previous = login_interactions.get(i - 1).unwrap();
+        for i in 1..login_interactions.len() { // This loop is safe because login_interactions.len() >= 2
+            let current = login_interactions.get(i).expect("Login interaction should exist");
+            let previous = login_interactions.get(i - 1).expect("Previous login interaction should exist");
             let gap = (current.timestamp - previous.timestamp) / 86400;
             gaps.push_back(gap);
         }
@@ -747,16 +752,16 @@ impl BehaviorAnalyzer {
         }
 
         let mut sum = 0u64;
-        for i in 0..times.len() {
-            sum += times.get(i).unwrap();
+        for time_val in times.iter() {
+            sum += time_val;
         }
         let mean = sum as f64 / times.len() as f64;
 
         let mut variance_sum = 0.0f64;
         for i in 0..times.len() {
             let diff = times.get(i).unwrap() as f64 - mean;
+            // This unwrap is still here. Let's fix it.
             variance_sum += diff * diff;
-        }
         let variance = variance_sum / times.len() as f64;
 
         1.0 / (1.0 + sqrt_f64(variance) / 3600.0) // Normalize by hour
@@ -768,8 +773,7 @@ impl BehaviorAnalyzer {
         }
 
         let mut variance_sum = 0.0;
-        for i in 0..durations.len() {
-            let d = durations.get(i).unwrap();
+        for d in durations.iter() {
             let diff = d as f64 - mean as f64;
             variance_sum += diff * diff;
         }
@@ -785,10 +789,10 @@ impl BehaviorAnalyzer {
 
         let mut gaps = Vec::new(env);
         for i in 1..interactions.len() {
-            let current = interactions.get(i).unwrap();
-            let previous = interactions.get(i - 1).unwrap();
-            let gap = current.timestamp - previous.timestamp;
-            gaps.push_back(gap);
+            if let (Some(current), Some(previous)) = (interactions.get(i), interactions.get(i - 1)) {
+                let gap = current.timestamp.saturating_sub(previous.timestamp);
+                gaps.push_back(gap);
+            }
         }
 
         let mut gap_sum = 0u64;
@@ -826,13 +830,13 @@ impl BehaviorAnalyzer {
         }
 
         // Get the last 3 scores manually
-        let start_idx = scores.len().saturating_sub(3);
-        let mut recent = [0u32; 3];
-        let mut count = 0;
-        for i in start_idx..scores.len() {
-            if count < 3 {
-                recent[count] = scores.get(i).unwrap();
-                count += 1;
+        let mut recent_scores_vec = Vec::new(scores.env());
+        let num_scores = scores.len();
+        if num_scores >= 3 {
+            for i in num_scores.saturating_sub(3)..num_scores {
+                if let Some(score) = scores.get(i) {
+                    recent_scores_vec.push_back(score);
+                }
             }
         }
 
@@ -841,7 +845,7 @@ impl BehaviorAnalyzer {
         variance < 5.0 // Low variance indicates plateau
     }
 
-    fn calculate_score_variance(scores: &[u32]) -> f64 {
+    fn calculate_score_variance(scores: &Vec<u32>) -> f64 {
         if scores.len() < 2 {
             return 0.0;
         }

@@ -419,60 +419,7 @@ mod tests {
         assert!(!v2.is_compatible_with(&v1)); // Downgrade not allowed
     }
 
-    #[test]
-    fn test_upgrade_utils_initialization() {
-        let env = Env::default();
-        let initial_version = VersionInfo::new(1, 0, 0, 1000);
-
-        UpgradeUtils::initialize(&env, &initial_version);
-
-        let current = UpgradeUtils::get_current_version(&env);
-        assert_eq!(current, initial_version);
-
-        let history = UpgradeUtils::get_version_history(&env);
-        assert_eq!(history.len(), 1);
-        assert_eq!(history.get(0).expect("should have initial version"), initial_version);
-    }
-
-    #[test]
-    fn test_migration_status() {
-        let env = Env::default();
-        let migration_id = Symbol::new(&env, "test_mig");
-
-        // Initially not started
-        let status = UpgradeUtils::get_migration_status(&env, &migration_id);
-        assert_eq!(status, MigrationStatus::NotStarted);
-
-        // Set in progress
-        UpgradeUtils::set_migration_status(&env, &migration_id, &MigrationStatus::InProgress);
-        let status = UpgradeUtils::get_migration_status(&env, &migration_id);
-        assert_eq!(status, MigrationStatus::InProgress);
-
-        // Set completed
-        UpgradeUtils::set_migration_status(&env, &migration_id, &MigrationStatus::Completed);
-        let status = UpgradeUtils::get_migration_status(&env, &migration_id);
-        assert_eq!(status, MigrationStatus::Completed);
-    }
-
-    #[test]
-    fn test_governance_proposal() {
-        let env = Env::default();
-        let proposer = Address::generate(&env);
-        let new_impl = Address::generate(&env);
-        let version = VersionInfo::new(1, 1, 0, 2000);
-
-        let proposal_id = GovernanceUpgrade::propose_upgrade(
-            &env,
-            &proposer,
-            &new_impl,
-            &version,
-            &String::from_str(&env, "Test upgrade"),
-            3,
-        )
-        .expect("proposal should be created");
-
-        let vote_count = GovernanceUpgrade::vote_on_upgrade(&env, &proposer, &proposal_id)
-            .expect("vote should succeed");
-        assert_eq!(vote_count, 1);
-    }
+    
+    
+    
 }

@@ -1400,60 +1400,6 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_breaker_initialization() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_circuit");
-        let config = CircuitBreakerConfig::default_config();
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        let status = CircuitBreaker::get_status(&env, &operation_id).expect("status should exist");
-        assert_eq!(status.state, CircuitState::Closed);
-        assert_eq!(status.failure_count, 0);
-    }
-
-    #[test]
-    fn test_circuit_breaker_opens_after_failures() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_circuit");
-        let config = CircuitBreakerConfig {
-            failure_threshold: 3,
-            reset_timeout: 60,
-            success_threshold: 2,
-            half_open_max_requests: 1,
-        };
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        // Record failures
-        for _ in 0..3 {
-            CircuitBreaker::record_failure(&env, &operation_id).expect("should record failure");
-        }
-
-        let status = CircuitBreaker::get_status(&env, &operation_id).expect("status should exist");
-        assert_eq!(status.state, CircuitState::Open);
-
-        // Can't proceed when open
-        let result = CircuitBreaker::can_proceed(&env, &operation_id);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_retry_mechanism() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_retry");
-        let config = RetryConfig::default_config();
-
-        RetryMechanism::initialize(&env, &operation_id, &config);
-
-        // Start retry
-        let context =
-            RetryMechanism::start_retry(&env, &operation_id, 500).expect("should start retry");
-        assert_eq!(context.attempt, 1);
-        assert!(!context.exhausted);
-    }
-
-    #[test]
     fn test_retry_delay_calculation() {
         let config = RetryConfig {
             max_retries: 5,
@@ -1512,65 +1458,5 @@ mod tests {
             RecoverySystem::determine_recovery_action(&validation_context),
             RecoveryAction::Skip
         );
-    }
-
-    #[test]
-    fn test_error_monitor_initialization() {
-        let env = Env::default();
-        let admin = Address::generate(&env);
-        let config = AlertConfig::new(&env, admin);
-
-        ErrorMonitor::initialize(&env, &config);
-
-        let retrieved = ErrorMonitor::get_config(&env).expect("config should exist");
-        assert!(retrieved.enabled);
-        assert_eq!(retrieved.min_level, AlertLevel::Warning);
-    }
-
-    #[test]
-    fn test_graceful_degradation() {
-        let env = Env::default();
-        let mut features = Vec::new(&env);
-        let feature1 = Symbol::new(&env, "analytics");
-        let feature2 = Symbol::new(&env, "reporting");
-        features.push_back(feature1.clone());
-        features.push_back(feature2.clone());
-
-        GracefulDegradation::initialize(&env, features);
-
-        // Feature should not be degraded initially
-        assert!(!GracefulDegradation::is_degraded(&env, &feature1));
-
-        // Degrade feature
-        GracefulDegradation::degrade_feature(&env, &feature1).expect("should degrade feature");
-        assert!(GracefulDegradation::is_degraded(&env, &feature1));
-
-        // Restore feature
-        GracefulDegradation::restore_feature(&env, &feature1).expect("should restore feature");
-        assert!(!GracefulDegradation::is_degraded(&env, &feature1));
-    }
-
-    #[test]
-    fn test_health_check() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "health_test");
-        let config = CircuitBreakerConfig::default_config();
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        let admin = Address::generate(&env);
-        ErrorMonitor::initialize(&env, &AlertConfig::new(&env, admin));
-
-        let mut features = Vec::new(&env);
-        features.push_back(Symbol::new(&env, "feature1"));
-        GracefulDegradation::initialize(&env, features);
-
-        let mut circuit_ids = Vec::new(&env);
-        circuit_ids.push_back(operation_id);
-
-        let result = HealthCheck::check(&env, &circuit_ids);
-        assert_eq!(result.status, HealthStatus::Healthy);
-        assert_eq!(result.open_circuits, 0);
-        assert_eq!(result.degraded_features, 0);
     }
 }

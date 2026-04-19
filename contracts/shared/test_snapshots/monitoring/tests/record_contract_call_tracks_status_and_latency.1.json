@@ -56,18 +56,6 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "kind"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Counter"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
                         "symbol": "name"
                       },
                       "val": {
@@ -76,7 +64,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "updated_at"
+                        "symbol": "timestamp"
                       },
                       "val": {
                         "u64": 250
@@ -141,18 +129,6 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "kind"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Counter"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
                         "symbol": "name"
                       },
                       "val": {
@@ -161,7 +137,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "updated_at"
+                        "symbol": "timestamp"
                       },
                       "val": {
                         "u64": 250
@@ -226,18 +202,6 @@
                   "map": [
                     {
                       "key": {
-                        "symbol": "kind"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "symbol": "Gauge"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
                         "symbol": "name"
                       },
                       "val": {
@@ -246,7 +210,7 @@
                     },
                     {
                       "key": {
-                        "symbol": "updated_at"
+                        "symbol": "timestamp"
                       },
                       "val": {
                         "u64": 250

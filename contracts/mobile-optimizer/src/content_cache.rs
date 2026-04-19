@@ -278,7 +278,7 @@ impl ContentCacheManager {
     fn update_hit_rate(stats: &mut CacheStats) {
         let total = stats.hit_count + stats.miss_count;
         if total > 0 {
-            stats.hit_rate_bps = ((stats.hit_count * 10000) / total) as u32;
+            stats.hit_rate_bps = ((stats.hit_count * 10000).checked_div(total).unwrap_or(0)) as u32;
         }
     }
 

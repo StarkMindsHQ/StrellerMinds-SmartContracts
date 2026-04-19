@@ -121,7 +121,7 @@ impl PerformanceMonitor {
         };
 
         let error_rate =
-            if total_transactions > 0 { (total_errors * 100) / total_transactions } else { 0 };
+            if total_transactions > 0 { (total_errors * 100).checked_div(total_transactions).unwrap_or(0) } else { 0 };
 
         Ok(PerformanceReport {
             contract_address: contract_address.clone(),

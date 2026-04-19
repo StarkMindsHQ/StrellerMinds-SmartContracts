@@ -176,7 +176,7 @@ impl PwaManager {
         let sw_active = sw_status.as_ref().map(|s| s.state == SwState::Activated).unwrap_or(false);
 
         let storage_pct = if config.storage_quota_bytes > 0 {
-            ((config.storage_used_bytes * 100) / config.storage_quota_bytes) as u32
+            (config.storage_used_bytes * 100).checked_div(config.storage_quota_bytes).unwrap_or(0) as u32
         } else {
             0
         };

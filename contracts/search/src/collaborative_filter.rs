@@ -102,7 +102,7 @@ impl CollaborativeFilter {
         }
 
         if count > 0 {
-            total_score / count
+            total_score.checked_div(count).unwrap_or(0)
         } else {
             0
         }
@@ -218,10 +218,10 @@ impl CollaborativeFilter {
 
         // Calculate Jaccard similarity
         let total_unique = interactions_a.len() + interactions_b.len() - overlap;
-        let jaccard = if total_unique > 0 { (overlap * 100) / total_unique } else { 0 };
+        let jaccard = if total_unique > 0 { (overlap * 100).checked_div(total_unique).unwrap_or(0) } else { 0 };
 
         // Combine with weighted score
-        let weighted_avg = if overlap > 0 { overlap_weight / overlap } else { 0 };
+        let weighted_avg = if overlap > 0 { overlap_weight.checked_div(overlap).unwrap_or(0) } else { 0 };
 
         // Final similarity (50% Jaccard, 50% weighted)
         (jaccard + weighted_avg) / 2
