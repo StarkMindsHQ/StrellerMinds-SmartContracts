@@ -354,7 +354,10 @@ impl OptimizationEngine {
         let mut recommendations = Vec::new(env);
 
         let read_write_ratio = if metrics.storage_writes > 0 {
-            metrics.storage_reads.checked_div(metrics.storage_writes).unwrap_or(metrics.storage_reads)
+            metrics
+                .storage_reads
+                .checked_div(metrics.storage_writes)
+                .unwrap_or(metrics.storage_reads)
         } else {
             metrics.storage_reads
         };
@@ -639,16 +642,12 @@ impl OptimizationEngine {
         let prefix_bytes = prefix.as_bytes();
         let prefix_len = prefix_bytes.len().min(16);
 
-        for i in 0..prefix_len {
-            data[i] = prefix_bytes[i];
-        }
+        data[0..prefix_len].copy_from_slice(&prefix_bytes[0..prefix_len]);
 
         // Add timestamp for uniqueness
         let timestamp = 1708524000u64; // Placeholder timestamp
         let ts_bytes = timestamp.to_be_bytes();
-        for i in 0..8 {
-            data[16 + i] = ts_bytes[i];
-        }
+        data[16..24].copy_from_slice(&ts_bytes);
 
         BytesN::from_array(&soroban_sdk::Env::default(), &data)
     }

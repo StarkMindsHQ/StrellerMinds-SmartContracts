@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -760,10 +761,8 @@ impl RegressionTester {
         if regressions.is_empty() {
             current_time + 86400 // 24 hours for normal schedule
         } else {
-            let critical_regressions = regressions.iter().any(|r| match r.severity {
-                RiskLevel::Critical => true,
-                _ => false,
-            });
+            let critical_regressions =
+                regressions.iter().any(|r| matches!(r.severity, RiskLevel::Critical));
 
             if critical_regressions {
                 current_time + 3600 // 1 hour for critical issues

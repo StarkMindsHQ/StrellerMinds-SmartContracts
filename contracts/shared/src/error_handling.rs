@@ -1381,7 +1381,6 @@ impl HealthCheck {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::testutils::Address as _;
     use soroban_sdk::Env;
 
     #[test]

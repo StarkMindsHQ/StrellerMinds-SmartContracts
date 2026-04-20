@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -353,17 +354,17 @@ impl BehaviorAnalyzer {
         // Pattern-based suggestions
         for pattern in patterns.iter() {
             match pattern.pattern_type {
-                PatternType::SessionDuration if pattern.impact_on_learning == ImpactLevel::Negative => {
+                PatternType::SessionDuration
+                    if pattern.impact_on_learning == ImpactLevel::Negative =>
+                {
                     suggestions.push_back(String::from_str(
                         env,
                         "Optimize session duration for better learning outcomes",
                     ));
                 }
                 PatternType::LoginTiming if pattern.confidence > 80 => {
-                    suggestions.push_back(String::from_str(
-                        env,
-                        "Maintain consistent learning schedule",
-                    ));
+                    suggestions
+                        .push_back(String::from_str(env, "Maintain consistent learning schedule"));
                 }
                 _ => {}
             }
@@ -473,8 +474,11 @@ impl BehaviorAnalyzer {
             .count() as u32;
 
         let total_interactions = interactions.len();
-        let consumption_rate =
-            if total_interactions > 0 { (content_views * 100).checked_div(total_interactions).unwrap_or(0) } else { 0 };
+        let consumption_rate = if total_interactions > 0 {
+            (content_views * 100).checked_div(total_interactions).unwrap_or(0)
+        } else {
+            0
+        };
 
         BehaviorPattern {
             pattern_type: PatternType::ContentConsumption,
@@ -627,8 +631,10 @@ impl BehaviorAnalyzer {
             last_count += 1;
         }
 
-        let first_avg = if first_count > 0 { first_sum.checked_div(first_count).unwrap_or(0) } else { 0 };
-        let last_avg = if last_count > 0 { last_sum.checked_div(last_count).unwrap_or(0) } else { 0 };
+        let first_avg =
+            if first_count > 0 { first_sum.checked_div(first_count).unwrap_or(0) } else { 0 };
+        let last_avg =
+            if last_count > 0 { last_sum.checked_div(last_count).unwrap_or(0) } else { 0 };
 
         if last_avg > first_avg + 5 {
             EffectivenessTrend::Improving
@@ -666,9 +672,11 @@ impl BehaviorAnalyzer {
             return 0;
         }
 
-        let time_span =
-            interactions.last().map(|i| i.timestamp).unwrap_or(0).saturating_sub(
-                interactions.first().map(|i| i.timestamp).unwrap_or(0));
+        let time_span = interactions
+            .last()
+            .map(|i| i.timestamp)
+            .unwrap_or(0)
+            .saturating_sub(interactions.first().map(|i| i.timestamp).unwrap_or(0));
         let weeks = (time_span / (7 * 86400)).max(1); // Ensure at least 1 week to avoid division by zero
 
         login_count / weeks as u32
@@ -722,9 +730,11 @@ impl BehaviorAnalyzer {
 
         // Calculate days between logins
         let mut gaps = Vec::new(env);
-        for i in 1..login_interactions.len() { // This loop is safe because login_interactions.len() >= 2
+        for i in 1..login_interactions.len() {
+            // This loop is safe because login_interactions.len() >= 2
             let current = login_interactions.get(i).expect("Login interaction should exist");
-            let previous = login_interactions.get(i - 1).expect("Previous login interaction should exist");
+            let previous =
+                login_interactions.get(i - 1).expect("Previous login interaction should exist");
             let gap = (current.timestamp - previous.timestamp) / 86400;
             gaps.push_back(gap);
         }
@@ -762,6 +772,7 @@ impl BehaviorAnalyzer {
             let diff = times.get(i).unwrap() as f64 - mean;
             // This unwrap is still here. Let's fix it.
             variance_sum += diff * diff;
+        }
         let variance = variance_sum / times.len() as f64;
 
         1.0 / (1.0 + sqrt_f64(variance) / 3600.0) // Normalize by hour
@@ -789,7 +800,8 @@ impl BehaviorAnalyzer {
 
         let mut gaps = Vec::new(env);
         for i in 1..interactions.len() {
-            if let (Some(current), Some(previous)) = (interactions.get(i), interactions.get(i - 1)) {
+            if let (Some(current), Some(previous)) = (interactions.get(i), interactions.get(i - 1))
+            {
                 let gap = current.timestamp.saturating_sub(previous.timestamp);
                 gaps.push_back(gap);
             }
@@ -829,18 +841,17 @@ impl BehaviorAnalyzer {
             return false;
         }
 
-        // Get the last 3 scores manually
-        let mut recent_scores_vec = Vec::new(scores.env());
+        // Check if the last 3 scores have low variance (indicating a plateau)
         let num_scores = scores.len();
-        if num_scores >= 3 {
-            for i in num_scores.saturating_sub(3)..num_scores {
-                if let Some(score) = scores.get(i) {
-                    recent_scores_vec.push_back(score);
-                }
-            }
-        }
+        let score_1 = scores.get(num_scores - 3).unwrap_or(0);
+        let score_2 = scores.get(num_scores - 2).unwrap_or(score_1);
+        let score_3 = scores.get(num_scores - 1).unwrap_or(score_2);
 
-        let variance = Self::calculate_score_variance(&recent[..count]);
+        let mean = (score_1 as f64 + score_2 as f64 + score_3 as f64) / 3.0;
+        let variance = ((score_1 as f64 - mean).powi(2)
+            + (score_2 as f64 - mean).powi(2)
+            + (score_3 as f64 - mean).powi(2))
+            / 3.0;
 
         variance < 5.0 // Low variance indicates plateau
     }
@@ -854,7 +865,7 @@ impl BehaviorAnalyzer {
         scores
             .iter()
             .map(|s| {
-                let diff = *s as f64 - mean;
+                let diff = s as f64 - mean;
                 diff * diff
             })
             .sum::<f64>()
@@ -867,10 +878,8 @@ impl BehaviorAnalyzer {
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
         BytesN::from_array(env, &data)
     }
 

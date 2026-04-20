@@ -65,7 +65,9 @@ impl GasOptimizer {
         total_optimized = total_optimized.saturating_sub(batch_savings);
 
         let savings_pct = if total_original > 0 {
-            ((total_original.saturating_sub(total_optimized)) * 100).checked_div(total_original).unwrap_or(0) as u32
+            ((total_original.saturating_sub(total_optimized)) * 100)
+                .checked_div(total_original)
+                .unwrap_or(0) as u32
         } else {
             0
         };

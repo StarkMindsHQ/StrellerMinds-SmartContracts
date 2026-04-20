@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -183,14 +185,14 @@ impl PredictiveEngine {
         let mut middle_vec = Vec::new(data.env());
         let mut recent_vec = Vec::new(data.env());
 
-        for i in 0..first_third {
-            early_vec.push_back(data.get(i).unwrap());
+        for m in data.slice(0..first_third) {
+            early_vec.push_back(m);
         }
-        for i in first_third..second_third {
-            middle_vec.push_back(data.get(i).unwrap());
+        for m in data.slice(first_third..second_third) {
+            middle_vec.push_back(m);
         }
-        for i in second_third..data.len() {
-            recent_vec.push_back(data.get(i).unwrap());
+        for m in data.slice(second_third..data.len()) {
+            recent_vec.push_back(m);
         }
 
         let early_avg = Self::calculate_average_load(&early_vec);
@@ -423,10 +425,8 @@ impl PredictiveEngine {
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
         BytesN::from_array(env, &data)
     }
 
@@ -435,46 +435,37 @@ impl PredictiveEngine {
         if data.is_empty() {
             return 0;
         }
-        data.iter().map(|m| m.transaction_count).sum::<u32>()
-            .checked_div(data.len())
-            .unwrap_or(0)
+        data.iter().map(|m| m.transaction_count).sum::<u32>().checked_div(data.len()).unwrap_or(0)
     }
 
     fn calculate_average_memory(data: &Vec<PerformanceMetrics>) -> u32 {
         if data.is_empty() {
             return 0;
         }
-        let mut sum = 0u32;
-        data.iter().map(|m| m.memory_usage).sum::<u32>()
-            .checked_div(data.len())
-            .unwrap_or(0)
+        data.iter().map(|m| m.memory_usage).sum::<u32>().checked_div(data.len()).unwrap_or(0)
     }
 
     fn calculate_average_transactions_per_hour(data: &Vec<PerformanceMetrics>) -> u32 {
         if data.is_empty() {
             return 0;
         }
-        data.iter().map(|m| m.transaction_count).sum::<u32>() / data.len()
-            .checked_div(data.len())
-            .unwrap_or(0)
+        data.iter().map(|m| m.transaction_count).sum::<u32>()
+            / data.len().checked_div(data.len()).unwrap_or(0)
     }
 
     fn calculate_average_gas_usage(data: &Vec<PerformanceMetrics>) -> u64 {
         if data.is_empty() {
             return 0;
         }
-        data.iter().map(|m| m.gas_used).sum::<u64>()
-            .checked_div(data.len() as u64)
-            .unwrap_or(0)
+        data.iter().map(|m| m.gas_used).sum::<u64>().checked_div(data.len() as u64).unwrap_or(0)
     }
 
     fn calculate_average_storage_usage(data: &Vec<PerformanceMetrics>) -> u32 {
         if data.is_empty() {
             return 0;
         }
-        data.iter().map(|m| m.storage_reads + m.storage_writes).sum::<u32>() / data.len()
-            .checked_div(data.len())
-            .unwrap_or(0)
+        data.iter().map(|m| m.storage_reads + m.storage_writes).sum::<u32>()
+            / data.len().checked_div(data.len()).unwrap_or(0)
     }
 
     fn calculate_growth_rate(data: &Vec<PerformanceMetrics>) -> f64 {
@@ -572,10 +563,14 @@ impl PredictiveEngine {
         let mut second_half = Vec::new(data.env());
 
         for i in 0..mid {
-            if let Some(metric) = data.get(i) { first_half.push_back(metric); }
+            if let Some(metric) = data.get(i) {
+                first_half.push_back(metric);
+            }
         }
         for i in mid..data.len() {
-            if let Some(metric) = data.get(i) { second_half.push_back(metric); }
+            if let Some(metric) = data.get(i) {
+                second_half.push_back(metric);
+            }
         }
 
         let first_half_avg = Self::calculate_average_gas_usage(&first_half);
@@ -612,8 +607,7 @@ impl PredictiveEngine {
             Some(DegradationPrediction {
                 degradation_type: DegradationType::ExecutionTime,
                 current_value,
-                predicted_value: (current_value as f64
-                    * (1.0 + trend / 100.0)) as u64,
+                predicted_value: (current_value as f64 * (1.0 + trend / 100.0)) as u64,
                 confidence: 75,
                 time_to_degradation: 3600, // 1 hour estimate
             })
@@ -629,8 +623,7 @@ impl PredictiveEngine {
             Some(DegradationPrediction {
                 degradation_type: DegradationType::Memory,
                 current_value,
-                predicted_value: (current_value as f64 * (1.0 + trend / 100.0))
-                    as u64,
+                predicted_value: (current_value as f64 * (1.0 + trend / 100.0)) as u64,
                 confidence: 80,
                 time_to_degradation: 7200, // 2 hours estimate
             })
@@ -648,8 +641,7 @@ impl PredictiveEngine {
             Some(DegradationPrediction {
                 degradation_type: DegradationType::ErrorRate,
                 current_value,
-                predicted_value: (current_value as f64 * (1.0 + trend / 100.0))
-                    as u64,
+                predicted_value: (current_value as f64 * (1.0 + trend / 100.0)) as u64,
                 confidence: 70,
                 time_to_degradation: 1800, // 30 minutes estimate
             })

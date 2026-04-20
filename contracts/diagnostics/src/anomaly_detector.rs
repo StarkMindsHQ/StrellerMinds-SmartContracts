@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };

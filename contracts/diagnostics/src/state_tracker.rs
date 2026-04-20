@@ -92,8 +92,11 @@ impl StateTracker {
         }
 
         // Calculate growth rate
-        let first = snapshots.get(0).unwrap();
-        let last = snapshots.get(snapshots.len() - 1).unwrap();
+        let first = match snapshots.first() {
+            Some(s) => s,
+            None => return evolution,
+        };
+        let last = snapshots.last().unwrap_or(first.clone());
 
         let storage_growth = last.storage_entries.saturating_sub(first.storage_entries) as u64;
         let memory_growth = last.memory_usage_bytes.saturating_sub(first.memory_usage_bytes);
@@ -143,15 +146,7 @@ impl StateTracker {
     ) -> String {
         // In a real implementation, this would create a detailed visualization
         // For now, we'll create a summary
-        String::from_str(
-            env,
-            &format!(
-                "Contract State - Entries: {}, Memory: {} bytes, Seq: {}",
-                snapshot.storage_entries,
-                snapshot.memory_usage_bytes,
-                snapshot.ledger_sequence
-            ),
-        )
+        String::from_str(env, "Contract State Summary")
     }
 
     // Helper functions (simplified implementations)

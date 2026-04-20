@@ -230,7 +230,7 @@ impl SearchAnalytics {
         let conversion = Self::calculate_conversion_rate(env, query.clone());
 
         // Lower position = better (invert scale)
-        let position_score = if avg_pos > 0 { (1000 / avg_pos).min(1000) } else { 0 };
+        let position_score = 1000_u32.checked_div(avg_pos).unwrap_or(0).min(1000);
 
         // Combine metrics
         (position_score + conversion) / 2

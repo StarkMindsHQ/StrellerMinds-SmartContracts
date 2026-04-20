@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -474,8 +475,8 @@ impl ResourceOptimizer {
                 0
             },
             pending: if overall_improvement <= 40.0 { 1 } else { 0 },
-            success_rate: overall_improvement.min(100.0).max(0.0) as u32,
-            progress_percentage: overall_improvement.min(100.0).max(0.0) as u32,
+            success_rate: overall_improvement.clamp(0.0, 100.0) as u32,
+            progress_percentage: overall_improvement.clamp(0.0, 100.0) as u32,
             gas_efficiency_change: gas_improvement as i32,
             memory_efficiency_change: memory_improvement as i32,
             storage_efficiency_change: storage_improvement as i32,
@@ -520,11 +521,6 @@ impl ResourceOptimizer {
 
     fn find_peak_gas_usage(metrics: &Vec<PerformanceMetrics>) -> u64 {
         let mut peak = 0u64;
-        for i in 0..metrics.len() {
-            let gas = metrics.get(i).unwrap().gas_used;
-            if gas > peak {
-                peak = gas;
-            }
         for m in metrics {
             peak = peak.max(m.gas_used);
         }
@@ -533,11 +529,6 @@ impl ResourceOptimizer {
 
     fn find_peak_memory_usage(metrics: &Vec<PerformanceMetrics>) -> u32 {
         let mut peak = 0u32;
-        for i in 0..metrics.len() {
-            let memory = metrics.get(i).unwrap().memory_usage;
-            if memory > peak {
-                peak = memory;
-            }
         for m in metrics {
             peak = peak.max(m.memory_usage);
         }
@@ -552,8 +543,6 @@ impl ResourceOptimizer {
         let mut total_efficiency = 0.0;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // Efficiency based on gas per transaction and execution time
             // Efficiency based on gas per transaction and execution time
             let efficiency = if m.execution_time > 0 {
                 (m.transaction_count as f64 * 1000.0)
@@ -582,8 +571,6 @@ impl ResourceOptimizer {
         for i in 0..metrics.len() {
             // Simplified cost calculation (gas_used / 10000 as cost units)
             total_cost += metrics.get(i).unwrap().gas_used / 10000;
-        for m in metrics.iter() {
-            total_cost += m.gas_used / 10000;
         }
 
         total_cost / metrics.len() as u64
@@ -597,8 +584,6 @@ impl ResourceOptimizer {
         let mut efficiency_sum = 0.0;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // Memory efficiency based on transactions processed per MB
             // Memory efficiency based on transactions processed per MB
             let efficiency = if m.memory_usage > 0 {
                 (m.transaction_count as f64 * 1_000_000.0) / m.memory_usage as f64
@@ -620,8 +605,6 @@ impl ResourceOptimizer {
         for i in 1..metrics.len() {
             let prev = metrics.get(i - 1).unwrap().memory_usage;
             let current = metrics.get(i).unwrap().memory_usage;
-            let prev = metrics.get(i - 1).map(|m| m.memory_usage).unwrap_or(0);
-            let current = metrics.get(i).map(|m| m.memory_usage).unwrap_or(0);
 
             if current > prev {
                 consecutive_increases += 1;
@@ -649,8 +632,6 @@ impl ResourceOptimizer {
             let mut total = 0u64;
             for i in 0..metrics.len() {
                 total += metrics.get(i).unwrap().memory_usage as u64;
-            for m in metrics.iter() {
-                total += m.memory_usage as u64;
             }
             (total / metrics.len() as u64) as u32
         } else {
@@ -688,8 +669,6 @@ impl ResourceOptimizer {
         let mut efficiency_sum = 0.0;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // Efficiency based on transactions per storage operation
             let total_storage_ops = m.storage_reads + m.storage_writes;
 
             // Efficiency based on transactions per storage operation
@@ -712,8 +691,6 @@ impl ResourceOptimizer {
         let mut total_cost = 0u64;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // Simplified cost: reads + writes (writes cost more)
             // Simplified cost: reads + writes (writes cost more)
             total_cost += (m.storage_reads as u64) + (m.storage_writes as u64 * 10);
         }
@@ -754,8 +731,6 @@ impl ResourceOptimizer {
         let mut efficiency_sum = 0.0;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // CPU efficiency based on transactions per instruction
             // CPU efficiency based on transactions per instruction
             let efficiency = if m.cpu_instructions > 0 {
                 (m.transaction_count as f64 / m.cpu_instructions as f64) * 100_000.0
@@ -774,8 +749,6 @@ impl ResourceOptimizer {
 
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
-            // > 20M instructions
             if m.cpu_instructions > 20_000_000 {
                 // > 20M instructions
                 bottlenecks
@@ -827,8 +800,6 @@ impl ResourceOptimizer {
             let mut total = 0u32;
             for i in 0..metrics.len() {
                 total += metrics.get(i).unwrap().transaction_count;
-            for m in metrics.iter() {
-                total += m.transaction_count;
             }
             total
         } else {
@@ -1178,14 +1149,11 @@ impl ResourceOptimizer {
 
         for i in 0..half_point {
             let m = metrics.get(i).unwrap();
-        for m in metrics.slice(0..half_point).iter() {
             first_half_cost += Self::calculate_single_metric_cost(&m);
         }
 
         for i in half_point..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.slice(half_point..metrics.len()).iter() {
-            // This unwrap is still here. Let's fix it.
             second_half_cost += Self::calculate_single_metric_cost(&m);
         }
 
@@ -1218,7 +1186,6 @@ impl ResourceOptimizer {
         let mut efficiency_sum = 0.0;
         for i in 0..metrics.len() {
             let m = metrics.get(i).unwrap();
-        for m in metrics.iter() {
             let cost = Self::calculate_single_metric_cost(&m);
 
             // Efficiency = transactions processed per unit cost

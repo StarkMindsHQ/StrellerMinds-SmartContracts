@@ -274,9 +274,9 @@ impl Diagnostics {
         admin.require_auth();
 
         // Extract contract address from test config for the new implementation
-        let contract_address = test_config.test_contracts.get(0)
-            .ok_or(DiagnosticsError::InvalidRegressionConfig)?;
-            
+        let contract_address =
+            test_config.test_contracts.get(0).ok_or(DiagnosticsError::InvalidRegressionConfig)?;
+
         RegressionTester::run_regression_tests(&env, &contract_address, &test_config)
     }
 

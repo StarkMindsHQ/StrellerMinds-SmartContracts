@@ -129,7 +129,10 @@ impl ThreatDetector {
         // In a real implementation, these would be calculated from actual events
         let total_events = 0u32; // Would be counted from event replay
         let error_events = 0u32; // Would be filtered from events
-        let error_rate = if total_events > 0 { (error_events * 100) / total_events } else { 0 };
+        let error_rate = error_events
+            .checked_mul(100)
+            .and_then(|value| value.checked_div(total_events))
+            .unwrap_or(0);
 
         let metrics = SecurityMetrics {
             window_id,

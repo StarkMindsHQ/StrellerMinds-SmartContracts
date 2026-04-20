@@ -404,7 +404,6 @@ impl DataMigration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::testutils::Address as _;
 
     #[test]
     fn test_version_info() {
@@ -418,8 +417,4 @@ mod tests {
         assert!(!v1.is_compatible_with(&v3)); // Different major version
         assert!(!v2.is_compatible_with(&v1)); // Downgrade not allowed
     }
-
-    
-    
-    
 }

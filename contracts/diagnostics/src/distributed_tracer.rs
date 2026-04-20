@@ -257,10 +257,8 @@ impl DistributedTracer {
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
         // Add some randomness using contract address
         data[16] = 0xAB; // Trace identifier
         BytesN::from_array(env, &data)
@@ -273,10 +271,8 @@ impl DistributedTracer {
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
         data[16] = 0xCD; // Span identifier
         BytesN::from_array(env, &data)
     }
@@ -365,7 +361,7 @@ impl DistributedTracer {
     /// Identify optimization opportunities from trace data
     fn identify_optimization_opportunities(env: &Env, trace_analysis: &mut TraceAnalysis) {
         let mut opportunities = Vec::new(env);
-        
+
         // Check for redundant operations (simplified: if span count is very high)
         if trace_analysis.span_count > 50 {
             opportunities.push_back(String::from_str(
