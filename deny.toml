@@ -3,22 +3,20 @@
 
 [advisories]
 db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "deny"
-unsound = "deny"
 yanked = "deny"
-severity-threshold = "medium"
 ignore = [
     "RUSTSEC-2024-0388",
     "RUSTSEC-2024-0436",
     "RUSTSEC-2025-0057",
     "RUSTSEC-2025-0119",
     "RUSTSEC-2025-0134",
-    "RUSTSEC-2026-0073", # Parsing error for CVSS 4.0 in current tool version
+    # time: DoS via stack exhaustion — transitive dep via serde_with, pinned by soroban-sdk 22.0.0
+    "RUSTSEC-2026-0009",
+    # libcrux-poly1305: CVSS 4.0 parsing error in current cargo-deny version
+    "RUSTSEC-2026-0073",
 ]
 
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
@@ -29,11 +27,10 @@ allow = [
     "Unicode-DFS-2016",
     "CC0-1.0",
 ]
-deny = ["GPL-2.0", "GPL-3.0", "AGPL-3.0", "LGPL-2.0", "LGPL-3.0"]
-copyleft = "deny"
-allow-osi-fsf-free = "neither"
-default = "deny"
 confidence-threshold = 0.8
+
+[licenses.private]
+ignore = false
 
 [bans]
 # Deny multiple versions of the same crate to keep the dependency tree clean
