@@ -93,6 +93,8 @@ jobs:
   compatibility:
     name: Version Compatibility Testing
     runs-on: ubuntu-latest
+    # Only run on schedule or manual trigger — CI already covers stable build+test on PRs
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         rust: [stable, beta]
