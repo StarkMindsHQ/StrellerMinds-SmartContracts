@@ -3,6 +3,7 @@ name = "diagnostics"
 version = "0.1.0"
 edition = "2021"
 authors = ["StarkMinds Team"]
+license = "Apache-2.0"
 
 [lib]
 crate-type = ["cdylib"]
