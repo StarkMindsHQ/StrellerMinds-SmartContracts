@@ -881,3 +881,260 @@ fn test_health_check_before_init() {
     assert_eq!(report.status, ContractHealthStatus::Unknown);
     assert!(!report.initialized);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 18. Two-Factor Authentication
+// ─────────────────────────────────────────────────────────────
+
+fn compute_test_totp(env: &Env, secret_hash: &BytesN<32>, time_bucket: u64) -> BytesN<32> {
+    use soroban_sdk::Bytes;
+    let mut input = Bytes::new(env);
+    input.extend_from_slice(&secret_hash.to_array());
+    input.extend_from_slice(&time_bucket.to_be_bytes());
+    env.crypto().sha256(&input).into()
+}
+
+#[test]
+fn test_enable_two_factor() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    let config = client.get_two_factor_config(&user).unwrap();
+    assert!(config.enabled);
+    assert_eq!(config.secret_hash, secret_hash);
+    assert_eq!(config.recovery_codes_remaining, 8);
+    assert_eq!(config.method, crate::types::TwoFactorMethod::Totp);
+}
+
+#[test]
+fn test_verify_totp_code() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    let now = env.ledger().timestamp();
+    let bucket = now / 30;
+    let code_hash = compute_test_totp(&env, &secret_hash, bucket);
+
+    let result = client.verify_two_factor(&user, &code_hash);
+    assert!(result);
+}
+
+#[test]
+fn test_verify_recovery_code() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    // Use recovery code hash at index 3
+    let code_hash = BytesN::from_array(&env, &[13u8; 32]);
+    let result = client.verify_two_factor(&user, &code_hash);
+    assert!(result);
+
+    // Recovery code count should decrease
+    let config = client.get_two_factor_config(&user).unwrap();
+    assert_eq!(config.recovery_codes_remaining, 7);
+}
+
+#[test]
+fn test_admin_two_factor_enforcement_blocks_admin_ops() {
+    let (env, client, admin) = setup_env();
+
+    // Enable admin 2FA requirement
+    client.set_admin_two_factor_required(&admin, &true);
+    assert!(client.is_admin_two_factor_required());
+
+    // Admin tries to issue certificate without 2FA session -> should fail
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "2FA_COURSE", &student);
+
+    let result = client.try_issue_certificate(&admin, &params);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_admin_two_factor_enforcement_allows_after_verification() {
+    let (env, client, admin) = setup_env();
+
+    // Setup admin 2FA
+    let secret_hash = BytesN::from_array(&env, &[99u8; 32]);
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 20; 32]));
+    }
+    client.enable_two_factor(&admin, &secret_hash, &recovery_hashes);
+
+    // Enable enforcement
+    client.set_admin_two_factor_required(&admin, &true);
+
+    // Verify TOTP to create session
+    let now = env.ledger().timestamp();
+    let bucket = now / 30;
+    let code_hash = compute_test_totp(&env, &secret_hash, bucket);
+    client.verify_two_factor(&admin, &code_hash);
+
+    // Admin operation should now succeed
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "2FA_OK", &student);
+    client.issue_certificate(&admin, &params);
+
+    let cert = client.get_certificate(&params.certificate_id);
+    assert!(cert.is_some());
+}
+
+#[test]
+fn test_disable_two_factor_by_admin() {
+    let (env, client, admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+    assert!(client.get_two_factor_config(&user).is_some());
+
+    client.disable_two_factor(&admin, &user);
+    assert!(client.get_two_factor_config(&user).is_none());
+}
+
+#[test]
+fn test_regenerate_recovery_codes() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    // Use one recovery code
+    let code_hash = BytesN::from_array(&env, &[10u8; 32]);
+    client.verify_two_factor(&user, &code_hash);
+    assert_eq!(client.get_two_factor_config(&user).unwrap().recovery_codes_remaining, 7);
+
+    // Regenerate with new codes
+    let mut new_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        new_hashes.push_back(BytesN::from_array(&env, &[i + 50; 32]));
+    }
+    client.regenerate_recovery_codes(&user, &new_hashes);
+
+    let config = client.get_two_factor_config(&user).unwrap();
+    assert_eq!(config.recovery_codes_remaining, 8);
+}
+
+#[test]
+fn test_double_enable_two_factor_fails() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    let result = client.try_enable_two_factor(&user, &secret_hash, &recovery_hashes);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_verify_without_2fa_enabled_fails() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let code_hash = BytesN::from_array(&env, &[1u8; 32]);
+
+    let result = client.try_verify_two_factor(&user, &code_hash);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_invalid_two_factor_code_fails() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    let invalid_code = BytesN::from_array(&env, &[255u8; 32]);
+    let result = client.try_verify_two_factor(&user, &invalid_code);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_non_admin_cannot_disable_2fa() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let attacker = Address::generate(&env);
+    let secret_hash = BytesN::from_array(&env, &[7u8; 32]);
+
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 10; 32]));
+    }
+    client.enable_two_factor(&user, &secret_hash, &recovery_hashes);
+
+    let result = client.try_disable_two_factor(&attacker, &user);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_admin_two_factor_enforcement_only_affects_admin() {
+    let (env, client, admin) = setup_env();
+
+    // Enable admin 2FA globally
+    let secret_hash = BytesN::from_array(&env, &[99u8; 32]);
+    let mut recovery_hashes: Vec<BytesN<32>> = Vec::new(&env);
+    for i in 0u8..8 {
+        recovery_hashes.push_back(BytesN::from_array(&env, &[i + 20; 32]));
+    }
+    client.enable_two_factor(&admin, &secret_hash, &recovery_hashes);
+    client.set_admin_two_factor_required(&admin, &true);
+
+    // Verify admin session
+    let bucket = env.ledger().timestamp() / 30;
+    let code_hash = compute_test_totp(&env, &secret_hash, bucket);
+    client.verify_two_factor(&admin, &code_hash);
+
+    // Non-admin user can still perform non-admin operations without 2FA
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "SHARE_COURSE", &student);
+    client.issue_certificate(&admin, &params);
+
+    // Student sharing does not require 2FA
+    client.share_certificate(&student, &params.certificate_id, &String::from_str(&env, "linkedin"), &String::from_str(&env, "https://verify.example.com"));
+}

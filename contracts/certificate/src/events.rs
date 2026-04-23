@@ -212,3 +212,39 @@ pub fn emit_certificate_verified(
         })
     );
 }
+
+/// Emit when a user enables two-factor authentication.
+pub fn emit_two_factor_enabled(env: &Env, user: &Address, method: &crate::types::TwoFactorMethod) {
+    use soroban_sdk::symbol_short;
+    env.events().publish(
+        (symbol_short!("2fa"), symbol_short!("enabled")),
+        (user.clone(), method.clone()),
+    );
+}
+
+/// Emit when a user disables two-factor authentication.
+pub fn emit_two_factor_disabled(env: &Env, user: &Address) {
+    use soroban_sdk::symbol_short;
+    env.events().publish(
+        (symbol_short!("2fa"), symbol_short!("disabled")),
+        user.clone(),
+    );
+}
+
+/// Emit when a two-factor code is verified.
+pub fn emit_two_factor_verified(env: &Env, user: &Address, method: &crate::types::TwoFactorMethod) {
+    use soroban_sdk::symbol_short;
+    env.events().publish(
+        (symbol_short!("2fa"), symbol_short!("verified")),
+        (user.clone(), method.clone()),
+    );
+}
+
+/// Emit when a recovery code is used.
+pub fn emit_recovery_code_used(env: &Env, user: &Address, index: u32) {
+    use soroban_sdk::symbol_short;
+    env.events().publish(
+        (symbol_short!("2fa"), symbol_short!("recovery")),
+        (user.clone(), index),
+    );
+}

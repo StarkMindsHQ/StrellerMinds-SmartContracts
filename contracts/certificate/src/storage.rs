@@ -243,3 +243,42 @@ pub fn next_certificate_counter(env: &Env) -> u64 {
     env.storage().instance().set(&CertDataKey::CertificateCounter, &next);
     next
 }
+
+// ─────────────────────────────────────────────────────────────
+// Two-Factor Authentication
+// ─────────────────────────────────────────────────────────────
+pub fn set_two_factor_config(env: &Env, user: &Address, config: &crate::types::TwoFactorConfig) {
+    env.storage().persistent().set(&CertDataKey::TwoFactorConfig(user.clone()), config);
+}
+
+pub fn get_two_factor_config(env: &Env, user: &Address) -> Option<crate::types::TwoFactorConfig> {
+    env.storage().persistent().get(&CertDataKey::TwoFactorConfig(user.clone()))
+}
+
+pub fn set_recovery_code(env: &Env, user: &Address, index: u32, code: &crate::types::RecoveryCode) {
+    env.storage().persistent().set(&CertDataKey::RecoveryCode(user.clone(), index), code);
+}
+
+pub fn get_recovery_code(env: &Env, user: &Address, index: u32) -> Option<crate::types::RecoveryCode> {
+    env.storage().persistent().get(&CertDataKey::RecoveryCode(user.clone(), index))
+}
+
+pub fn set_admin_two_factor_required(env: &Env, required: bool) {
+    env.storage().instance().set(&CertDataKey::AdminTwoFactorRequired, &required);
+}
+
+pub fn is_admin_two_factor_required(env: &Env) -> bool {
+    env.storage().instance().get(&CertDataKey::AdminTwoFactorRequired).unwrap_or(false)
+}
+
+pub fn set_two_factor_session(env: &Env, user: &Address, expires_at: u64) {
+    env.storage().temporary().set(&CertDataKey::TwoFactorSession(user.clone()), &expires_at);
+}
+
+pub fn get_two_factor_session(env: &Env, user: &Address) -> Option<u64> {
+    env.storage().temporary().get(&CertDataKey::TwoFactorSession(user.clone()))
+}
+
+pub fn clear_two_factor_session(env: &Env, user: &Address) {
+    env.storage().temporary().remove(&CertDataKey::TwoFactorSession(user.clone()));
+}

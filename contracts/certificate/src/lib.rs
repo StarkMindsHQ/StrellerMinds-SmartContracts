@@ -4,6 +4,7 @@ pub mod errors;
 pub mod events;
 pub mod storage;
 pub mod types;
+pub mod two_factor;
 
 #[cfg(test)]
 mod test;
@@ -47,6 +48,8 @@ fn require_admin(env: &Env, caller: &Address) -> Result<(), CertificateError> {
         log_error!(env, symbol_short!("cert"), symbol_short!("unauth"));
         return Err(CertificateError::Unauthorized);
     }
+    // Enforce 2FA for admins when globally required
+    two_factor::require_if_needed(env, caller)?;
     Ok(())
 }
 
@@ -70,7 +73,8 @@ fn generate_request_id(env: &Env) -> BytesN<32> {
 }
 
 /// Deterministic certificate anchor hash.
-fn generate_blockchain_anchor(env: &Env, cert_id: &BytesN<32>) -> soroban_sdk::Bytes {
+/// Returns BytesN<32> instead of Bytes to eliminate variable-length overhead in storage.
+fn generate_blockchain_anchor(env: &Env, cert_id: &BytesN<32>) -> BytesN<32> {
     let counter = storage::next_certificate_counter(env);
     let mut bytes = [0u8; 32];
     // Embed certificate id prefix
@@ -79,7 +83,7 @@ fn generate_blockchain_anchor(env: &Env, cert_id: &BytesN<32>) -> soroban_sdk::B
     // Embed counter
     let counter_bytes = counter.to_be_bytes();
     bytes[24..32].copy_from_slice(&counter_bytes);
-    soroban_sdk::Bytes::from_array(env, &bytes)
+    BytesN::from_array(env, &bytes)
 }
 
 fn update_analytics_field(env: &Env, updater: impl FnOnce(&mut CertificateAnalytics)) {
@@ -270,12 +274,10 @@ impl CertificateContract {
         let now = env.ledger().timestamp();
 
         let request = MultiSigCertificateRequest {
-            request_id: request_id.clone(),
             certificate_params: params.clone(),
             requester: requester.clone(),
             required_approvals: config.required_approvals,
             current_approvals: 0,
-            approvers: Vec::new(&env),
             approval_records: Vec::new(&env),
             status: MultiSigRequestStatus::Pending,
             created_at: now,
@@ -390,7 +392,6 @@ impl CertificateContract {
 
         if approved {
             request.current_approvals += 1;
-            request.approvers.push_back(approver.clone());
 
             events::emit_multisig_approval_granted(
                 &env,
@@ -415,7 +416,7 @@ impl CertificateContract {
 
                 // Auto-execute if configured
                 if config.auto_execute {
-                    Self::internal_execute(&env, &mut request)?;
+                    Self::internal_execute(&env, &request_id, &mut request)?;
                 }
             }
         } else {
@@ -481,7 +482,7 @@ impl CertificateContract {
             return Err(CertificateError::InsufficientApprovals);
         }
 
-        Self::internal_execute(&env, &mut request)?;
+        Self::internal_execute(&env, &request_id, &mut request)?;
 
         record_audit(
             &env,
@@ -497,13 +498,13 @@ impl CertificateContract {
     /// Internal certificate issuance on approval completion.
     fn internal_execute(
         env: &Env,
+        request_id: &BytesN<32>,
         request: &mut MultiSigCertificateRequest,
     ) -> Result<(), CertificateError> {
         let params = &request.certificate_params;
         let anchor = generate_blockchain_anchor(env, &params.certificate_id);
 
         let certificate = Certificate {
-            certificate_id: params.certificate_id.clone(),
             course_id: params.course_id.clone(),
             student: params.student.clone(),
             title: params.title.clone(),
@@ -523,7 +524,7 @@ impl CertificateContract {
         storage::add_student_certificate(env, &params.student, &params.certificate_id);
 
         request.status = MultiSigRequestStatus::Executed;
-        storage::set_multisig_request(env, &request.request_id, request);
+        storage::set_multisig_request(env, request_id, request);
 
         events::emit_certificate_issued(
             env,
@@ -593,7 +594,6 @@ impl CertificateContract {
 
             let anchor = generate_blockchain_anchor(&env, &params.certificate_id);
             let certificate = Certificate {
-                certificate_id: params.certificate_id.clone(),
                 course_id: params.course_id.clone(),
                 student: params.student.clone(),
                 title: params.title.clone(),
@@ -711,7 +711,6 @@ impl CertificateContract {
         storage::set_certificate(&env, &certificate_id, &cert);
 
         let revocation = RevocationRecord {
-            certificate_id: certificate_id.clone(),
             revoked_by: admin.clone(),
             revoked_at: env.ledger().timestamp(),
             reason,
@@ -780,7 +779,6 @@ impl CertificateContract {
         // Issue the new certificate
         let anchor = generate_blockchain_anchor(&env, &new_params.certificate_id);
         let new_cert = Certificate {
-            certificate_id: new_params.certificate_id.clone(),
             course_id: new_params.course_id.clone(),
             student: new_params.student.clone(),
             title: new_params.title.clone(),
@@ -916,7 +914,6 @@ impl CertificateContract {
 
         let anchor = generate_blockchain_anchor(&env, &params.certificate_id);
         let certificate = Certificate {
-            certificate_id: params.certificate_id.clone(),
             course_id: params.course_id.clone(),
             student: params.student.clone(),
             title: params.title.clone(),
@@ -1034,7 +1031,6 @@ impl CertificateContract {
             && (cert.expiry_date == 0 || env.ledger().timestamp() <= cert.expiry_date);
 
         let record = ComplianceRecord {
-            certificate_id: certificate_id.clone(),
             standard,
             verified_at: env.ledger().timestamp(),
             verified_by: verifier.clone(),
@@ -1118,7 +1114,6 @@ impl CertificateContract {
         }
 
         let record = ShareRecord {
-            certificate_id: certificate_id.clone(),
             shared_by: owner.clone(),
             shared_at: env.ledger().timestamp(),
             platform: platform.clone(),
@@ -1297,5 +1292,107 @@ impl CertificateContract {
         let report = Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
         Monitor::emit_health_check(&env, &report);
         report
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 14. Two-Factor Authentication
+    // ─────────────────────────────────────────────────────────
+    /// Enables two-factor authentication for the calling user.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `user` - The address enabling 2FA.
+    /// * `secret_hash` - Hash of the shared TOTP secret.
+    /// * `recovery_code_hashes` - Hashes of recovery codes (typically 8).
+    pub fn enable_two_factor(
+        env: Env,
+        user: Address,
+        secret_hash: BytesN<32>,
+        recovery_code_hashes: Vec<BytesN<32>>,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        two_factor::enable(&env, &user, &secret_hash, &recovery_code_hashes)
+    }
+
+    /// Disables two-factor authentication for a user. Admin only.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the action.
+    /// * `user` - The address whose 2FA will be disabled.
+    pub fn disable_two_factor(
+        env: Env,
+        admin: Address,
+        user: Address,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        two_factor::disable(&env, &admin, &user)
+    }
+
+    /// Verifies a TOTP or recovery code and creates an authenticated session.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `user` - The address verifying 2FA.
+    /// * `code_hash` - Hash of the TOTP code or recovery code.
+    pub fn verify_two_factor(
+        env: Env,
+        user: Address,
+        code_hash: BytesN<32>,
+    ) -> Result<bool, CertificateError> {
+        require_initialized(&env)?;
+        two_factor::verify(&env, &user, &code_hash)
+    }
+
+    /// Regenerates recovery codes for a user with active 2FA.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `user` - The address regenerating recovery codes.
+    /// * `new_code_hashes` - Hashes of the new recovery codes.
+    pub fn regenerate_recovery_codes(
+        env: Env,
+        user: Address,
+        new_code_hashes: Vec<BytesN<32>>,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        two_factor::regenerate_recovery_codes(&env, &user, &new_code_hashes)
+    }
+
+    /// Returns the 2FA configuration for a user, if any.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `user` - The address to query.
+    pub fn get_two_factor_config(
+        env: Env,
+        user: Address,
+    ) -> Option<crate::types::TwoFactorConfig> {
+        storage::get_two_factor_config(&env, &user)
+    }
+
+    /// Sets whether admin 2FA enforcement is required globally.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the change.
+    /// * `required` - `true` to require 2FA for all admin operations.
+    pub fn set_admin_two_factor_required(
+        env: Env,
+        admin: Address,
+        required: bool,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+        storage::set_admin_two_factor_required(&env, required);
+        Ok(())
+    }
+
+    /// Returns whether admin 2FA enforcement is currently active.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    pub fn is_admin_two_factor_required(env: Env) -> bool {
+        storage::is_admin_two_factor_required(&env)
     }
 }

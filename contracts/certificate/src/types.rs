@@ -116,11 +116,10 @@ pub struct MintCertificateParams {
 // Multi-Sig Certificate Request
 // ─────────────────────────────────────────────────────────────
 /// A pending or completed multi-signature certificate issuance request.
+/// Optimized for storage: request_id is the storage key and approvers are derived from approval_records.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MultiSigCertificateRequest {
-    /// Unique 32-byte identifier for this request.
-    pub request_id: BytesN<32>,
     /// Parameters that will be used to mint the certificate once approved.
     pub certificate_params: MintCertificateParams,
     /// Address that submitted the request.
@@ -129,9 +128,8 @@ pub struct MultiSigCertificateRequest {
     pub required_approvals: u32,
     /// Number of approvals collected so far.
     pub current_approvals: u32,
-    /// List of addresses that have been asked to approve.
-    pub approvers: Vec<Address>,
     /// Detailed approval or rejection records from each approver.
+    /// The list of approvers is derived from this Vec to avoid redundant storage.
     pub approval_records: Vec<ApprovalRecord>,
     /// Current lifecycle status of the request.
     pub status: MultiSigRequestStatus,
@@ -165,11 +163,10 @@ pub enum CertificateStatus {
 }
 
 /// An on-chain record of an issued certificate.
+/// Optimized for storage: the certificate_id is the storage key and is not duplicated in the value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Certificate {
-    /// Unique 32-byte identifier for this certificate.
-    pub certificate_id: BytesN<32>,
     /// Identifier of the course this certificate was awarded for.
     pub course_id: String,
     /// Address of the student who holds this certificate.
@@ -191,7 +188,8 @@ pub struct Certificate {
     /// Incremental version number, updated on reissuance.
     pub version: u32,
     /// Optional on-chain anchor (e.g., block hash) for additional provenance.
-    pub blockchain_anchor: Option<Bytes>,
+    /// Stored as BytesN<32> instead of Bytes to eliminate length-prefix overhead.
+    pub blockchain_anchor: Option<BytesN<32>>,
     /// Optional identifier of the template used to generate this certificate.
     pub template_id: Option<String>,
     /// Number of times this certificate has been shared externally.
@@ -255,11 +253,10 @@ pub enum FieldType {
 // Revocation Record
 // ─────────────────────────────────────────────────────────────
 /// Record of a certificate revocation event.
+/// Optimized for storage: certificate_id is the storage key and is not duplicated in the value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RevocationRecord {
-    /// Identifier of the revoked certificate.
-    pub certificate_id: BytesN<32>,
     /// Address that performed the revocation.
     pub revoked_by: Address,
     /// Unix timestamp (seconds) when the revocation occurred.
@@ -336,11 +333,10 @@ pub enum ComplianceStandard {
 }
 
 /// Record of a compliance verification performed on a certificate.
+/// Optimized for storage: certificate_id is the storage key and is not duplicated in the value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComplianceRecord {
-    /// Identifier of the certificate that was verified.
-    pub certificate_id: BytesN<32>,
     /// The compliance standard against which the certificate was checked.
     pub standard: ComplianceStandard,
     /// Unix timestamp (seconds) when the verification was performed.
@@ -357,11 +353,10 @@ pub struct ComplianceRecord {
 // Share / Social Verification
 // ─────────────────────────────────────────────────────────────
 /// Record of a certificate being shared to an external platform.
+/// Optimized for storage: certificate_id is the storage key and is not duplicated in the value.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ShareRecord {
-    /// Identifier of the shared certificate.
-    pub certificate_id: BytesN<32>,
     /// Address of the certificate holder who performed the share.
     pub shared_by: Address,
     /// Unix timestamp (seconds) when the share occurred.
@@ -490,6 +485,12 @@ pub enum CertDataKey {
     // Rate Limiting
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // CertRateLimitConfig
+
+    // Two-Factor Authentication
+    TwoFactorConfig(Address),
+    RecoveryCode(Address, u32),
+    AdminTwoFactorRequired,
+    TwoFactorSession(Address),
 }
 
 /// Configurable rate limits for certificate operations.
@@ -498,4 +499,46 @@ pub enum CertDataKey {
 pub struct CertRateLimitConfig {
     pub max_requests_per_day: u32,
     pub window_seconds: u64,
+}
+
+// ─────────────────────────────────────────────────────────────
+// Two-Factor Authentication
+// ─────────────────────────────────────────────────────────────
+
+/// Supported 2FA verification methods.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TwoFactorMethod {
+    /// Time-based one-time password.
+    Totp,
+    /// SMS-delivered backup code.
+    Sms,
+    /// Static recovery code.
+    Recovery,
+}
+
+/// Configuration and state for a user's two-factor authentication.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TwoFactorConfig {
+    /// Whether 2FA is currently enabled.
+    pub enabled: bool,
+    /// Hash of the shared secret used for TOTP generation.
+    pub secret_hash: BytesN<32>,
+    /// Number of remaining recovery codes.
+    pub recovery_codes_remaining: u32,
+    /// Timestamp when 2FA was enabled.
+    pub enabled_at: u64,
+    /// The preferred 2FA method.
+    pub method: TwoFactorMethod,
+}
+
+/// A hashed recovery code entry.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecoveryCode {
+    /// Hash of the recovery code.
+    pub code_hash: BytesN<32>,
+    /// Whether this code has been used.
+    pub used: bool,
 }

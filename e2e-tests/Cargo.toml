@@ -18,8 +18,9 @@ tokio-test = "0.4"
 
 # Contract dependencies for testing
 shared = { path = "../contracts/shared" }
-analytics = { path = "../contracts/analytics" } 
+analytics = { path = "../contracts/analytics" }
 token = { path = "../contracts/token" }
+certificate = { path = "../contracts/certificate" }
 
 # Random number generation for test data
 rand = "0.8"
@@ -39,3 +40,7 @@ path = "tests/analytics_integration.rs"
 [[test]]
 name = "scalability"
 path = "tests/scalability.rs"
+
+[[test]]
+name = "certificate_workflow"
+path = "tests/certificate_workflow.rs"

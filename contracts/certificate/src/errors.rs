@@ -87,6 +87,20 @@ pub enum CertificateError {
 
     // Rate limiting
     RateLimitExceeded = 90,
+
+    // Two-Factor Authentication
+    /// 2FA is not enabled for this account.
+    TwoFactorNotEnabled = 100,
+    /// The provided 2FA code is invalid or expired.
+    InvalidTwoFactorCode = 101,
+    /// 2FA is required for this operation but not provided.
+    TwoFactorRequired = 102,
+    /// The backup/recovery code has already been used.
+    RecoveryCodeAlreadyUsed = 103,
+    /// No backup/recovery codes remain.
+    NoRecoveryCodesLeft = 104,
+    /// 2FA is already enabled for this account.
+    TwoFactorAlreadyEnabled = 105,
 }
 
 impl CertificateError {
