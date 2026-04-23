@@ -32,7 +32,7 @@ fn test_save_search() {
     client.initialize(&admin);
 
     let user = Address::generate(&env);
-    
+
     let filters = SearchFilters {
         categories: Vec::new(&env),
         difficulty_levels: Vec::new(&env),
@@ -63,17 +63,13 @@ fn test_save_search() {
             secondary_sort: MaybeSortField::None,
             sort_order: SortOrder::Descending,
         },
-        pagination: PaginationOptions {
-            page: 1,
-            page_size: 10,
-            max_results: 100,
-        },
+        pagination: PaginationOptions { page: 1, page_size: 10, max_results: 100 },
         search_scope: SearchScope::All,
     };
 
     let name = String::from_str(&env, "My Rust Search");
     let search_id = client.save_search(&user, &name, &query);
-    assert!(search_id.len() > 0);
+    assert!(!search_id.is_empty());
 
     let saved_searches = client.get_saved_searches(&user);
     assert_eq!(saved_searches.len(), 1);

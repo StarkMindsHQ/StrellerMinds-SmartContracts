@@ -733,6 +733,7 @@ dependencies = [
 name = "diagnostics"
 version = "0.1.0"
 dependencies = [
+ "num-traits",
  "soroban-sdk",
 ]
 

@@ -2,6 +2,7 @@
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
+use num_traits::float::FloatCore;
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 /// User behavior analysis and learning pattern identification engine

@@ -1235,13 +1235,13 @@ impl CertificateContract {
         env: Env,
         certificate_id: BytesN<32>,
         proof: soroban_sdk::Bytes,
-        public_inputs: Vec<soroban_sdk::Bytes>,
+        _public_inputs: Vec<soroban_sdk::Bytes>,
     ) -> Result<bool, CertificateError> {
         require_initialized(&env)?;
 
         let cert = storage::get_certificate(&env, &certificate_id)
             .ok_or(CertificateError::CertificateNotFound)?;
-        
+
         if cert.status != CertificateStatus::Active {
             return Err(CertificateError::CertificateRevoked);
         }
@@ -1253,7 +1253,7 @@ impl CertificateContract {
         }
 
         // Mock verification result
-        let is_valid = true; 
+        let is_valid = true;
 
         if is_valid {
             events::emit_certificate_verified(
@@ -1263,7 +1263,7 @@ impl CertificateContract {
                 true,
             );
             update_analytics_field(&env, |a| a.total_verified += 1);
-            
+
             record_audit(
                 &env,
                 &certificate_id,

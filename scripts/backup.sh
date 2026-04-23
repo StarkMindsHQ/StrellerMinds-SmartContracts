@@ -17,9 +17,9 @@ log "INFO  Starting backup → ${BACKUP_DIR}"
 # ── 1. Contract source & build artifacts ────────────────────────────────────
 CONTRACTS_ARCHIVE="${BACKUP_DIR}/contracts.tar.gz"
 tar -czf "$CONTRACTS_ARCHIVE" \
+  --exclude='target' --exclude='*.wasm.bak' \
   contracts/ src/ e2e-tests/ e2e/ \
-  Cargo.toml Cargo.lock rust-toolchain.toml \
-  --exclude='target' --exclude='*.wasm.bak'
+  Cargo.toml Cargo.lock rust-toolchain.toml
 log "INFO  Contracts archived → ${CONTRACTS_ARCHIVE}"
 
 # ── 2. Scripts & configuration ───────────────────────────────────────────────
@@ -48,7 +48,7 @@ else
 fi
 
 # ── 5. Generate SHA-256 manifest ─────────────────────────────────────────────
-sha256sum "${BACKUP_DIR}"/*.tar.gz > "$MANIFEST"
+(cd "${BACKUP_DIR}" && sha256sum *.tar.gz > "manifest.sha256")
 log "INFO  Manifest written → ${MANIFEST}"
 
 # ── 6. Prune backups older than 30 days ──────────────────────────────────────

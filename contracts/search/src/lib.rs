@@ -442,7 +442,8 @@ impl AdvancedSearchContract {
         };
 
         let key = DataKey::SavedSearches(user);
-        let mut list: Vec<SavedSearch> = env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
+        let mut list: Vec<SavedSearch> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
         list.push_back(saved);
         env.storage().persistent().set(&key, &list);
 

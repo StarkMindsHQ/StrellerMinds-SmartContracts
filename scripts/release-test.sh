@@ -70,6 +70,7 @@ record_test() {
     else
         FAILED_TESTS=$((FAILED_TESTS + 1))
         log_error "$test_name - $message"
+        echo "[FAIL] $test_name - $message" >> "$LOG_FILE"
     fi
 }
 
@@ -210,16 +211,13 @@ test_build() {
         return 0
     fi
     
-    log_step "Running build tests..."
-    cd "$PROJECT_ROOT"
-    
     # Test clean build
     log_info "Testing clean build..."
-    if cargo check --workspace --target wasm32-unknown-unknown --release 2>&1 | tee -a "$LOG_FILE"; then
+    # Exclude non-contract packages that require std
+    if cargo check --workspace --target wasm32-unknown-unknown --release --exclude e2e-tests --exclude streller-cli 2>&1 | tee -a "$LOG_FILE"; then
         record_test "clean_build" "PASS" "Workspace builds successfully"
     else
         record_test "clean_build" "FAIL" "Workspace build failed"
-        return 1
     fi
     
     # Test individual contracts
@@ -450,15 +448,15 @@ main() {
     
     # Show summary and exit
     show_summary
-    exit_code=$?
+    local result=$?
     
-    if [ $exit_code -ne 0 ]; then
+    if [ $result -ne 0 ]; then
         log_error "Release testing failed. Review log file: $LOG_FILE"
     else
         log_success "Release testing completed successfully!"
     fi
     
-    exit $exit_code
+    exit $result
 }
 
 # Run main function
