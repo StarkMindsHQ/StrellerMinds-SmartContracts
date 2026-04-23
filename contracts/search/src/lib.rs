@@ -413,6 +413,51 @@ impl AdvancedSearchContract {
         Ok(())
     }
 
+    /// Save search filters for later use
+    pub fn save_search(
+        env: Env,
+        user: Address,
+        name: String,
+        query: SearchQuery,
+    ) -> Result<String, Error> {
+        Self::require_initialized(&env)?;
+        user.require_auth();
+
+        let search_id = String::from_str(&env, "saved_"); // Simplified ID generation
+        let now = env.ledger().timestamp();
+
+        let saved = SavedSearch {
+            search_id: search_id.clone(),
+            user_id: user.clone(),
+            name,
+            description: String::from_str(&env, ""),
+            query,
+            created_at: now,
+            last_used: now,
+            use_count: 0,
+            is_favorite: false,
+            notification_enabled: false,
+            auto_execute: false,
+            execution_frequency: MaybeExecutionFrequency::None,
+        };
+
+        let key = DataKey::SavedSearches(user);
+        let mut list: Vec<SavedSearch> = env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
+        list.push_back(saved);
+        env.storage().persistent().set(&key, &list);
+
+        Ok(search_id)
+    }
+
+    /// Get all saved searches for a user
+    pub fn get_saved_searches(env: Env, user: Address) -> Result<Vec<SavedSearch>, Error> {
+        Self::require_initialized(&env)?;
+        user.require_auth();
+
+        let key = DataKey::SavedSearches(user);
+        Ok(env.storage().persistent().get(&key).unwrap_or(Vec::new(&env)))
+    }
+
     /// Get click-through rate
     pub fn get_ctr(env: Env, query: String, content_id: String) -> Result<u32, Error> {
         Self::require_initialized(&env)?;
