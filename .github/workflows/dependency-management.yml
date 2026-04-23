@@ -55,10 +55,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v1
+      - name: Run cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
+          arguments: --all-features
+          manifest-path: ./Cargo.toml
 
   outdated:
     name: Check Outdated Dependencies
