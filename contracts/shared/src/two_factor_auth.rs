@@ -1,5 +1,5 @@
 //! Final Working Two-Factor Authentication (2FA) Module
-//! 
+//!
 //! Provides basic 2FA functionality compatible with Soroban constraints.
 
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
@@ -56,15 +56,15 @@ pub fn initialize_2fa(
     // Use simple Symbol-based storage keys
     let enabled_key = Symbol::new(env, "2fa_enabled");
     let secret_key = Symbol::new(env, "2fa_secret");
-    
+
     // Store 2FA configuration using instance storage
     env.storage().instance().set(&(enabled_key, user.clone()), &true);
     env.storage().instance().set(&(secret_key, user.clone()), totp_secret);
-    
+
     // Log initialization event
     let event_type = Symbol::new(env, "2fa_initialized");
     env.events().publish((event_type, user.clone()), ());
-    
+
     Ok(())
 }
 
@@ -73,14 +73,14 @@ pub fn disable_2fa(env: &Env, user: &Address) -> Result<(), TwoFactorError> {
     if !is_2fa_enabled(env, user) {
         return Err(TwoFactorError::NotEnabled);
     }
-    
+
     // Remove 2FA configuration
     let enabled_key = Symbol::new(env, "2fa_enabled");
     let secret_key = Symbol::new(env, "2fa_secret");
-    
+
     env.storage().instance().remove(&(enabled_key, user.clone()));
     env.storage().instance().remove(&(secret_key, user.clone()));
-    
+
     Ok(())
 }
 
@@ -95,53 +95,53 @@ pub fn verify_2fa(
     if !is_2fa_enabled(env, user) {
         return Ok(TwoFactorResult::NotEnabled);
     }
-    
+
     // Check account lockout
     if is_account_locked(env, user) {
         return Ok(TwoFactorResult::AccountLocked);
     }
-    
+
     let result = match method {
         TwoFactorMethod::TOTP => verify_totp(env, user, code),
         TwoFactorMethod::SMS => verify_sms_code(env, user, code),
         TwoFactorMethod::Recovery => verify_recovery_code(env, user, code),
     };
-    
+
     // Log the attempt
     let event_type = match result {
         TwoFactorResult::Success => Symbol::new(env, "2fa_success"),
         _ => Symbol::new(env, "2fa_failed"),
     };
-    
+
     env.events().publish((event_type, user.clone()), ());
-    
+
     Ok(result)
 }
 
 /// Check if 2FA is enabled for a user
 pub fn is_2fa_enabled(env: &Env, user: &Address) -> bool {
     let enabled_key = Symbol::new(env, "2fa_enabled");
-    env.storage()
-        .instance()
-        .get(&(enabled_key, user.clone()))
-        .unwrap_or(false)
+    env.storage().instance().get(&(enabled_key, user.clone())).unwrap_or(false)
 }
 
 /// Generate TOTP code for testing (simplified)
-pub fn generate_totp_code(env: &Env, user: &Address, timestamp: u64) -> Result<String, TwoFactorError> {
+pub fn generate_totp_code(
+    env: &Env,
+    user: &Address,
+    timestamp: u64,
+) -> Result<String, TwoFactorError> {
     let secret_key = Symbol::new(env, "2fa_secret");
-    
-    if let Some(_totp_secret) = env.storage()
-        .instance()
-        .get::<_, BytesN<32>>(&(secret_key, user.clone())) {
-        
+
+    if let Some(_totp_secret) =
+        env.storage().instance().get::<_, BytesN<32>>(&(secret_key, user.clone()))
+    {
         // Simple TOTP simulation - return a predictable 6-digit code
         let time_window = timestamp / 30; // 30-second windows
-        let code = (time_window % 999999) + 1; // Ensure 6-digit code
-        
+        let _code = (time_window % 999999) + 1; // Ensure 6-digit code
+
         // Create a simple 6-digit string representation
         let result = String::from_str(env, "123456"); // Fixed for simplicity
-        
+
         Ok(result)
     } else {
         Err(TwoFactorError::TOTPNotConfigured)
@@ -153,7 +153,7 @@ pub fn generate_totp_code(env: &Env, user: &Address, timestamp: u64) -> Result<S
 // ─────────────────────────────────────────────────────────────
 
 /// Verify TOTP code (simplified)
-fn verify_totp(env: &Env, user: &Address, code: &String) -> TwoFactorResult {
+fn verify_totp(_env: &Env, _user: &Address, code: &String) -> TwoFactorResult {
     // For simplicity, just check if code is 6 digits
     if code.len() == 6 {
         TwoFactorResult::Success
@@ -185,11 +185,10 @@ fn verify_recovery_code(_env: &Env, _user: &Address, code: &String) -> TwoFactor
 /// Check if account is locked
 fn is_account_locked(env: &Env, user: &Address) -> bool {
     let lockout_key = Symbol::new(env, "2fa_lockout");
-    
-    if let Some(lockout_timestamp) = env.storage()
-        .instance()
-        .get::<_, u64>(&(lockout_key, user.clone())) {
-        
+
+    if let Some(lockout_timestamp) =
+        env.storage().instance().get::<_, u64>(&(lockout_key, user.clone()))
+    {
         if lockout_timestamp > 0 {
             let current_time = env.ledger().timestamp();
             return current_time < lockout_timestamp + LOCKOUT_DURATION;

@@ -1,14 +1,12 @@
 //! Simplified Two-Factor Authentication Integration for Certificate Contract
-//! 
+//!
 //! Basic 2FA integration that works with Soroban constraints.
 
 use soroban_sdk::{Address, BytesN, Env, String};
 
 use crate::errors::CertificateError;
 use shared::two_factor_auth::{
-    TwoFactorMethod, TwoFactorResult, TwoFactorError,
-    initialize_2fa, verify_2fa,
-    is_2fa_enabled
+    initialize_2fa, is_2fa_enabled, verify_2fa, TwoFactorError, TwoFactorMethod, TwoFactorResult,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -39,12 +37,12 @@ pub enum CertificateOperation {
     ReissueCertificate,
     CreateTemplate,
     RecordCompliance,
-    
+
     /// User operations (optional 2FA)
     CreateMultiSigRequest,
     ProcessMultiSigApproval,
     ShareCertificate,
-    
+
     /// Critical operations (always require 2FA)
     TransferAdmin,
     EmergencyRevoke,
@@ -71,8 +69,7 @@ pub fn initialize_admin_2fa(
     admin: &Address,
     totp_secret: BytesN<32>,
 ) -> Result<(), CertificateError> {
-    initialize_2fa(env, admin, &totp_secret)
-        .map_err(|e| convert_2fa_error(e))
+    initialize_2fa(env, admin, &totp_secret).map_err(convert_2fa_error)
 }
 
 /// Enable 2FA for a certificate user (simplified)
@@ -81,8 +78,7 @@ pub fn enable_user_2fa(
     user: &Address,
     totp_secret: BytesN<32>,
 ) -> Result<(), CertificateError> {
-    initialize_2fa(env, user, &totp_secret)
-        .map_err(|e| convert_2fa_error(e))
+    initialize_2fa(env, user, &totp_secret).map_err(convert_2fa_error)
 }
 
 /// Verify 2FA before certificate operation
@@ -95,11 +91,11 @@ pub fn verify_certificate_operation_2fa(
     if !is_2fa_required_for_operation(env, context, policy)? {
         return Ok(());
     }
-    
+
     // Perform 2FA verification
     let result = verify_2fa(env, &context.user, &context.verification_code, context.method.clone())
-        .map_err(|e| convert_2fa_error(e))?;
-    
+        .map_err(convert_2fa_error)?;
+
     match result {
         TwoFactorResult::Success => Ok(()),
         TwoFactorResult::AccountLocked => Err(CertificateError::InternalError),
@@ -119,25 +115,25 @@ pub fn is_2fa_required_for_operation(
     if is_critical_operation(&context.operation) {
         return Ok(true);
     }
-    
+
     // Check if user has 2FA configured
     if !is_2fa_enabled(env, &context.user) {
         return Ok(false);
     }
-    
+
     // For simplified version, just check if 2FA is enabled
     if is_2fa_enabled(env, &context.user) {
         // Check if this is an admin operation
         if is_admin_operation(&context.operation) && policy.admin_mandatory {
             return Ok(true);
         }
-        
+
         // Check if user optional 2FA is enabled
         if policy.user_optional {
             return Ok(true);
         }
     }
-    
+
     Ok(false)
 }
 
@@ -158,12 +154,7 @@ pub fn create_certificate_2fa_context(
     verification_code: String,
     method: TwoFactorMethod,
 ) -> Certificate2FAContext {
-    Certificate2FAContext {
-        operation,
-        user,
-        verification_code,
-        method,
-    }
+    Certificate2FAContext { operation, user, verification_code, method }
 }
 
 /// Get default 2FA policy for certificate contract
@@ -183,15 +174,15 @@ pub fn get_default_2fa_policy() -> TwoFactorPolicy {
 fn is_admin_operation(operation: &CertificateOperation) -> bool {
     matches!(
         operation,
-        CertificateOperation::InitializeContract |
-        CertificateOperation::ConfigureMultiSig |
-        CertificateOperation::BatchIssueCertificates |
-        CertificateOperation::RevokeCertificate |
-        CertificateOperation::ReissueCertificate |
-        CertificateOperation::CreateTemplate |
-        CertificateOperation::RecordCompliance |
-        CertificateOperation::TransferAdmin |
-        CertificateOperation::EmergencyRevoke
+        CertificateOperation::InitializeContract
+            | CertificateOperation::ConfigureMultiSig
+            | CertificateOperation::BatchIssueCertificates
+            | CertificateOperation::RevokeCertificate
+            | CertificateOperation::ReissueCertificate
+            | CertificateOperation::CreateTemplate
+            | CertificateOperation::RecordCompliance
+            | CertificateOperation::TransferAdmin
+            | CertificateOperation::EmergencyRevoke
     )
 }
 
@@ -199,9 +190,9 @@ fn is_admin_operation(operation: &CertificateOperation) -> bool {
 fn is_critical_operation(operation: &CertificateOperation) -> bool {
     matches!(
         operation,
-        CertificateOperation::InitializeContract |
-        CertificateOperation::TransferAdmin |
-        CertificateOperation::EmergencyRevoke
+        CertificateOperation::InitializeContract
+            | CertificateOperation::TransferAdmin
+            | CertificateOperation::EmergencyRevoke
     )
 }
 
@@ -234,19 +225,20 @@ pub fn initialize_certificate_with_2fa(
         verification_code.clone(),
         method,
     );
-    
+
     // Verify 2FA
     let policy = get_default_2fa_policy();
     verify_certificate_operation_2fa(env, &context, &policy)?;
-    
+
     // Proceed with certificate initialization
     crate::storage::set_admin(env, admin);
     crate::storage::set_initialized(env);
-    
+
     Ok(())
 }
 
 /// Enhanced multi-sig configuration with 2FA
+#[allow(clippy::too_many_arguments)]
 pub fn configure_multisig_with_2fa(
     env: &Env,
     admin: &Address,
@@ -254,7 +246,7 @@ pub fn configure_multisig_with_2fa(
     authorized_approvers: &soroban_sdk::Vec<Address>,
     required_approvals: &u32,
     timeout_duration: &u64,
-    priority: &String,
+    _priority: &String,
     verification_code: &String,
     method: TwoFactorMethod,
 ) -> Result<(), CertificateError> {
@@ -265,11 +257,11 @@ pub fn configure_multisig_with_2fa(
         verification_code.clone(),
         method,
     );
-    
+
     // Verify 2FA
     let policy = get_default_2fa_policy();
     verify_certificate_operation_2fa(env, &context, &policy)?;
-    
+
     // Proceed with multi-sig configuration (simplified)
     let config = crate::types::MultiSigConfig {
         course_id: course_id.clone(),
@@ -279,9 +271,9 @@ pub fn configure_multisig_with_2fa(
         priority: crate::types::CertificatePriority::Standard, // Simplified
         auto_execute: true,
     };
-    
+
     crate::storage::set_multisig_config(env, course_id, &config);
-    
+
     Ok(())
 }
 
@@ -295,23 +287,26 @@ pub fn get_user_2fa_status(env: &Env, user: &Address) -> Result<bool, Certificat
 }
 
 /// Check if user can perform certificate operations without 2FA
-pub fn can_bypass_2fa(env: &Env, user: &Address, operation: &CertificateOperation) -> Result<bool, CertificateError> {
+pub fn can_bypass_2fa(
+    env: &Env,
+    user: &Address,
+    operation: &CertificateOperation,
+) -> Result<bool, CertificateError> {
     if !is_2fa_enabled(env, user) {
         return Ok(true);
     }
-    
+
     // For simplified version, just check if 2FA is enabled
     if is_2fa_enabled(env, user) {
         // Cannot bypass for critical operations
         if is_critical_operation(operation) {
             return Ok(false);
         }
-        
+
         // If 2FA is enabled, cannot bypass
         return Ok(false);
     }
-    
+
     // Can bypass if 2FA is not configured
     Ok(true)
 }
-

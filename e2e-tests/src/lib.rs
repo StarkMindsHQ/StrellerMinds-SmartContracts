@@ -9,9 +9,9 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 
+pub mod certificate_integration;
 pub mod test_data;
 pub mod test_utils;
-pub mod certificate_integration;
 
 /// Configuration for the E2E test environment
 #[derive(Debug, Clone)]

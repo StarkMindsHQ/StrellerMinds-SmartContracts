@@ -1,5 +1,5 @@
 //! Certificate Workflow Integration Test Suite
-//! 
+//!
 //! Comprehensive end-to-end tests for the complete certificate lifecycle:
 //! - Certificate creation and multi-sig approval flow
 //! - Batch issuance and template-based issuance
@@ -12,16 +12,16 @@
 
 use soroban_sdk::{
     testutils::{Address as _, BytesN as _, Ledger},
-    Address, BytesN, Env, String, Symbol, Vec, Map, U256, I256, Duration,
+    Address, BytesN, Duration, Env, Map, String, Symbol, Vec, I256, U256,
 };
 use std::collections::HashMap;
 
+use crate::test_data::MockDataGenerator;
+use crate::test_utils::{DataValidator, PerformanceTracker, TestEnvironment};
 use contracts::{
     certificate::{CertificateContract, CertificateContractClient},
     shared::validation::{CoreValidator, ValidationError},
 };
-use crate::test_utils::{TestEnvironment, PerformanceTracker, DataValidator};
-use crate::test_data::MockDataGenerator;
 
 // ==================== TEST DATA STRUCTURES ====================
 
@@ -136,7 +136,7 @@ fn test_certificate_performance_stress() {
     tracker.checkpoint("storage_analysis_end");
 
     tracker.print_summary();
-    
+
     // Assert performance requirements
     assert!(storage_usage <= 1400, "Storage usage exceeds 1.4KB limit");
 }
@@ -187,20 +187,23 @@ fn setup_certificate_test_environment(env: &Env) -> TestEnvironment {
         student,
         validator,
         assessment_client: panic!("Not used in certificate tests"), // Placeholder
-        community_client: panic!("Not used in certificate tests"), // Placeholder  
+        community_client: panic!("Not used in certificate tests"),  // Placeholder
         certificate_client,
         analytics_client: panic!("Not used in certificate tests"), // Placeholder
     }
 }
 
-fn test_basic_certificate_lifecycle(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_basic_certificate_lifecycle(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Create certificate directly (admin bypass)
     let cert_id = scenario.certificate_id.clone();
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
 
     results.total_certificates += 1;
@@ -218,7 +221,10 @@ fn test_basic_certificate_lifecycle(test_env: &TestEnvironment, results: &mut Ce
     println!("✅ Basic certificate lifecycle test passed");
 }
 
-fn test_multisig_approval_workflow(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_multisig_approval_workflow(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let scenario = create_test_certificate_scenario(test_env);
     let multisig_config = create_multisig_test_config(test_env);
 
@@ -229,14 +235,14 @@ fn test_multisig_approval_workflow(test_env: &TestEnvironment, results: &mut Cer
         &multisig_config.authorized_approvers,
         &multisig_config.required_approvals,
         &multisig_config.timeout_duration,
-        &String::from_str(test_env.env, &multisig_config.priority)
+        &String::from_str(test_env.env, &multisig_config.priority),
     );
 
     // Create multi-sig request
     let request_id = test_env.certificate_client.create_multisig_request(
         &scenario.instructor,
         &create_multisig_request_params(&scenario),
-        &String::from_str(test_env.env, "Student completed course requirements")
+        &String::from_str(test_env.env, "Student completed course requirements"),
     );
 
     // First approval
@@ -246,7 +252,7 @@ fn test_multisig_approval_workflow(test_env: &TestEnvironment, results: &mut Cer
         &request_id,
         true,
         &String::from_str(test_env.env, "Requirements verified"),
-        &BytesN::from_array(test_env.env, &[0; 32])
+        &BytesN::from_array(test_env.env, &[0; 32]),
     );
 
     // Second approval (should trigger issuance)
@@ -256,7 +262,7 @@ fn test_multisig_approval_workflow(test_env: &TestEnvironment, results: &mut Cer
         &request_id,
         true,
         &String::from_str(test_env.env, "All requirements confirmed"),
-        &BytesN::from_array(test_env.env, &[0; 32])
+        &BytesN::from_array(test_env.env, &[0; 32]),
     );
 
     results.total_certificates += 1;
@@ -273,7 +279,10 @@ fn test_multisig_approval_workflow(test_env: &TestEnvironment, results: &mut Cer
     println!("✅ Multi-sig approval workflow test passed");
 }
 
-fn test_batch_certificate_issuance(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_batch_certificate_issuance(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let batch_size = 25; // Maximum allowed
     let mut batch_params = Vec::new(test_env.env);
 
@@ -300,7 +309,7 @@ fn test_batch_certificate_issuance(test_env: &TestEnvironment, results: &mut Cer
 
 fn test_template_based_issuance(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
     let template_id = Symbol::from_str(test_env.env, "COMPLETION_TEMPLATE");
-    
+
     // Create template
     let mut required_fields = Vec::new(test_env.env);
     required_fields.push_back(Symbol::from_str(test_env.env, "course_id"));
@@ -312,30 +321,27 @@ fn test_template_based_issuance(test_env: &TestEnvironment, results: &mut Certif
         &template_id,
         &String::from_str(test_env.env, "Course Completion Certificate"),
         &String::from_str(test_env.env, "Standard certificate for course completion"),
-        &required_fields
+        &required_fields,
     );
 
     // Issue certificate with template
     let scenario = create_test_certificate_scenario(test_env);
     let mut field_values = Map::new(test_env.env);
     field_values.set(
-        Symbol::from_str(test_env.env, "course_id"), 
-        String::from_str(test_env.env, &scenario.course_id.to_string())
+        Symbol::from_str(test_env.env, "course_id"),
+        String::from_str(test_env.env, &scenario.course_id.to_string()),
     );
     field_values.set(
-        Symbol::from_str(test_env.env, "completion_date"), 
-        String::from_str(test_env.env, &scenario.completion_date.to_string())
+        Symbol::from_str(test_env.env, "completion_date"),
+        String::from_str(test_env.env, &scenario.completion_date.to_string()),
     );
-    field_values.set(
-        Symbol::from_str(test_env.env, "score"), 
-        String::from_str(test_env.env, "95")
-    );
+    field_values.set(Symbol::from_str(test_env.env, "score"), String::from_str(test_env.env, "95"));
 
     test_env.certificate_client.issue_with_template(
         &test_env.admin,
         &template_id,
         &create_certificate_params(&scenario),
-        &field_values
+        &field_values,
     );
 
     results.total_certificates += 1;
@@ -348,13 +354,16 @@ fn test_template_based_issuance(test_env: &TestEnvironment, results: &mut Certif
     println!("✅ Template-based issuance test passed");
 }
 
-fn test_certificate_verification_sharing(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_certificate_verification_sharing(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Issue certificate
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
 
     results.total_certificates += 1;
@@ -371,7 +380,7 @@ fn test_certificate_verification_sharing(test_env: &TestEnvironment, results: &m
         &scenario.student,
         &scenario.certificate_id,
         &String::from_str(test_env.env, "employer@example.com"),
-        &String::from_str(test_env.env, "email")
+        &String::from_str(test_env.env, "email"),
     );
 
     // Verify share record
@@ -381,13 +390,16 @@ fn test_certificate_verification_sharing(test_env: &TestEnvironment, results: &m
     println!("✅ Certificate verification and sharing test passed");
 }
 
-fn test_certificate_revocation_reissuance(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_certificate_revocation_reissuance(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Issue certificate
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
 
     results.total_certificates += 1;
@@ -401,18 +413,20 @@ fn test_certificate_revocation_reissuance(test_env: &TestEnvironment, results: &
         &test_env.admin,
         &scenario.certificate_id,
         &String::from_str(test_env.env, "Policy violation"),
-        true // Mark as eligible for reissuance
+        true, // Mark as eligible for reissuance
     );
 
     results.revoked_certificates += 1;
 
     // Verify revoked state
-    let is_valid_after_revocation = test_env.certificate_client.verify_certificate(&scenario.certificate_id);
+    let is_valid_after_revocation =
+        test_env.certificate_client.verify_certificate(&scenario.certificate_id);
     assert!(!is_valid_after_revocation, "Revoked certificate should not be valid");
     results.failed_verifications += 1;
 
     // Check revocation record
-    let revocation_record = test_env.certificate_client.get_revocation_record(&scenario.certificate_id);
+    let revocation_record =
+        test_env.certificate_client.get_revocation_record(&scenario.certificate_id);
     assert!(revocation_record.reason == String::from_str(test_env.env, "Policy violation"));
 
     // Reissue certificate
@@ -420,26 +434,30 @@ fn test_certificate_revocation_reissuance(test_env: &TestEnvironment, results: &
     test_env.certificate_client.reissue_certificate(
         &test_env.admin,
         &scenario.certificate_id,
-        &create_certificate_params(&new_scenario)
+        &create_certificate_params(&new_scenario),
     );
 
     results.reissued_certificates += 1;
 
     // Verify reissued certificate
-    let is_reissued_valid = test_env.certificate_client.verify_certificate(&new_scenario.certificate_id);
+    let is_reissued_valid =
+        test_env.certificate_client.verify_certificate(&new_scenario.certificate_id);
     assert!(is_reissued_valid, "Reissued certificate should be valid");
     results.successful_verifications += 1;
 
     println!("✅ Certificate revocation and reissuance test passed");
 }
 
-fn test_compliance_audit_functionality(test_env: &TestEnvironment, results: &mut CertificateTestResults) {
+fn test_compliance_audit_functionality(
+    test_env: &TestEnvironment,
+    results: &mut CertificateTestResults,
+) {
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Issue certificate
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
 
     results.total_certificates += 1;
@@ -448,23 +466,24 @@ fn test_compliance_audit_functionality(test_env: &TestEnvironment, results: &mut
     let standard = Symbol::from_str(test_env.env, "ISO_27001");
     let mut compliance_data = Map::new(test_env.env);
     compliance_data.set(
-        Symbol::from_str(test_env.env, "audit_date"), 
-        String::from_str(test_env.env, "2024-01-15")
+        Symbol::from_str(test_env.env, "audit_date"),
+        String::from_str(test_env.env, "2024-01-15"),
     );
     compliance_data.set(
-        Symbol::from_str(test_env.env, "auditor"), 
-        String::from_str(test_env.env, "Certified Auditor Inc")
+        Symbol::from_str(test_env.env, "auditor"),
+        String::from_str(test_env.env, "Certified Auditor Inc"),
     );
 
     test_env.certificate_client.record_compliance(
         &test_env.admin,
         &scenario.certificate_id,
         &standard,
-        &compliance_data
+        &compliance_data,
     );
 
     // Verify compliance record
-    let compliance_record = test_env.certificate_client.get_compliance_record(&scenario.certificate_id, &standard);
+    let compliance_record =
+        test_env.certificate_client.get_compliance_record(&scenario.certificate_id, &standard);
     assert!(compliance_record.audit_date == String::from_str(test_env.env, "2024-01-15"));
 
     // Test analytics
@@ -479,45 +498,45 @@ fn test_compliance_audit_functionality(test_env: &TestEnvironment, results: &mut
 fn test_large_scale_certificate_issuance(test_env: &TestEnvironment, count: u32) {
     let batch_size = 25;
     let batches = count / batch_size;
-    
+
     for batch in 0..batches {
         let mut batch_params = Vec::new(test_env.env);
-        
+
         for i in 0..batch_size {
             let index = batch * batch_size + i;
             let scenario = create_test_certificate_scenario_with_index(test_env, index);
             batch_params.push_back(create_certificate_params(&scenario));
         }
-        
+
         test_env.certificate_client.batch_issue_certificates(&test_env.admin, &batch_params);
     }
-    
+
     println!("🚀 Large-scale issuance: {} certificates completed", count);
 }
 
 fn test_concurrent_certificate_verification(test_env: &TestEnvironment, count: u32) {
     // Create certificates for verification test
     let mut certificate_ids = Vec::new(test_env.env);
-    
+
     for i in 0..count {
         let scenario = create_test_certificate_scenario_with_index(test_env, i);
         certificate_ids.push_back(scenario.certificate_id);
     }
-    
+
     // Issue all certificates
     let batch_size = 25;
     for batch_start in (0..count).step_by(batch_size as usize) {
         let batch_end = std::cmp::min(batch_start + batch_size, count);
         let mut batch_params = Vec::new(test_env.env);
-        
+
         for i in batch_start..batch_end {
             let scenario = create_test_certificate_scenario_with_index(test_env, i);
             batch_params.push_back(create_certificate_params(&scenario));
         }
-        
+
         test_env.certificate_client.batch_issue_certificates(&test_env.admin, &batch_params);
     }
-    
+
     // Verify all certificates
     let mut successful_verifications = 0;
     for cert_id in certificate_ids.iter() {
@@ -526,7 +545,7 @@ fn test_concurrent_certificate_verification(test_env: &TestEnvironment, count: u
             successful_verifications += 1;
         }
     }
-    
+
     assert!(successful_verifications == count, "All certificates should verify successfully");
     println!("🔍 Concurrent verification: {} certificates verified", count);
 }
@@ -534,26 +553,26 @@ fn test_concurrent_certificate_verification(test_env: &TestEnvironment, count: u
 fn analyze_certificate_storage_usage(test_env: &TestEnvironment) -> u32 {
     // Issue a test certificate and measure storage
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
-    
+
     // Get certificate and estimate storage size
     let certificate = test_env.certificate_client.get_certificate(&scenario.certificate_id);
-    
+
     // Estimate storage usage (simplified calculation)
     let mut estimated_size = 200; // Base certificate structure
-    
+
     // Add title and description sizes
     estimated_size += certificate.title.len() as u32;
     estimated_size += certificate.description.len() as u32;
     estimated_size += certificate.issuer_name.len() as u32;
-    
+
     // Add metadata size
     estimated_size += certificate.metadata.len() * 50; // Estimate per metadata entry
-    
+
     println!("📊 Estimated storage per certificate: {} bytes", estimated_size);
     estimated_size
 }
@@ -562,20 +581,20 @@ fn analyze_certificate_storage_usage(test_env: &TestEnvironment) -> u32 {
 
 fn test_duplicate_certificate_prevention(test_env: &TestEnvironment) {
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Issue certificate
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
-    
+
     // Attempt to issue duplicate - should fail
     let result = test_env.env.try_invoke_contract::<_, _>(
         &test_env.certificate_client.address,
         &Symbol::from_str(test_env.env, "batch_issue_certificates"),
-        (test_env.admin, Vec::from_array(test_env.env, [create_certificate_params(&scenario)]))
+        (test_env.admin, Vec::from_array(test_env.env, [create_certificate_params(&scenario)])),
     );
-    
+
     assert!(result.is_err(), "Duplicate certificate issuance should fail");
     println!("✅ Duplicate certificate prevention test passed");
 }
@@ -584,13 +603,16 @@ fn test_invalid_certificate_data_handling(test_env: &TestEnvironment) {
     // Test with invalid data - should be handled gracefully
     let mut invalid_scenario = create_test_certificate_scenario(test_env);
     invalid_scenario.title = String::from_str(test_env.env, ""); // Empty title
-    
+
     let result = test_env.env.try_invoke_contract::<_, _>(
         &test_env.certificate_client.address,
         &Symbol::from_str(test_env.env, "batch_issue_certificates"),
-        (test_env.admin, Vec::from_array(test_env.env, [create_certificate_params(&invalid_scenario)]))
+        (
+            test_env.admin,
+            Vec::from_array(test_env.env, [create_certificate_params(&invalid_scenario)]),
+        ),
     );
-    
+
     assert!(result.is_err(), "Invalid certificate data should be rejected");
     println!("✅ Invalid certificate data handling test passed");
 }
@@ -598,31 +620,31 @@ fn test_invalid_certificate_data_handling(test_env: &TestEnvironment) {
 fn test_expired_certificate_verification(test_env: &TestEnvironment) {
     let mut scenario = create_test_certificate_scenario(test_env);
     scenario.expiry_date = 1000000; // Set expiry in the past
-    
+
     // Issue certificate with past expiry
     test_env.certificate_client.batch_issue_certificates(
         &test_env.admin,
-        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)])
+        &Vec::from_array(test_env.env, [create_certificate_params(&scenario)]),
     );
-    
+
     // Verify expired certificate
     let is_valid = test_env.certificate_client.verify_certificate(&scenario.certificate_id);
     assert!(!is_valid, "Expired certificate should not be valid");
-    
+
     println!("✅ Expired certificate verification test passed");
 }
 
 fn test_unauthorized_access_prevention(test_env: &TestEnvironment) {
     let unauthorized_user = Address::generate(test_env.env);
     let scenario = create_test_certificate_scenario(test_env);
-    
+
     // Attempt to issue certificate as unauthorized user
     let result = test_env.env.try_invoke_contract::<_, _>(
         &test_env.certificate_client.address,
         &Symbol::from_str(test_env.env, "batch_issue_certificates"),
-        (unauthorized_user, Vec::from_array(test_env.env, [create_certificate_params(&scenario)]))
+        (unauthorized_user, Vec::from_array(test_env.env, [create_certificate_params(&scenario)])),
     );
-    
+
     assert!(result.is_err(), "Unauthorized certificate issuance should fail");
     println!("✅ Unauthorized access prevention test passed");
 }
@@ -630,7 +652,7 @@ fn test_unauthorized_access_prevention(test_env: &TestEnvironment) {
 fn test_multisig_edge_cases(test_env: &TestEnvironment) {
     let scenario = create_test_certificate_scenario(test_env);
     let multisig_config = create_multisig_test_config(test_env);
-    
+
     // Configure multi-sig
     test_env.certificate_client.configure_multisig(
         &test_env.admin,
@@ -638,16 +660,16 @@ fn test_multisig_edge_cases(test_env: &TestEnvironment) {
         &multisig_config.authorized_approvers,
         &multisig_config.required_approvals,
         &multisig_config.timeout_duration,
-        &String::from_str(test_env.env, &multisig_config.priority)
+        &String::from_str(test_env.env, &multisig_config.priority),
     );
-    
+
     // Create request
     let request_id = test_env.certificate_client.create_multisig_request(
         &scenario.instructor,
         &create_multisig_request_params(&scenario),
-        &String::from_str(test_env.env, "Test request")
+        &String::from_str(test_env.env, "Test request"),
     );
-    
+
     // Test double approval by same approver
     let approver = multisig_config.authorized_approvers.get(0).unwrap().clone();
     test_env.certificate_client.process_multisig_approval(
@@ -655,16 +677,22 @@ fn test_multisig_edge_cases(test_env: &TestEnvironment) {
         &request_id,
         true,
         &String::from_str(test_env.env, "First approval"),
-        &BytesN::from_array(test_env.env, &[0; 32])
+        &BytesN::from_array(test_env.env, &[0; 32]),
     );
-    
+
     // Second approval by same approver should fail
     let result = test_env.env.try_invoke_contract::<_, _>(
         &test_env.certificate_client.address,
         &Symbol::from_str(test_env.env, "process_multisig_approval"),
-        (approver, request_id, true, String::from_str(test_env.env, "Duplicate approval"), BytesN::from_array(test_env.env, &[0; 32]))
+        (
+            approver,
+            request_id,
+            true,
+            String::from_str(test_env.env, "Duplicate approval"),
+            BytesN::from_array(test_env.env, &[0; 32]),
+        ),
     );
-    
+
     assert!(result.is_err(), "Double approval by same approver should fail");
     println!("✅ Multi-sig edge cases test passed");
 }
@@ -678,7 +706,10 @@ fn create_test_certificate_scenario(test_env: &TestEnvironment) -> CertificateTe
         student: test_env.student.clone(),
         instructor: test_env.instructor.clone(),
         title: String::from_str(test_env.env, "Rust Fundamentals Certificate"),
-        description: String::from_str(test_env.env, "Completed comprehensive Rust programming course"),
+        description: String::from_str(
+            test_env.env,
+            "Completed comprehensive Rust programming course",
+        ),
         issuer_name: String::from_str(test_env.env, "StrellerMinds Academy"),
         issuer_signature: BytesN::from_array(test_env.env, &generate_test_signature()),
         completion_date: test_env.env.ledger().timestamp(),
@@ -687,9 +718,13 @@ fn create_test_certificate_scenario(test_env: &TestEnvironment) -> CertificateTe
     }
 }
 
-fn create_test_certificate_scenario_with_index(test_env: &TestEnvironment, index: u32) -> CertificateTestScenario {
+fn create_test_certificate_scenario_with_index(
+    test_env: &TestEnvironment,
+    index: u32,
+) -> CertificateTestScenario {
     let mut scenario = create_test_certificate_scenario(test_env);
-    scenario.certificate_id = BytesN::from_array(test_env.env, &generate_test_certificate_id(index));
+    scenario.certificate_id =
+        BytesN::from_array(test_env.env, &generate_test_certificate_id(index));
     scenario.title = String::from_str(test_env.env, &format!("Certificate {}", index));
     scenario
 }
@@ -699,7 +734,7 @@ fn create_multisig_test_config(test_env: &TestEnvironment) -> MultiSigTestConfig
     approvers.push_back(Address::generate(test_env.env));
     approvers.push_back(Address::generate(test_env.env));
     approvers.push_back(Address::generate(test_env.env));
-    
+
     MultiSigTestConfig {
         course_id: Symbol::from_str(test_env.env, "RUST101"),
         authorized_approvers: approvers,
@@ -713,11 +748,14 @@ fn create_test_metadata(env: &Env) -> Map<Symbol, String> {
     let mut metadata = Map::new(env);
     metadata.set(Symbol::from_str(env, "difficulty"), String::from_str(env, "intermediate"));
     metadata.set(Symbol::from_str(env, "duration_hours"), String::from_str(env, "40"));
-    metadata.set(Symbol::from_str(env, "prerequisites"), String::from_str(env, "basic_programming"));
+    metadata
+        .set(Symbol::from_str(env, "prerequisites"), String::from_str(env, "basic_programming"));
     metadata
 }
 
-fn create_certificate_params(scenario: &CertificateTestScenario) -> contracts::certificate::CertificateParams {
+fn create_certificate_params(
+    scenario: &CertificateTestScenario,
+) -> contracts::certificate::CertificateParams {
     contracts::certificate::CertificateParams {
         certificate_id: scenario.certificate_id.clone(),
         course_id: scenario.course_id.clone(),
@@ -732,7 +770,9 @@ fn create_certificate_params(scenario: &CertificateTestScenario) -> contracts::c
     }
 }
 
-fn create_multisig_request_params(scenario: &CertificateTestScenario) -> contracts::certificate::MultiSigRequestParams {
+fn create_multisig_request_params(
+    scenario: &CertificateTestScenario,
+) -> contracts::certificate::MultiSigRequestParams {
     contracts::certificate::MultiSigRequestParams {
         certificate_id: scenario.certificate_id.clone(),
         course_id: scenario.course_id.clone(),
@@ -772,23 +812,24 @@ fn generate_certificate_test_report(results: &CertificateTestResults) {
     println!("Failed Verifications: {}", results.failed_verifications);
     println!("Revoked Certificates: {}", results.revoked_certificates);
     println!("Reissued Certificates: {}", results.reissued_certificates);
-    
+
     if results.successful_verifications > 0 {
         println!("Average Verification Time: {}ms", results.average_verification_time);
     }
-    
+
     if results.total_certificates > 0 {
         println!("Storage per Certificate: {} bytes", results.storage_usage_per_certificate);
     }
-    
+
     let success_rate = if results.successful_verifications + results.failed_verifications > 0 {
-        (results.successful_verifications * 100) / (results.successful_verifications + results.failed_verifications)
+        (results.successful_verifications * 100)
+            / (results.successful_verifications + results.failed_verifications)
     } else {
         0
     };
-    
+
     println!("Success Rate: {}%", success_rate);
-    
+
     if success_rate >= 90 {
         println!("🎉 EXCELLENT: Test success rate meets 90% requirement!");
     } else {

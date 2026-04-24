@@ -1,8 +1,8 @@
 //! Simplified Storage Optimization Module
-//! 
+//!
 //! Provides basic storage optimization functionality compatible with Soroban.
 
-use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use soroban_sdk::{BytesN, Env, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Storage Optimization Constants
@@ -53,21 +53,18 @@ pub struct StorageMetrics {
 /// Compress a string for storage
 pub fn compress_string(input: &String) -> CompressedString {
     let env = Env::default();
-    
+
     // Simple compression: just store as u32 array for now
     let data = Vec::new(&env);
     // In production, implement actual compression algorithm
-    
-    CompressedString {
-        data,
-        original_length: input.len() as u32,
-    }
+
+    CompressedString { data, original_length: input.len() }
 }
 
 /// Decompress a string from storage
-pub fn decompress_string(compressed: &CompressedString) -> String {
+pub fn decompress_string(_compressed: &CompressedString) -> String {
     let env = Env::default();
-    
+
     // Simple decompression: return empty string for now
     // In production, implement actual decompression algorithm
     String::from_str(&env, "")
@@ -75,18 +72,15 @@ pub fn decompress_string(compressed: &CompressedString) -> String {
 
 /// Create metadata reference for offloaded data
 pub fn create_metadata_ref(uri: &String, hash: &BytesN<32>) -> MetadataRef {
-    MetadataRef {
-        hash: hash.clone(),
-        uri: uri.clone(),
-    }
+    MetadataRef { hash: hash.clone(), uri: uri.clone() }
 }
 
 /// Calculate storage metrics
 pub fn calculate_storage_metrics(_env: &Env) -> StorageMetrics {
     // Return default metrics for now
     StorageMetrics {
-        original_size: 2048, // 2KB original
-        optimized_size: 1400, // 1.4KB optimized
+        original_size: 2048,   // 2KB original
+        optimized_size: 1400,  // 1.4KB optimized
         compression_ratio: 30, // 30% reduction
         certificate_count: 0,
     }
@@ -94,14 +88,13 @@ pub fn calculate_storage_metrics(_env: &Env) -> StorageMetrics {
 
 /// Check if string should be compressed
 pub fn should_compress(input: &String) -> bool {
-    let input_len = input.len() as u32;
-    input_len > MAX_INLINE_STRING_LENGTH
+    input.len() > MAX_INLINE_STRING_LENGTH
 }
 
 /// Generate storage optimization report
 pub fn generate_optimization_report(env: &Env) -> String {
-    let metrics = calculate_storage_metrics(env);
-    
+    let _metrics = calculate_storage_metrics(env);
+
     // Simple report generation
     String::from_str(env, "Storage Optimization Report")
 }
@@ -115,12 +108,11 @@ pub fn calculate_compression_ratio(original: u32, compressed: u32) -> u32 {
     if original == 0 {
         return 0;
     }
-    
+
     ((original - compressed) * 100) / original
 }
 
 /// Validate storage metrics
 pub fn validate_metrics(metrics: &StorageMetrics) -> bool {
-    metrics.optimized_size <= metrics.original_size && 
-    metrics.compression_ratio <= 100
+    metrics.optimized_size <= metrics.original_size && metrics.compression_ratio <= 100
 }
