@@ -24,6 +24,7 @@ struct PathItem {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Operation {
     operation_id: String,
     request_body: Option<RequestBody>,
@@ -31,21 +32,25 @@ struct Operation {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct RequestBody {
     content: HashMap<String, MediaType>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Response {
     content: Option<HashMap<String, MediaType>>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct MediaType {
     schema: Option<Schema>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Schema {
     #[serde(rename = "$ref")]
     ref_path: Option<String>,
@@ -56,12 +61,14 @@ struct Schema {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Components {
     schemas: Option<HashMap<String, Schema>>,
 }
 
 /// Standard error response structure
 #[derive(Debug, Deserialize, Serialize, Validate)]
+#[allow(dead_code)]
 struct ErrorResponse {
     error: String,
     code: i32,
@@ -103,6 +110,7 @@ fn load_openapi_spec() -> Result<OpenApiSpec> {
 }
 
 /// Validate that a JSON response matches the expected schema
+#[allow(dead_code)]
 fn validate_response_against_schema(
     response: &Value,
     schema: &Schema,
@@ -197,22 +205,24 @@ fn parse_and_validate_response(
     spec: &OpenApiSpec,
 ) -> Result<Value> {
     // Try to parse as JSON
-    let response: Value = serde_json::from_str(response_str).or_else(|_| {
+    let response: Value = if let Ok(json) = serde_json::from_str(response_str) {
+        json
+    } else {
         // If not JSON, try to extract JSON from CLI output
         if let Some(start) = response_str.find('{') {
             if let Some(end) = response_str.rfind('}') {
-                serde_json::from_str(&response_str[start..=end])
+                serde_json::from_str(&response_str[start..=end])?
             } else {
-                Err(serde_json::Error::custom("No valid JSON found"))
+                anyhow::bail!("No valid JSON found in response")
             }
         } else {
-            Err(serde_json::Error::custom("No valid JSON found"))
+            anyhow::bail!("No valid JSON found in response")
         }
-    })?;
+    };
 
     // Find the operation in the spec
-    for (_path, path_item) in &spec.paths {
-        for (_method, operation) in &path_item.operations {
+    for path_item in spec.paths.values() {
+        for operation in path_item.operations.values() {
             if operation.operation_id == operation_id {
                 // For now, we'll do basic validation
                 // In a full implementation, we'd validate against the specific response schema
@@ -229,7 +239,7 @@ fn parse_and_validate_response(
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_analytics_initialize_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -258,7 +268,7 @@ async fn test_analytics_initialize_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_analytics_record_session_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -312,7 +322,7 @@ async fn test_analytics_record_session_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_analytics_complete_session_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -383,7 +393,7 @@ async fn test_analytics_complete_session_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_token_initialize_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let token_id = harness.get_contract_id("token").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -411,7 +421,7 @@ async fn test_token_initialize_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_token_mint_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let token_id = harness.get_contract_id("token").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -434,7 +444,7 @@ async fn test_token_mint_response_matches_spec() -> Result<()> {
         .invoke_contract(
             token_id,
             "mint",
-            &[format!("--to {student_address}"), "--amount 1000"],
+            &[format!("--to {student_address}"), "--amount 1000".to_string()],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -452,7 +462,7 @@ async fn test_token_mint_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_token_transfer_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let token_id = harness.get_contract_id("token").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -476,7 +486,7 @@ async fn test_token_transfer_response_matches_spec() -> Result<()> {
         .invoke_contract(
             token_id,
             "mint",
-            &[format!("--to {alice_address}"), "--amount 1000"],
+            &[format!("--to {alice_address}"), "--amount 1000".to_string()],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -487,7 +497,11 @@ async fn test_token_transfer_response_matches_spec() -> Result<()> {
         .invoke_contract(
             token_id,
             "transfer",
-            &[format!("--from {alice_address}"), format!("--to {bob_address}"), "--amount 200"],
+            &[
+                format!("--from {alice_address}"),
+                format!("--to {bob_address}"),
+                "--amount 200".to_string(),
+            ],
             "alice",
         )
         .await?;
@@ -505,7 +519,7 @@ async fn test_token_transfer_response_matches_spec() -> Result<()> {
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_token_balance_response_matches_spec() -> Result<()> {
     let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let harness = setup_test_harness!();
 
     let token_id = harness.get_contract_id("token").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -528,7 +542,7 @@ async fn test_token_balance_response_matches_spec() -> Result<()> {
         .invoke_contract(
             token_id,
             "mint",
-            &[format!("--to {alice_address}"), "--amount 1000"],
+            &[format!("--to {alice_address}"), "--amount 1000".to_string()],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -556,8 +570,8 @@ async fn test_token_balance_response_matches_spec() -> Result<()> {
 #[tokio::test]
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_error_response_matches_spec() -> Result<()> {
-    let spec = load_openapi_spec()?;
-    let mut harness = setup_test_harness!();
+    let _spec = load_openapi_spec()?;
+    let harness = setup_test_harness!();
 
     let token_id = harness.get_contract_id("token").unwrap();
     let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
@@ -598,7 +612,7 @@ async fn test_error_response_matches_spec() -> Result<()> {
 }
 
 /// Test: Validate session data structure matches OpenAPI spec
-#[tokio::test]
+#[test]
 fn test_session_data_schema_validation() -> Result<()> {
     let session_data = SessionData {
         session_id: hex::encode(uuid::Uuid::new_v4().as_bytes()),
@@ -620,7 +634,7 @@ fn test_session_data_schema_validation() -> Result<()> {
 }
 
 /// Test: Validate standard event structure matches OpenAPI spec
-#[tokio::test]
+#[test]
 fn test_standard_event_schema_validation() -> Result<()> {
     let event = StandardEvent {
         version: 1,
@@ -640,7 +654,7 @@ fn test_standard_event_schema_validation() -> Result<()> {
 }
 
 /// Test: Load and validate OpenAPI specification
-#[tokio::test]
+#[test]
 fn test_openapi_spec_is_valid() -> Result<()> {
     let spec = load_openapi_spec()?;
 
