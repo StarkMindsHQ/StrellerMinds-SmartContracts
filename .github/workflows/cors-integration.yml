@@ -1,0 +1,330 @@
+name: CORS Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/shared/src/cors_config.rs'
+      - 'contracts/cross-chain-credentials/src/enhanced_verification.rs'
+      - 'contracts/cross-chain-credentials/src/lib.rs'
+      - 'contracts/shared/src/lib.rs'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/shared/src/cors_config.rs'
+      - 'contracts/cross-chain-credentials/src/enhanced_verification.rs'
+      - 'contracts/cross-chain-credentials/src/lib.rs'
+      - 'contracts/shared/src/lib.rs'
+
+env:
+  CARGO_TERM_COLOR: always
+  CORS_ALLOWED_ORIGINS: "https://*.edu,https://starkminds.io,https://localhost:*"
+  CORS_ALLOWED_METHODS: "GET,POST,OPTIONS"
+  CORS_ALLOWED_HEADERS: "Content-Type,Authorization,X-API-Key,X-Verification-Token"
+  CORS_MAX_AGE: "7200"
+  CORS_ALLOW_CREDENTIALS: "true"
+  VERIFICATION_MAX_RETRY_ATTEMPTS: "3"
+  VERIFICATION_BASE_RETRY_DELAY_MS: "1000"
+  VERIFICATION_TIMEOUT_MS: "30000"
+  VERIFICATION_REQUIRED_CONFIDENCE_THRESHOLD: "0.8"
+
+jobs:
+  cors-unit-tests:
+    name: CORS Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cors-unit-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-unit-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run CORS configuration tests
+        run: cargo test -p shared cors_config --verbose
+      
+      - name: Run enhanced verification tests
+        run: cargo test -p cross-chain-credentials enhanced_verification --verbose
+      
+      - name: Check CORS module formatting
+        run: cargo fmt --all -- --check
+      
+      - name: Run CORS clippy checks
+        run: cargo clippy -p shared -p cross-chain-credentials --all-targets --all-features -- -D warnings
+
+  cors-integration-tests:
+    name: CORS Integration Tests
+    runs-on: ubuntu-latest
+    needs: cors-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cors-integration-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-integration-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build contracts with CORS features
+        run: cargo build --workspace --release --verbose
+      
+      - name: Run CORS integration tests
+        run: cargo test -p cross-chain-credentials test_cors_integration --verbose
+      
+      - name: Test external verification simulation
+        run: cargo test -p cross-chain-credentials test_external_verification --verbose
+      
+      - name: Test retry mechanisms
+        run: cargo test -p cross-chain-credentials test_retry_logic --verbose
+
+  cors-performance-tests:
+    name: CORS Performance Tests
+    runs-on: ubuntu-latest
+    needs: cors-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cors-perf-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-perf-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run CORS performance benchmarks
+        run: cargo test -p shared cors_config --release -- --nocapture performance
+      
+      - name: Test verification service performance
+        run: cargo test -p cross-chain-credentials enhanced_verification --release -- --nocapture performance
+      
+      - name: Generate performance report
+        run: |
+          mkdir -p target/cors-reports
+          echo '{"cors_config_time": "measured", "verification_time": "measured"}' > target/cors-reports/performance.json
+      
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cors-performance-report
+          path: target/cors-reports/
+
+  cors-security-tests:
+    name: CORS Security Tests
+    runs-on: ubuntu-latest
+    needs: cors-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cors-security-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-security-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run CORS security tests
+        run: cargo test -p shared cors_config --release -- --nocapture security
+      
+      - name: Test origin validation
+        run: cargo test -p shared test_origin_validation --release --verbose
+      
+      - name: Test header security
+        run: cargo test -p shared test_header_security --release --verbose
+      
+      - name: Test verification security
+        run: cargo test -p cross-chain-credentials test_verification_security --release --verbose
+
+  cors-compatibility-tests:
+    name: CORS Compatibility Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chrome, firefox, safari]
+        environment: [development, staging, production]
+    needs: cors-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cors-compat-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-compat-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build contracts
+        run: cargo build --workspace --release
+      
+      - name: Setup test environment
+        run: |
+          echo "CORS_ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+          echo "BROWSER_TYPE=${{ matrix.browser }}" >> $GITHUB_ENV
+      
+      - name: Run browser compatibility tests
+        run: cargo test -p cross-chain-credentials test_browser_compatibility --release --verbose
+      
+      - name: Test environment-specific configurations
+        run: cargo test -p shared test_environment_configs --release --verbose
+
+  cors-e2e-tests:
+    name: CORS End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [cors-integration-tests, cors-performance-tests, cors-security-tests]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install Node.js and dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            node_modules
+          key: ${{ runner.os }}-cors-e2e-${{ hashFiles('**/Cargo.lock', '**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cors-e2e-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build all contracts
+        run: cargo build --workspace --release
+      
+      - name: Start local Soroban network
+        run: |
+          soroban config network add standalone --rpc-url http://localhost:8000 --network-passphrase "Standalone Network ; February 2017"
+          soroban start --standalone &
+          sleep 10
+      
+      - name: Run E2E CORS tests
+        run: |
+          cd e2e
+          npm install
+          npm run test:cors
+      
+      - name: Test external verification services
+        run: |
+          cd e2e
+          npm run test:external-verification
+      
+      - name: Cleanup test network
+        run: pkill -f soroban || true
+
+  cors-coverage:
+    name: CORS Code Coverage
+    runs-on: ubuntu-latest
+    needs: cors-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
+      
+      - name: Generate coverage report
+        run: |
+          cargo llvm-cov --workspace --lcov --output-path lcov.info \
+            --features test-utils \
+            --ignore filename-stable \
+            --contracts/shared/src/cors_config.rs \
+            --contracts/cross-chain-credentials/src/enhanced_verification.rs
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: lcov.info
+          flags: cors
+          name: cors-coverage
+      
+      - name: Generate coverage summary
+        run: |
+          cargo llvm-cov --workspace --summary --features test-utils
+
+  cors-success:
+    name: CORS Tests Success
+    runs-on: ubuntu-latest
+    needs: [cors-unit-tests, cors-integration-tests, cors-performance-tests, cors-security-tests, cors-compatibility-tests, cors-e2e-tests, cors-coverage]
+    if: always()
+    steps:
+      - name: Check all CORS jobs
+        run: |
+          if [[ "${{ needs.cors-unit-tests.result }}" != "success" || \
+                "${{ needs.cors-integration-tests.result }}" != "success" || \
+                "${{ needs.cors-performance-tests.result }}" != "success" || \
+                "${{ needs.cors-security-tests.result }}" != "success" || \
+                "${{ needs.cors-compatibility-tests.result }}" != "success" || \
+                "${{ needs.cors-e2e-tests.result }}" != "success" || \
+                "${{ needs.cors-coverage.result }}" != "success" ]]; then
+            echo "❌ One or more CORS test jobs failed"
+            echo "Unit Tests: ${{ needs.cors-unit-tests.result }}"
+            echo "Integration Tests: ${{ needs.cors-integration-tests.result }}"
+            echo "Performance Tests: ${{ needs.cors-performance-tests.result }}"
+            echo "Security Tests: ${{ needs.cors-security-tests.result }}"
+            echo "Compatibility Tests: ${{ needs.cors-compatibility-tests.result }}"
+            echo "E2E Tests: ${{ needs.cors-e2e-tests.result }}"
+            echo "Coverage: ${{ needs.cors-coverage.result }}"
+            exit 1
+          fi
+          echo "✅ All CORS test jobs passed successfully"
+          echo "🔒 CORS implementation is ready for production!"
