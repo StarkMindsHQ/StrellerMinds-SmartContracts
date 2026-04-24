@@ -24,8 +24,7 @@ pub enum ProgressKey {
 }
 
 /// Rate limit: max 100 progress updates per day per student.
-const RATE_LIMIT_CFG: RateLimitConfig =
-    RateLimitConfig { max_calls: 100, window_seconds: 86_400 };
+const RATE_LIMIT_CFG: RateLimitConfig = RateLimitConfig { max_calls: 100, window_seconds: 86_400 };
 
 #[contract]
 pub struct Progress;
