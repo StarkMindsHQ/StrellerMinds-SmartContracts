@@ -1,0 +1,175 @@
+openapi: 3.0.3
+info:
+  title: Analytics Contract
+  description: Learning analytics and progress tracking
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize contract
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Initialized
+  /record_session:
+    post:
+      operationId: record_session
+      summary: Record learning session
+      parameters:
+        - name: session
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/LearningSession'
+      responses:
+        '200':
+          description: Session recorded
+  /complete_session:
+    post:
+      operationId: complete_session
+      summary: Complete session
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: end_time
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: final_score
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: completion_percentage
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session completed
+  /get_course_analytics:
+    get:
+      operationId: get_course_analytics
+      summary: Get course analytics
+      parameters:
+        - name: course_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course analytics
+  /get_student_analytics:
+    get:
+      operationId: get_student_analytics
+      summary: Get student analytics
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: course_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Student analytics
+  /get_leaderboard:
+    get:
+      operationId: get_leaderboard
+      summary: Get leaderboard
+      parameters:
+        - name: metric
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leaderboard entries
+  /get_student_performance_trend:
+    get:
+      operationId: get_student_performance_trend
+      summary: Get performance trend
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: course_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Performance trend
+  /generate_report:
+    post:
+      operationId: generate_report
+      summary: Generate analytics report
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ReportPeriod'
+        - name: filters
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AnalyticsFilter'
+      responses:
+        '200':
+          description: Report generated
+components:
+  schemas:
+    LearningSession:
+      type: object
+      properties:
+        student:
+          type: string
+        course_id:
+          type: string
+        module_id:
+          type: string
+        start_time:
+          type: integer
+    ReportPeriod:
+      type: string
+      enum: [daily, weekly, monthly, quarterly]
+    AnalyticsFilter:
+      type: object
+      properties:
+        course_ids:
+          type: array
+          items:
+            type: string
+        student_ids:
+          type: array
+          items:
+            type: string

@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Progress Contract
+  description: Student progress tracking for StrellerMinds courses
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize the progress contract
+      description: Sets the admin address. Must be called once before any other function.
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully initialized
+        '400':
+          description: Already initialized
+  /record_progress:
+    post:
+      operationId: record_progress
+      summary: Record student progress
+      description: Records a student's progress percentage for a given course. Rate limited to 100 updates per day per student.
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Student address (must authorize)
+        - name: course_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Course identifier
+        - name: progress
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+          description: Progress percentage (0-100)
+      responses:
+        '200':
+          description: Progress recorded
+        '400':
+          description: Invalid progress value
+        '429':
+          description: Rate limit exceeded
+  /get_progress:
+    get:
+      operationId: get_progress
+      summary: Get student progress
+      description: Returns the recorded progress percentage for a student in a given course.
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: course_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progress retrieved
+          content:
+            application/json:
+              schema:
+                type: integer
+                minimum: 0
+                maximum: 100
+        '404':
+          description: Progress not found
+  /get_student_courses:
+    get:
+      operationId: get_student_courses
+      summary: Get student's courses
+      description: Returns all course IDs in which the student has recorded progress.
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Courses retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /health_check:
+    get:
+      operationId: health_check
+      summary: Get contract health status
+      responses:
+        '200':
+          description: Health report
+components:
+  schemas:
+    HealthReport:
+      type: object
+      properties:
+        status:
+          type: string
+        contract:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: integer

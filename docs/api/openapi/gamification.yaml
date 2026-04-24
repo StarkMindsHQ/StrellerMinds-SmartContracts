@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Gamification Contract
+  description: Achievements, challenges, guilds, seasons, and social features
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize the gamification contract
+      description: One-time setup that seeds 25 default milestone achievements.
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully initialized
+        '400':
+          description: Already initialized
+  /record_activity:
+    post:
+      operationId: record_activity
+      summary: Record learning activity
+      description: Records a learning activity and returns newly earned achievement IDs. Rate limited to 100 calls per day per user.
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: activity
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ActivityRecord'
+      responses:
+        '200':
+          description: Activity recorded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: uint64
+        '429':
+          description: Rate limit exceeded
+  /get_user_profile:
+    get:
+      operationId: get_user_profile
+      summary: Get user gamification profile
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile retrieved
+  /create_achievement:
+    post:
+      operationId: create_achievement
+      summary: Create custom achievement
+      description: Admin-only function to create achievements beyond the 25 seeded milestones.
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: achievement
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Achievement'
+      responses:
+        '200':
+          description: Achievement created
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: uint64
+  /get_user_achievements:
+    get:
+      operationId: get_user_achievements
+      summary: Get user's achievements
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Achievements retrieved
+  /claim_achievement_reward:
+    post:
+      operationId: claim_achievement_reward
+      summary: Claim achievement reward
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: achievement_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Reward claimed
+  /get_leaderboard:
+    get:
+      operationId: get_leaderboard
+      summary: Get leaderboard
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/LeaderboardCategory'
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            maximum: 50
+      responses:
+        '200':
+          description: Leaderboard retrieved
+  /create_challenge:
+    post:
+      operationId: create_challenge
+      summary: Create challenge
+      description: Admin-only function to create time-bound challenges.
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: challenge
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Challenge'
+      responses:
+        '200':
+          description: Challenge created
+  /join_challenge:
+    post:
+      operationId: join_challenge
+      summary: Join challenge
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: challenge_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Joined challenge
+  /create_guild:
+    post:
+      operationId: create_guild
+      summary: Create guild
+      parameters:
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: description
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: max_members
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: is_public
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Guild created
+  /endorse_peer:
+    post:
+      operationId: endorse_peer
+      summary: Endorse peer
+      description: Endorse another user for a skill, awarding XP to both parties.
+      parameters:
+        - name: endorser
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: endorsee
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: skill
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Endorsement recorded
+  /recognize_peer:
+    post:
+      operationId: recognize_peer
+      summary: Recognize peer
+      description: Send a public recognition badge. Rate limited to 10 per day per user.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: recognition_type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/RecognitionType'
+        - name: message
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recognition sent
+        '429':
+          description: Rate limit exceeded
+  /get_active_season:
+    get:
+      operationId: get_active_season
+      summary: Get active season
+      responses:
+        '200':
+          description: Active season or null
+components:
+  schemas:
+    ActivityRecord:
+      type: object
+      properties:
+        activity_type:
+          type: string
+        course_id:
+          type: string
+        module_id:
+          type: string
+        timestamp:
+          type: integer
+    Achievement:
+      type: object
+    Challenge:
+      type: object
+    Guild:
+      type: object
+    LeaderboardCategory:
+      type: string
+      enum: [xp, achievements, streaks, guild_xp]
+    RecognitionType:
+      type: string
+      enum: [helpful, insightful, creative, supportive]
