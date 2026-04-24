@@ -127,12 +127,9 @@ pub fn get_student_certificates(env: &Env, student: &Address) -> Vec<BytesN<32>>
 }
 
 /// Batch-appends multiple certificate IDs for multiple students in a single pass.
-/// Groups cert IDs by student, then does one read + one write per unique student —
+/// Groups cert IDs by student, then does one read + one write per unique student,
 /// reducing storage ops from O(2N) to O(2 * unique_students).
-pub fn add_student_certificates_batch(
-    env: &Env,
-    entries: &Vec<(Address, BytesN<32>)>,
-) {
+pub fn add_student_certificates_batch(env: &Env, entries: &Vec<(Address, BytesN<32>)>) {
     // Group cert_ids by student using a Map for O(1) lookup
     let mut student_map: Map<Address, Vec<BytesN<32>>> = Map::new(env);
 
