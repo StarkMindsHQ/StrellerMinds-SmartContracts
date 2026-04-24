@@ -1,6 +1,6 @@
 use soroban_sdk::{contracttype, Address, BytesN, Env, Symbol, Vec, Map, String};
-use crate::shared::storage_optimization::{CompactStorage, PackedStudentData, CompressedSessionCollection};
-use crate::shared::storage_cleanup::StorageCleanup;
+use crate::storage_optimization::{CompactStorage, PackedStudentData, CompressedSessionCollection};
+use crate::storage_cleanup::StorageCleanup;
 
 /// Storage benchmarking utilities
 pub struct StorageBenchmark;
@@ -26,8 +26,8 @@ pub struct BenchmarkResults {
     pub storage_savings_bytes: u64,
     pub storage_savings_percent: u32,
     pub original_operations_per_second: u32,
-    pub optimized_operations_per_second: u32,
-    pub performance_improvement_percent: u32,
+    pub optimized_ops_per_second: u32,
+    pub performance_improvement_pct: u32,
     pub original_gas_per_operation: u32,
     pub optimized_gas_per_operation: u32,
     pub gas_savings_percent: u32,

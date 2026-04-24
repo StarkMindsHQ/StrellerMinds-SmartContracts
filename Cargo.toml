@@ -1,12 +1,13 @@
 [workspace]
-members = ["contracts/*", "e2e-tests", "utils/streller-cli"]
+members = ["contracts/*"]
 resolver = "2"
 
 [workspace.dependencies]
-soroban-sdk = "22.0.0"
+soroban-sdk = "20.0.0"
 stellar-strkey = "0.0.7"
 ed25519-dalek = "2.0.0"
 rand = "0.8.5"
+serde_json = "1.0"
 
 # Workspace-level linting configuration (simplified for CI stability)
 [workspace.lints.rust]

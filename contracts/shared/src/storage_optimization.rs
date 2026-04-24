@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec, Map};
+use soroban_sdk::{contracttype, Address, BytesN, Symbol, Vec};
 
 /// Compact storage optimization utilities
 pub struct CompactStorage;
