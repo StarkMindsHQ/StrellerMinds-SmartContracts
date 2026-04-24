@@ -515,7 +515,7 @@ impl CertificateContract {
             status: CertificateStatus::Active,
             issuer: request.requester.clone(),
             version: 1,
-            blockchain_anchor: Some(anchor),
+            blockchain_anchor: Some(anchor.into()),
             template_id: None,
             share_count: 0,
         };
@@ -604,7 +604,7 @@ impl CertificateContract {
                 status: CertificateStatus::Active,
                 issuer: admin.clone(),
                 version: 1,
-                blockchain_anchor: Some(anchor),
+                blockchain_anchor: Some(anchor.into()),
                 template_id: None,
                 share_count: 0,
             };
@@ -789,7 +789,7 @@ impl CertificateContract {
             status: CertificateStatus::Active,
             issuer: admin.clone(),
             version: old_mut.version + 1,
-            blockchain_anchor: Some(anchor),
+            blockchain_anchor: Some(anchor.into()),
             template_id: None,
             share_count: 0,
         };
@@ -924,7 +924,7 @@ impl CertificateContract {
             status: CertificateStatus::Active,
             issuer: admin.clone(),
             version: 1,
-            blockchain_anchor: Some(anchor),
+            blockchain_anchor: Some(anchor.into()),
             template_id: Some(template_id),
             share_count: 0,
         };

@@ -139,6 +139,12 @@ impl CertificateError {
             Self::InvalidInput => "CERT-080",
             Self::InternalError => "CERT-099",
             Self::RateLimitExceeded => "CERT-090",
+            Self::TwoFactorNotEnabled => "CERT-100",
+            Self::InvalidTwoFactorCode => "CERT-101",
+            Self::TwoFactorRequired => "CERT-102",
+            Self::RecoveryCodeAlreadyUsed => "CERT-103",
+            Self::NoRecoveryCodesLeft => "CERT-104",
+            Self::TwoFactorAlreadyEnabled => "CERT-105",
         }
     }
 

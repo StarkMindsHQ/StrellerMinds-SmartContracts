@@ -3,7 +3,7 @@
 //! Provides TOTP-style verification, backup codes, and recovery codes
 //! to protect sensitive operations. Admin 2FA can be enforced globally.
 
-use soroban_sdk::{Address, Bytes, BytesN, Env, String, Vec};
+use soroban_sdk::{Address, Bytes, BytesN, Env, Vec};
 
 use crate::errors::CertificateError;
 use crate::storage;

@@ -188,8 +188,8 @@ pub struct Certificate {
     /// Incremental version number, updated on reissuance.
     pub version: u32,
     /// Optional on-chain anchor (e.g., block hash) for additional provenance.
-    /// Stored as BytesN<32> instead of Bytes to eliminate length-prefix overhead.
-    pub blockchain_anchor: Option<BytesN<32>>,
+    /// Stored as Bytes instead of BytesN to support optional values.
+    pub blockchain_anchor: Option<Bytes>,
     /// Optional identifier of the template used to generate this certificate.
     pub template_id: Option<String>,
     /// Number of times this certificate has been shared externally.
