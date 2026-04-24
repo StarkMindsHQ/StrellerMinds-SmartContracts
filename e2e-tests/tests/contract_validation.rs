@@ -8,7 +8,6 @@ use e2e_tests::{setup_test_harness, E2ETestHarness};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use validator::Validate;
 
 /// OpenAPI specification structure
 #[derive(Debug, Deserialize)]
@@ -28,7 +27,7 @@ struct Operation {
 }
 
 /// Standard error response structure
-#[derive(Debug, Deserialize, Serialize, Validate)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 struct ErrorResponse {
     error: String,
@@ -37,7 +36,7 @@ struct ErrorResponse {
 }
 
 /// Session data structure
-#[derive(Debug, Deserialize, Serialize, Validate)]
+#[derive(Debug, Deserialize, Serialize)]
 struct SessionData {
     session_id: String,
     user: String,
@@ -51,7 +50,7 @@ struct SessionData {
 }
 
 /// Standard event structure
-#[derive(Debug, Deserialize, Serialize, Validate)]
+#[derive(Debug, Deserialize, Serialize)]
 struct StandardEvent {
     version: u32,
     contract: String,
@@ -498,8 +497,10 @@ fn test_session_data_schema_validation() -> Result<()> {
         status: "completed".to_string(),
     };
 
-    let validation_result = session_data.validate();
-    assert!(validation_result.is_ok(), "Session data should be valid");
+    // Basic validation - ensure required fields are present
+    assert!(!session_data.session_id.is_empty());
+    assert!(!session_data.user.is_empty());
+    assert!(!session_data.course_id.is_empty());
 
     println!("✅ Session data schema validation passed");
     Ok(())
@@ -518,8 +519,10 @@ fn test_standard_event_schema_validation() -> Result<()> {
         event_data: serde_json::json!({"action": "record_session"}),
     };
 
-    let validation_result = event.validate();
-    assert!(validation_result.is_ok(), "Standard event should be valid");
+    // Basic validation - ensure required fields are present
+    assert!(event.version > 0);
+    assert!(!event.contract.is_empty());
+    assert!(!event.actor.is_empty());
 
     println!("✅ Standard event schema validation passed");
     Ok(())
