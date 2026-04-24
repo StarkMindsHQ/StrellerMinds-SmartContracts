@@ -1,7 +1,7 @@
 use crate::types::{
-    CircuitBreakerState, IncidentReport, RateLimitState, SecurityConfig, SecurityDataKey,
-    SecurityMetrics, SecurityRecommendation, SecurityThreat, SecurityTrainingStatus, ThreatId,
-    ThreatIdList, ThreatIntelligence, UserRiskScore,
+    CircuitBreakerState, IncidentReport, RateLimitState, RbacRole, RoleAssignment, RoleDelegation,
+    SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation, SecurityThreat,
+    SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence, UserRiskScore,
 };
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
@@ -244,5 +244,83 @@ impl SecurityStorage {
     pub fn is_oracle_authorized(env: &Env, oracle: &Address) -> bool {
         let key = SecurityDataKey::Oracle(oracle.clone());
         env.storage().persistent().get(&key).unwrap_or(false)
+    }
+
+    // ===== RBAC Storage =====
+
+    pub fn set_rbac_role(env: &Env, role: &RbacRole) {
+        let key = SecurityDataKey::RbacRole(role.role_id.clone());
+        env.storage().persistent().set(&key, role);
+    }
+
+    pub fn get_rbac_role(env: &Env, role_id: &Symbol) -> Option<RbacRole> {
+        let key = SecurityDataKey::RbacRole(role_id.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn has_rbac_role(env: &Env, role_id: &Symbol) -> bool {
+        let key = SecurityDataKey::RbacRole(role_id.clone());
+        env.storage().persistent().has(&key)
+    }
+
+    pub fn set_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+        assignment: &RoleAssignment,
+    ) {
+        let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
+        env.storage().persistent().set(&key, assignment);
+
+        let user_key = SecurityDataKey::RbacUserRoles(user.clone());
+        let mut roles: Vec<Symbol> =
+            env.storage().persistent().get(&user_key).unwrap_or(Vec::new(env));
+        let mut already_tracked = false;
+        for i in 0..roles.len() {
+            if roles.get(i).unwrap() == *role_id {
+                already_tracked = true;
+                break;
+            }
+        }
+        if !already_tracked {
+            roles.push_back(role_id.clone());
+            env.storage().persistent().set(&user_key, &roles);
+        }
+    }
+
+    pub fn get_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+    ) -> Option<RoleAssignment> {
+        let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn get_user_roles(env: &Env, user: &Address) -> Vec<Symbol> {
+        let key = SecurityDataKey::RbacUserRoles(user.clone());
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
+    }
+
+    pub fn add_role_delegation(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+        delegation: &RoleDelegation,
+    ) {
+        let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
+        let mut delegations: Vec<RoleDelegation> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+        delegations.push_back(delegation.clone());
+        env.storage().persistent().set(&key, &delegations);
+    }
+
+    pub fn get_role_delegations(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+    ) -> Vec<RoleDelegation> {
+        let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 }

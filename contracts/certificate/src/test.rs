@@ -618,6 +618,31 @@ fn test_verify_compliance() {
     assert!(record.is_compliant);
 }
 
+#[test]
+fn test_verify_compliance_iso9001() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let mut params = make_cert_params(&env, "ISO9001_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[91u8; 32]);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    let verifier = Address::generate(&env);
+    let is_compliant = client.verify_compliance(
+        &verifier,
+        &params.certificate_id,
+        &ComplianceStandard::Iso9001,
+        &String::from_str(&env, "Meets ISO 9001 quality management requirements"),
+    );
+    assert!(is_compliant, "ISO 9001 compliance check must return true for active certificate");
+
+    let record = client.get_compliance_record(&params.certificate_id).unwrap();
+    assert!(record.is_compliant);
+    assert_eq!(record.standard, ComplianceStandard::Iso9001);
+}
+
 // ─────────────────────────────────────────────────────────────
 // 10. Certificate Sharing & Social Verification
 // ─────────────────────────────────────────────────────────────

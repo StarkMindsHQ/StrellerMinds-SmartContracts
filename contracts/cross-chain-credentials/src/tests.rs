@@ -284,3 +284,122 @@ fn test_error_variants_are_ordered() {
     assert!(CrossChainError::CredentialNotFound < CrossChainError::CredentialNotActive);
     assert_ne!(CrossChainError::CredentialNotFound, CrossChainError::ProofNotFound);
 }
+
+#[test]
+fn test_arbitrum_chain_support() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let student = Address::generate(&env);
+
+    client.initialize(&admin);
+
+    let cred_id = client.issue_credential(
+        &student,
+        &String::from_str(&env, "Arbitrum DeFi"),
+        &String::from_str(&env, "hash_arb"),
+        &ChainId::Arbitrum,
+    );
+
+    let credential = client.get_credential(&cred_id);
+    assert_eq!(credential.chain_id, ChainId::Arbitrum);
+    assert_eq!(credential.status, CredentialStatus::Active);
+}
+
+#[test]
+fn test_initiate_bridge_to_arbitrum() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let student = Address::generate(&env);
+
+    client.initialize(&admin);
+
+    let cred_id = client.issue_credential(
+        &student,
+        &String::from_str(&env, "Smart Contract Dev"),
+        &String::from_str(&env, "hash_bridge"),
+        &ChainId::Stellar,
+    );
+
+    let bridge_req = client.initiate_bridge(&cred_id, &ChainId::Arbitrum);
+    assert_eq!(bridge_req.credential_id, cred_id);
+    assert_eq!(bridge_req.source_chain, ChainId::Stellar);
+    assert_eq!(bridge_req.target_chain, ChainId::Arbitrum);
+    assert!(bridge_req.gas_estimate > 0);
+}
+
+#[test]
+fn test_migrate_credential_to_arbitrum() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let student = Address::generate(&env);
+
+    client.initialize(&admin);
+
+    let cred_id = client.issue_credential(
+        &student,
+        &String::from_str(&env, "Layer2 Expert"),
+        &String::from_str(&env, "hash_migrate"),
+        &ChainId::Ethereum,
+    );
+
+    client.migrate_credential(&cred_id, &ChainId::Arbitrum);
+
+    let updated_cred = client.get_credential(&cred_id);
+    assert_eq!(updated_cred.chain_id, ChainId::Arbitrum);
+}
+
+#[test]
+fn test_gas_estimate_per_chain() {
+    let env = Env::default();
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let eth_gas = client.estimate_bridge_gas(&ChainId::Ethereum);
+    let arb_gas = client.estimate_bridge_gas(&ChainId::Arbitrum);
+    let poly_gas = client.estimate_bridge_gas(&ChainId::Polygon);
+
+    assert!(arb_gas < eth_gas, "Arbitrum should be cheaper than Ethereum");
+    assert!(poly_gas < eth_gas, "Polygon should be cheaper than Ethereum");
+    assert!(arb_gas > 0);
+}
+
+#[test]
+fn test_bridge_revoked_credential_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(CrossChainCredentials, ());
+    let client = CrossChainCredentialsClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    let student = Address::generate(&env);
+
+    client.initialize(&admin);
+
+    let cred_id = client.issue_credential(
+        &student,
+        &String::from_str(&env, "Test"),
+        &String::from_str(&env, "hash"),
+        &ChainId::Stellar,
+    );
+
+    client.revoke_credential(&cred_id);
+
+    let result = client.try_initiate_bridge(&cred_id, &ChainId::Arbitrum);
+    assert_eq!(result, Err(Ok(CrossChainError::CredentialNotActive)));
+}
