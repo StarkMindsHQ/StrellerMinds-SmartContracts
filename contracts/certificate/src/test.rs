@@ -362,10 +362,46 @@ fn test_batch_issue_certificates() {
     assert_eq!(result.failed, 0);
     assert_eq!(result.certificate_ids.len(), 3);
 
+    // Verify student certificates
+    let _student_certs = client.get_student_certificates(&params_list.first().unwrap().student);
+    // Note: since students were randomly generated each iteration, we need to check the last one
+    let last_student = params_list.last().unwrap().student.clone();
+    let last_certs = client.get_student_certificates(&last_student);
+    assert_eq!(last_certs.len(), 1, "Student should have 1 certificate");
+
     // Verify analytics
     let analytics = client.get_analytics();
     assert_eq!(analytics.total_issued, 3);
     assert_eq!(analytics.active_certificates, 3);
+}
+
+#[test]
+fn test_batch_issue_certificates_duplicate() {
+    let (env, client, admin) = setup_env();
+
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(&env);
+    let student = Address::generate(&env);
+
+    // Add same certificate twice
+    let mut cert_id_bytes = [0u8; 32];
+    cert_id_bytes[0] = 10;
+    let params = MintCertificateParams {
+        certificate_id: BytesN::from_array(&env, &cert_id_bytes),
+        course_id: String::from_str(&env, "BATCH_COURSE"),
+        student: student.clone(),
+        title: String::from_str(&env, "Batch Cert"),
+        description: String::from_str(&env, "Batch issued"),
+        metadata_uri: String::from_str(&env, "https://example.com/batch"),
+        expiry_date: env.ledger().timestamp() + 31_536_000,
+    };
+
+    params_list.push_back(params.clone());
+    params_list.push_back(params.clone());
+
+    let result = client.batch_issue_certificates(&admin, &params_list);
+    assert_eq!(result.total, 2);
+    assert_eq!(result.succeeded, 1, "Duplicate should be ignored");
+    assert_eq!(result.failed, 1, "Duplicate should fail");
 }
 
 #[test]
@@ -888,9 +924,13 @@ fn test_student_certificates() {
     for i in 0u8..3 {
         let mut cert_id_bytes = [0u8; 32];
         cert_id_bytes[0] = 150 + i;
+        let mut course_id_bytes = [0u8; 32];
+        course_id_bytes[0] = 65 + i;
+        let course_id =
+            String::from_str(&env, core::str::from_utf8(&course_id_bytes[0..1]).unwrap());
         let params = MintCertificateParams {
             certificate_id: BytesN::from_array(&env, &cert_id_bytes),
-            course_id: String::from_str(&env, "STUDENT_COURSE"),
+            course_id,
             student: student.clone(),
             title: String::from_str(&env, "Student Cert"),
             description: String::from_str(&env, "For student query testing"),
