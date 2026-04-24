@@ -1,6 +1,6 @@
-//! Final Working Two-Factor Authentication (2FA) Module
+//! Working Two-Factor Authentication (2FA) Module
 //! 
-//! Provides basic 2FA functionality compatible with Soroban constraints.
+//! Provides basic 2FA functionality compatible with Soroban.
 
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
@@ -127,43 +127,111 @@ pub fn is_2fa_enabled(env: &Env, user: &Address) -> bool {
         .unwrap_or(false)
 }
 
-/// Generate TOTP code for testing (simplified)
+/// Generate TOTP code for testing
 pub fn generate_totp_code(env: &Env, user: &Address, timestamp: u64) -> Result<String, TwoFactorError> {
     let secret_key = Symbol::new(env, "2fa_secret");
     
-    if let Some(_totp_secret) = env.storage()
+    if let Some(totp_secret) = env.storage()
         .instance()
         .get::<_, BytesN<32>>(&(secret_key, user.clone())) {
         
-        // Simple TOTP simulation - return a predictable 6-digit code
+        // Simple TOTP simulation
         let time_window = timestamp / 30; // 30-second windows
-        let code = (time_window % 999999) + 1; // Ensure 6-digit code
+        let hash = simple_hash(&totp_secret, &time_window);
+        let code = hash % 1_000_000;
         
-        // Create a simple 6-digit string representation
-        let result = String::from_str(env, "123456"); // Fixed for simplicity
-        
-        Ok(result)
+        // Return a simple 6-digit code as string
+        Ok(String::from_str(env, &format_simple_number(code)))
     } else {
         Err(TwoFactorError::TOTPNotConfigured)
     }
+}
+
+/// Helper function to format number as string (simple implementation)
+fn format_simple_number(num: u64) -> String {
+    // This is a simplified implementation - in production you'd use proper formatting
+    if num == 0 {
+        return String::from_str(&Env::default(), "000000");
+    }
+    
+    let mut result = String::from_str(&Env::default(), "");
+    let mut n = num;
+    let mut digits = 0;
+    
+    // Count digits
+    let mut temp = n;
+    while temp > 0 && digits < 6 {
+        temp /= 10;
+        digits += 1;
+    }
+    
+    // Pad with zeros
+    for _ in 0..(6 - digits) {
+        result = result.concat(&String::from_str(&Env::default(), "0"));
+    }
+    
+    // Add digits
+    n = num;
+    let mut divisor = 1;
+    for _ in 0..(digits - 1) {
+        divisor *= 10;
+    }
+    
+    while divisor > 0 {
+        let digit = n / divisor;
+        let digit_str = match digit {
+            0 => "0",
+            1 => "1",
+            2 => "2",
+            3 => "3",
+            4 => "4",
+            5 => "5",
+            6 => "6",
+            7 => "7",
+            8 => "8",
+            9 => "9",
+            _ => "0",
+        };
+        result = result.concat(&String::from_str(&Env::default(), digit_str));
+        n %= divisor;
+        divisor /= 10;
+    }
+    
+    result
 }
 
 // ─────────────────────────────────────────────────────────────
 // Helper Functions
 // ─────────────────────────────────────────────────────────────
 
-/// Verify TOTP code (simplified)
+/// Verify TOTP code
 fn verify_totp(env: &Env, user: &Address, code: &String) -> TwoFactorResult {
-    // For simplicity, just check if code is 6 digits
-    if code.len() == 6 {
-        TwoFactorResult::Success
-    } else {
-        TwoFactorResult::InvalidCode
+    let current_time = env.ledger().timestamp();
+    
+    // Check current time window and adjacent windows
+    for drift in 0..=1 {
+        let time_window = current_time / 30;
+        let check_time = if drift == 0 {
+            time_window
+        } else if current_time % 30 < 15 {
+            time_window - drift
+        } else {
+            time_window + drift
+        };
+        
+        if let Ok(expected_code) = generate_totp_code(env, user, check_time * 30) {
+            if expected_code == *code {
+                return TwoFactorResult::Success;
+            }
+        }
     }
+    
+    TwoFactorResult::InvalidCode
 }
 
 /// Verify SMS code (simplified)
 fn verify_sms_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResult {
+    // In production, this would verify against stored SMS codes
     // For now, just validate format (6 digits)
     if code.len() == 6 {
         TwoFactorResult::Success
@@ -174,6 +242,7 @@ fn verify_sms_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResul
 
 /// Verify recovery code (simplified)
 fn verify_recovery_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResult {
+    // In production, this would verify against stored recovery codes
     // For now, just validate format (8 characters)
     if code.len() == 8 {
         TwoFactorResult::Success
@@ -196,6 +265,22 @@ fn is_account_locked(env: &Env, user: &Address) -> bool {
         }
     }
     false
+}
+
+/// Simple hash function for demonstration
+fn simple_hash(secret: &BytesN<32>, counter: &u64) -> u64 {
+    let mut hash: u64 = 0;
+    
+    // Hash the secret
+    for i in 0..32 {
+        let byte = secret.get(i).unwrap();
+        hash = hash.wrapping_add((byte as u64).wrapping_mul((i + 1) as u64));
+    }
+    
+    // Hash the counter
+    hash = hash.wrapping_add(counter.wrapping_mul(32));
+    
+    hash
 }
 
 // ─────────────────────────────────────────────────────────────

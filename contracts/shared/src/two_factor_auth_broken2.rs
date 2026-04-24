@@ -1,6 +1,6 @@
-//! Final Working Two-Factor Authentication (2FA) Module
+//! Minimal Two-Factor Authentication (2FA) Module
 //! 
-//! Provides basic 2FA functionality compatible with Soroban constraints.
+//! Provides basic 2FA functionality using simple storage patterns.
 
 use soroban_sdk::{Address, BytesN, Env, String, Symbol};
 
@@ -127,22 +127,20 @@ pub fn is_2fa_enabled(env: &Env, user: &Address) -> bool {
         .unwrap_or(false)
 }
 
-/// Generate TOTP code for testing (simplified)
+/// Generate TOTP code for testing
 pub fn generate_totp_code(env: &Env, user: &Address, timestamp: u64) -> Result<String, TwoFactorError> {
     let secret_key = Symbol::new(env, "2fa_secret");
     
-    if let Some(_totp_secret) = env.storage()
+    if let Some(totp_secret) = env.storage()
         .instance()
         .get::<_, BytesN<32>>(&(secret_key, user.clone())) {
         
-        // Simple TOTP simulation - return a predictable 6-digit code
+        // Simple TOTP simulation
         let time_window = timestamp / 30; // 30-second windows
-        let code = (time_window % 999999) + 1; // Ensure 6-digit code
+        let hash = simple_hash(&totp_secret.to_bytes(), &time_window.to_le_bytes());
+        let code = (hash % 1_000_000).to_string();
         
-        // Create a simple 6-digit string representation
-        let result = String::from_str(env, "123456"); // Fixed for simplicity
-        
-        Ok(result)
+        Ok(format!("{:06}", code.parse::<u32>().unwrap_or(0)))
     } else {
         Err(TwoFactorError::TOTPNotConfigured)
     }
@@ -152,20 +150,36 @@ pub fn generate_totp_code(env: &Env, user: &Address, timestamp: u64) -> Result<S
 // Helper Functions
 // ─────────────────────────────────────────────────────────────
 
-/// Verify TOTP code (simplified)
+/// Verify TOTP code
 fn verify_totp(env: &Env, user: &Address, code: &String) -> TwoFactorResult {
-    // For simplicity, just check if code is 6 digits
-    if code.len() == 6 {
-        TwoFactorResult::Success
-    } else {
-        TwoFactorResult::InvalidCode
+    let current_time = env.ledger().timestamp();
+    
+    // Check current time window and adjacent windows
+    for drift in 0..=1 {
+        let time_window = current_time / 30;
+        let check_time = if drift == 0 {
+            time_window
+        } else if current_time % 30 < 15 {
+            time_window - drift
+        } else {
+            time_window + drift
+        };
+        
+        if let Ok(expected_code) = generate_totp_code(env, user, check_time * 30) {
+            if expected_code == *code {
+                return TwoFactorResult::Success;
+            }
+        }
     }
+    
+    TwoFactorResult::InvalidCode
 }
 
 /// Verify SMS code (simplified)
 fn verify_sms_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResult {
-    // For now, just validate format (6 digits)
-    if code.len() == 6 {
+    // In production, this would verify against stored SMS codes
+    // For now, just validate format
+    if code.len() == 6 && code.chars().all(|c| c.is_ascii_digit()) {
         TwoFactorResult::Success
     } else {
         TwoFactorResult::InvalidCode
@@ -174,8 +188,9 @@ fn verify_sms_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResul
 
 /// Verify recovery code (simplified)
 fn verify_recovery_code(_env: &Env, _user: &Address, code: &String) -> TwoFactorResult {
-    // For now, just validate format (8 characters)
-    if code.len() == 8 {
+    // In production, this would verify against stored recovery codes
+    // For now, just validate format
+    if code.len() == 8 && code.chars().all(|c| c.is_ascii_alphanumeric()) {
         TwoFactorResult::Success
     } else {
         TwoFactorResult::InvalidCode
@@ -196,6 +211,21 @@ fn is_account_locked(env: &Env, user: &Address) -> bool {
         }
     }
     false
+}
+
+/// Simple hash function for demonstration
+fn simple_hash(secret: &[u8], counter: &[u8]) -> u64 {
+    let mut hash: u64 = 0;
+    
+    for (i, &byte) in secret.iter().enumerate() {
+        hash = hash.wrapping_add((byte as u64).wrapping_mul(i as u64 + 1));
+    }
+    
+    for (i, &byte) in counter.iter().enumerate() {
+        hash = hash.wrapping_add((byte as u64).wrapping_mul((i + 32) as u64));
+    }
+    
+    hash
 }
 
 // ─────────────────────────────────────────────────────────────
