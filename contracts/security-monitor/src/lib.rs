@@ -17,9 +17,9 @@ use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
 use crate::threat_detector::ThreatDetector;
 use crate::types::{
-    IncidentReport, MitigationAction, RateLimitState, SecurityConfig, SecurityThreat,
-    SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence, ThreatLevel, ThreatType,
-    UserRiskScore,
+    IncidentReport, MitigationAction, RateLimitState, RbacRole, RoleAssignment, RoleDelegation,
+    SecurityConfig, SecurityThreat, SecurityTrainingStatus, ThreatId, ThreatIdList,
+    ThreatIntelligence, ThreatLevel, ThreatType, UserRiskScore,
 };
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, String, Symbol, Vec};
 
@@ -545,6 +545,286 @@ impl SecurityMonitor {
         SecurityEvents::emit_incident_reported(&env, &incident_id, &admin);
 
         Ok(incident_id)
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // RBAC Enhancement
+    // ─────────────────────────────────────────────────────────
+
+    /// Creates a new role in the RBAC hierarchy.
+    ///
+    /// Requires admin authorization. The role is active by default.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `role_id` - Unique symbol identifier for the role.
+    /// * `parent_role` - Optional parent role for hierarchy inheritance.
+    /// * `description` - Human-readable description of the role.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    /// Returns contract error `4` (already exists) if the role already exists.
+    pub fn create_role(
+        env: Env,
+        admin: Address,
+        role_id: Symbol,
+        parent_role: Option<Symbol>,
+        description: String,
+    ) -> Result<(), Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        if SecurityStorage::has_rbac_role(&env, &role_id) {
+            return Err(Error::from_contract_error(4));
+        }
+        let role = RbacRole {
+            role_id: role_id.clone(),
+            parent_role,
+            description,
+            is_active: true,
+            created_at: env.ledger().timestamp(),
+        };
+        SecurityStorage::set_rbac_role(&env, &role);
+        Ok(())
+    }
+
+    /// Assigns a role to a user with an optional expiry.
+    ///
+    /// Requires admin authorization. If the role does not exist or is inactive, an error is returned.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `user` - Address of the user receiving the role.
+    /// * `role_id` - Symbol identifier of the role to assign.
+    /// * `expires_at` - Optional Unix timestamp after which the assignment expires.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    /// Returns contract error `5` (role not found) if the role does not exist.
+    /// Returns contract error `6` (role inactive) if the role is deactivated.
+    pub fn assign_role(
+        env: Env,
+        admin: Address,
+        user: Address,
+        role_id: Symbol,
+        expires_at: Option<u64>,
+    ) -> Result<(), Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        let role =
+            SecurityStorage::get_rbac_role(&env, &role_id).ok_or(Error::from_contract_error(5))?;
+        if !role.is_active {
+            return Err(Error::from_contract_error(6));
+        }
+        let assignment = RoleAssignment {
+            user: user.clone(),
+            role_id: role_id.clone(),
+            assigned_by: admin,
+            assigned_at: env.ledger().timestamp(),
+            expires_at,
+            is_active: true,
+        };
+        SecurityStorage::set_role_assignment(&env, &user, &role_id, &assignment);
+        Ok(())
+    }
+
+    /// Revokes a role assignment from a user.
+    ///
+    /// Requires admin authorization. Marks the assignment as inactive.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `user` - Address of the user whose role is being revoked.
+    /// * `role_id` - Symbol identifier of the role to revoke.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    /// Returns contract error `7` (assignment not found) if no active assignment exists.
+    pub fn revoke_role(
+        env: Env,
+        admin: Address,
+        user: Address,
+        role_id: Symbol,
+    ) -> Result<(), Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        let mut assignment = SecurityStorage::get_role_assignment(&env, &user, &role_id)
+            .ok_or(Error::from_contract_error(7))?;
+        assignment.is_active = false;
+        SecurityStorage::set_role_assignment(&env, &user, &role_id, &assignment);
+        Ok(())
+    }
+
+    /// Activates a previously deactivated role.
+    ///
+    /// Requires admin authorization.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `role_id` - Symbol identifier of the role to activate.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    /// Returns contract error `5` (role not found) if the role does not exist.
+    pub fn activate_role(env: Env, admin: Address, role_id: Symbol) -> Result<(), Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        let mut role =
+            SecurityStorage::get_rbac_role(&env, &role_id).ok_or(Error::from_contract_error(5))?;
+        role.is_active = true;
+        SecurityStorage::set_rbac_role(&env, &role);
+        Ok(())
+    }
+
+    /// Deactivates a role without deleting it, preventing new assignments.
+    ///
+    /// Requires admin authorization. Existing assignments are unaffected.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `role_id` - Symbol identifier of the role to deactivate.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    /// Returns contract error `5` (role not found) if the role does not exist.
+    pub fn deactivate_role(env: Env, admin: Address, role_id: Symbol) -> Result<(), Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        let mut role =
+            SecurityStorage::get_rbac_role(&env, &role_id).ok_or(Error::from_contract_error(5))?;
+        role.is_active = false;
+        SecurityStorage::set_rbac_role(&env, &role);
+        Ok(())
+    }
+
+    /// Delegates a role that the delegator holds to another user.
+    ///
+    /// The delegator must hold the role. The delegation can optionally expire.
+    ///
+    /// # Arguments
+    /// * `delegator` - Address of the user delegating the role.
+    /// * `delegate` - Address of the user receiving the delegation.
+    /// * `role_id` - Symbol identifier of the role being delegated.
+    /// * `expires_at` - Optional Unix timestamp after which the delegation expires.
+    ///
+    /// # Errors
+    /// Returns contract error `7` (assignment not found) if the delegator does not hold the role.
+    pub fn delegate_role(
+        env: Env,
+        delegator: Address,
+        delegate: Address,
+        role_id: Symbol,
+        expires_at: Option<u64>,
+    ) -> Result<(), Error> {
+        delegator.require_auth();
+        let assignment = SecurityStorage::get_role_assignment(&env, &delegator, &role_id)
+            .ok_or(Error::from_contract_error(7))?;
+        if !assignment.is_active {
+            return Err(Error::from_contract_error(7));
+        }
+        let delegation = RoleDelegation {
+            delegator: delegator.clone(),
+            delegate: delegate.clone(),
+            role_id: role_id.clone(),
+            delegated_at: env.ledger().timestamp(),
+            expires_at,
+        };
+        SecurityStorage::add_role_delegation(&env, &delegator, &role_id, &delegation);
+        Ok(())
+    }
+
+    /// Returns `true` if the user holds the given role (directly assigned or delegated, not expired).
+    ///
+    /// # Arguments
+    /// * `user` - Address of the user to check.
+    /// * `role_id` - Symbol identifier of the role to check.
+    pub fn has_role(env: Env, user: Address, role_id: Symbol) -> bool {
+        let now = env.ledger().timestamp();
+        if let Some(assignment) = SecurityStorage::get_role_assignment(&env, &user, &role_id) {
+            if assignment.is_active {
+                if let Some(exp) = assignment.expires_at {
+                    if now <= exp {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Returns the role definition for the given role ID.
+    ///
+    /// # Arguments
+    /// * `role_id` - Symbol identifier of the role to retrieve.
+    pub fn get_role(env: Env, role_id: Symbol) -> Option<RbacRole> {
+        SecurityStorage::get_rbac_role(&env, &role_id)
+    }
+
+    /// Returns all role IDs assigned to a user (including inactive and expired).
+    ///
+    /// # Arguments
+    /// * `user` - Address of the user whose roles to retrieve.
+    pub fn get_user_roles(env: Env, user: Address) -> Vec<Symbol> {
+        SecurityStorage::get_user_roles(&env, &user)
+    }
+
+    /// Scans all role assignments for the user and revokes any that have passed their expiry.
+    ///
+    /// Requires admin authorization. Returns the count of assignments revoked.
+    ///
+    /// # Arguments
+    /// * `admin` - Address of the contract admin.
+    /// * `user` - Address of the user whose expired roles should be cleaned up.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if the caller is not the admin.
+    pub fn cleanup_expired_roles(env: Env, admin: Address, user: Address) -> Result<u32, Error> {
+        let expected_admin =
+            SecurityStorage::get_admin(&env).ok_or(Error::from_contract_error(1))?;
+        if admin != expected_admin {
+            return Err(Error::from_contract_error(1));
+        }
+        let now = env.ledger().timestamp();
+        let roles = SecurityStorage::get_user_roles(&env, &user);
+        let mut revoked: u32 = 0;
+        for i in 0..roles.len() {
+            let role_id = roles.get(i).unwrap();
+            if let Some(mut assignment) =
+                SecurityStorage::get_role_assignment(&env, &user, &role_id)
+            {
+                if assignment.is_active {
+                    if let Some(exp) = assignment.expires_at {
+                        if now > exp {
+                            assignment.is_active = false;
+                            SecurityStorage::set_role_assignment(
+                                &env,
+                                &user,
+                                &role_id,
+                                &assignment,
+                            );
+                            revoked += 1;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(revoked)
     }
 
     // --- Note: Some methods from the `SecurityMonitorTrait` are omitted here for brevity or were already missing in the dummy implementation in `lib.rs`, such as apply_mitigation, check_circuit_breaker, etc. We'll stick to implementing the new advanced AI features and updating the basic dummy ones that were there. ---

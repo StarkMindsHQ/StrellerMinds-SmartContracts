@@ -86,30 +86,71 @@ fn test_record_progress_multiple_courses_one_student() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 3. get_progress (currently returns placeholder 0)
+// 3. get_progress – now stores and retrieves real values (#365)
 // ─────────────────────────────────────────────────────────────
 
 #[test]
-fn test_get_progress_returns_u32() {
+fn test_get_progress_returns_recorded_value() {
     let (env, client, _) = setup();
     let student = Address::generate(&env);
     let course_id = symbol_short!("RUST101");
+    client.record_progress(&student, &course_id, &75u32);
     let progress = client.get_progress(&student, &course_id);
-    // The contract currently returns 0 as a placeholder; value must be a valid u32.
-    assert!(progress <= 100 || progress == 0);
+    assert_eq!(progress, 75);
+}
+
+#[test]
+fn test_get_progress_not_found_panics() {
+    let (env, client, _) = setup();
+    let student = Address::generate(&env);
+    let course_id = symbol_short!("RUST101");
+    let result = client.try_get_progress(&student, &course_id);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_get_progress_overwrite_updates_value() {
+    let (env, client, _) = setup();
+    let student = Address::generate(&env);
+    let course_id = symbol_short!("RUST101");
+    client.record_progress(&student, &course_id, &50u32);
+    client.record_progress(&student, &course_id, &90u32);
+    let progress = client.get_progress(&student, &course_id);
+    assert_eq!(progress, 90);
 }
 
 // ─────────────────────────────────────────────────────────────
-// 4. get_student_courses (placeholder – returns empty Vec)
+// 4. get_student_courses – now returns real course list (#365)
 // ─────────────────────────────────────────────────────────────
 
 #[test]
-fn test_get_student_courses_returns_vec() {
+fn test_get_student_courses_empty_before_any_progress() {
     let (env, client, _) = setup();
     let student = Address::generate(&env);
     let courses = client.get_student_courses(&student);
-    // Placeholder returns empty; verify it doesn't panic and is a Vec.
     assert_eq!(courses.len(), 0);
+}
+
+#[test]
+fn test_get_student_courses_tracks_recorded_courses() {
+    let (env, client, _) = setup();
+    let student = Address::generate(&env);
+    client.record_progress(&student, &symbol_short!("C1"), &10u32);
+    client.record_progress(&student, &symbol_short!("C2"), &20u32);
+    let courses = client.get_student_courses(&student);
+    assert_eq!(courses.len(), 2);
+}
+
+#[test]
+fn test_get_student_courses_no_duplicates() {
+    let (env, client, _) = setup();
+    let student = Address::generate(&env);
+    let course_id = symbol_short!("C1");
+    client.record_progress(&student, &course_id, &10u32);
+    client.record_progress(&student, &course_id, &50u32);
+    let courses = client.get_student_courses(&student);
+    // Same course recorded twice should only appear once.
+    assert_eq!(courses.len(), 1);
 }
 
 // ─────────────────────────────────────────────────────────────

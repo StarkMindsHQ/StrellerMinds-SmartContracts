@@ -10,6 +10,7 @@ pub enum DataKey {
     Request(String),
     StudentCreds(Address),
     ChainBridge(u32),
+    BridgeRequest(String),
 }
 
 pub fn set_admin(env: &Env, admin: &Address) {

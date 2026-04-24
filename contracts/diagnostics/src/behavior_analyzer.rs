@@ -848,10 +848,10 @@ impl BehaviorAnalyzer {
         let score_3 = scores.get(num_scores - 1).unwrap_or(score_2);
 
         let mean = (score_1 as f64 + score_2 as f64 + score_3 as f64) / 3.0;
-        let variance = ((score_1 as f64 - mean).powi(2)
-            + (score_2 as f64 - mean).powi(2)
-            + (score_3 as f64 - mean).powi(2))
-            / 3.0;
+        let diff1 = score_1 as f64 - mean;
+        let diff2 = score_2 as f64 - mean;
+        let diff3 = score_3 as f64 - mean;
+        let variance = (diff1 * diff1 + diff2 * diff2 + diff3 * diff3) / 3.0;
 
         variance < 5.0 // Low variance indicates plateau
     }
