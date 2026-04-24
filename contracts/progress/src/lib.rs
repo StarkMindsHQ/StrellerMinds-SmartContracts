@@ -7,8 +7,25 @@ use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
 use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{emit_access_control_event, emit_progress_event};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
+
+/// Storage key for progress records.
+#[contracttype]
+#[derive(Clone)]
+pub enum ProgressKey {
+    /// Stores the progress percentage for (student, course_id).
+    Progress(Address, Symbol),
+    /// Stores the list of course IDs a student has recorded progress in.
+    StudentCourses(Address),
+    /// Rate limit state for a student's record_progress calls.
+    RateLimit(Address),
+}
+
+/// Rate limit: max 100 progress updates per day per student.
+const RATE_LIMIT_CFG: RateLimitConfig =
+    RateLimitConfig { max_calls: 100, window_seconds: 86_400 };
 
 #[contract]
 pub struct Progress;
@@ -22,11 +39,6 @@ impl Progress {
     ///
     /// # Errors
     /// Returns [`ProgressError::AlreadyInitialized`] if the contract has already been initialized.
-    ///
-    /// # Example
-    /// ```ignore
-    /// client.initialize(&admin);
-    /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), ProgressError> {
         admin.require_auth();
         if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
@@ -45,6 +57,8 @@ impl Progress {
 
     /// Records a student's progress percentage for a given course.
     ///
+    /// Enforces a per-student rate limit (100 calls/day) to prevent abuse.
+    /// Stores the progress value on-chain and tracks the course in the student's course list.
     /// Emits a `ProgressUpdated` event on success.
     ///
     /// # Arguments
@@ -55,17 +69,37 @@ impl Progress {
     /// # Errors
     /// Returns [`ProgressError::Unauthorized`] if the caller is not authorized.
     /// Returns [`ProgressError::InvalidProgress`] if `progress` exceeds 100.
-    ///
-    /// # Example
-    /// ```ignore
-    /// client.record_progress(&student, &course_id, &75u32);
-    /// ```
     pub fn record_progress(
         env: Env,
         student: Address,
         course_id: Symbol,
         progress: u32,
     ) -> Result<(), ProgressError> {
+        student.require_auth();
+
+        if progress > 100 {
+            return Err(ProgressError::InvalidProgress);
+        }
+
+        // Enforce per-student rate limit (#363)
+        let rl_key = ProgressKey::RateLimit(student.clone());
+        enforce_rate_limit(&env, &rl_key, &RATE_LIMIT_CFG)
+            .map_err(|_| ProgressError::Unauthorized)?;
+
+        // Store progress (#365)
+        let progress_key = ProgressKey::Progress(student.clone(), course_id.clone());
+        env.storage().persistent().set(&progress_key, &progress);
+
+        // Track course in student's course list if not already present (#365)
+        let courses_key = ProgressKey::StudentCourses(student.clone());
+        let mut courses: Vec<Symbol> =
+            env.storage().persistent().get(&courses_key).unwrap_or_else(|| Vec::new(&env));
+        let already_tracked = courses.iter().any(|c| c == course_id);
+        if !already_tracked {
+            courses.push_back(course_id.clone());
+            env.storage().persistent().set(&courses_key, &courses);
+        }
+
         emit_progress_event!(
             &env,
             symbol_short!("progress"),
@@ -88,30 +122,22 @@ impl Progress {
     ///
     /// # Errors
     /// Returns [`ProgressError::ProgressNotFound`] if no progress has been recorded.
-    ///
-    /// # Example
-    /// ```ignore
-    /// let pct = client.get_progress(&student, &course_id);
-    /// ```
     pub fn get_progress(
-        _env: Env,
-        _student: Address,
-        _course_id: Symbol,
+        env: Env,
+        student: Address,
+        course_id: Symbol,
     ) -> Result<u32, ProgressError> {
-        Ok(0)
+        let key = ProgressKey::Progress(student, course_id);
+        env.storage().persistent().get(&key).ok_or(ProgressError::ProgressNotFound)
     }
 
     /// Returns all course IDs in which the student has recorded progress.
     ///
     /// # Arguments
     /// * `student` - Address of the student to query.
-    ///
-    /// # Example
-    /// ```ignore
-    /// let courses = client.get_student_courses(&student);
-    /// ```
-    pub fn get_student_courses(_env: Env, _student: Address) -> Vec<Symbol> {
-        Vec::new(&_env)
+    pub fn get_student_courses(env: Env, student: Address) -> Vec<Symbol> {
+        let key = ProgressKey::StudentCourses(student);
+        env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(&env))
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {
