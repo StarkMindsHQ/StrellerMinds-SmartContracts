@@ -28,6 +28,11 @@ rand = "0.8"
 futures = "0.3"
 uuid = { version = "1.0", features = ["v4"] }
 
+# OpenAPI validation
+validator = { version = "0.16", features = ["derive"] }
+schemars = "0.8"
+serde_yaml = "0.9"
+
 [[test]]
 name = "integration"
 path = "tests/integration.rs"
@@ -39,3 +44,7 @@ path = "tests/analytics_integration.rs"
 [[test]]
 name = "scalability"
 path = "tests/scalability.rs"
+
+[[test]]
+name = "contract_validation"
+path = "tests/contract_validation.rs"
