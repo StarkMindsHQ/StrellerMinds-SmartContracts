@@ -113,7 +113,11 @@ fn validate_response_against_schema(
         if let Some(ref_path) = ref_path.strip_prefix("#/components/schemas/") {
             if let Some(schemas) = components.as_ref().and_then(|c| c.schemas.as_ref()) {
                 if let Some(referenced_schema) = schemas.get(ref_path) {
-                    return validate_response_against_schema(response, referenced_schema, components);
+                    return validate_response_against_schema(
+                        response,
+                        referenced_schema,
+                        components,
+                    );
                 }
             }
         }
@@ -193,19 +197,18 @@ fn parse_and_validate_response(
     spec: &OpenApiSpec,
 ) -> Result<Value> {
     // Try to parse as JSON
-    let response: Value = serde_json::from_str(response_str)
-        .or_else(|_| {
-            // If not JSON, try to extract JSON from CLI output
-            if let Some(start) = response_str.find('{') {
-                if let Some(end) = response_str.rfind('}') {
-                    serde_json::from_str(&response_str[start..=end])
-                } else {
-                    Err(serde_json::Error::custom("No valid JSON found"))
-                }
+    let response: Value = serde_json::from_str(response_str).or_else(|_| {
+        // If not JSON, try to extract JSON from CLI output
+        if let Some(start) = response_str.find('{') {
+            if let Some(end) = response_str.rfind('}') {
+                serde_json::from_str(&response_str[start..=end])
             } else {
                 Err(serde_json::Error::custom("No valid JSON found"))
             }
-        })?;
+        } else {
+            Err(serde_json::Error::custom("No valid JSON found"))
+        }
+    })?;
 
     // Find the operation in the spec
     for (_path, path_item) in &spec.paths {
@@ -244,10 +247,7 @@ async fn test_analytics_initialize_response_matches_spec() -> Result<()> {
     let parsed_response = parse_and_validate_response(&response, "analytics_initialize", &spec)?;
 
     // Validate that response contains expected fields
-    assert!(
-        !parsed_response.is_null(),
-        "Initialize response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Initialize response should not be null");
 
     println!("✅ Analytics initialize response matches spec");
     Ok(())
@@ -297,13 +297,11 @@ async fn test_analytics_record_session_response_matches_spec() -> Result<()> {
         )
         .await?;
 
-    let parsed_response = parse_and_validate_response(&response, "analytics_record_session", &spec)?;
+    let parsed_response =
+        parse_and_validate_response(&response, "analytics_record_session", &spec)?;
 
     // Validate response structure
-    assert!(
-        !parsed_response.is_null(),
-        "Record session response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Record session response should not be null");
 
     println!("✅ Analytics record session response matches spec");
     Ok(())
@@ -333,9 +331,7 @@ async fn test_analytics_complete_session_response_matches_spec() -> Result<()> {
 
     // Record session first
     let session_id = hex::encode(uuid::Uuid::new_v4().as_bytes());
-    let start_time = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)?
-        .as_secs();
+    let start_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs();
 
     let session_data = serde_json::json!({
         "user": student_address,
@@ -373,12 +369,10 @@ async fn test_analytics_complete_session_response_matches_spec() -> Result<()> {
         )
         .await?;
 
-    let parsed_response = parse_and_validate_response(&response, "analytics_complete_session", &spec)?;
+    let parsed_response =
+        parse_and_validate_response(&response, "analytics_complete_session", &spec)?;
 
-    assert!(
-        !parsed_response.is_null(),
-        "Complete session response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Complete session response should not be null");
 
     println!("✅ Analytics complete session response matches spec");
     Ok(())
@@ -406,10 +400,7 @@ async fn test_token_initialize_response_matches_spec() -> Result<()> {
 
     let parsed_response = parse_and_validate_response(&response, "token_initialize", &spec)?;
 
-    assert!(
-        !parsed_response.is_null(),
-        "Token initialize response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Token initialize response should not be null");
 
     println!("✅ Token initialize response matches spec");
     Ok(())
@@ -450,10 +441,7 @@ async fn test_token_mint_response_matches_spec() -> Result<()> {
 
     let parsed_response = parse_and_validate_response(&response, "token_mint", &spec)?;
 
-    assert!(
-        !parsed_response.is_null(),
-        "Token mint response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Token mint response should not be null");
 
     println!("✅ Token mint response matches spec");
     Ok(())
@@ -499,21 +487,14 @@ async fn test_token_transfer_response_matches_spec() -> Result<()> {
         .invoke_contract(
             token_id,
             "transfer",
-            &[
-                format!("--from {alice_address}"),
-                format!("--to {bob_address}"),
-                "--amount 200",
-            ],
+            &[format!("--from {alice_address}"), format!("--to {bob_address}"), "--amount 200"],
             "alice",
         )
         .await?;
 
     let parsed_response = parse_and_validate_response(&response, "token_transfer", &spec)?;
 
-    assert!(
-        !parsed_response.is_null(),
-        "Token transfer response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Token transfer response should not be null");
 
     println!("✅ Token transfer response matches spec");
     Ok(())
@@ -565,10 +546,7 @@ async fn test_token_balance_response_matches_spec() -> Result<()> {
 
     let parsed_response = parse_and_validate_response(&response, "token_balance", &spec)?;
 
-    assert!(
-        !parsed_response.is_null(),
-        "Token balance response should not be null"
-    );
+    assert!(!parsed_response.is_null(), "Token balance response should not be null");
 
     println!("✅ Token balance response matches spec");
     Ok(())
@@ -611,10 +589,7 @@ async fn test_error_response_matches_spec() -> Result<()> {
         Err(e) => {
             // Error should contain error code and message
             let error_str = e.to_string();
-            assert!(
-                !error_str.is_empty(),
-                "Error response should not be empty"
-            );
+            assert!(!error_str.is_empty(), "Error response should not be empty");
             println!("✅ Error response structure matches spec: {}", error_str);
         }
     }
@@ -680,10 +655,7 @@ fn test_openapi_spec_is_valid() -> Result<()> {
     );
 
     // Verify components exist
-    assert!(
-        spec.components.is_some(),
-        "Spec should contain components section"
-    );
+    assert!(spec.components.is_some(), "Spec should contain components section");
 
     println!("✅ OpenAPI specification is valid and complete");
     Ok(())
