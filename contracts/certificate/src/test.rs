@@ -1,3 +1,4 @@
+use shared::monitoring::ContractHealthStatus;
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Vec};
 
 use crate::{
@@ -714,6 +715,39 @@ fn test_verify_revoked_cert_not_authentic() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Reproduce Issue #378: Revoked certificate still passing verification
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_reproduce_issue_378() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "REPRO_378", &student);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    // Verify it is active first
+    assert!(client.verify_certificate(&params.certificate_id));
+
+    // Revoke the certificate
+    client.revoke_certificate(
+        &admin,
+        &params.certificate_id,
+        &String::from_str(&env, "Test Revocation"),
+        &false,
+    );
+
+    // Verify certificate SHOULD BE false
+    let is_valid = client.verify_certificate(&params.certificate_id);
+    assert!(!is_valid, "Revoked certificate should not be valid");
+
+    // Verify authenticity SHOULD BE false
+    let is_authentic = client.verify_authenticity(&params.certificate_id);
+    assert!(!is_authentic, "Revoked certificate should not be authentic");
+}
+
+// ─────────────────────────────────────────────────────────────
 // 12. Audit Trail
 // ─────────────────────────────────────────────────────────────
 #[test]
@@ -845,6 +879,22 @@ fn test_student_certificates() {
 
     let certs = client.get_student_certificates(&student);
     assert_eq!(certs.len(), 3);
+
+    // Revoke one
+    client.revoke_certificate(
+        &admin,
+        &certs.get(0).unwrap(),
+        &String::from_str(&env, "Revoked"),
+        &false,
+    );
+
+    // Should now have 2 active
+    let active_certs = client.get_student_certificates(&student);
+    assert_eq!(active_certs.len(), 2);
+
+    // Should still have 3 total
+    let all_certs = client.get_all_student_certificates(&student);
+    assert_eq!(all_certs.len(), 3);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -856,4 +906,27 @@ fn test_certificate_priority_levels() {
     assert_eq!(CertificatePriority::Premium.required_approvals(), 2);
     assert_eq!(CertificatePriority::Enterprise.required_approvals(), 3);
     assert_eq!(CertificatePriority::Institutional.required_approvals(), 5);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 17. Health Check
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_health_check_returns_healthy() {
+    let (_env, client, _admin) = setup_env();
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Healthy);
+    assert!(report.initialized);
+}
+
+#[test]
+fn test_health_check_before_init() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(CertificateContract, ());
+    let client = CertificateContractClient::new(&env, &contract_id);
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Unknown);
+    assert!(!report.initialized);
 }

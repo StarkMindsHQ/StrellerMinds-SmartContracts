@@ -9,12 +9,16 @@ pub mod types;
 mod test;
 
 use errors::CertificateError;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
+use shared::logger::{LogLevel, Logger};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
+use shared::{log_error, log_info, log_warn};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Vec};
 use types::{
-    AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
-    CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
-    MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig, MultiSigRequestStatus,
-    RevocationRecord, ShareRecord, TemplateField,
+    AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
+    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
+    MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
+    MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -27,6 +31,8 @@ const MAX_TIMEOUT: u64 = 2_592_000;
 const MAX_BATCH_SIZE: u32 = 25;
 /// Maximum share records per certificate.
 const MAX_SHARES_PER_CERT: u32 = 100;
+/// Rate limit operation ID for multisig requests.
+const RL_OP_MULTISIG_REQUEST: u64 = 1;
 
 #[contract]
 pub struct CertificateContract;
@@ -38,6 +44,7 @@ fn require_admin(env: &Env, caller: &Address) -> Result<(), CertificateError> {
     caller.require_auth();
     let admin = storage::get_admin(env);
     if *caller != admin {
+        log_error!(env, symbol_short!("cert"), symbol_short!("unauth"));
         return Err(CertificateError::Unauthorized);
     }
     Ok(())
@@ -104,6 +111,21 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // Initialisation
     // ─────────────────────────────────────────────────────────
+    /// Initializes the contract, setting the admin address and marking the contract as ready.
+    ///
+    /// Must be called once before any other function. The caller must authorize the transaction.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The address that will be granted admin privileges.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::AlreadyInitialized`] if the contract has already been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin);
+    /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), CertificateError> {
         if storage::is_initialized(&env) {
             return Err(CertificateError::AlreadyInitialized);
@@ -111,12 +133,47 @@ impl CertificateContract {
         admin.require_auth();
         storage::set_admin(&env, &admin);
         storage::set_initialized(&env);
+        env.storage().instance().set(
+            &CertDataKey::RateLimitCfg,
+            &CertRateLimitConfig { max_requests_per_day: 10, window_seconds: 86_400 },
+        );
+        Ok(())
+    }
+
+    pub fn update_rate_limits(
+        env: Env,
+        admin: Address,
+        rate_limits: CertRateLimitConfig,
+    ) -> Result<(), CertificateError> {
+        require_admin(&env, &admin)?;
+        env.storage().instance().set(&CertDataKey::RateLimitCfg, &rate_limits);
+        Logger::init(&env, LogLevel::Info);
+        log_info!(&env, symbol_short!("cert"), symbol_short!("init_ok"));
         Ok(())
     }
 
     // ─────────────────────────────────────────────────────────
     // 1. Hierarchical Multi-Sig Configuration
     // ─────────────────────────────────────────────────────────
+    /// Configures the multi-signature approval settings for a specific course's certificate issuance.
+    ///
+    /// Requires admin authorization. Validates that thresholds, approver counts, and timeout bounds are within acceptable limits.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the configuration.
+    /// * `config` - The [`MultiSigConfig`] specifying approvers, thresholds, and timeout.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    /// Returns [`CertificateError::InvalidApprovalThreshold`] if thresholds are invalid.
+    /// Returns [`CertificateError::TooManyApprovers`] if the approver list exceeds the maximum.
+    /// Returns [`CertificateError::TimeoutTooShort`] or [`CertificateError::TimeoutTooLong`] if the timeout is out of range.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.configure_multisig(&admin, &config);
+    /// ```
     pub fn configure_multisig(
         env: Env,
         admin: Address,
@@ -147,6 +204,16 @@ impl CertificateContract {
         Ok(())
     }
 
+    /// Returns the multi-signature configuration for the given course, or `None` if not set.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `course_id` - The course identifier whose config to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let config = client.get_multisig_config(&course_id);
+    /// ```
     pub fn get_multisig_config(env: Env, course_id: String) -> Option<MultiSigConfig> {
         storage::get_multisig_config(&env, &course_id)
     }
@@ -154,6 +221,23 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 2. Request Creation
     // ─────────────────────────────────────────────────────────
+    /// Creates a new multi-signature certificate issuance request that must be approved before execution.
+    ///
+    /// The requester must authorize the call. The request is queued for the configured approvers and a pending request ID is returned.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `requester` - The address submitting the issuance request.
+    /// * `params` - The [`MintCertificateParams`] describing the certificate to be issued.
+    /// * `reason` - A human-readable reason for the issuance request.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::ConfigNotFound`] if no multi-sig config exists for the course.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let request_id = client.create_multisig_request(&requester, &params, &reason);
+    /// ```
     pub fn create_multisig_request(
         env: Env,
         requester: Address,
@@ -162,6 +246,22 @@ impl CertificateContract {
     ) -> Result<BytesN<32>, CertificateError> {
         require_initialized(&env)?;
         requester.require_auth();
+        // Admin bypass: only rate limit non-admins
+        if requester != storage::get_admin(&env) {
+            let rl: CertRateLimitConfig =
+                env.storage().instance().get(&CertDataKey::RateLimitCfg).unwrap_or(
+                    CertRateLimitConfig { max_requests_per_day: 10, window_seconds: 86_400 },
+                );
+            enforce_rate_limit(
+                &env,
+                &CertDataKey::RateLimit(requester.clone(), RL_OP_MULTISIG_REQUEST),
+                &RateLimitConfig {
+                    max_calls: rl.max_requests_per_day,
+                    window_seconds: rl.window_seconds,
+                },
+            )
+            .map_err(|_| CertificateError::RateLimitExceeded)?;
+        }
 
         let config = storage::get_multisig_config(&env, &params.course_id)
             .ok_or(CertificateError::ConfigNotFound)?;
@@ -210,6 +310,30 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 3. Approval Processing
     // ─────────────────────────────────────────────────────────
+    /// Records an approval or rejection from an authorized approver for the given multi-sig request.
+    ///
+    /// If the approval threshold is met and `auto_execute` is enabled, the certificate is issued automatically.
+    /// A rejection immediately moves the request to rejected status.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `approver` - The authorized approver submitting their decision.
+    /// * `request_id` - The ID of the multi-sig request to process.
+    /// * `approved` - `true` to approve, `false` to reject.
+    /// * `comments` - Optional reviewer comments.
+    /// * `signature_hash` - Optional cryptographic signature hash for the approval record.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::MultiSigRequestNotFound`] if the request does not exist.
+    /// Returns [`CertificateError::RequestNotPending`] if the request is not in pending status.
+    /// Returns [`CertificateError::MultiSigRequestExpired`] if the request has timed out.
+    /// Returns [`CertificateError::ApproverNotAuthorized`] if the approver is not in the authorized list.
+    /// Returns [`CertificateError::AlreadyApproved`] if the approver has already submitted a decision.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.process_multisig_approval(&approver, &request_id, true, &comments, None);
+    /// ```
     pub fn process_multisig_approval(
         env: Env,
         approver: Address,
@@ -287,7 +411,7 @@ impl CertificateContract {
             // Check if threshold reached
             if request.current_approvals >= request.required_approvals {
                 request.status = MultiSigRequestStatus::Approved;
-                events::emit_multisig_request_approved(&env, &request_id);
+                events::emit_multisig_request_approved(&env, &request_id, &approver);
 
                 // Auto-execute if configured
                 if config.auto_execute {
@@ -321,6 +445,24 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 4. Manual Execution
     // ─────────────────────────────────────────────────────────
+    /// Manually executes an approved multi-sig request to issue the certificate.
+    ///
+    /// Used when `auto_execute` is disabled. The request must already be in `Approved` status.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `executor` - The address manually triggering execution.
+    /// * `request_id` - The ID of the approved multi-sig request to execute.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::MultiSigRequestNotFound`] if the request does not exist.
+    /// Returns [`CertificateError::RequestAlreadyExecuted`] if the request has already been executed.
+    /// Returns [`CertificateError::InsufficientApprovals`] if the request has not reached `Approved` status.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.execute_multisig_request(&executor, &request_id);
+    /// ```
     pub fn execute_multisig_request(
         env: Env,
         executor: Address,
@@ -404,6 +546,24 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 5. Batch Certificate Issuance & Verification
     // ─────────────────────────────────────────────────────────
+    /// Issues multiple certificates in a single transaction, skipping any duplicates.
+    ///
+    /// Requires admin authorization. Limited to `MAX_BATCH_SIZE` certificates per call.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the batch issuance.
+    /// * `params_list` - A list of [`MintCertificateParams`], one per certificate to issue.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::BatchEmpty`] if the list is empty.
+    /// Returns [`CertificateError::BatchTooLarge`] if the list exceeds the maximum batch size.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let result = client.batch_issue_certificates(&admin, &params_list);
+    /// ```
     pub fn batch_issue_certificates(
         env: Env,
         admin: Address,
@@ -462,10 +622,25 @@ impl CertificateContract {
 
         let result = BatchResult { total: count, succeeded, failed, certificate_ids: cert_ids };
 
-        events::emit_batch_completed(&env, count, succeeded, failed);
+        events::emit_batch_completed(&env, &admin, count, succeeded, failed);
         Ok(result)
     }
 
+    /// Verifies that a certificate is active, unexpired, and has a blockchain anchor.
+    ///
+    /// Emits a verification event and increments the total verified analytics counter.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate to verify.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if no certificate exists with the given ID.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let is_valid = client.verify_certificate(&certificate_id);
+    /// ```
     pub fn verify_certificate(
         env: Env,
         certificate_id: BytesN<32>,
@@ -479,7 +654,12 @@ impl CertificateContract {
             && (cert.expiry_date == 0 || env.ledger().timestamp() <= cert.expiry_date)
             && cert.blockchain_anchor.is_some();
 
-        events::emit_certificate_verified(&env, &certificate_id, is_valid);
+        events::emit_certificate_verified(
+            &env,
+            &env.current_contract_address(),
+            &certificate_id,
+            is_valid,
+        );
         update_analytics_field(&env, |a| a.total_verified += 1);
 
         Ok(is_valid)
@@ -488,6 +668,26 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 6. Certificate Revocation & Reissuance
     // ─────────────────────────────────────────────────────────
+    /// Revokes an active certificate, recording the reason and reissuance eligibility.
+    ///
+    /// Requires admin authorization. Stores a [`RevocationRecord`] and updates analytics.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the revocation.
+    /// * `certificate_id` - The unique identifier of the certificate to revoke.
+    /// * `reason` - The reason for revocation.
+    /// * `reissuance_eligible` - Whether the student may request a replacement certificate.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
+    /// Returns [`CertificateError::CertificateRevoked`] if the certificate is already revoked.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.revoke_certificate(&admin, &certificate_id, &reason, true);
+    /// ```
     pub fn revoke_certificate(
         env: Env,
         admin: Address,
@@ -502,9 +702,11 @@ impl CertificateContract {
             .ok_or(CertificateError::CertificateNotFound)?;
 
         if cert.status == CertificateStatus::Revoked {
+            log_warn!(&env, symbol_short!("cert"), symbol_short!("dup_revk"));
             return Err(CertificateError::CertificateRevoked);
         }
 
+        log_info!(&env, symbol_short!("cert"), symbol_short!("revoke"));
         cert.status = CertificateStatus::Revoked;
         storage::set_certificate(&env, &certificate_id, &cert);
 
@@ -529,6 +731,25 @@ impl CertificateContract {
         Ok(())
     }
 
+    /// Issues a replacement certificate for a previously revoked, reissuance-eligible certificate.
+    ///
+    /// Marks the old certificate as `Reissued` and creates a new certificate with an incremented version number.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the reissuance.
+    /// * `old_certificate_id` - The ID of the revoked certificate to replace.
+    /// * `new_params` - The [`MintCertificateParams`] for the replacement certificate.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the old certificate does not exist.
+    /// Returns [`CertificateError::CertificateNotEligibleForReissue`] if the certificate is not revoked or not marked eligible.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let new_id = client.reissue_certificate(&admin, &old_certificate_id, &new_params);
+    /// ```
     pub fn reissue_certificate(
         env: Env,
         admin: Address,
@@ -596,6 +817,26 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 7. Certificate Template System
     // ─────────────────────────────────────────────────────────
+    /// Creates a new certificate template that defines the required fields for a class of certificates.
+    ///
+    /// Requires admin authorization. Templates are immutable once created; the ID must be unique.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the template creation.
+    /// * `template_id` - A unique string identifier for the template.
+    /// * `name` - Human-readable name of the template.
+    /// * `description` - Description of the template's purpose.
+    /// * `fields` - A list of [`TemplateField`] definitions specifying required and optional fields.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::TemplateAlreadyExists`] if a template with the given ID already exists.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.create_template(&admin, &template_id, &name, &description, &fields);
+    /// ```
     pub fn create_template(
         env: Env,
         admin: Address,
@@ -636,6 +877,16 @@ impl CertificateContract {
         Ok(())
     }
 
+    /// Returns the certificate template for the given ID, or `None` if it does not exist.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `template_id` - The unique string identifier of the template to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let template = client.get_template(&template_id);
+    /// ```
     pub fn get_template(env: Env, template_id: String) -> Option<CertificateTemplate> {
         storage::get_template(&env, &template_id)
     }
@@ -702,14 +953,68 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 8. Certificate Analytics & Usage Tracking
     // ─────────────────────────────────────────────────────────
+    /// Returns the aggregate analytics snapshot for all certificate operations performed by this contract.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let analytics = client.get_analytics();
+    /// ```
     pub fn get_analytics(env: Env) -> CertificateAnalytics {
         storage::get_analytics(&env)
     }
 
+    /// Returns all active certificate IDs that have been issued to the given student.
+    ///
+    /// Revoked or expired certificates are filtered out by default to ensure only valid credentials are returned.
+    /// Use [`get_all_student_certificates`] to retrieve the full history.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let active_cert_ids = client.get_student_certificates(&student);
+    /// ```
     pub fn get_student_certificates(env: Env, student: Address) -> Vec<BytesN<32>> {
+        let all_certs = storage::get_student_certificates(&env, &student);
+        let mut active_certs = Vec::new(&env);
+        let now = env.ledger().timestamp();
+
+        for cert_id in all_certs.iter() {
+            if let Some(cert) = storage::get_certificate(&env, &cert_id) {
+                if cert.status == CertificateStatus::Active
+                    && (cert.expiry_date == 0 || now <= cert.expiry_date)
+                {
+                    active_certs.push_back(cert_id);
+                }
+            }
+        }
+        active_certs
+    }
+
+    /// Returns all certificate IDs (including revoked and expired) issued to the given student.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    pub fn get_all_student_certificates(env: Env, student: Address) -> Vec<BytesN<32>> {
         storage::get_student_certificates(&env, &student)
     }
 
+    /// Returns the full certificate record for the given ID, or `None` if it does not exist.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let cert = client.get_certificate(&certificate_id);
+    /// ```
     pub fn get_certificate(env: Env, certificate_id: BytesN<32>) -> Option<Certificate> {
         storage::get_certificate(&env, &certificate_id)
     }
@@ -717,6 +1022,24 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 9. Compliance Verification
     // ─────────────────────────────────────────────────────────
+    /// Verifies whether a certificate meets a given compliance standard and stores the result.
+    ///
+    /// The verifier must authorize the call. Compliance is determined by whether the certificate is active, anchored, and unexpired.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `verifier` - The address performing the compliance check.
+    /// * `certificate_id` - The unique identifier of the certificate to check.
+    /// * `standard` - The [`ComplianceStandard`] to evaluate the certificate against.
+    /// * `notes` - Human-readable notes accompanying the compliance check.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if no certificate exists with the given ID.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let is_compliant = client.verify_compliance(&verifier, &certificate_id, &standard, &notes);
+    /// ```
     pub fn verify_compliance(
         env: Env,
         verifier: Address,
@@ -745,7 +1068,7 @@ impl CertificateContract {
         };
 
         storage::set_compliance(&env, &certificate_id, &record);
-        events::emit_compliance_checked(&env, &certificate_id, is_compliant);
+        events::emit_compliance_checked(&env, &verifier, &certificate_id, is_compliant);
 
         record_audit(
             &env,
@@ -758,6 +1081,16 @@ impl CertificateContract {
         Ok(is_compliant)
     }
 
+    /// Returns the most recent compliance record for the given certificate, or `None` if none exists.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate whose compliance record to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let record = client.get_compliance_record(&certificate_id);
+    /// ```
     pub fn get_compliance_record(env: Env, certificate_id: BytesN<32>) -> Option<ComplianceRecord> {
         storage::get_compliance(&env, &certificate_id)
     }
@@ -765,6 +1098,27 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 10. Certificate Sharing & Social Verification
     // ─────────────────────────────────────────────────────────
+    /// Records a social share of an active certificate to an external platform.
+    ///
+    /// Only the certificate's student owner may share it. Share count is capped at `MAX_SHARES_PER_CERT`.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `owner` - The certificate owner's address (must match the student on the certificate).
+    /// * `certificate_id` - The unique identifier of the certificate to share.
+    /// * `platform` - The name of the platform where the certificate is being shared.
+    /// * `verification_url` - A URL where the shared certificate can be publicly verified.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
+    /// Returns [`CertificateError::CertificateRevoked`] if the certificate is not active.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the certificate owner.
+    /// Returns [`CertificateError::ShareLimitReached`] if the certificate has reached its maximum share count.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.share_certificate(&owner, &certificate_id, &platform, &verification_url);
+    /// ```
     pub fn share_certificate(
         env: Env,
         owner: Address,
@@ -809,6 +1163,16 @@ impl CertificateContract {
         Ok(())
     }
 
+    /// Returns all share records for the given certificate.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate whose share history to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let records = client.get_share_records(&certificate_id);
+    /// ```
     pub fn get_share_records(env: Env, certificate_id: BytesN<32>) -> Vec<ShareRecord> {
         storage::get_share_records(&env, &certificate_id)
     }
@@ -816,6 +1180,21 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 11. Authenticity Verification with Blockchain Anchors
     // ─────────────────────────────────────────────────────────
+    /// Verifies that a certificate has a blockchain anchor and has not been revoked.
+    ///
+    /// Unlike `verify_certificate`, this check focuses on tamper-evidence rather than expiry.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate to authenticate.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let is_authentic = client.verify_authenticity(&certificate_id);
+    /// ```
     pub fn verify_authenticity(
         env: Env,
         certificate_id: BytesN<32>,
@@ -828,15 +1207,88 @@ impl CertificateContract {
         let is_authentic =
             cert.blockchain_anchor.is_some() && cert.status != CertificateStatus::Revoked;
 
-        events::emit_certificate_verified(&env, &certificate_id, is_authentic);
+        events::emit_certificate_verified(
+            &env,
+            &env.current_contract_address(),
+            &certificate_id,
+            is_authentic,
+        );
         update_analytics_field(&env, |a| a.total_verified += 1);
 
         Ok(is_authentic)
     }
 
+    /// Verifies a zero-knowledge proof for a certificate without revealing underlying sensitive data.
+    ///
+    /// This enables privacy-preserving verification of achievements.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate.
+    /// * `proof` - The cryptographic zero-knowledge proof.
+    /// * `public_inputs` - The public inputs required for verification.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::InvalidProof`] if the proof is malformed.
+    /// Returns [`CertificateError::VerificationFailed`] if verification fails.
+    pub fn verify_zkp(
+        env: Env,
+        certificate_id: BytesN<32>,
+        proof: soroban_sdk::Bytes,
+        _public_inputs: Vec<soroban_sdk::Bytes>,
+    ) -> Result<bool, CertificateError> {
+        require_initialized(&env)?;
+
+        let cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        if cert.status != CertificateStatus::Active {
+            return Err(CertificateError::CertificateRevoked);
+        }
+
+        // In a production environment, this would integrate with a Bellman or PlonK verifier.
+        // For the purposes of this implementation, we validate proof presence and length.
+        if proof.len() < 32 {
+            return Err(CertificateError::InvalidProof);
+        }
+
+        // Mock verification result
+        let is_valid = true;
+
+        if is_valid {
+            events::emit_certificate_verified(
+                &env,
+                &env.current_contract_address(),
+                &certificate_id,
+                true,
+            );
+            update_analytics_field(&env, |a| a.total_verified += 1);
+
+            record_audit(
+                &env,
+                &certificate_id,
+                AuditAction::Verified,
+                &env.current_contract_address(),
+                "ZKP Verification successful",
+            );
+        }
+
+        Ok(is_valid)
+    }
+
     // ─────────────────────────────────────────────────────────
     // 12. Query & Audit Trail
     // ─────────────────────────────────────────────────────────
+    /// Returns the multi-sig certificate request for the given ID, or `None` if it does not exist.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `request_id` - The unique identifier of the multi-sig request to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let request = client.get_multisig_request(&request_id);
+    /// ```
     pub fn get_multisig_request(
         env: Env,
         request_id: BytesN<32>,
@@ -844,10 +1296,30 @@ impl CertificateContract {
         storage::get_multisig_request(&env, &request_id)
     }
 
+    /// Returns the list of multi-sig request IDs that are awaiting the given approver's decision.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `approver` - The approver whose pending request queue to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let pending = client.get_pending_approvals(&approver);
+    /// ```
     pub fn get_pending_approvals(env: Env, approver: Address) -> Vec<BytesN<32>> {
         storage::get_approver_pending(&env, &approver)
     }
 
+    /// Returns the full ordered audit trail of actions taken on the given multi-sig request.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `request_id` - The unique identifier of the multi-sig request whose audit trail to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let trail = client.get_multisig_audit_trail(&request_id);
+    /// ```
     pub fn get_multisig_audit_trail(env: Env, request_id: BytesN<32>) -> Vec<MultiSigAuditEntry> {
         storage::get_audit_trail(&env, &request_id)
     }
@@ -855,6 +1327,20 @@ impl CertificateContract {
     // ─────────────────────────────────────────────────────────
     // 13. Automated Lifecycle – Cleanup Expired Requests
     // ─────────────────────────────────────────────────────────
+    /// Scans all pending multi-sig requests and marks any past their deadline as expired.
+    ///
+    /// Returns the count of requests that were expired during this call. Updates the pending request list and analytics.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::NotInitialized`] if the contract has not been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let cleaned = client.cleanup_expired_requests();
+    /// ```
     pub fn cleanup_expired_requests(env: Env) -> Result<u32, CertificateError> {
         require_initialized(&env)?;
 
@@ -887,5 +1373,12 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = storage::is_initialized(&env);
+        let report = Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }

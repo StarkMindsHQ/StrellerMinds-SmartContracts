@@ -240,10 +240,11 @@ impl AccessControlEvents {
 
     /// Emits event when a template is created
     pub fn emit_template_created(env: &Env, admin: &Address, template_id: &Symbol) {
-        let event_data = AccessControlEventData::TemplateCreated(TemplateCreatedEvent {
-            admin: admin.clone(),
-            template_id: template_id.clone(),
-        });
+        let event_data =
+            AccessControlEventData::TemplateCreated(AccessControlTemplateCreatedEvent {
+                admin: admin.clone(),
+                template_id: template_id.clone(),
+            });
         StandardEvent::new(
             env,
             Symbol::new(env, "access_control"),

@@ -1,7 +1,13 @@
 #![no_std]
 #![allow(dead_code)]
 
-use soroban_sdk::{contract, contracterror, contractimpl, Address, Env, String, Vec};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::validation::{CoreValidator, ValidationConfig};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
+
+pub mod errors;
+
+pub use errors::{Error, SearchError};
 
 mod collaborative_filter;
 mod content_analyzer;
@@ -30,22 +36,6 @@ use voice_search::VoiceSearch;
 // Import SearchAnalytics from module, not from types to avoid shadow warning
 use search_analytics::SearchAnalytics as AnalyticsModule;
 pub use types::*;
-
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Error {
-    AlreadyInitialized = 1,
-    NotInitialized = 2,
-    Unauthorized = 3,
-    InvalidQuery = 4,
-    ContentNotFound = 5,
-    InvalidMetadata = 6,
-    InvalidScore = 7,
-    SessionExpired = 8,
-    InvalidLanguage = 9,
-    OracleNotAuthorized = 10,
-}
 
 #[contract]
 pub struct AdvancedSearchContract;
@@ -115,6 +105,8 @@ impl AdvancedSearchContract {
     ) -> Result<Vec<Recommendation>, Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(RecommendationEngine::generate_recommendations(&env, user, limit))
     }
@@ -250,6 +242,10 @@ impl AdvancedSearchContract {
         limit: u32,
     ) -> Result<Vec<String>, Error> {
         Self::require_initialized(&env)?;
+        CoreValidator::validate_range(min_score, "min_score", 0, ValidationConfig::MAX_PROGRESS)
+            .map_err(|_| Error::InvalidQuery)?;
+        CoreValidator::validate_range(limit, "limit", 1, ValidationConfig::MAX_QUERY_LIMIT)
+            .map_err(|_| Error::InvalidQuery)?;
 
         Ok(VisualSearch::find_visually_similar(&env, content_id, min_score, limit))
     }
@@ -301,6 +297,13 @@ impl AdvancedSearchContract {
     ) -> Result<(), Error> {
         Self::require_initialized(&env)?;
         user.require_auth();
+        CoreValidator::validate_range(
+            completion_score,
+            "completion_score",
+            0,
+            ValidationConfig::MAX_PROGRESS,
+        )
+        .map_err(|_| Error::InvalidQuery)?;
 
         LearningPathOptimizer::complete_step(&env, user, step_id, completion_score);
         Ok(())
@@ -410,6 +413,52 @@ impl AdvancedSearchContract {
         Ok(())
     }
 
+    /// Save search filters for later use
+    pub fn save_search(
+        env: Env,
+        user: Address,
+        name: String,
+        query: SearchQuery,
+    ) -> Result<String, Error> {
+        Self::require_initialized(&env)?;
+        user.require_auth();
+
+        let search_id = String::from_str(&env, "saved_"); // Simplified ID generation
+        let now = env.ledger().timestamp();
+
+        let saved = SavedSearch {
+            search_id: search_id.clone(),
+            user_id: user.clone(),
+            name,
+            description: String::from_str(&env, ""),
+            query,
+            created_at: now,
+            last_used: now,
+            use_count: 0,
+            is_favorite: false,
+            notification_enabled: false,
+            auto_execute: false,
+            execution_frequency: MaybeExecutionFrequency::None,
+        };
+
+        let key = DataKey::SavedSearches(user);
+        let mut list: Vec<SavedSearch> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(&env));
+        list.push_back(saved);
+        env.storage().persistent().set(&key, &list);
+
+        Ok(search_id)
+    }
+
+    /// Get all saved searches for a user
+    pub fn get_saved_searches(env: Env, user: Address) -> Result<Vec<SavedSearch>, Error> {
+        Self::require_initialized(&env)?;
+        user.require_auth();
+
+        let key = DataKey::SavedSearches(user);
+        Ok(env.storage().persistent().get(&key).unwrap_or(Vec::new(&env)))
+    }
+
     /// Get click-through rate
     pub fn get_ctr(env: Env, query: String, content_id: String) -> Result<u32, Error> {
         Self::require_initialized(&env)?;
@@ -489,6 +538,15 @@ impl AdvancedSearchContract {
         env.storage().persistent().remove(&key);
 
         Ok(())
+    }
+
+    // ==================== Health Check ====================
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Initialized);
+        let report = Monitor::build_health_report(&env, symbol_short!("search"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 
     // ==================== Helper Functions ====================

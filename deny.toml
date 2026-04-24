@@ -1,0 +1,50 @@
+# cargo-deny configuration
+# See: https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "warn"
+ignore = [
+    "RUSTSEC-2024-0388",
+    "RUSTSEC-2024-0436",
+    "RUSTSEC-2025-0057",
+    "RUSTSEC-2025-0119",
+    "RUSTSEC-2025-0134",
+    # time: DoS via stack exhaustion — transitive dep via serde_with, pinned by soroban-sdk 22.0.0
+    "RUSTSEC-2026-0009",
+    # libcrux-poly1305: CVSS 4.0 parsing error in older cargo-deny versions
+    "RUSTSEC-2026-0073",
+]
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "CC0-1.0",
+    "MPL-2.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+highlight = "all"
+
+# Crates that must never be included
+deny = [
+    { name = "openssl", reason = "Use rustls instead for WASM compatibility" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

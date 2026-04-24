@@ -125,9 +125,7 @@ impl BenchmarkEngine {
         let timestamp = env.ledger().timestamp();
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
         data[8] = 0xBE; // Benchmark identifier
         BytesN::from_array(env, &data)
     }
@@ -224,7 +222,12 @@ impl BenchmarkEngine {
             return 0;
         }
 
-        results.iter().map(|r| r.performance_score).sum::<u32>() / results.len()
+        results
+            .iter()
+            .map(|r| r.performance_score)
+            .sum::<u32>()
+            .checked_div(results.len())
+            .unwrap_or(0)
     }
 
     fn compare_with_baseline(

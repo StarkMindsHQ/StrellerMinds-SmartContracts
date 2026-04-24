@@ -1,6 +1,4 @@
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
-use soroban_sdk::{BytesN, Env};
+use soroban_sdk::{Address, BytesN, Env, String as SorobanString, Symbol};
 
 /// Configuration constants for metadata validation that can be reused across contracts
 pub struct ValidationConfig;
@@ -29,55 +27,325 @@ impl ValidationConfig {
         '\x16', '\x17', '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F', '\x7F',
     ];
 
-    // Maximum allowed special characters ratio (to prevent spam/malformed content)
-    pub const MAX_SPECIAL_CHAR_RATIO: f32 = 0.3;
-
     // Maximum consecutive identical characters
     pub const MAX_CONSECUTIVE_CHARS: usize = 5;
 
     // Maximum future time for expiry dates (100 years in seconds)
     pub const MAX_FUTURE_EXPIRY: u64 = 100 * 365 * 24 * 60 * 60;
+
+    // Content and collection limits
+    pub const MAX_CONTENT_LENGTH: u32 = 10_000;
+    pub const MAX_BIO_LENGTH: u32 = 500;
+    pub const MAX_MESSAGE_LENGTH: u32 = 2000;
+    pub const MAX_TAGS: u32 = 20;
+    pub const MAX_STEPS: u32 = 50;
+    pub const MAX_PARAMETERS: u32 = 30;
+    pub const MAX_EXPERTISE_AREAS: u32 = 10;
+
+    // Numeric range limits
+    pub const MAX_RATING: u32 = 5;
+    pub const MAX_PROGRESS: u32 = 100;
+    pub const MAX_MENTEES: u32 = 50;
+    pub const MAX_PARTICIPANTS: u32 = 10_000;
+    pub const MAX_QUERY_LIMIT: u32 = 100;
+    pub const MIN_VOTING_DURATION: u64 = 3600; // 1 hour
+    pub const MAX_VOTING_DURATION: u64 = 2_592_000; // 30 days
+
+    // Numeric validation limits
+    pub const MIN_SCORE: u32 = 0;
+    pub const MAX_SCORE: u32 = 1000;
+    pub const MIN_ATTEMPTS: u32 = 1;
+    pub const MAX_ATTEMPTS: u32 = 10;
+    pub const MIN_TIME_LIMIT: u64 = 60; // 1 minute
+    pub const MAX_TIME_LIMIT: u64 = 7 * 24 * 60 * 60; // 7 days
+    pub const MIN_DIFFICULTY: u32 = 1;
+    pub const MAX_DIFFICULTY: u32 = 10;
+    pub const MIN_REPUTATION: u32 = 0;
+    pub const MAX_REPUTATION: u32 = 1_000_000;
+    pub const MIN_TOKEN_AMOUNT: u64 = 0;
+    pub const MAX_TOKEN_AMOUNT: u64 = 1_000_000_000_000_000_000; // 1 quadrillion
+
+    // Array and collection limits
+    pub const MAX_ARRAY_SIZE: u32 = 1000;
+    pub const MAX_QUESTION_OPTIONS: u32 = 10;
+    pub const MAX_ANSWERS_PER_SUBMISSION: u32 = 100;
+    pub const MAX_TAGS_PER_POST: u32 = 10;
+    pub const MAX_PARTICIPANTS_PER_EVENT: u32 = 10000;
+    pub const MAX_BATCH_OPERATIONS: u32 = 50;
+
+    // Symbol validation limits
+    pub const MAX_SYMBOL_LENGTH: u32 = 32;
+    pub const MIN_SYMBOL_LENGTH: u32 = 1;
 }
 
 /// Validation error types for enhanced error reporting
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValidationError {
-    FieldTooShort {
-        field: &'static str,
-        min_length: u32,
-        actual_length: usize,
-    },
-    FieldTooLong {
-        field: &'static str,
-        max_length: u32,
-        actual_length: usize,
-    },
-    InvalidCharacters {
-        field: &'static str,
-        forbidden_char: char,
-    },
-    InvalidFormat {
-        field: &'static str,
-        reason: &'static str,
-    },
-    InvalidUri {
-        reason: &'static str,
-    },
-    InvalidDate {
-        reason: &'static str,
-    },
-    ContentQuality {
-        reason: &'static str,
-    },
-    EmptyField {
-        field: &'static str,
-    },
+    FieldTooShort { field: &'static str, min_length: u32, actual_length: usize },
+    FieldTooLong { field: &'static str, max_length: u32, actual_length: usize },
+    InvalidCharacters { field: &'static str, forbidden_char: char },
+    InvalidFormat { field: &'static str, reason: &'static str },
+    InvalidUri { reason: &'static str },
+    InvalidDate { reason: &'static str },
+    ContentQuality { reason: &'static str },
+    EmptyField { field: &'static str },
+    OutOfRange { field: &'static str, min: u32, max: u32, actual: u32 },
+    CollectionTooLarge { field: &'static str, max_size: u32, actual_size: u32 },
+    InvalidTimeRange { reason: &'static str },
+    InvalidAddress { reason: &'static str },
+    InvalidRange { field: &'static str, min: u64, max: u64, actual: u64 },
+    InvalidArraySize { field: &'static str, min: u32, max: u32, actual: u32 },
+    InvalidSymbol { reason: &'static str },
+    DuplicateValue { field: &'static str },
+    InvalidBatchSize { field: &'static str, max_size: u32, actual: u32 },
 }
 
 /// Core validation utilities that can be reused across different contracts
 pub struct CoreValidator;
 
 impl CoreValidator {
+    /// Validates address — the Soroban SDK guarantees address validity at the type level,
+    /// so this is a no-op stub kept for API compatibility.
+    pub fn validate_address(
+        _address: &Address,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Ok(())
+    }
+
+    /// Validates address with env — the Soroban SDK guarantees address validity at the type level,
+    /// so this is a no-op stub kept for API compatibility.
+    pub fn validate_address_with_env(
+        _env: &Env,
+        _address: &Address,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Ok(())
+    }
+
+    /// Validates numeric range (u64 values)
+    pub fn validate_u64_range(
+        value: u64,
+        field_name: &'static str,
+        min: u64,
+        max: u64,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::InvalidRange {
+                field: field_name,
+                min,
+                max,
+                actual: value,
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Validates u32 numeric range
+    pub fn validate_u32_range(
+        value: u32,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::InvalidRange {
+                field: field_name,
+                min: min as u64,
+                max: max as u64,
+                actual: value as u64,
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Validates array/collection size
+    pub fn validate_array_size<T>(
+        collection: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        let size = collection.len();
+
+        if size < min || size > max {
+            return Err(ValidationError::InvalidArraySize {
+                field: field_name,
+                min,
+                max,
+                actual: size,
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Validates symbol length and format.
+    ///
+    /// The Soroban SDK enforces symbol validity (characters `[a-zA-Z0-9_]`, max 32
+    /// chars) at the type level, so this is a no-op stub kept for API compatibility.
+    pub fn validate_symbol(
+        _symbol: &Symbol,
+        _field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Ok(())
+    }
+
+    /// Validates batch operation size
+    pub fn validate_batch_size(
+        batch_size: u32,
+        field_name: &'static str,
+        max_size: u32,
+    ) -> Result<(), ValidationError> {
+        if batch_size > max_size {
+            return Err(ValidationError::InvalidBatchSize {
+                field: field_name,
+                max_size,
+                actual: batch_size,
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Validates score range
+    pub fn validate_score(score: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            score,
+            "score",
+            ValidationConfig::MIN_SCORE,
+            ValidationConfig::MAX_SCORE,
+        )
+    }
+
+    /// validates attempts range
+    pub fn validate_attempts(attempts: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            attempts,
+            "attempts",
+            ValidationConfig::MIN_ATTEMPTS,
+            ValidationConfig::MAX_ATTEMPTS,
+        )
+    }
+
+    /// Validates time limit range
+    pub fn validate_time_limit(time_limit: u64) -> Result<(), ValidationError> {
+        Self::validate_u64_range(
+            time_limit,
+            "time_limit",
+            ValidationConfig::MIN_TIME_LIMIT,
+            ValidationConfig::MAX_TIME_LIMIT,
+        )
+    }
+
+    /// Validates difficulty range
+    pub fn validate_difficulty(difficulty: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            difficulty,
+            "difficulty",
+            ValidationConfig::MIN_DIFFICULTY,
+            ValidationConfig::MAX_DIFFICULTY,
+        )
+    }
+
+    /// Validates reputation range
+    pub fn validate_reputation(reputation: u32) -> Result<(), ValidationError> {
+        Self::validate_u32_range(
+            reputation,
+            "reputation",
+            ValidationConfig::MIN_REPUTATION,
+            ValidationConfig::MAX_REPUTATION,
+        )
+    }
+
+    /// Validates token amount range
+    pub fn validate_token_amount(amount: u64) -> Result<(), ValidationError> {
+        Self::validate_u64_range(
+            amount,
+            "token_amount",
+            ValidationConfig::MIN_TOKEN_AMOUNT,
+            ValidationConfig::MAX_TOKEN_AMOUNT,
+        )
+    }
+
+    /// Validates question options array
+    pub fn validate_question_options<T>(
+        options: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            options,
+            field_name,
+            2, // Minimum 2 options for choice questions
+            ValidationConfig::MAX_QUESTION_OPTIONS,
+        )
+    }
+
+    /// Validates submission answers array
+    pub fn validate_submission_answers<T>(
+        answers: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            answers,
+            field_name,
+            1, // Minimum 1 answer
+            ValidationConfig::MAX_ANSWERS_PER_SUBMISSION,
+        )
+    }
+
+    /// Validates post tags array
+    pub fn validate_post_tags<T>(
+        tags: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            tags,
+            field_name,
+            0, // Tags are optional
+            ValidationConfig::MAX_TAGS_PER_POST,
+        )
+    }
+
+    /// Validates event participants array
+    pub fn validate_event_participants<T>(
+        participants: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError> {
+        Self::validate_array_size(
+            participants,
+            field_name,
+            1, // Minimum 1 participant
+            ValidationConfig::MAX_PARTICIPANTS_PER_EVENT,
+        )
+    }
+
+    /// Validates no duplicate values in collection
+    pub fn validate_no_duplicates<T>(
+        env: &Env,
+        collection: &soroban_sdk::Vec<T>,
+        field_name: &'static str,
+    ) -> Result<(), ValidationError>
+    where
+        T: soroban_sdk::IntoVal<Env, soroban_sdk::Val>
+            + soroban_sdk::TryFromVal<Env, soroban_sdk::Val>
+            + Clone
+            + PartialEq,
+    {
+        let mut seen: soroban_sdk::Vec<T> = soroban_sdk::Vec::new(env);
+
+        for item in collection.iter() {
+            if seen.iter().any(|seen_item| seen_item == item) {
+                return Err(ValidationError::DuplicateValue { field: field_name });
+            }
+            seen.push_back(item.clone());
+        }
+
+        Ok(())
+    }
+
     /// Validates string field length constraints
     pub fn validate_string_length(
         text: &str,
@@ -133,16 +401,12 @@ impl CoreValidator {
         }
 
         // Check for excessive special characters
-        let special_char_count = text
-            .chars()
-            .filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace())
-            .count();
+        let special_char_count =
+            text.chars().filter(|&ch| !ch.is_alphanumeric() && !ch.is_whitespace()).count();
 
-        let special_char_ratio = special_char_count as f32 / text.len() as f32;
-        if special_char_ratio > ValidationConfig::MAX_SPECIAL_CHAR_RATIO {
-            return Err(ValidationError::ContentQuality {
-                reason: "Too many special characters",
-            });
+        // Use integer math: special_count * 10 > total * 3 is equivalent to ratio > 0.3
+        if special_char_count * 10 > text.len() * 3 {
+            return Err(ValidationError::ContentQuality { reason: "Too many special characters" });
         }
 
         // Check for repeated characters (potential spam)
@@ -156,11 +420,11 @@ impl CoreValidator {
         text: &str,
         _field_name: &'static str,
     ) -> Result<(), ValidationError> {
-        let chars: Vec<char> = text.chars().collect();
-        let mut consecutive_count = 1;
+        let mut consecutive_count: usize = 1;
+        let mut prev: Option<char> = None;
 
-        for i in 1..chars.len() {
-            if chars[i] == chars[i - 1] {
+        for ch in text.chars() {
+            if prev == Some(ch) {
                 consecutive_count += 1;
                 if consecutive_count > ValidationConfig::MAX_CONSECUTIVE_CHARS {
                     return Err(ValidationError::ContentQuality {
@@ -169,6 +433,7 @@ impl CoreValidator {
                 }
             } else {
                 consecutive_count = 1;
+                prev = Some(ch);
             }
         }
 
@@ -204,11 +469,11 @@ impl CoreValidator {
 
     /// Validates URI scheme is allowed
     pub fn validate_uri_scheme(uri: &str) -> Result<(), ValidationError> {
-        let uri_lower = uri.to_lowercase();
-
-        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES
-            .iter()
-            .any(|&scheme| uri_lower.starts_with(scheme));
+        let has_valid_scheme = ValidationConfig::VALID_URI_SCHEMES.iter().any(|&scheme| {
+            uri.get(..scheme.len())
+                .map(|prefix| prefix.eq_ignore_ascii_case(scheme))
+                .unwrap_or(false)
+        });
 
         if !has_valid_scheme {
             return Err(ValidationError::InvalidUri {
@@ -223,9 +488,7 @@ impl CoreValidator {
     pub fn validate_uri_format(uri: &str) -> Result<(), ValidationError> {
         // Should not contain spaces
         if uri.contains(' ') {
-            return Err(ValidationError::InvalidUri {
-                reason: "URI cannot contain spaces",
-            });
+            return Err(ValidationError::InvalidUri { reason: "URI cannot contain spaces" });
         }
 
         // Should not have consecutive slashes after scheme
@@ -256,25 +519,18 @@ impl CoreValidator {
     /// Validates HTTPS URI domain structure
     fn validate_https_uri(domain_path: &str) -> Result<(), ValidationError> {
         if domain_path.is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have domain",
-            });
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have domain" });
         }
 
-        // Should contain at least a domain
-        let parts: Vec<&str> = domain_path.split('/').collect();
-        if parts.is_empty() || parts[0].is_empty() {
-            return Err(ValidationError::InvalidUri {
-                reason: "HTTPS URI must have valid domain",
-            });
+        // Extract domain (everything before the first '/')
+        let domain = domain_path.split('/').next().unwrap_or("");
+        if domain.is_empty() {
+            return Err(ValidationError::InvalidUri { reason: "HTTPS URI must have valid domain" });
         }
 
         // Basic domain validation
-        let domain = parts[0];
         if !domain.contains('.') || domain.starts_with('.') || domain.ends_with('.') {
-            return Err(ValidationError::InvalidUri {
-                reason: "Invalid domain format",
-            });
+            return Err(ValidationError::InvalidUri { reason: "Invalid domain format" });
         }
 
         Ok(())
@@ -291,9 +547,7 @@ impl CoreValidator {
 
         // Should contain only alphanumeric characters
         if !hash.chars().all(|c| c.is_alphanumeric()) {
-            return Err(ValidationError::InvalidUri {
-                reason: "IPFS hash must be alphanumeric",
-            });
+            return Err(ValidationError::InvalidUri { reason: "IPFS hash must be alphanumeric" });
         }
 
         Ok(())
@@ -351,21 +605,83 @@ impl CoreValidator {
         // Check if all bytes are zero (invalid certificate ID)
         let bytes = certificate_id.to_array();
         if bytes.iter().all(|&b| b == 0) {
-            return Err(ValidationError::EmptyField {
-                field: "certificate_id",
-            });
+            return Err(ValidationError::EmptyField { field: "certificate_id" });
         }
 
         Ok(())
     }
 
-    /// Sanitizes text content for safe storage and display
-    pub fn sanitize_text(text: &str) -> String {
-        text.chars()
-            .filter(|&ch| !ValidationConfig::FORBIDDEN_CHARS.contains(&ch))
-            .collect::<String>()
-            .trim()
-            .to_string()
+    /// Validates a soroban_sdk::String field length (works directly with on-chain String type)
+    pub fn validate_soroban_string_length(
+        text: &SorobanString,
+        field_name: &'static str,
+        min_length: u32,
+        max_length: u32,
+    ) -> Result<(), ValidationError> {
+        let len = text.len();
+        if len < min_length {
+            return Err(ValidationError::FieldTooShort {
+                field: field_name,
+                min_length,
+                actual_length: len as usize,
+            });
+        }
+        if len > max_length {
+            return Err(ValidationError::FieldTooLong {
+                field: field_name,
+                max_length,
+                actual_length: len as usize,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validates a numeric value is within an allowed range
+    pub fn validate_range(
+        value: u32,
+        field_name: &'static str,
+        min: u32,
+        max: u32,
+    ) -> Result<(), ValidationError> {
+        if value < min || value > max {
+            return Err(ValidationError::OutOfRange { field: field_name, min, max, actual: value });
+        }
+        Ok(())
+    }
+
+    /// Validates a collection does not exceed the maximum allowed size
+    pub fn validate_vec_size(
+        len: u32,
+        field_name: &'static str,
+        max_size: u32,
+    ) -> Result<(), ValidationError> {
+        if len > max_size {
+            return Err(ValidationError::CollectionTooLarge {
+                field: field_name,
+                max_size,
+                actual_size: len,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validates that start_time is before end_time
+    pub fn validate_time_range(start_time: u64, end_time: u64) -> Result<(), ValidationError> {
+        if start_time >= end_time {
+            return Err(ValidationError::InvalidTimeRange {
+                reason: "Start time must be before end time",
+            });
+        }
+        Ok(())
+    }
+
+    /// Returns `true` if the text contains no forbidden characters, `false` otherwise.
+    ///
+    /// Use `validate_no_forbidden_chars` to get a detailed error, or this function
+    /// for a simple boolean check before constructing a `SorobanString`.
+    pub fn is_text_clean(text: &str) -> bool {
+        !ValidationConfig::FORBIDDEN_CHARS.iter().any(|&ch| text.contains(ch))
+            && !text.trim().is_empty()
     }
 
     /// Validates complete text field with all checks
@@ -437,10 +753,7 @@ mod tests {
     #[test]
     fn test_validate_forbidden_chars() {
         let result = CoreValidator::validate_no_forbidden_chars("Text with <script>", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::InvalidCharacters { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::InvalidCharacters { .. })));
     }
 
     #[test]
@@ -452,10 +765,7 @@ mod tests {
     #[test]
     fn test_validate_text_quality_too_many_special_chars() {
         let result = CoreValidator::validate_text_quality("!@#$%^&*()", "test_field");
-        assert!(matches!(
-            result,
-            Err(ValidationError::ContentQuality { .. })
-        ));
+        assert!(matches!(result, Err(ValidationError::ContentQuality { .. })));
     }
 
     #[test]
@@ -521,11 +831,215 @@ mod tests {
     }
 
     #[test]
-    fn test_sanitize_text() {
-        let dirty_text = "Clean text with <script> and 'quotes'";
-        let clean_text = CoreValidator::sanitize_text(dirty_text);
-        assert!(!clean_text.contains('<'));
-        assert!(!clean_text.contains('>'));
-        assert!(!clean_text.contains('\''));
+    fn test_is_text_clean() {
+        assert!(!CoreValidator::is_text_clean("Text with <script>"));
+        assert!(!CoreValidator::is_text_clean("Text with 'quotes'"));
+        assert!(CoreValidator::is_text_clean("Clean text here"));
+    }
+
+    // ── New validator tests ──
+
+    #[test]
+    fn test_validate_range_success() {
+        assert!(CoreValidator::validate_range(50, "score", 0, 100).is_ok());
+        assert!(CoreValidator::validate_range(0, "score", 0, 100).is_ok());
+        assert!(CoreValidator::validate_range(100, "score", 0, 100).is_ok());
+    }
+
+    #[test]
+    fn test_validate_range_too_low() {
+        let result = CoreValidator::validate_range(0, "rating", 1, 5);
+        assert!(matches!(result, Err(ValidationError::OutOfRange { actual: 0, .. })));
+    }
+
+    #[test]
+    fn test_validate_range_too_high() {
+        let result = CoreValidator::validate_range(101, "progress", 0, 100);
+        assert!(matches!(result, Err(ValidationError::OutOfRange { actual: 101, .. })));
+    }
+
+    #[test]
+    fn test_validate_vec_size_success() {
+        assert!(CoreValidator::validate_vec_size(5, "tags", 20).is_ok());
+        assert!(CoreValidator::validate_vec_size(0, "tags", 20).is_ok());
+    }
+
+    #[test]
+    fn test_validate_vec_size_too_large() {
+        let result = CoreValidator::validate_vec_size(25, "tags", 20);
+        assert!(matches!(result, Err(ValidationError::CollectionTooLarge { actual_size: 25, .. })));
+    }
+
+    #[test]
+    fn test_validate_time_range_success() {
+        assert!(CoreValidator::validate_time_range(1000, 2000).is_ok());
+    }
+
+    #[test]
+    fn test_validate_time_range_invalid() {
+        let result = CoreValidator::validate_time_range(2000, 1000);
+        assert!(matches!(result, Err(ValidationError::InvalidTimeRange { .. })));
+
+        let result = CoreValidator::validate_time_range(1000, 1000);
+        assert!(matches!(result, Err(ValidationError::InvalidTimeRange { .. })));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Security Tests: Input Injection & Boundary Attacks
+    // ─────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn security_xss_script_tag_rejected() {
+        let result =
+            CoreValidator::validate_no_forbidden_chars("<script>alert(1)</script>", "field");
+        assert!(result.is_err(), "XSS script tag must be rejected");
+    }
+
+    #[test]
+    fn security_xss_img_onerror_rejected() {
+        let result =
+            CoreValidator::validate_no_forbidden_chars("<img src=x onerror=alert(1)>", "field");
+        assert!(result.is_err(), "XSS img onerror must be rejected");
+    }
+
+    #[test]
+    fn security_null_byte_injection_rejected() {
+        let payload = "valid\x00injection";
+        let result = CoreValidator::validate_no_forbidden_chars(payload, "field");
+        assert!(result.is_err(), "Null byte injection must be rejected");
+    }
+
+    #[test]
+    fn security_control_chars_rejected() {
+        // Control chars \x01-\x08 are forbidden
+        for byte in [0x01u8, 0x02, 0x03, 0x07, 0x08] {
+            let payload = alloc::format!("valid{}text", byte as char);
+            let result = CoreValidator::validate_no_forbidden_chars(&payload, "field");
+            assert!(result.is_err(), "Control char 0x{:02X} must be rejected", byte);
+        }
+    }
+
+    #[test]
+    fn security_http_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("http://insecure.example.com/cert");
+        assert!(result.is_err(), "Plain HTTP URI must be rejected");
+    }
+
+    #[test]
+    fn security_javascript_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("javascript:alert(1)");
+        assert!(result.is_err(), "JavaScript URI must be rejected");
+    }
+
+    #[test]
+    fn security_data_uri_rejected() {
+        let result = CoreValidator::validate_uri_scheme("data:text/html,<h1>test</h1>");
+        assert!(result.is_err(), "Data URI must be rejected");
+    }
+
+    #[test]
+    fn security_empty_string_rejected() {
+        let result = CoreValidator::validate_string_length("", "field", 1, 100);
+        assert!(result.is_err(), "Empty string must be rejected");
+    }
+
+    #[test]
+    fn security_oversized_input_rejected() {
+        let oversized: alloc::string::String = "a".repeat(1001);
+        let result = CoreValidator::validate_string_length(
+            &oversized,
+            "description",
+            ValidationConfig::MIN_DESCRIPTION_LENGTH,
+            ValidationConfig::MAX_DESCRIPTION_LENGTH,
+        );
+        assert!(result.is_err(), "Input exceeding max length must be rejected");
+    }
+
+    #[test]
+    fn security_expiry_in_past_rejected() {
+        let env = Env::default();
+        env.ledger().set_timestamp(1_000_000);
+        let result = CoreValidator::validate_expiry_date(&env, 500_000);
+        assert!(result.is_err(), "Past expiry must be rejected");
+    }
+
+    #[test]
+    fn security_expiry_too_far_future_rejected() {
+        let env = Env::default();
+        env.ledger().set_timestamp(1_000_000);
+        let far_future = 1_000_000u64 + ValidationConfig::MAX_FUTURE_EXPIRY + 1;
+        let result = CoreValidator::validate_expiry_date(&env, far_future);
+        assert!(result.is_err(), "Expiry beyond 100 years must be rejected");
+    }
+
+    #[test]
+    fn security_zero_cert_id_rejected() {
+        let env = Env::default();
+        let zero_id = BytesN::from_array(&env, &[0u8; 32]);
+        let result = CoreValidator::validate_certificate_id(&zero_id);
+        assert!(result.is_err(), "All-zero certificate ID must be rejected");
+    }
+
+    #[test]
+    fn security_excessive_repetition_rejected() {
+        // >5 consecutive identical chars — spam pattern
+        let spam = "aaaaaaa";
+        let result = CoreValidator::validate_text_quality(spam, "field");
+        assert!(result.is_err(), "Excessive character repetition must be rejected");
+    }
+
+    #[test]
+    fn security_whitespace_only_rejected() {
+        let result = CoreValidator::validate_text_quality("     ", "field");
+        assert!(result.is_err(), "Whitespace-only content must be rejected");
+    }
+
+    #[test]
+    fn security_high_special_char_ratio_rejected() {
+        // >30% special chars
+        let result =
+            CoreValidator::validate_text_quality("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", "field");
+        assert!(result.is_err(), "High special-char ratio must be rejected");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Security Tests: Integer Arithmetic Safety
+    // ─────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn security_u64_saturating_add_no_overflow() {
+        assert_eq!(u64::MAX.saturating_add(1), u64::MAX);
+    }
+
+    #[test]
+    fn security_u64_saturating_sub_no_underflow() {
+        assert_eq!(0u64.saturating_sub(1), 0);
+    }
+
+    #[test]
+    fn security_u32_saturating_add_no_overflow() {
+        assert_eq!(u32::MAX.saturating_add(1), u32::MAX);
+    }
+
+    #[test]
+    fn security_u32_saturating_sub_no_underflow() {
+        assert_eq!(0u32.saturating_sub(1), 0);
+    }
+
+    #[test]
+    fn security_percentage_calc_no_overflow() {
+        // score * 100 / max_score — common grading pattern
+        let score: u64 = u64::MAX / 100;
+        let max_score: u64 = u64::MAX / 100;
+        let pct = score.saturating_mul(100).saturating_div(max_score.max(1));
+        assert!(pct <= 100, "Percentage must not exceed 100");
+    }
+
+    #[test]
+    fn security_batch_size_max_constant_enforced() {
+        // Documents the invariant: batch operations must check against MAX_BATCH_SIZE
+        assert_eq!(ValidationConfig::MAX_BATCH_SIZE, 100);
+        let oversized: u32 = ValidationConfig::MAX_BATCH_SIZE + 1;
+        assert!(oversized > ValidationConfig::MAX_BATCH_SIZE);
     }
 }

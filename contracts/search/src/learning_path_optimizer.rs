@@ -191,14 +191,9 @@ impl LearningPathOptimizer {
                 }
             }
 
-            if count > 0 {
-                total_completion / count
-            } else {
-                0
-            }
-        } else {
-            0
+            return total_completion.checked_div(count).unwrap_or(0);
         }
+        0
     }
 
     /// Identify skill gaps for user

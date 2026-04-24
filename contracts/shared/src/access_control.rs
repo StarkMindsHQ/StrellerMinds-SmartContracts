@@ -148,12 +148,7 @@ impl AccessControl {
         }
 
         // Create custom role
-        let role = Role::new(
-            role_level,
-            permissions,
-            granter.clone(),
-            env.ledger().timestamp(),
-        );
+        let role = Role::new(role_level, permissions, granter.clone(), env.ledger().timestamp());
 
         // Store role
         AccessControlStorage::set_role(env, user, &role);
@@ -189,13 +184,8 @@ impl AccessControl {
         }
 
         // Create custom role with expiry
-        let role = Role::new(
-            role_level,
-            permissions,
-            granter.clone(),
-            env.ledger().timestamp(),
-        )
-        .with_expiry(expires_at);
+        let role = Role::new(role_level, permissions, granter.clone(), env.ledger().timestamp())
+            .with_expiry(expires_at);
 
         // Store role
         AccessControlStorage::set_role(env, user, &role);
@@ -331,12 +321,8 @@ impl AccessControl {
         }
 
         // Create new role
-        let new_role = Role::new(
-            new_role_level,
-            new_permissions,
-            updater.clone(),
-            env.ledger().timestamp(),
-        );
+        let new_role =
+            Role::new(new_role_level, new_permissions, updater.clone(), env.ledger().timestamp());
 
         // Store old role in history
         AccessControlStorage::add_role_history(env, user, &current_role);

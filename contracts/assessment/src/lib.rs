@@ -1,3 +1,4 @@
+#![no_std]
 #![allow(clippy::too_many_arguments)]
 pub mod errors;
 pub mod events;
@@ -7,13 +8,28 @@ pub mod types;
 use errors::AssessmentError;
 use events::AssessmentEvents;
 use grading::GradingEngine;
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use types::*;
 
 #[cfg(test)]
 mod test;
 
+use shared::monitoring::{ContractHealthReport, Monitor};
 use soroban_sdk::xdr::ToXdr;
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec};
+use soroban_sdk::{
+    contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec,
+};
+
+const RL_OP_START_SUBMISSION: u64 = 1;
+const RL_OP_SUBMIT_ANSWERS: u64 = 2;
+
+fn get_rate_limits(env: &Env) -> AssessmentRateLimits {
+    env.storage().instance().get(&DataKey::RateLimitCfg).unwrap_or(AssessmentRateLimits {
+        max_submissions_per_day: 3,
+        max_answers_per_day: 5,
+        window_seconds: 86_400,
+    })
+}
 
 #[contract]
 pub struct Assessment;
@@ -149,6 +165,21 @@ fn get_integration(env: &Env) -> IntegrationConfig {
 #[contractimpl]
 impl Assessment {
     // Initialization & configuration
+    /// Initializes the assessment contract, setting the admin address and default integration config.
+    ///
+    /// Must be called once before any other function. The caller must authorize the transaction.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The address that will be granted admin privileges.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::AlreadyInitialized`] if the contract has already been initialized.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.initialize(&admin);
+    /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), AssessmentError> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(AssessmentError::AlreadyInitialized);
@@ -163,7 +194,26 @@ impl Assessment {
                 security_monitor_contract: None,
             },
         );
+        env.storage().instance().set(
+            &DataKey::RateLimitCfg,
+            &AssessmentRateLimits {
+                max_submissions_per_day: 3,
+                max_answers_per_day: 5,
+                window_seconds: 86_400,
+            },
+        );
         AssessmentEvents::emit_initialized(&env, &admin);
+        Ok(())
+    }
+
+    pub fn update_rate_limits(
+        env: Env,
+        admin: Address,
+        rate_limits: AssessmentRateLimits,
+    ) -> Result<(), AssessmentError> {
+        require_admin(&env, &admin)?;
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::RateLimitCfg, &rate_limits);
         Ok(())
     }
 
@@ -186,6 +236,24 @@ impl Assessment {
 
     // Assessment & question management
 
+    /// Creates a new assessment for the given course and module, returning the generated assessment ID.
+    ///
+    /// The instructor must authorize the call. The assessment starts in an unpublished state.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `instructor` - The instructor's address creating the assessment.
+    /// * `course_id` - The symbol identifying the course this assessment belongs to.
+    /// * `module_id` - The symbol identifying the module within the course.
+    /// * `config` - The [`AssessmentConfig`] specifying pass score, max attempts, and time limits.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::InvalidConfig`] if `max_attempts` or `pass_score` is zero.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let assessment_id = client.create_assessment(&instructor, &course_id, &module_id, &config);
+    /// ```
     pub fn create_assessment(
         env: Env,
         instructor: Address,
@@ -213,6 +281,23 @@ impl Assessment {
         Ok(id)
     }
 
+    /// Marks an assessment as published, making it available for students to attempt.
+    ///
+    /// Requires admin authorization.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the publication.
+    /// * `assessment_id` - The ID of the assessment to publish.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::Unauthorized`] if the caller is not the admin.
+    /// Returns [`AssessmentError::AssessmentNotFound`] if no assessment exists with the given ID.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.publish_assessment(&admin, assessment_id);
+    /// ```
     pub fn publish_assessment(
         env: Env,
         admin: Address,
@@ -398,12 +483,44 @@ impl Assessment {
         )
     }
 
+    /// Returns the metadata for the given assessment, or `None` if it does not exist.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `assessment_id` - The ID of the assessment to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let meta = client.get_assessment_metadata(assessment_id);
+    /// ```
     pub fn get_assessment_metadata(env: Env, assessment_id: u64) -> Option<AssessmentMetadata> {
         env.storage().persistent().get(&DataKey::Assessment(assessment_id))
     }
 
     // Scheduling & accessibility
 
+    /// Sets or replaces the availability schedule for the given assessment.
+    ///
+    /// Requires admin authorization. Students can only start submissions within the scheduled window.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the schedule change.
+    /// * `assessment_id` - The ID of the assessment to schedule.
+    /// * `start_time` - Unix timestamp (seconds) when the assessment opens.
+    /// * `end_time` - Unix timestamp (seconds) when the assessment closes.
+    /// * `time_zone_offset_minutes` - Timezone offset in minutes for display purposes.
+    /// * `proctoring_provider` - Optional symbol identifying an external proctoring service.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::Unauthorized`] if the caller is not the admin.
+    /// Returns [`AssessmentError::InvalidSchedule`] if `end_time` is not after `start_time`.
+    /// Returns [`AssessmentError::AssessmentNotFound`] if no assessment exists with the given ID.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.set_schedule(&admin, assessment_id, start, end, 0, None);
+    /// ```
     pub fn set_schedule(
         env: Env,
         admin: Address,
@@ -430,6 +547,23 @@ impl Assessment {
         Ok(())
     }
 
+    /// Sets accessibility accommodations for a student, such as extra time or additional attempts.
+    ///
+    /// Requires admin authorization. Overwrites any previously stored accommodation for the student.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - The admin address authorizing the accommodation.
+    /// * `student` - The student's address to apply accommodations to.
+    /// * `config` - The [`AccommodationConfig`] specifying extra time percentage and extra attempts.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.set_accommodation(&admin, &student, &config);
+    /// ```
     pub fn set_accommodation(
         env: Env,
         admin: Address,
@@ -441,6 +575,16 @@ impl Assessment {
         Ok(())
     }
 
+    /// Returns the accessibility accommodation configuration for the given student, or `None` if none is set.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let accommodation = client.get_accommodation_for_student(&student);
+    /// ```
     pub fn get_accommodation_for_student(
         env: Env,
         student: Address,
@@ -450,6 +594,23 @@ impl Assessment {
 
     // Adaptive testing
 
+    /// Returns the next unanswered question for the student based on their current adaptive difficulty level.
+    ///
+    /// Requires the assessment to have adaptive mode enabled. Returns `None` if no matching question is available.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    /// * `assessment_id` - The ID of the adaptive assessment.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::AssessmentNotFound`] if the assessment does not exist.
+    /// Returns [`AssessmentError::AdaptiveNotEnabled`] if the assessment is not configured for adaptive testing.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let question = client.get_next_question(&student, assessment_id);
+    /// ```
     pub fn get_next_question(
         env: Env,
         student: Address,
@@ -481,6 +642,25 @@ impl Assessment {
         Ok(chosen)
     }
 
+    /// Updates the student's adaptive difficulty state after answering a question.
+    ///
+    /// Difficulty increases by one on a correct answer and decreases by one on an incorrect answer, clamped between 1 and 5.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    /// * `assessment_id` - The ID of the adaptive assessment.
+    /// * `question_id` - The ID of the question just answered.
+    /// * `was_correct` - `true` if the student answered the question correctly.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::AssessmentNotFound`] if the assessment does not exist.
+    /// Returns [`AssessmentError::AdaptiveNotEnabled`] if the assessment is not configured for adaptive testing.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.update_adaptive_state(&student, assessment_id, question_id, true);
+    /// ```
     pub fn update_adaptive_state(
         env: Env,
         student: Address,
@@ -508,12 +688,41 @@ impl Assessment {
 
     // Submissions, grading, and integrity
 
+    /// Opens a new in-progress submission for the student, returning a unique submission ID.
+    ///
+    /// The student must authorize the call. Checks that the assessment is published, within schedule, and that the student has remaining attempts (including any accommodation bonuses).
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address starting the attempt.
+    /// * `assessment_id` - The ID of the assessment to attempt.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::AssessmentNotFound`] if the assessment does not exist.
+    /// Returns [`AssessmentError::AssessmentNotPublished`] if the assessment is not yet published.
+    /// Returns [`AssessmentError::AssessmentClosed`] if the current time is outside the scheduled window.
+    /// Returns [`AssessmentError::MaxAttemptsReached`] if the student has used all allowed attempts.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let submission_id = client.start_submission(&student, assessment_id);
+    /// ```
     pub fn start_submission(
         env: Env,
         student: Address,
         assessment_id: u64,
     ) -> Result<BytesN<32>, AssessmentError> {
         student.require_auth();
+        let rl = get_rate_limits(&env);
+        enforce_rate_limit(
+            &env,
+            &DataKey::RateLimit(student.clone(), RL_OP_START_SUBMISSION),
+            &RateLimitConfig {
+                max_calls: rl.max_submissions_per_day,
+                window_seconds: rl.window_seconds,
+            },
+        )
+        .map_err(|_| AssessmentError::RateLimitExceeded)?;
         let meta = get_assessment(&env, assessment_id)?;
         if !meta.published {
             return Err(AssessmentError::AssessmentNotPublished);
@@ -563,6 +772,26 @@ impl Assessment {
         Ok(sid)
     }
 
+    /// Submits answers for an in-progress submission, triggers auto-grading, and returns the completed submission.
+    ///
+    /// The student must authorize the call. The submission is finalized after this call; time-limit violations cause an error.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address submitting their answers.
+    /// * `submission_id` - The ID of the in-progress submission to finalize.
+    /// * `answers` - A list of [`SubmittedAnswer`] entries, one per answered question.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::SubmissionNotFound`] if the submission does not exist.
+    /// Returns [`AssessmentError::Unauthorized`] if the caller does not own the submission.
+    /// Returns [`AssessmentError::SubmissionAlreadyFinalized`] if the submission has already been graded.
+    /// Returns [`AssessmentError::AssessmentClosed`] if the student's time limit has been exceeded.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let result = client.submit_answers(&student, &submission_id, &answers);
+    /// ```
     pub fn submit_answers(
         env: Env,
         student: Address,
@@ -570,6 +799,16 @@ impl Assessment {
         answers: Vec<SubmittedAnswer>,
     ) -> Result<Submission, AssessmentError> {
         student.require_auth();
+        let rl = get_rate_limits(&env);
+        enforce_rate_limit(
+            &env,
+            &DataKey::RateLimit(student.clone(), RL_OP_SUBMIT_ANSWERS),
+            &RateLimitConfig {
+                max_calls: rl.max_answers_per_day,
+                window_seconds: rl.window_seconds,
+            },
+        )
+        .map_err(|_| AssessmentError::RateLimitExceeded)?;
         let mut submission = get_submission(&env, &submission_id)?;
         if submission.student != student {
             return Err(AssessmentError::Unauthorized);
@@ -612,10 +851,42 @@ impl Assessment {
         Ok(submission)
     }
 
+    /// Returns the full submission record for the given submission ID, or `None` if it does not exist.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `submission_id` - The unique identifier of the submission to retrieve.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let submission = client.get_submission_details(&submission_id);
+    /// ```
     pub fn get_submission_details(env: Env, submission_id: BytesN<32>) -> Option<Submission> {
         env.storage().persistent().get(&DataKey::Submission(submission_id))
     }
 
+    /// Attaches integrity metadata to a submission, such as plagiarism scores and proctoring evidence.
+    ///
+    /// Only the registered security monitor contract or the admin may call this function. Emits integrity events if a plagiarism flag is set.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `oracle_or_admin` - The address of the security monitor contract or the admin.
+    /// * `submission_id` - The ID of the submission to update.
+    /// * `plagiarism_score` - Numeric plagiarism confidence score (0–100).
+    /// * `plagiarism_flag` - `true` if the submission is flagged for plagiarism.
+    /// * `integrity_flags` - A list of symbolic integrity violation codes.
+    /// * `has_proctoring_evidence` - Whether proctoring evidence is available for this submission.
+    /// * `proctoring_evidence_hash` - Hash of the proctoring evidence artifact.
+    ///
+    /// # Errors
+    /// Returns [`AssessmentError::SecurityIntegrationMissing`] if the caller is neither the admin nor the registered security monitor.
+    /// Returns [`AssessmentError::SubmissionNotFound`] if the submission does not exist.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.update_integrity_metadata(&oracle, &submission_id, 0, false, &flags, false, &hash);
+    /// ```
     pub fn update_integrity_metadata(
         env: Env,
         oracle_or_admin: Address,
@@ -657,8 +928,19 @@ impl Assessment {
         Ok(())
     }
 
-    // Progress / analytics helper
-    // Returns assessment_id -> (score, max_score, passed) for the latest attempt
+    /// Returns the latest assessment results for all assessments in a course taken by the student.
+    ///
+    /// The returned map keys are assessment IDs and values are `(score, max_score, passed)` tuples from the most recent attempt.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    /// * `course_id` - The symbol identifying the course to aggregate progress for.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let progress = client.get_course_assessment_progress(&student, &course_id);
+    /// ```
     pub fn get_course_assessment_progress(
         env: Env,
         student: Address,
@@ -700,5 +982,12 @@ impl Assessment {
         }
 
         result
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&DataKey::Admin);
+        let report = Monitor::build_health_report(&env, symbol_short!("assess"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }

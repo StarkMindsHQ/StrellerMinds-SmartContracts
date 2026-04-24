@@ -1,0 +1,172 @@
+# Tarpaulin configuration for test coverage analysis
+
+[output]
+# Output formats: Html, Json, Lcov, Xml, Cobertura
+formats = ["Html", "Json", "Lcov"]
+
+# Output directory
+directory = "target/tarpaulin"
+
+# Generate reports even if no tests were run
+always_report = true
+
+[report]
+# Show line coverage
+line_coverage = true
+
+# Show branch coverage
+branch_coverage = true
+
+# Show function coverage
+function_coverage = true
+
+# Show condition coverage
+condition_coverage = true
+
+# Show region coverage
+region_coverage = true
+
+[engine]
+# Use LLVM for coverage
+hardlink = true
+
+# Count unreachable code
+unreachable = false
+
+# Count dead code
+dead_code = false
+
+[exclude]
+# Exclude test files from coverage
+exclude_files = [
+    "tests/**",
+    "**/tests/**",
+    "**/*_tests.rs",
+    "**/test_*.rs",
+    "**/benches/**",
+    "**/examples/**",
+    "**/target/**",
+    "**/build.rs",
+]
+
+# Exclude certain patterns
+exclude_patterns = [
+    "test_",
+    "_test",
+    "tests?",
+    "bench_",
+    "_bench",
+    "benches?",
+    "debug_assert",
+    "cfg\\(test\\)",
+    "cfg\\(feature = \"test\"\\)",
+]
+
+[filter]
+# Only include specific packages
+include_packages = [
+    "assessment",
+    "community", 
+    "certificate",
+    "analytics",
+    "shared",
+    "e2e-tests",
+]
+
+# Exclude certain packages
+exclude_packages = [
+    "build",
+    "proc-macro",
+]
+
+[llvm]
+# Path to llvm-cov
+llvm_cov_path = "llvm-cov"
+
+# Path to llvm-profdata
+llvm_profdata_path = "llvm-profdata"
+
+# Use cargo metadata for workspace
+workspace = true
+
+[features]
+# Run tests with all features
+all_features = true
+
+# Default features
+default_features = true
+
+# Additional features to include
+features = [
+    "test-utils",
+    "mock",
+]
+
+[run]
+# Number of test threads (0 = number of CPUs)
+threads = 0
+
+# Test timeout in seconds
+timeout = 300
+
+# Ignore test failures
+ignore_failures = false
+
+# Run tests in release mode
+release = false
+
+# Count code that is not executed
+no_run = false
+
+# Count dead code
+dead_code = false
+
+# Skip clean
+skip_clean = false
+
+# Follow executable dependencies
+follow_exec = false
+
+# Include tests in coverage
+include_tests = true
+
+# Include benches in coverage
+include_benches = false
+
+# Count unreachable code
+unreachable = false
+
+[env]
+# Environment variables for tests
+# Example: "TEST_VAR=value"
+
+[posthook]
+# Command to run after coverage analysis
+# Example: "cargo coverage-report --format markdown"
+
+[fail_under]
+# Minimum coverage percentage to pass (80% as required)
+line = 80.0
+branch = 75.0
+function = 85.0
+condition = 70.0
+
+# Fail if coverage is below threshold
+fail_under = true
+
+[files]
+# Files to include in coverage
+include = [
+    "src/**/*.rs",
+    "contracts/*/src/**/*.rs",
+    "e2e-tests/src/**/*.rs",
+]
+
+# Files to exclude from coverage
+exclude = [
+    "src/main.rs",
+    "src/bin/**",
+    "**/mod.rs",
+    "**/lib.rs",
+    "**/main.rs",
+]

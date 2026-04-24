@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -474,8 +475,8 @@ impl ResourceOptimizer {
                 0
             },
             pending: if overall_improvement <= 40.0 { 1 } else { 0 },
-            success_rate: overall_improvement.min(100.0).max(0.0) as u32,
-            progress_percentage: overall_improvement.min(100.0).max(0.0) as u32,
+            success_rate: overall_improvement.clamp(0.0, 100.0) as u32,
+            progress_percentage: overall_improvement.clamp(0.0, 100.0) as u32,
             gas_efficiency_change: gas_improvement as i32,
             memory_efficiency_change: memory_improvement as i32,
             storage_efficiency_change: storage_improvement as i32,
@@ -520,22 +521,16 @@ impl ResourceOptimizer {
 
     fn find_peak_gas_usage(metrics: &Vec<PerformanceMetrics>) -> u64 {
         let mut peak = 0u64;
-        for i in 0..metrics.len() {
-            let gas = metrics.get(i).unwrap().gas_used;
-            if gas > peak {
-                peak = gas;
-            }
+        for m in metrics {
+            peak = peak.max(m.gas_used);
         }
         peak
     }
 
     fn find_peak_memory_usage(metrics: &Vec<PerformanceMetrics>) -> u32 {
         let mut peak = 0u32;
-        for i in 0..metrics.len() {
-            let memory = metrics.get(i).unwrap().memory_usage;
-            if memory > peak {
-                peak = memory;
-            }
+        for m in metrics {
+            peak = peak.max(m.memory_usage);
         }
         peak
     }
@@ -812,12 +807,12 @@ impl ResourceOptimizer {
         };
 
         let gas_pct = if gas_costs + storage_costs > 0 {
-            gas_costs * 100 / (gas_costs + storage_costs)
+            (gas_costs * 100).checked_div(gas_costs + storage_costs).unwrap_or(0)
         } else {
             0
         };
         let storage_pct = if gas_costs + storage_costs > 0 {
-            storage_costs * 100 / (gas_costs + storage_costs)
+            (storage_costs * 100).checked_div(gas_costs + storage_costs).unwrap_or(0)
         } else {
             0
         };

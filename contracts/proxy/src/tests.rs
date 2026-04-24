@@ -1,4 +1,8 @@
 extern crate std;
+
+#[cfg(test)]
+mod upgrade_tests;
+
 use super::*;
 use soroban_sdk::{
     testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
