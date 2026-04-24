@@ -65,10 +65,7 @@ pub fn enable(
 
     // Store recovery codes
     for i in 0..recovery_code_hashes.len() {
-        let code = RecoveryCode {
-            code_hash: recovery_code_hashes.get(i).unwrap(),
-            used: false,
-        };
+        let code = RecoveryCode { code_hash: recovery_code_hashes.get(i).unwrap(), used: false };
         storage::set_recovery_code(env, user, i, &code);
     }
 
@@ -77,11 +74,7 @@ pub fn enable(
 }
 
 /// Disable two-factor authentication for a user. Admin only.
-pub fn disable(
-    env: &Env,
-    admin: &Address,
-    user: &Address,
-) -> Result<(), CertificateError> {
+pub fn disable(env: &Env, admin: &Address, user: &Address) -> Result<(), CertificateError> {
     admin.require_auth();
     let stored_admin = storage::get_admin(env);
     if *admin != stored_admin {
@@ -97,7 +90,9 @@ pub fn disable(
 
     // Best-effort removal of recovery codes (up to default count)
     for i in 0..DEFAULT_RECOVERY_CODES {
-        env.storage().persistent().remove(&crate::types::CertDataKey::RecoveryCode(user.clone(), i));
+        env.storage()
+            .persistent()
+            .remove(&crate::types::CertDataKey::RecoveryCode(user.clone(), i));
     }
 
     storage::clear_two_factor_session(env, user);
@@ -108,15 +103,11 @@ pub fn disable(
 /// Verify a TOTP or backup code and create a session.
 ///
 /// Returns Ok(true) on success, Ok(false) if code was invalid.
-pub fn verify(
-    env: &Env,
-    user: &Address,
-    code_hash: &BytesN<32>,
-) -> Result<bool, CertificateError> {
+pub fn verify(env: &Env, user: &Address, code_hash: &BytesN<32>) -> Result<bool, CertificateError> {
     user.require_auth();
 
-    let config = storage::get_two_factor_config(env, user)
-        .ok_or(CertificateError::TwoFactorNotEnabled)?;
+    let config =
+        storage::get_two_factor_config(env, user).ok_or(CertificateError::TwoFactorNotEnabled)?;
 
     if !config.enabled {
         return Err(CertificateError::TwoFactorNotEnabled);
@@ -142,10 +133,7 @@ pub fn verify(
         if let Some(recovery) = storage::get_recovery_code(env, user, i) {
             if !recovery.used && recovery.code_hash == *code_hash {
                 // Mark as used
-                let updated = RecoveryCode {
-                    code_hash: recovery.code_hash,
-                    used: true,
-                };
+                let updated = RecoveryCode { code_hash: recovery.code_hash, used: true };
                 storage::set_recovery_code(env, user, i, &updated);
 
                 // Update remaining count
@@ -170,10 +158,7 @@ pub fn verify(
 ///
 /// If admin 2FA is enforced globally, returns an error when the user is admin
 /// and does not have an active session.
-pub fn require_if_needed(
-    env: &Env,
-    user: &Address,
-) -> Result<(), CertificateError> {
+pub fn require_if_needed(env: &Env, user: &Address) -> Result<(), CertificateError> {
     if !storage::is_admin_two_factor_required(env) {
         return Ok(());
     }
@@ -204,20 +189,19 @@ pub fn regenerate_recovery_codes(
 ) -> Result<(), CertificateError> {
     user.require_auth();
 
-    let mut config = storage::get_two_factor_config(env, user)
-        .ok_or(CertificateError::TwoFactorNotEnabled)?;
+    let mut config =
+        storage::get_two_factor_config(env, user).ok_or(CertificateError::TwoFactorNotEnabled)?;
 
     // Clear old codes
     for i in 0..DEFAULT_RECOVERY_CODES {
-        env.storage().persistent().remove(&crate::types::CertDataKey::RecoveryCode(user.clone(), i));
+        env.storage()
+            .persistent()
+            .remove(&crate::types::CertDataKey::RecoveryCode(user.clone(), i));
     }
 
     // Store new codes
     for i in 0..new_code_hashes.len() {
-        let code = RecoveryCode {
-            code_hash: new_code_hashes.get(i).unwrap(),
-            used: false,
-        };
+        let code = RecoveryCode { code_hash: new_code_hashes.get(i).unwrap(), used: false };
         storage::set_recovery_code(env, user, i, &code);
     }
 

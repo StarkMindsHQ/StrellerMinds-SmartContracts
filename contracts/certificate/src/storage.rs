@@ -259,7 +259,11 @@ pub fn set_recovery_code(env: &Env, user: &Address, index: u32, code: &crate::ty
     env.storage().persistent().set(&CertDataKey::RecoveryCode(user.clone(), index), code);
 }
 
-pub fn get_recovery_code(env: &Env, user: &Address, index: u32) -> Option<crate::types::RecoveryCode> {
+pub fn get_recovery_code(
+    env: &Env,
+    user: &Address,
+    index: u32,
+) -> Option<crate::types::RecoveryCode> {
     env.storage().persistent().get(&CertDataKey::RecoveryCode(user.clone(), index))
 }
 

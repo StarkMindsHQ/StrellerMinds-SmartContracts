@@ -3,8 +3,8 @@
 pub mod errors;
 pub mod events;
 pub mod storage;
-pub mod types;
 pub mod two_factor;
+pub mod types;
 
 #[cfg(test)]
 mod test;
@@ -1364,10 +1364,7 @@ impl CertificateContract {
     /// # Arguments
     /// * `env` - The Soroban environment.
     /// * `user` - The address to query.
-    pub fn get_two_factor_config(
-        env: Env,
-        user: Address,
-    ) -> Option<crate::types::TwoFactorConfig> {
+    pub fn get_two_factor_config(env: Env, user: Address) -> Option<crate::types::TwoFactorConfig> {
         storage::get_two_factor_config(&env, &user)
     }
 

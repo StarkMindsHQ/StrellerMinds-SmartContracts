@@ -16,10 +16,9 @@
 
 use certificate::{
     types::{
-        AuditAction, BatchResult, CertificateAnalytics, CertificatePriority,
-        CertificateStatus, CertificateTemplate, ComplianceStandard, FieldType,
-        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, RevocationRecord,
-        ShareRecord, TemplateField,
+        AuditAction, BatchResult, CertificateAnalytics, CertificatePriority, CertificateStatus,
+        CertificateTemplate, ComplianceStandard, FieldType, MintCertificateParams, MultiSigConfig,
+        MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
     },
     CertificateContract, CertificateContractClient,
 };
@@ -101,9 +100,7 @@ impl CertificateTestEnv {
     }
 
     fn advance_time(&self, seconds: u64) {
-        self.env
-            .ledger()
-            .set_timestamp(self.env.ledger().timestamp() + seconds);
+        self.env.ledger().set_timestamp(self.env.ledger().timestamp() + seconds);
     }
 }
 
@@ -152,7 +149,8 @@ fn test_full_multisig_auto_execute_workflow() {
     let student = test_env.generate_address();
 
     // Step 1: Configure multi-sig with auto-execute
-    let config = test_env.make_multisig_config("CS101", &[approver1.clone(), approver2.clone()], 2, true);
+    let config =
+        test_env.make_multisig_config("CS101", &[approver1.clone(), approver2.clone()], 2, true);
     test_env.client.configure_multisig(&test_env.admin, &config);
 
     // Step 2: Create certificate request
@@ -160,9 +158,7 @@ fn test_full_multisig_auto_execute_workflow() {
     let params = test_env.make_cert_params(&cert_id_bytes, "CS101", &student);
     let reason = String::from_str(&test_env.env, "Requesting certificate for course completion");
 
-    let request_id = test_env
-        .client
-        .create_multisig_request(&student, &params, &reason);
+    let request_id = test_env.client.create_multisig_request(&student, &params, &reason);
 
     // Verify request is pending
     let request = test_env.client.get_multisig_request(&request_id).unwrap();
@@ -171,13 +167,7 @@ fn test_full_multisig_auto_execute_workflow() {
 
     // Step 3: First approval
     let comments1 = String::from_str(&test_env.env, "Looks good");
-    test_env.client.process_multisig_approval(
-        &approver1,
-        &request_id,
-        &true,
-        &comments1,
-        &None,
-    );
+    test_env.client.process_multisig_approval(&approver1, &request_id, &true, &comments1, &None);
 
     let request = test_env.client.get_multisig_request(&request_id).unwrap();
     assert_eq!(request.current_approvals, 1);
@@ -185,13 +175,7 @@ fn test_full_multisig_auto_execute_workflow() {
 
     // Step 4: Second approval triggers auto-execution
     let comments2 = String::from_str(&test_env.env, "Approved");
-    test_env.client.process_multisig_approval(
-        &approver2,
-        &request_id,
-        &true,
-        &comments2,
-        &None,
-    );
+    test_env.client.process_multisig_approval(&approver2, &request_id, &true, &comments2, &None);
 
     let request = test_env.client.get_multisig_request(&request_id).unwrap();
     assert_eq!(request.status, MultiSigRequestStatus::Executed);
@@ -222,16 +206,15 @@ fn test_multisig_manual_execution_workflow() {
     let executor = test_env.generate_address();
 
     // Configure with auto_execute = false
-    let config = test_env.make_multisig_config("CS202", &[approver1.clone(), approver2.clone()], 2, false);
+    let config =
+        test_env.make_multisig_config("CS202", &[approver1.clone(), approver2.clone()], 2, false);
     test_env.client.configure_multisig(&test_env.admin, &config);
 
     let cert_id_bytes = [2u8; 32];
     let params = test_env.make_cert_params(&cert_id_bytes, "CS202", &student);
     let reason = String::from_str(&test_env.env, "Manual execution test");
 
-    let request_id = test_env
-        .client
-        .create_multisig_request(&student, &params, &reason);
+    let request_id = test_env.client.create_multisig_request(&student, &params, &reason);
 
     // Both approvers approve
     test_env.client.process_multisig_approval(
@@ -282,9 +265,8 @@ fn test_batch_certificate_issuance() {
         params_list.push_back(params);
     }
 
-    let result: BatchResult = test_env
-        .client
-        .batch_issue_certificates(&test_env.admin, &params_list);
+    let result: BatchResult =
+        test_env.client.batch_issue_certificates(&test_env.admin, &params_list);
 
     assert_eq!(result.total, 5);
     assert_eq!(result.succeeded, 5);
@@ -322,12 +304,10 @@ fn test_batch_issuance_skips_duplicates() {
     let cert_id_bytes2 = [11u8; 32];
     let params2 = test_env.make_cert_params(&cert_id_bytes2, "DUP101", &student2);
     let mut second_batch: Vec<MintCertificateParams> = Vec::new(&test_env.env);
-    second_batch.push_back(params);  // duplicate
+    second_batch.push_back(params); // duplicate
     second_batch.push_back(params2); // new
 
-    let result = test_env
-        .client
-        .batch_issue_certificates(&test_env.admin, &second_batch);
+    let result = test_env.client.batch_issue_certificates(&test_env.admin, &second_batch);
 
     assert_eq!(result.total, 2);
     assert_eq!(result.succeeded, 1);
@@ -452,17 +432,16 @@ fn test_certificate_reissuance_workflow() {
     let new_cert_id_bytes = [7u8; 32];
     let new_params = test_env.make_cert_params(&new_cert_id_bytes, "REISSUE101", &student);
 
-    let new_cert_id = test_env
-        .client
-        .reissue_certificate(&test_env.admin, &old_params.certificate_id, &new_params);
+    let new_cert_id = test_env.client.reissue_certificate(
+        &test_env.admin,
+        &old_params.certificate_id,
+        &new_params,
+    );
 
     assert_eq!(new_cert_id, new_params.certificate_id);
 
     // Old certificate should be marked Reissued
-    let old_cert = test_env
-        .client
-        .get_certificate(&old_params.certificate_id)
-        .unwrap();
+    let old_cert = test_env.client.get_certificate(&old_params.certificate_id).unwrap();
     assert_eq!(old_cert.status, CertificateStatus::Reissued);
 
     // New certificate should be Active with incremented version
@@ -523,9 +502,8 @@ fn test_template_creation_and_issuance() {
     field_values.push_back(String::from_str(&test_env.env, "A+"));
     field_values.push_back(String::from_str(&test_env.env, "2024-01-15"));
 
-    let issued_id = test_env
-        .client
-        .issue_with_template(&test_env.admin, &template_id, &params, &field_values);
+    let issued_id =
+        test_env.client.issue_with_template(&test_env.admin, &template_id, &params, &field_values);
 
     let cert = test_env.client.get_certificate(&issued_id).unwrap();
     assert_eq!(cert.status, CertificateStatus::Active);
@@ -590,10 +568,7 @@ fn test_compliance_verification_workflow() {
 
     assert!(is_compliant);
 
-    let record = test_env
-        .client
-        .get_compliance_record(&params.certificate_id)
-        .unwrap();
+    let record = test_env.client.get_compliance_record(&params.certificate_id).unwrap();
     assert_eq!(record.standard, ComplianceStandard::Iso17024);
     assert!(record.is_compliant);
     assert_eq!(record.verified_by, verifier);
@@ -616,9 +591,7 @@ fn test_cleanup_expired_multisig_requests() {
 
     let params = test_env.make_cert_params(&[13u8; 32], "EXP_REQ", &student);
     let reason = String::from_str(&test_env.env, "Will expire");
-    let request_id = test_env
-        .client
-        .create_multisig_request(&student, &params, &reason);
+    let request_id = test_env.client.create_multisig_request(&student, &params, &reason);
 
     // Advance time past expiry
     test_env.advance_time(3_601);
@@ -642,13 +615,16 @@ fn test_multisig_audit_trail() {
     let approver2 = test_env.generate_address();
     let student = test_env.generate_address();
 
-    let config = test_env.make_multisig_config("AUDIT101", &[approver1.clone(), approver2.clone()], 2, true);
+    let config =
+        test_env.make_multisig_config("AUDIT101", &[approver1.clone(), approver2.clone()], 2, true);
     test_env.client.configure_multisig(&test_env.admin, &config);
 
     let params = test_env.make_cert_params(&[14u8; 32], "AUDIT101", &student);
-    let request_id = test_env
-        .client
-        .create_multisig_request(&student, &params, &String::from_str(&test_env.env, "Audit test"));
+    let request_id = test_env.client.create_multisig_request(
+        &student,
+        &params,
+        &String::from_str(&test_env.env, "Audit test"),
+    );
 
     test_env.client.process_multisig_approval(
         &approver1,
@@ -782,9 +758,11 @@ fn test_approver_not_authorized_fails() {
     test_env.client.configure_multisig(&test_env.admin, &config);
 
     let params = test_env.make_cert_params(&[19u8; 32], "UNAUTH_APP", &student);
-    let request_id = test_env
-        .client
-        .create_multisig_request(&student, &params, &String::from_str(&test_env.env, "Test"));
+    let request_id = test_env.client.create_multisig_request(
+        &student,
+        &params,
+        &String::from_str(&test_env.env, "Test"),
+    );
 
     let result = test_env.client.try_process_multisig_approval(
         &unauthorized_approver,
@@ -813,9 +791,7 @@ fn test_performance_batch_issuance_baseline() {
         params_list.push_back(params);
     }
 
-    let result = test_env
-        .client
-        .batch_issue_certificates(&test_env.admin, &params_list);
+    let result = test_env.client.batch_issue_certificates(&test_env.admin, &params_list);
 
     let duration = start.elapsed();
 
@@ -836,7 +812,8 @@ fn test_performance_multisig_workflow_baseline() {
     let approver2 = test_env.generate_address();
     let student = test_env.generate_address();
 
-    let config = test_env.make_multisig_config("PERF_MS", &[approver1.clone(), approver2.clone()], 2, true);
+    let config =
+        test_env.make_multisig_config("PERF_MS", &[approver1.clone(), approver2.clone()], 2, true);
     test_env.client.configure_multisig(&test_env.admin, &config);
 
     for i in 0u8..10 {
@@ -898,9 +875,7 @@ fn test_rate_limit_configuration() {
         window_seconds: 86_400,
     };
 
-    test_env
-        .client
-        .update_rate_limits(&test_env.admin, &new_limits);
+    test_env.client.update_rate_limits(&test_env.admin, &new_limits);
 
     // Rate limit update should succeed without error
     // Subsequent requests should use the new limits

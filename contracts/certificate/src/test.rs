@@ -1136,5 +1136,10 @@ fn test_admin_two_factor_enforcement_only_affects_admin() {
     client.issue_certificate(&admin, &params);
 
     // Student sharing does not require 2FA
-    client.share_certificate(&student, &params.certificate_id, &String::from_str(&env, "linkedin"), &String::from_str(&env, "https://verify.example.com"));
+    client.share_certificate(
+        &student,
+        &params.certificate_id,
+        &String::from_str(&env, "linkedin"),
+        &String::from_str(&env, "https://verify.example.com"),
+    );
 }
