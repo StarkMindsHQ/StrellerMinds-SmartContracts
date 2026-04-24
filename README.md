@@ -27,7 +27,7 @@ cd StrellerMinds-SmartContracts
 cargo test
 ```
 
-That's it! Your contracts are built and tested. See [Getting Started](#getting-started) for detailed installation instructions.
+That's it! Your contracts are built and tested. See the [Developer Onboarding Guide](docs/ONBOARDING.md) for new team members.
 
 ## ✨ Features
 
