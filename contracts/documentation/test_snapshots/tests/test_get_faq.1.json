@@ -40,10 +40,10 @@
                   "string": "faq-get"
                 },
                 {
-                  "string": "Q?"
+                  "string": "What is this question?"
                 },
                 {
-                  "string": "A."
+                  "string": "This is the answer to the FAQ"
                 },
                 {
                   "string": "cat"
@@ -249,6 +249,30 @@
                     },
                     {
                       "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "require_review"
                       },
                       "val": {
@@ -314,7 +338,7 @@
                         "symbol": "answer"
                       },
                       "val": {
-                        "string": "A."
+                        "string": "This is the answer to the FAQ"
                       }
                     },
                     {
@@ -370,7 +394,7 @@
                         "symbol": "question"
                       },
                       "val": {
-                        "string": "Q?"
+                        "string": "What is this question?"
                       }
                     },
                     {

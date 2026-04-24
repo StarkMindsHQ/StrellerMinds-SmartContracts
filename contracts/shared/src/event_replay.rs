@@ -94,11 +94,7 @@ impl EventReplay {
             if let Some(event_ref) = Self::get_event_reference(env, state.current_sequence) {
                 // Reconstruct event from reference (simplified)
                 // In production, you'd store full event data
-                events.push_back(Self::reconstruct_event(
-                    env,
-                    state.current_sequence,
-                    &event_ref,
-                ));
+                events.push_back(Self::reconstruct_event(env, state.current_sequence, &event_ref));
                 state.last_replayed = state.current_sequence;
                 state.total_replayed += 1;
             }

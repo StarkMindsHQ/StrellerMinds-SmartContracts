@@ -106,11 +106,7 @@ impl EventAggregator {
             category_counts,
             contract_counts,
             event_type_counts,
-            first_timestamp: if first_timestamp == u64::MAX {
-                0
-            } else {
-                first_timestamp
-            },
+            first_timestamp: if first_timestamp == u64::MAX { 0 } else { first_timestamp },
             last_timestamp,
         }
     }

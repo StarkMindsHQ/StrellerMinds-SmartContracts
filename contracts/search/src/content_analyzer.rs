@@ -213,11 +213,7 @@ impl ContentAnalyzer {
 
         // Normalize to 0-100 scale
         let total_unique = tags_a.len() + tags_b.len() - overlap;
-        if total_unique > 0 {
-            (overlap * 100) / total_unique
-        } else {
-            0
-        }
+        overlap.checked_mul(100).and_then(|value| value.checked_div(total_unique)).unwrap_or(0)
     }
 
     /// Calculate topic overlap similarity

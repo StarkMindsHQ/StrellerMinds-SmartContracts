@@ -39,8 +39,21 @@ pub enum EventCategory {
     Progress,
     /// System and configuration events
     System,
-    /// Error and audit events
-    Err,
+    /// Assessment and examination events
+    Assessment,
+    /// Community and forum events
+    Community,
+    /// Mentorship events
+    Mentorship,
+    /// Governance events
+    Governance,
+    Security,
+    Certification,
+    Gamification,
+    CrossChain,
+    Search,
+    Failure,
+    Monitoring,
 }
 
 /// Standardized event data types
@@ -59,8 +72,21 @@ pub enum EventData {
     Progress(ProgressEventData),
     /// System events
     System(SystemEventData),
-    /// Error events
+    /// Assessment events
+    Assessment(AssessmentEventData),
+    /// Community events
+    Community(CommunityEventData),
+    /// Mentorship events
+    Mentorship(MentorshipEventData),
+    /// Governance events
+    Governance(GovernanceEventData),
+    Security(SecurityEventData),
+    Certification(CertificationEventData),
+    Gamification(GamificationEventData),
+    CrossChain(CrossChainEventData),
+    Search(SearchEventData),
     Err(ErrorEventData),
+    Monitoring(MonitoringEventData),
 }
 
 // Access Control Event Structs
@@ -129,7 +155,7 @@ pub struct RoleInheritanceUpdatedEvent {
 }
 #[contracttype]
 #[derive(Clone, Debug)]
-pub struct TemplateCreatedEvent {
+pub struct AccessControlTemplateCreatedEvent {
     pub admin: Address,
     pub template_id: Symbol,
 }
@@ -171,7 +197,7 @@ pub enum AccessControlEventData {
     PermissionRevoked(PermissionRevokedEvent),
     DynamicPermissionGranted(DynamicPermissionGrantedEvent),
     RoleInheritanceUpdated(RoleInheritanceUpdatedEvent),
-    TemplateCreated(TemplateCreatedEvent),
+    TemplateCreated(AccessControlTemplateCreatedEvent),
     AdminChanged(AdminChangedEvent),
     RoleExpired(RoleExpiredEvent),
     AccessDenied(AccessDeniedEvent),
@@ -313,27 +339,6 @@ pub enum CertificateEventData {
     IssuerRemoved(IssuerRemovedEvent),
 }
 
-/// Analytics event data
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum AnalyticsEventData {
-    SessionRecorded(BytesN<32>, Address, Symbol, Symbol, String, u64, u32), // session_id, student, course_id, module_id, session_type, time_spent, completion_percentage
-    SessionCompleted(BytesN<32>, Address, Symbol, Symbol, Option<u32>, u64), // session_id, student, course_id, module_id, final_score, total_time
-    ProgressUpdated(Address, Symbol, u32, u64, String), // student, course_id, completion_percentage, total_time_spent, performance_trend
-    CourseAnalyticsUpdated(Symbol, u32, u32, Option<u32>), // course_id, total_students, completion_rate, average_score
-    ModuleAnalyticsUpdated(Symbol, Symbol, u32, u64, String), // course_id, module_id, completion_rate, average_time, difficulty_rating
-    AchievementEarned(Address, Symbol, String, Symbol, u64), // student, achievement_id, achievement_type, course_id, earned_date
-    LeaderboardUpdated(Symbol, String, Address, u32, u32), // course_id, metric_type, top_student, top_score, total_entries
-    ReportGenerated(Address, Symbol, String, u64, u64, u32), // student, course_id, report_period, start_date, end_date, sessions_count
-    BatchProcessed(u32, u64, u32), // batch_size, processing_time, updated_analytics
-    ConfigUpdated(Address, String), // admin, config_type
-    DataAggregated(Symbol, u64, u32, u32), // course_id, date, active_students, total_sessions
-    TrendChange(Address, Symbol, String, String), // student, course_id, old_trend, new_trend
-    StreakMilestone(Address, Symbol, u32, String), // student, course_id, streak_days, milestone_type
-    InsightRequested(Address, Symbol, String),     // student, course_id, insight_type
-    InsightReceived(Address, BytesN<32>, String, String, u64), // student, insight_id, insight_type, content, timestamp
-}
-
 // Token Event Structs
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -384,6 +389,18 @@ pub struct EventEndedEvent {
     pub participants: u32,
     pub total_rewards: i128,
 }
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TokensStakedEvent {
+    pub staker: Address,
+    pub amount: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TokensUnstakedEvent {
+    pub staker: Address,
+    pub amount: u64,
+}
 
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -395,6 +412,8 @@ pub enum TokenEventData {
     RewardClaimed(RewardClaimedEvent),
     EventCreated(EventCreatedEvent),
     EventEnded(EventEndedEvent),
+    TokensStaked(TokensStakedEvent),
+    TokensUnstaked(TokensUnstakedEvent),
 }
 
 // Progress Event Structs
@@ -682,6 +701,698 @@ pub enum PrerequisiteEventData {
     EnrollmentValidated(EnrollmentValidatedEvent),
 }
 
+// Assessment Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AssessmentCreatedEvent {
+    pub id: u64,
+    pub instructor: Address,
+    pub course: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AssessmentPublishedEvent {
+    pub id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct QuestionAddedEvent {
+    pub assessment_id: u64,
+    pub question_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SubmissionReceivedEvent {
+    pub submission_id: BytesN<32>,
+    pub assessment_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SubmissionGradedEvent {
+    pub submission_id: BytesN<32>,
+    pub score: u32,
+    pub max_score: u32,
+    pub passed: bool,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PlagiarismFlaggedEvent {
+    pub submission_id: BytesN<32>,
+    pub score: u32,
+    pub flagged: bool,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct IntegrityEventData {
+    pub submission_id: BytesN<32>,
+    pub flag: Symbol,
+    pub severity: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ScheduleCreatedEvent {
+    pub assessment_id: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum AssessmentEventData {
+    AssessmentCreated(AssessmentCreatedEvent),
+    AssessmentPublished(AssessmentPublishedEvent),
+    QuestionAdded(QuestionAddedEvent),
+    SubmissionReceived(SubmissionReceivedEvent),
+    SubmissionGraded(SubmissionGradedEvent),
+    PlagiarismFlagged(PlagiarismFlaggedEvent),
+    IntegrityEvent(IntegrityEventData),
+    ScheduleCreated(ScheduleCreatedEvent),
+}
+
+// Community Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct PostCreatedEvent {
+    pub author: Address,
+    pub post_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ReplyCreatedEvent {
+    pub author: Address,
+    pub post_id: u64,
+    pub reply_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SolutionMarkedEvent {
+    pub post_id: u64,
+    pub reply_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContributionSubmittedEvent {
+    pub contributor: Address,
+    pub contribution_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContributionApprovedEvent {
+    pub contribution_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct InternalEventCreatedEvent {
+    pub organizer: Address,
+    pub event_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EventRegisteredEvent {
+    pub user: Address,
+    pub event_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EventCompletedEvent {
+    pub event_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ContentReportedEvent {
+    pub reporter: Address,
+    pub report_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ModeratorActionEvent {
+    pub moderator: Address,
+    pub action_id: u64,
+    pub target: Address,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum CommunityEventData {
+    PostCreated(PostCreatedEvent),
+    ReplyCreated(ReplyCreatedEvent),
+    SolutionMarked(SolutionMarkedEvent),
+    ContributionSubmitted(ContributionSubmittedEvent),
+    ContributionApproved(ContributionApprovedEvent),
+    EventCreated(InternalEventCreatedEvent),
+    EventRegistered(EventRegisteredEvent),
+    EventCompleted(EventCompletedEvent),
+    ContentReported(ContentReportedEvent),
+    ModeratorAction(ModeratorActionEvent),
+}
+
+// Mentorship Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MentorRegisteredEvent {
+    pub mentor: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MentorshipRequestedEvent {
+    pub mentee: Address,
+    pub mentor: Address,
+    pub request_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MentorshipStartedEvent {
+    pub request_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MentorshipSessionCompletedEvent {
+    pub session_id: u64,
+    pub mentor: Address,
+    pub mentee: Address,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum MentorshipEventData {
+    MentorRegistered(MentorRegisteredEvent),
+    MentorshipRequested(MentorshipRequestedEvent),
+    MentorshipStarted(MentorshipStartedEvent),
+    SessionCompleted(MentorshipSessionCompletedEvent),
+}
+
+// Governance Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProposalCreatedEvent {
+    pub proposer: Address,
+    pub proposal_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct VoteCastEvent {
+    pub voter: Address,
+    pub proposal_id: u64,
+    pub vote_for: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum GovernanceEventData {
+    ProposalCreated(ProposalCreatedEvent),
+    VoteCast(VoteCastEvent),
+}
+
+// Security Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AnomalyAnalysisRequestedEvent {
+    pub actor: Address,
+    pub contract: Symbol,
+    pub request_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct BiometricsVerificationRequestedEvent {
+    pub actor: Address,
+    pub request_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct FraudVerificationRequestedEvent {
+    pub actor: Address,
+    pub request_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ThreatIntelligenceAddedEvent {
+    pub source: Symbol,
+    pub indicator_type: Symbol,
+    pub indicator_value: String,
+    pub threat_level: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct UserRiskScoreUpdatedEvent {
+    pub user: Address,
+    pub score: u32,
+    pub risk_factor: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SecurityTrainingRecordedEvent {
+    pub user: Address,
+    pub module: Symbol,
+    pub score: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct IncidentReportGeneratedEvent {
+    pub incident_id: BytesN<32>,
+    pub admin: Address,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum SecurityEventData {
+    AnomalyAnalysisRequested(AnomalyAnalysisRequestedEvent),
+    BiometricsVerificationRequested(BiometricsVerificationRequestedEvent),
+    FraudVerificationRequested(FraudVerificationRequestedEvent),
+    ThreatIntelligenceAdded(ThreatIntelligenceAddedEvent),
+    UserRiskScoreUpdated(UserRiskScoreUpdatedEvent),
+    SecurityTrainingRecorded(SecurityTrainingRecordedEvent),
+    IncidentReportGenerated(IncidentReportGeneratedEvent),
+}
+
+// Certification Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificationIssuedEvent {
+    pub certificate_id: BytesN<32>,
+    pub student: Address,
+    pub course_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateVerifiedEvent {
+    pub certificate_id: BytesN<32>,
+    pub is_valid: bool,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificationRevokedEvent {
+    pub certificate_id: BytesN<32>,
+    pub admin: Address,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateReissuedEvent {
+    pub old_id: BytesN<32>,
+    pub new_id: BytesN<32>,
+    pub student: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MultisigRequestCreatedEvent {
+    pub request_id: BytesN<32>,
+    pub requester: Address,
+    pub course_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MultisigApprovalGrantedEvent {
+    pub request_id: BytesN<32>,
+    pub approver: Address,
+    pub current: u32,
+    pub required: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MultisigRequestRejectedEvent {
+    pub request_id: BytesN<32>,
+    pub approver: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MultisigRequestApprovedEvent {
+    pub request_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MultisigConfigUpdatedEvent {
+    pub course_id: String,
+    pub admin: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct BatchCompletedEvent {
+    pub total: u32,
+    pub succeeded: u32,
+    pub failed: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateSharedEvent {
+    pub certificate_id: BytesN<32>,
+    pub platform: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ComplianceCheckedEvent {
+    pub certificate_id: BytesN<32>,
+    pub is_compliant: bool,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct TemplateCreatedEvent {
+    pub template_id: String,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum CertificationEventData {
+    CertificateIssued(CertificationIssuedEvent),
+    CertificateVerified(CertificateVerifiedEvent),
+    CertificateRevoked(CertificationRevokedEvent),
+    CertificateReissued(CertificateReissuedEvent),
+    MultisigRequestCreated(MultisigRequestCreatedEvent),
+    MultisigApprovalGranted(MultisigApprovalGrantedEvent),
+    MultisigRequestRejected(MultisigRequestRejectedEvent),
+    MultisigRequestApproved(MultisigRequestApprovedEvent),
+    MultisigConfigUpdated(MultisigConfigUpdatedEvent),
+    BatchCompleted(BatchCompletedEvent),
+    CertificateShared(CertificateSharedEvent),
+    ComplianceChecked(ComplianceCheckedEvent),
+    TemplateCreated(TemplateCreatedEvent),
+}
+
+// Gamification Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AchievementEarnedEvent {
+    pub user: Address,
+    pub achievement_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct XPAddedEvent {
+    pub user: Address,
+    pub amount: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ChallengeJoinedEvent {
+    pub user: Address,
+    pub challenge_id: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct LevelUpEvent {
+    pub user: Address,
+    pub new_level: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct StreakMilestoneEvent {
+    pub user: Address,
+    pub streak_days: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AchievementClaimedEvent {
+    pub user: Address,
+    pub achievement_id: u64,
+    pub tokens: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ChallengeCreatedEvent {
+    pub challenge_id: u64,
+    pub creator: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ChallengeCompletedEvent {
+    pub user: Address,
+    pub challenge_id: u64,
+    pub rank: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct GuildCreatedEvent {
+    pub guild_id: u64,
+    pub creator: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct GuildJoinedEvent {
+    pub user: Address,
+    pub guild_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct GuildLeftEvent {
+    pub user: Address,
+    pub guild_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SeasonStartedEvent {
+    pub season_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SeasonEndedEvent {
+    pub season_id: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EndorsedEvent {
+    pub endorser: Address,
+    pub endorsee: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RecognizedEvent {
+    pub from: Address,
+    pub to: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ReputationUpdatedEvent {
+    pub user: Address,
+    pub new_score: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum GamificationEventData {
+    AchievementEarned(AchievementEarnedEvent),
+    XPAdded(XPAddedEvent),
+    ChallengeJoined(ChallengeJoinedEvent),
+    LevelUp(LevelUpEvent),
+    StreakMilestone(StreakMilestoneEvent),
+    AchievementClaimed(AchievementClaimedEvent),
+    ChallengeCreated(ChallengeCreatedEvent),
+    ChallengeCompleted(ChallengeCompletedEvent),
+    GuildCreated(GuildCreatedEvent),
+    GuildJoined(GuildJoinedEvent),
+    GuildLeft(GuildLeftEvent),
+    SeasonStarted(SeasonStartedEvent),
+    SeasonEnded(SeasonEndedEvent),
+    Endorsed(EndorsedEvent),
+    Recognized(RecognizedEvent),
+    ReputationUpdated(ReputationUpdatedEvent),
+}
+
+// Cross-Chain Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CredentialIssuedEvent {
+    pub student: Address,
+    pub credential_id: String,
+    pub chain_id: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ProofGeneratedEvent {
+    pub credential_id: String,
+    pub target_chain: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CredentialRevokedEvent {
+    pub credential_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CredentialSuspendedEvent {
+    pub credential_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CredentialReactivatedEvent {
+    pub credential_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct VerificationRequestedEvent {
+    pub request_id: String,
+    pub credential_id: String,
+    pub chain_id: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct OracleUpdatedEvent {
+    pub oracle: Address,
+    pub added: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum CrossChainEventData {
+    CredentialIssued(CredentialIssuedEvent),
+    ProofGenerated(ProofGeneratedEvent),
+    CredentialRevoked(CredentialRevokedEvent),
+    CredentialSuspended(CredentialSuspendedEvent),
+    CredentialReactivated(CredentialReactivatedEvent),
+    VerificationRequested(VerificationRequestedEvent),
+    OracleUpdated(OracleUpdatedEvent),
+}
+
+// Analytics Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SessionRecordedEvent {
+    pub session_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct ActionTrackedEvent {
+    pub user: Address,
+    pub action: Symbol,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SessionCompletedEvent {
+    pub session_id: BytesN<32>,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MetricsUpdatedEvent {
+    pub metric_id: Symbol,
+    pub new_value: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum AnalyticsEventData {
+    SessionRecorded(SessionRecordedEvent),
+    ActionTracked(ActionTrackedEvent),
+    SessionCompleted(SessionCompletedEvent),
+    MetricsUpdated(MetricsUpdatedEvent),
+}
+
+// Search Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SemanticSearchEvent {
+    pub user: Option<Address>,
+    pub query: String,
+    pub results_count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MetadataStoredEvent {
+    pub content_id: String,
+    pub oracle: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RecommendationGeneratedEvent {
+    pub user: Address,
+    pub count: u32,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct InteractionRecordedEvent {
+    pub user: Address,
+    pub content_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct LearningPathUpdatedEvent {
+    pub user: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct SearchStepCompletedEvent {
+    pub user: Address,
+    pub step_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct RankingUpdatedEvent {
+    pub admin: Address,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct VisualSearchEvent {
+    pub content_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct VoiceSearchEvent {
+    pub user: Address,
+    pub session_id: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct OracleManagementEvent {
+    pub oracle: Address,
+    pub authorized: bool,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum SearchEventData {
+    SemanticSearch(SemanticSearchEvent),
+    MetadataStored(MetadataStoredEvent),
+    RecommendationGenerated(RecommendationGeneratedEvent),
+    InteractionRecorded(InteractionRecordedEvent),
+    LearningPathUpdated(LearningPathUpdatedEvent),
+    StepCompleted(SearchStepCompletedEvent),
+    RankingUpdated(RankingUpdatedEvent),
+    VisualSearch(VisualSearchEvent),
+    VoiceSearch(VoiceSearchEvent),
+    OracleManagement(OracleManagementEvent),
+}
+
+// Monitoring Event Structs
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct HealthCheckEventData {
+    pub contract_id: Symbol,
+    pub status: u32,
+    pub timestamp: u64,
+    pub details: Symbol,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct MetricRecordedEventData {
+    pub contract_id: Symbol,
+    pub metric_name: Symbol,
+    pub value: i128,
+    pub timestamp: u64,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AlertTriggeredEventData {
+    pub contract_id: Symbol,
+    pub alert_level: u32,
+    pub metric_name: Symbol,
+    pub current_value: i128,
+    pub threshold_value: i128,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct AlertResolvedEventData {
+    pub contract_id: Symbol,
+    pub metric_name: Symbol,
+    pub resolved_at: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub enum MonitoringEventData {
+    HealthCheck(HealthCheckEventData),
+    MetricRecorded(MetricRecordedEventData),
+    AlertTriggered(AlertTriggeredEventData),
+    AlertResolved(AlertResolvedEventData),
+}
+
 impl StandardEvent {
     /// Create a new standard event
     pub fn new(env: &Env, contract: Symbol, actor: Address, event_data: EventData) -> Self {
@@ -747,7 +1458,17 @@ impl StandardEvent {
             EventData::Token(_) => "token",
             EventData::Progress(_) => "progress",
             EventData::System(_) => "system",
-            EventData::Err(_) => "error",
+            EventData::Assessment(_) => "assessment",
+            EventData::Community(_) => "community",
+            EventData::Mentorship(_) => "mentorship",
+            EventData::Governance(_) => "governance",
+            EventData::Security(_) => "security",
+            EventData::Certification(_) => "certification",
+            EventData::Gamification(_) => "gamification",
+            EventData::CrossChain(_) => "crosschain",
+            EventData::Search(_) => "search",
+            EventData::Err(_) => "failure",
+            EventData::Monitoring(_) => "monitoring",
         }
     }
 
@@ -788,21 +1509,10 @@ impl StandardEvent {
                 CertificateEventData::IssuerRemoved(_) => "issuer_removed",
             },
             EventData::Analytics(data) => match data {
-                AnalyticsEventData::SessionRecorded(..) => "session_recorded",
-                AnalyticsEventData::SessionCompleted(..) => "session_completed",
-                AnalyticsEventData::ProgressUpdated(..) => "progress_updated",
-                AnalyticsEventData::CourseAnalyticsUpdated(..) => "course_analytics_updated",
-                AnalyticsEventData::ModuleAnalyticsUpdated(..) => "module_analytics_updated",
-                AnalyticsEventData::AchievementEarned(..) => "achievement_earned",
-                AnalyticsEventData::LeaderboardUpdated(..) => "leaderboard_updated",
-                AnalyticsEventData::ReportGenerated(..) => "report_generated",
-                AnalyticsEventData::BatchProcessed(..) => "batch_processed",
-                AnalyticsEventData::ConfigUpdated(..) => "config_updated",
-                AnalyticsEventData::DataAggregated(..) => "data_aggregated",
-                AnalyticsEventData::TrendChange(..) => "trend_change",
-                AnalyticsEventData::StreakMilestone(..) => "streak_milestone",
-                AnalyticsEventData::InsightRequested(..) => "insight_requested",
-                AnalyticsEventData::InsightReceived(..) => "insight_received",
+                AnalyticsEventData::SessionRecorded(_) => "session_recorded",
+                AnalyticsEventData::ActionTracked(_) => "action_tracked",
+                AnalyticsEventData::SessionCompleted(_) => "session_completed",
+                AnalyticsEventData::MetricsUpdated(_) => "metrics_updated",
             },
             EventData::Token(data) => match data {
                 TokenEventData::TokensTransferred(_) => "tokens_transferred",
@@ -812,6 +1522,8 @@ impl StandardEvent {
                 TokenEventData::RewardClaimed(_) => "reward_claimed",
                 TokenEventData::EventCreated(_) => "event_created",
                 TokenEventData::EventEnded(_) => "event_ended",
+                TokenEventData::TokensStaked(_) => "tokens_staked",
+                TokenEventData::TokensUnstaked(_) => "tokens_unstaked",
             },
             EventData::Progress(data) => match data {
                 ProgressEventData::ProgressUpdated(_) => "progress_updated",
@@ -828,12 +1540,113 @@ impl StandardEvent {
                 SystemEventData::ProxyUpgraded(_) => "proxy_upgraded",
                 SystemEventData::ProxyRollback(_) => "proxy_rollback",
             },
+            EventData::Assessment(data) => match data {
+                AssessmentEventData::AssessmentCreated(_) => "assessment_created",
+                AssessmentEventData::AssessmentPublished(_) => "assessment_published",
+                AssessmentEventData::QuestionAdded(_) => "question_added",
+                AssessmentEventData::SubmissionReceived(_) => "submission_received",
+                AssessmentEventData::SubmissionGraded(_) => "submission_graded",
+                AssessmentEventData::PlagiarismFlagged(_) => "plagiarism_flagged",
+                AssessmentEventData::IntegrityEvent(_) => "integrity_event",
+                AssessmentEventData::ScheduleCreated(_) => "schedule_created",
+            },
+            EventData::Community(data) => match data {
+                CommunityEventData::PostCreated(_) => "post_created",
+                CommunityEventData::ReplyCreated(_) => "reply_created",
+                CommunityEventData::SolutionMarked(_) => "solution_marked",
+                CommunityEventData::ContributionSubmitted(_) => "contribution_submitted",
+                CommunityEventData::ContributionApproved(_) => "contribution_approved",
+                CommunityEventData::EventCreated(_) => "event_created",
+                CommunityEventData::EventRegistered(_) => "event_registered",
+                CommunityEventData::EventCompleted(_) => "event_completed",
+                CommunityEventData::ContentReported(_) => "content_reported",
+                CommunityEventData::ModeratorAction(_) => "moderator_action",
+            },
+            EventData::Mentorship(data) => match data {
+                MentorshipEventData::MentorRegistered(_) => "mentor_registered",
+                MentorshipEventData::MentorshipRequested(_) => "mentorship_requested",
+                MentorshipEventData::MentorshipStarted(_) => "mentorship_started",
+                MentorshipEventData::SessionCompleted(_) => "session_completed",
+            },
+            EventData::Governance(data) => match data {
+                GovernanceEventData::ProposalCreated(_) => "proposal_created",
+                GovernanceEventData::VoteCast(_) => "vote_cast",
+            },
+            EventData::Security(data) => match data {
+                SecurityEventData::AnomalyAnalysisRequested(_) => "anomaly_requested",
+                SecurityEventData::BiometricsVerificationRequested(_) => "biometrics_requested",
+                SecurityEventData::FraudVerificationRequested(_) => "fraud_requested",
+                SecurityEventData::ThreatIntelligenceAdded(_) => "intel_added",
+                SecurityEventData::UserRiskScoreUpdated(_) => "risk_score_updated",
+                SecurityEventData::SecurityTrainingRecorded(_) => "training_recorded",
+                SecurityEventData::IncidentReportGenerated(_) => "incident_reported",
+            },
+            EventData::Certification(data) => match data {
+                CertificationEventData::CertificateIssued(_) => "cert_issued",
+                CertificationEventData::CertificateVerified(_) => "cert_verified",
+                CertificationEventData::CertificateRevoked(_) => "cert_revoked",
+                CertificationEventData::CertificateReissued(_) => "cert_reissued",
+                CertificationEventData::MultisigRequestCreated(_) => "multisig_request_created",
+                CertificationEventData::MultisigApprovalGranted(_) => "multisig_approval_granted",
+                CertificationEventData::MultisigRequestRejected(_) => "multisig_request_rejected",
+                CertificationEventData::MultisigRequestApproved(_) => "multisig_request_approved",
+                CertificationEventData::MultisigConfigUpdated(_) => "multisig_config_updated",
+                CertificationEventData::BatchCompleted(_) => "batch_completed",
+                CertificationEventData::CertificateShared(_) => "cert_shared",
+                CertificationEventData::ComplianceChecked(_) => "compliance_checked",
+                CertificationEventData::TemplateCreated(_) => "template_created",
+            },
+            EventData::Gamification(data) => match data {
+                GamificationEventData::AchievementEarned(_) => "achievement_earned",
+                GamificationEventData::XPAdded(_) => "xp_added",
+                GamificationEventData::ChallengeJoined(_) => "challenge_joined",
+                GamificationEventData::LevelUp(_) => "level_up",
+                GamificationEventData::StreakMilestone(_) => "streak_milestone",
+                GamificationEventData::AchievementClaimed(_) => "achievement_claimed",
+                GamificationEventData::ChallengeCreated(_) => "challenge_created",
+                GamificationEventData::ChallengeCompleted(_) => "challenge_completed",
+                GamificationEventData::GuildCreated(_) => "guild_created",
+                GamificationEventData::GuildJoined(_) => "guild_joined",
+                GamificationEventData::GuildLeft(_) => "guild_left",
+                GamificationEventData::SeasonStarted(_) => "season_started",
+                GamificationEventData::SeasonEnded(_) => "season_ended",
+                GamificationEventData::Endorsed(_) => "endorsed",
+                GamificationEventData::Recognized(_) => "recognized",
+                GamificationEventData::ReputationUpdated(_) => "reputation_updated",
+            },
+            EventData::CrossChain(data) => match data {
+                CrossChainEventData::CredentialIssued(_) => "cred_issued",
+                CrossChainEventData::ProofGenerated(_) => "proof_generated",
+                CrossChainEventData::CredentialRevoked(_) => "cred_revoked",
+                CrossChainEventData::CredentialSuspended(_) => "cred_suspended",
+                CrossChainEventData::CredentialReactivated(_) => "cred_reactivated",
+                CrossChainEventData::VerificationRequested(_) => "verification_requested",
+                CrossChainEventData::OracleUpdated(_) => "oracle_updated",
+            },
+            EventData::Search(data) => match data {
+                SearchEventData::SemanticSearch(_) => "semantic_search",
+                SearchEventData::MetadataStored(_) => "metadata_stored",
+                SearchEventData::RecommendationGenerated(_) => "recommendation_generated",
+                SearchEventData::InteractionRecorded(_) => "interaction_recorded",
+                SearchEventData::LearningPathUpdated(_) => "learning_path_updated",
+                SearchEventData::StepCompleted(_) => "step_completed",
+                SearchEventData::RankingUpdated(_) => "ranking_updated",
+                SearchEventData::VisualSearch(_) => "visual_search",
+                SearchEventData::VoiceSearch(_) => "voice_search",
+                SearchEventData::OracleManagement(_) => "oracle_management",
+            },
             EventData::Err(data) => match data {
                 ErrorEventData::ValidationError(_) => "validation_error",
                 ErrorEventData::PermissionDenied(_) => "permission_denied",
                 ErrorEventData::ResourceNotFound(_) => "resource_not_found",
                 ErrorEventData::InvalidInput(_) => "invalid_input",
                 ErrorEventData::SystemError(_) => "system_error",
+            },
+            EventData::Monitoring(data) => match data {
+                MonitoringEventData::HealthCheck(_) => "health_check",
+                MonitoringEventData::MetricRecorded(_) => "metric_recorded",
+                MonitoringEventData::AlertTriggered(_) => "alert_triggered",
+                MonitoringEventData::AlertResolved(_) => "alert_resolved",
             },
         }
     }
@@ -849,7 +1662,17 @@ impl StandardEvent {
             EventData::Token(_) => String::from_str(env, "token_event"),
             EventData::Progress(_) => String::from_str(env, "progress_event"),
             EventData::System(_) => String::from_str(env, "system_event"),
+            EventData::Assessment(_) => String::from_str(env, "assessment_event"),
+            EventData::Community(_) => String::from_str(env, "community_event"),
+            EventData::Mentorship(_) => String::from_str(env, "mentorship_event"),
+            EventData::Governance(_) => String::from_str(env, "governance_event"),
+            EventData::Security(_) => String::from_str(env, "security_event"),
+            EventData::Certification(_) => String::from_str(env, "certification_event"),
+            EventData::Gamification(_) => String::from_str(env, "gamification_event"),
+            EventData::CrossChain(_) => String::from_str(env, "crosschain_event"),
+            EventData::Search(_) => String::from_str(env, "search_event"),
             EventData::Err(_) => String::from_str(env, "error_event"),
+            EventData::Monitoring(_) => String::from_str(env, "monitoring_event"),
         }
     }
 }
@@ -858,48 +1681,220 @@ impl StandardEvent {
 #[macro_export]
 macro_rules! emit_access_control_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::AccessControl($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::AccessControl($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_certificate_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Certificate($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Certificate($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_analytics_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Analytics($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Analytics($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_token_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Token($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Token($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_progress_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Progress($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Progress($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_system_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::System($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::System($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_assessment_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Assessment($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_community_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Community($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_mentorship_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Mentorship($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_governance_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Governance($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_security_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Security($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_certification_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Certification($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_gamification_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Gamification($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_crosschain_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::CrossChain($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_search_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Search($data),
+        )
+        .emit($env)
     };
 }
 
 #[macro_export]
 macro_rules! emit_error_event {
     ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
-        StandardEvent::new($env, $contract, $actor, EventData::Err($data)).emit($env)
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Err($data),
+        )
+        .emit($env)
+    };
+}
+
+#[macro_export]
+macro_rules! emit_monitoring_event {
+    ($env:expr, $contract:expr, $actor:expr, $data:expr) => {
+        $crate::event_schema::StandardEvent::new(
+            $env,
+            $contract,
+            $actor,
+            $crate::event_schema::EventData::Monitoring($data),
+        )
+        .emit($env)
     };
 }

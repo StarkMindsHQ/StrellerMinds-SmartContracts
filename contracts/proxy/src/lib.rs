@@ -1,23 +1,11 @@
-use soroban_sdk::{contract, contractimpl, Address, Env, Error};
+#![no_std]
 
-#[contract]
-pub struct Proxy;
+pub mod data_migration;
+pub mod errors;
+pub mod governance;
+pub mod upgradeable_proxy;
 
-#[contractimpl]
-impl Proxy {
-    pub fn initialize(_env: Env, _admin: Address, _implementation: Address) -> Result<(), Error> {
-        Ok(())
-    }
-
-    pub fn upgrade(_env: Env, _new_implementation: Address) -> Result<(), Error> {
-        Ok(())
-    }
-
-    pub fn get_admin(_env: Env) -> Result<Address, Error> {
-        Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-    }
-
-    pub fn get_implementation(_env: Env) -> Result<Address, Error> {
-        Ok(Address::from_str(&_env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
-    }
-}
+pub use data_migration::DataMigration;
+pub use errors::ProxyError;
+pub use governance::UpgradeGovernance;
+pub use upgradeable_proxy::UpgradeableProxy;

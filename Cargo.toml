@@ -7,25 +7,21 @@ soroban-sdk = "20.0.0"
 stellar-strkey = "0.0.7"
 ed25519-dalek = "2.0.0"
 rand = "0.8.5"
-serde_json = "1.0"
+proptest = "1.4.0"
+shared = { path = "contracts/shared" }
 
-# Workspace-level linting configuration (simplified for CI stability)
-[workspace.lints.rust]
-# Rust built-in lints (basic ones that don't cause issues)
-missing_docs = "warn"
-trivial_numeric_casts = "warn"
-unused_extern_crates = "warn"
-unused_import_braces = "warn"
-unused_qualifications = "warn"
+# Testing dependencies
+quickcheck = "1.0.0"
+criterion = { version = "0.5", features = ["html_reports"] }
 
-[workspace.lints.clippy]
-# Clippy lints (basic quality checks without being overly strict)
-cargo = "warn"
-# Allow some pedantic lints that might be too strict for smart contracts
-module_name_repetitions = "allow"
-must_use_candidate = "allow"
-missing_errors_doc = "allow"
-missing_panics_doc = "allow"
+# Coverage and analysis
+cargo-llvm-cov = "0.5"
+cargo-tarpaulin = "0.27"
+cargo-coverage-report = "0.2"
+
+# Security and audit
+cargo-audit = "0.17"
+cargo-deny = "0.13"
 
 [profile.release]
 opt-level = "z"

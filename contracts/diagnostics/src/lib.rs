@@ -1,10 +1,6 @@
 #![no_std]
 #![allow(dead_code)]
-#![allow(clippy::manual_memcpy)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::match_like_matches_macro)]
-#![allow(clippy::manual_clamp)]
-#![allow(clippy::enum_variant_names)]
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 pub mod anomaly_detector;
 pub mod behavior_analyzer;
@@ -278,11 +274,9 @@ impl Diagnostics {
         admin.require_auth();
 
         // Extract contract address from test config for the new implementation
-        let contract_address = if test_config.test_contracts.is_empty() {
-            return Err(DiagnosticsError::InvalidRegressionConfig);
-        } else {
-            test_config.test_contracts.get(0).unwrap().clone()
-        };
+        let contract_address =
+            test_config.test_contracts.get(0).ok_or(DiagnosticsError::InvalidRegressionConfig)?;
+
         RegressionTester::run_regression_tests(&env, &contract_address, &test_config)
     }
 
@@ -306,7 +300,7 @@ impl Diagnostics {
         };
 
         // Aggregate health data from all monitored contracts
-        for contract in contracts.iter() {
+        for contract in contracts {
             if let Ok(metrics) = PerformanceMonitor::get_current_metrics(&env, &contract) {
                 health_report.system_metrics.total_transactions += metrics.transaction_count;
                 health_report.system_metrics.average_response_time +=

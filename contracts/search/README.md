@@ -1,261 +1,117 @@
 # Search Contract
 
-## Overview
-A comprehensive search system for educational content on the Stellar blockchain. This contract provides advanced search capabilities including saved searches, search preferences, search history, suggestions, and analytics for educational platforms.
+## Purpose
 
-## Interface
+The Search contract (`AdvancedSearchContract`) is the intelligent content discovery engine for the StrellerMinds platform. It combines semantic NLP search, collaborative filtering, visual similarity, multilingual support, voice query processing, and personalized learning path optimization into a single on-chain contract. Because heavy compute (ML embeddings, NLP parsing, image processing) cannot run inside a WASM contract, the contract integrates with a set of authorized off-chain oracles that supply pre-computed metadata; the contract stores and indexes that data and enforces access control on all oracle write operations.
 
-### Core Search Functions
-```rust
-// Initialize the search contract
-fn initialize(env: Env, admin: Address) -> Result<(), Error>
+## Architecture
 
-// Execute a comprehensive search query
-fn search(env: Env, query: SearchQuery, user: Option<Address>) -> Result<SearchResults, Error>
+| Module | Description |
+|---|---|
+| `src/lib.rs` | Contract entrypoint — orchestrates all sub-engines and oracle management |
+| `src/semantic_search.rs` | NLP-enhanced query understanding and semantic content retrieval |
+| `src/recommendation_engine.rs` | Personalized recommendation generation and user profile management |
+| `src/content_analyzer.rs` | Tag- and skill-based content indexing and look-up |
+| `src/collaborative_filter.rs` | User similarity scoring and interaction-based recommendations |
+| `src/visual_search.rs` | Visual metadata storage and image-similarity content retrieval |
+| `src/learning_path_optimizer.rs` | Personalized learning path storage, step completion, and next-step retrieval |
+| `src/ranking_engine.rs` | Multi-signal result ranking with configurable weights |
+| `src/multilingual_search.rs` | Multilingual content storage and language-preference-aware retrieval |
+| `src/voice_search.rs` | Voice query storage and conversation session management |
+| `src/search_analytics.rs` | Search event recording, CTR tracking, and quality scoring |
+| `src/types.rs` | All shared data types (`SearchResultItem`, `Recommendation`, `RankingConfig`, `LearningPath`, etc.) |
+| `src/errors.rs` | `SearchError` enum (aliased as `Error`) |
 
-// Get search suggestions based on query prefix
-fn get_search_suggestions(env: Env, query_prefix: String, limit: Option<u32>) -> Result<Vec<SearchSuggestion>, Error>
+## Public API
 
-// Get popular search queries
-fn get_popular_queries(env: Env, limit: Option<u32>, period: Option<u64>) -> Result<Vec<PopularQuery>, Error>
+| Function | Description | Auth Required |
+|---|---|---|
+| `initialize(admin)` | One-time setup; sets admin and default ranking config | Yes — `admin` |
+| `semantic_search(query, user, filters)` | Executes an NLP-enhanced search; returns ranked `SearchResultItem` list | No |
+| `store_semantic_metadata(oracle, content_id, metadata)` | Stores pre-computed NLP metadata from an authorized oracle | Yes — oracle |
+| `get_recommendations(user, limit)` | Returns personalized content recommendations for `user` | Yes — `user` |
+| `store_recommendations(oracle, user, recommendations)` | Stores ML-generated recommendations from an authorized oracle | Yes — oracle |
+| `update_user_profile(user, completed_course, completed)` | Updates `user`'s profile with a completed (or uncompleted) course | Yes — `user` |
+| `store_content_analysis(oracle, content_id, analysis)` | Stores content analysis data from an authorized oracle | Yes — oracle |
+| `get_content_analysis(content_id)` | Returns the stored content analysis for `content_id` | No |
+| `find_by_tag(tag)` | Returns content IDs associated with `tag` | No |
+| `find_by_skill(skill_name)` | Returns content IDs associated with `skill_name` | No |
+| `store_user_similarity(oracle, user_a, user_b, score)` | Stores a collaborative-filter similarity score between two users | Yes — oracle |
+| `record_interaction(user, interaction)` | Records a user interaction event for collaborative filtering | Yes — `user` |
+| `get_collab_recommendations(user, limit)` | Returns collaborative-filter-based recommendations for `user` | Yes — `user` |
+| `store_visual_metadata(oracle, content_id, metadata)` | Stores image-processing metadata from an authorized oracle | Yes — oracle |
+| `find_visually_similar(content_id, min_score, limit)` | Returns content IDs visually similar to `content_id` | No |
+| `find_by_color(color_hex)` | Returns content IDs matching a dominant color | No |
+| `find_by_object(object_type)` | Returns content IDs containing a detected object type | No |
+| `store_learning_path(oracle, user, path)` | Stores an optimized learning path for `user` from an authorized oracle | Yes — oracle |
+| `get_learning_path(user)` | Returns `user`'s current learning path | Yes — `user` |
+| `complete_path_step(user, step_id, completion_score)` | Records completion of a learning path step | Yes — `user` |
+| `get_next_step(user)` | Returns the next recommended step in `user`'s learning path | Yes — `user` |
+| `rank_results(results, user)` | Ranks a list of content IDs using the multi-signal ranking engine | No |
+| `update_ranking_config(admin, config)` | Updates signal weights for the ranking engine | Yes — admin |
+| `store_multilingual_content(oracle, content_id, multilingual)` | Stores multilingual translations from an authorized oracle | Yes — oracle |
+| `set_language_preferences(user, preferences)` | Stores `user`'s language preferences | Yes — `user` |
+| `search_by_language(language, query)` | Returns content IDs matching `query` in the specified language | No |
+| `record_search(user, query, results_count)` | Records a search event for analytics purposes | No |
+| `record_click(user, query, content_id, rank_position)` | Records a click event for CTR tracking | No |
+| `get_ctr(query, content_id)` | Returns the click-through rate for a query/content pair | No |
+| `get_search_quality_score(query)` | Returns the computed quality score for a query | No |
+| `store_voice_query(oracle, user, processed_query)` | Stores a processed voice query from an authorized oracle | Yes — oracle |
+| `create_conversation_session(user)` | Creates a new voice conversation session for `user`; returns session ID | Yes — `user` |
+| `get_conversation_session(session_id)` | Returns the conversation session record | No |
+| `end_conversation_session(user)` | Ends `user`'s active voice conversation session | Yes — `user` |
+| `authorize_oracle(admin, oracle)` | Adds `oracle` to the authorized oracle set | Yes — admin |
+| `revoke_oracle(admin, oracle)` | Removes `oracle` from the authorized oracle set | Yes — admin |
+
+## Usage Example
+
+```text
+# Initialize contract
+search.initialize(admin_address)
+
+# Admin authorizes an off-chain NLP oracle
+search.authorize_oracle(admin_address, nlp_oracle_address)
+
+# Oracle stores pre-computed semantic metadata for a course
+search.store_semantic_metadata(nlp_oracle_address, "course-rust-101", semantic_metadata)
+
+# Student searches for Rust content
+results = search.semantic_search(processed_query, student_address, search_filters)
+
+# Record the search event and a click for analytics
+search.record_search(student_address, "learn rust", results.len())
+search.record_click(student_address, "learn rust", "course-rust-101", 0)
+
+# Student requests personalized recommendations
+recs = search.get_recommendations(student_address, 5)
+
+# Student works through their learning path
+step = search.get_next_step(student_address)
+search.complete_path_step(student_address, step.id, 95)
 ```
 
-### Saved Search Management
-```rust
-// Save a search query for future use
-fn save_search(env: Env, user: Address, name: String, description: String, query: SearchQuery, notification_enabled: bool) -> Result<String, Error>
+## Errors
 
-// Get saved searches for a user
-fn get_saved_searches(env: Env, user: Address) -> Result<Vec<SavedSearch>, Error>
+For the full error code reference and conventions, see [ERROR_HANDLING.md](../../docs/ERROR_HANDLING.md).
 
-// Execute a saved search
-fn execute_saved_search(env: Env, user: Address, search_id: String) -> Result<SearchResults, Error>
+| Code | Variant | Meaning |
+|---|---|---|
+| 1 | `AlreadyInitialized` | `initialize` has already been called |
+| 2 | `NotInitialized` | Contract has not been initialized yet |
+| 3 | `Unauthorized` | Caller is not the admin |
+| 4 | `InvalidQuery` | Search query is malformed or empty |
+| 5 | `ContentNotFound` | Requested content ID does not exist |
+| 6 | `InvalidMetadata` | Supplied semantic or visual metadata is invalid |
+| 7 | `InvalidScore` | Similarity or quality score is out of valid range |
+| 8 | `SessionExpired` | Conversation session has expired or does not exist |
+| 9 | `InvalidLanguage` | Language code is not recognized or supported |
+| 10 | `OracleNotAuthorized` | Oracle address is not in the authorized oracle list |
 
-// Delete a saved search
-fn delete_saved_search(env: Env, user: Address, search_id: String) -> Result<(), Error>
+## Integration
 
-// Mark a saved search as favorite
-fn toggle_favorite_search(env: Env, user: Address, search_id: String) -> Result<bool, Error>
-```
-
-### Search Preferences and History
-```rust
-// Set user search preferences
-fn set_search_preferences(env: Env, user: Address, preferences: SearchPreferences) -> Result<(), Error>
-
-// Get user search preferences
-fn get_search_preferences(env: Env, user: Address) -> Result<SearchPreferences, Error>
-
-// Get search history for a user
-fn get_search_history(env: Env, user: Address, limit: Option<u32>) -> Result<Vec<SearchHistoryEntry>, Error>
-
-// Clear search history for a user
-fn clear_search_history(env: Env, user: Address) -> Result<(), Error>
-```
-
-### Administrative Functions
-```rust
-// Get search analytics (admin only)
-fn get_search_analytics(env: Env, admin: Address, period_start: u64, period_end: u64) -> Result<SearchAnalytics, Error>
-
-// Update search index configuration (admin only)
-fn update_index_config(env: Env, admin: Address, index_name: String, config: SearchIndexConfig) -> Result<(), Error>
-
-// Update search weights (admin only)
-fn update_search_weights(env: Env, admin: Address, weights: SearchWeights) -> Result<(), Error>
-
-// Add search suggestions (admin only)
-fn add_search_suggestions(env: Env, admin: Address, category: String, suggestions: Vec<SearchSuggestion>) -> Result<(), Error>
-
-// Rebuild search index (admin only)
-fn rebuild_search_index(env: Env, admin: Address) -> Result<(), Error>
-```
-
-## Events
-
-### Search Events
-- `search_executed`: Emitted when a search query is executed
-- `search_saved`: Emitted when a search is saved for future use
-- `search_deleted`: Emitted when a saved search is deleted
-- `search_favorited`: Emitted when a search is marked as favorite
-
-### Preference Events
-- `preferences_updated`: Emitted when user search preferences are updated
-- `history_cleared`: Emitted when search history is cleared
-
-### Administrative Events
-- `index_rebuilt`: Emitted when search index is rebuilt
-- `weights_updated`: Emitted when search weights are updated
-- `suggestions_added`: Emitted when new search suggestions are added
-
-## Configuration
-
-### Search Weights Configuration
-```rust
-pub struct SearchWeights {
-    pub title_weight: u32,
-    pub description_weight: u32,
-    pub content_weight: u32,
-    pub tags_weight: u32,
-    pub category_weight: u32,
-    pub instructor_weight: u32,
-    pub metadata_weight: u32,
-}
-```
-
-### Search Index Configuration
-```rust
-pub struct SearchIndexConfig {
-    pub index_name: String,
-    pub fields: Vec<String>,
-    pub weights: SearchWeights,
-    pub filters: Vec<SearchFilter>,
-    pub sorting_options: Vec<SortOption>,
-}
-```
-
-### Search Preferences
-```rust
-pub struct SearchPreferences {
-    pub default_sort: SortOption,
-    pub results_per_page: u32,
-    pub auto_suggestions: bool,
-    pub save_history: bool,
-    pub notification_enabled: bool,
-}
-```
-
-## Testing
-
-### Running Tests
-```bash
-# Run all tests for search contract
-cargo test --package search
-
-# Run specific test modules
-cargo test --package search tests::test_search_functionality
-cargo test --package search tests::test_saved_searches
-cargo test --package search tests::test_search_preferences
-cargo test --package search tests::test_search_analytics
-```
-
-### Test Coverage
-- **Search Functionality Tests**: Core search query execution
-- **Saved Search Tests**: Save, retrieve, and manage saved searches
-- **Preference Tests**: User preference management
-- **History Tests**: Search history tracking and management
-- **Suggestion Tests**: Search suggestion functionality
-- **Analytics Tests**: Search analytics and reporting
-- **Administrative Tests**: Admin-only functions and configurations
-
-## Deployment
-
-### Prerequisites
-- Admin address for contract initialization
-- Search index configuration
-- Initial search weights and suggestions
-
-### Deployment Steps
-1. Deploy the search contract
-2. Initialize with admin address
-3. Configure search weights and index settings
-4. Add initial search suggestions
-5. Set up search analytics collection
-6. Begin search operations
-
-### Environment Setup
-- Configure search weights for different content types
-- Set up search index with appropriate fields
-- Add popular search suggestions
-- Configure analytics collection parameters
-- Set up search result pagination limits
-
-## Usage Examples
-
-### Basic Search
-```rust
-let query = SearchQuery {
-    query_text: "blockchain fundamentals".to_string(),
-    filters: vec![SearchFilter::Category("Technology".to_string())],
-    sort_by: SortOption::Relevance,
-    limit: Some(20),
-};
-
-let results = client.search(&query, Some(&user))?;
-```
-
-### Saving a Search
-```rust
-let search_id = client.save_search(
-    &user,
-    "Blockchain Courses".to_string(),
-    "Find all blockchain-related courses".to_string(),
-    query,
-    true, // notification_enabled
-)?;
-```
-
-### Setting Search Preferences
-```rust
-let preferences = SearchPreferences {
-    default_sort: SortOption::Relevance,
-    results_per_page: 20,
-    auto_suggestions: true,
-    save_history: true,
-    notification_enabled: true,
-};
-
-client.set_search_preferences(&user, &preferences)?;
-```
-
-### Getting Search Suggestions
-```rust
-let suggestions = client.get_search_suggestions(
-    "blockchain".to_string(),
-    Some(10)
-)?;
-```
-
-## Data Structures
-
-### Search Query
-```rust
-pub struct SearchQuery {
-    pub query_text: String,
-    pub filters: Vec<SearchFilter>,
-    pub sort_by: SortOption,
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
-}
-```
-
-### Search Results
-```rust
-pub struct SearchResults {
-    pub results: Vec<SearchResult>,
-    pub total_count: u32,
-    pub page: u32,
-    pub has_more: bool,
-    pub execution_time_ms: u64,
-}
-```
-
-### Saved Search
-```rust
-pub struct SavedSearch {
-    pub search_id: String,
-    pub user_id: Address,
-    pub name: String,
-    pub description: String,
-    pub query: SearchQuery,
-    pub created_at: u64,
-    pub last_used: u64,
-    pub use_count: u32,
-    pub is_favorite: bool,
-    pub notification_enabled: bool,
-}
-```
-
-## Related Docs
-- [Advanced Search System](../docs/ADVANCED_SEARCH_SYSTEM.md)
-- [Development Guide](../docs/development.md)
+| Contract | Relationship |
+|---|---|
+| `documentation` | Search indexes documentation articles and knowledge base entries |
+| `analytics` | Search analytics events (CTR, quality scores) feed platform-wide engagement metrics |
+| `student-progress-tracker` | Learning path steps map to course modules tracked by the progress tracker |
+| `shared` | RBAC and storage conventions shared across all contracts |
