@@ -124,25 +124,51 @@ jobs:
           name: perf-report
           path: target/perf_report.json
 
+  cors-integration:
+    name: CORS Integration Check
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'cors_config') || contains(github.event.head_commit.modified, 'enhanced_verification') || contains(github.event.head_commit.modified, 'cross-chain-credentials')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Trigger CORS integration tests
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: cors-integration-trigger
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [format, clippy, build, test, performance]
+    needs: [format, clippy, build, test, performance, cors-integration]
     if: always()
     steps:
       - name: Check all jobs
         run: |
+          cors_result="success"
+          if [[ "${{ needs.cors-integration.result }}" == "skipped" ]]; then
+            echo "CORS integration tests skipped (no CORS-related changes)"
+          elif [[ "${{ needs.cors-integration.result }}" != "success" ]]; then
+            cors_result="failed"
+            echo "CORS Integration: ${{ needs.cors-integration.result }}"
+          else
+            echo "CORS Integration: ${{ needs.cors-integration.result }}"
+          fi
+          
           if [[ "${{ needs.format.result }}" != "success" || \
                 "${{ needs.clippy.result }}" != "success" || \
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
-                "${{ needs.performance.result }}" != "success" ]]; then
-            echo "One or more CI jobs failed"
+                "${{ needs.performance.result }}" != "success" || \
+                "$cors_result" == "failed" ]]; then
+            echo "❌ One or more CI jobs failed"
             echo "Format: ${{ needs.format.result }}"
             echo "Clippy: ${{ needs.clippy.result }}"
             echo "Build: ${{ needs.build.result }}"
             echo "Test: ${{ needs.test.result }}"
             echo "Performance: ${{ needs.performance.result }}"
+            echo "CORS Integration: $cors_result"
             exit 1
           fi
           echo "✅ All CI jobs passed successfully"
