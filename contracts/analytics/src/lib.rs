@@ -12,10 +12,10 @@ mod storage;
 #[cfg(test)]
 mod integration_tests;
 
+use crate::analytics_engine::AnalyticsEngine;
 use crate::errors::AnalyticsError;
 use crate::reports::{generate_leaderboard_from_storage, ReportGenerator};
 use crate::storage::AnalyticsStorage;
-use crate::analytics_engine::AnalyticsEngine;
 use crate::types::{
     Achievement, AchievementType, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter,
     CourseAnalytics, DataKey, DifficultyRating, InsightType, LeaderboardEntry, LeaderboardMetric,
@@ -1060,7 +1060,11 @@ impl Analytics {
         let start = if offset >= total_students { total_students } else { offset };
         let end = {
             let e = start + safe_limit;
-            if e > total_students { total_students } else { e }
+            if e > total_students {
+                total_students
+            } else {
+                e
+            }
         };
 
         let now = env.ledger().timestamp();
@@ -1098,8 +1102,7 @@ impl Analytics {
         }
 
         let page_size = end - start;
-        let completion_rate =
-            (completed_students * 100).checked_div(page_size).unwrap_or(0);
+        let completion_rate = (completed_students * 100).checked_div(page_size).unwrap_or(0);
         let average_completion_time = if completed_students > 0 {
             total_completion_times / completed_students as u64
         } else {
@@ -1194,18 +1197,16 @@ impl Analytics {
     ) -> Result<Vec<LearningRecommendation>, AnalyticsError> {
         require_initialized(&env)?;
 
-        let analytics =
-            AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
-                .ok_or(AnalyticsError::StudentNotFound)?;
+        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+            .ok_or(AnalyticsError::StudentNotFound)?;
 
         let mut recommendations: Vec<LearningRecommendation> = Vec::new(&env);
 
         // Determine recommendation tier from performance data
         let is_struggling = analytics.average_score.map(|s| s < 70).unwrap_or(true);
         let is_declining = analytics.performance_trend == PerformanceTrend::Declining;
-        let is_advanced =
-            analytics.average_score.map(|s| s >= 85).unwrap_or(false)
-                && analytics.performance_trend == PerformanceTrend::Improving;
+        let is_advanced = analytics.average_score.map(|s| s >= 85).unwrap_or(false)
+            && analytics.performance_trend == PerformanceTrend::Improving;
 
         if is_struggling || is_declining {
             // Remedial path: revisit basics before advancing
@@ -1225,10 +1226,7 @@ impl Analytics {
             // Advanced / accelerated path
             recommendations.push_back(LearningRecommendation {
                 target_module: Symbol::new(&env, "ADVANCED"),
-                reason: String::from_str(
-                    &env,
-                    "Strong performance – advanced content unlocked",
-                ),
+                reason: String::from_str(&env, "Strong performance – advanced content unlocked"),
                 priority: 1,
                 estimated_difficulty: 8,
                 prerequisites: Vec::new(&env),
@@ -1239,10 +1237,7 @@ impl Analytics {
             // Standard next-step path
             recommendations.push_back(LearningRecommendation {
                 target_module: Symbol::new(&env, "NEXT_MOD"),
-                reason: String::from_str(
-                    &env,
-                    "Continue with next scheduled module",
-                ),
+                reason: String::from_str(&env, "Continue with next scheduled module"),
                 priority: 2,
                 estimated_difficulty: 5,
                 prerequisites: Vec::new(&env),
@@ -1265,7 +1260,8 @@ impl Analytics {
         }
 
         // Persist as an MLInsight for later retrieval
-        let insight = AnalyticsEngine::generate_adaptive_recommendations(&env, &student, &course_id)?;
+        let insight =
+            AnalyticsEngine::generate_adaptive_recommendations(&env, &student, &course_id)?;
         AnalyticsStorage::set_ml_insight(&env, &insight);
 
         Ok(recommendations)
@@ -1316,9 +1312,8 @@ impl Analytics {
     ) -> Result<LearningPathOptimization, AnalyticsError> {
         require_initialized(&env)?;
 
-        let analytics =
-            AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
-                .ok_or(AnalyticsError::StudentNotFound)?;
+        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+            .ok_or(AnalyticsError::StudentNotFound)?;
 
         let is_struggling = analytics.average_score.map(|s| s < 70).unwrap_or(true);
 
@@ -1394,18 +1389,16 @@ impl Analytics {
     ) -> Result<MLInsight, AnalyticsError> {
         require_initialized(&env)?;
 
-        let analytics =
-            AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
-                .ok_or(AnalyticsError::StudentNotFound)?;
+        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+            .ok_or(AnalyticsError::StudentNotFound)?;
 
         // Heuristic probability: weight completion%, avg score and streak
         let completion_weight = analytics.completion_percentage as u64;
         let score_weight = analytics.average_score.unwrap_or(0) as u64;
         let streak_weight = (analytics.streak_days.min(30) as u64).saturating_mul(2);
 
-        let probability =
-            ((completion_weight * 40 + score_weight * 40 + streak_weight * 20) / 100).min(100)
-                as u32;
+        let probability = ((completion_weight * 40 + score_weight * 40 + streak_weight * 20) / 100)
+            .min(100) as u32;
 
         let data_str = if probability >= 75 {
             String::from_str(&env, "HIGH: on track to complete")
@@ -1570,6 +1563,7 @@ mod tests {
         // Offset past all students returns nothing meaningful but shouldn't panic
         let empty_page = client
             .try_get_course_analytics_paginated(&course, &100, &10)
+            .unwrap()
             .unwrap();
         assert_eq!(empty_page.total_students, 2); // total_students is always full count
     }

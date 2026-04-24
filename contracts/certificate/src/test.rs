@@ -937,12 +937,8 @@ fn test_cleanup_expired_requests() {
 
     // Use minimum timeout so we can advance the ledger past it easily.
     let min_timeout: u64 = 3_600; // 1 hour (MIN_TIMEOUT in lib.rs)
-    let mut config = make_multisig_config(
-        &env,
-        "EXPIRE_COURSE",
-        &[approver1.clone(), approver2.clone()],
-        2,
-    );
+    let mut config =
+        make_multisig_config(&env, "EXPIRE_COURSE", &[approver1.clone(), approver2.clone()], 2);
     config.timeout_duration = min_timeout;
     client.configure_multisig(&admin, &config);
 
@@ -950,18 +946,17 @@ fn test_cleanup_expired_requests() {
     params.certificate_id = BytesN::from_array(&env, &[42u8; 32]);
 
     let requester = Address::generate(&env);
-    let request_id = client.create_multisig_request(
-        &requester,
-        &params,
-        &String::from_str(&env, "Expiry test"),
-    );
+    let request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Expiry test"));
 
     // Confirm request is pending
     let req = client.get_multisig_request(&request_id).unwrap();
     assert_eq!(req.status, MultiSigRequestStatus::Pending);
 
     // Advance the ledger timestamp past the timeout
-    env.ledger().set_timestamp(env.ledger().timestamp() + min_timeout + 1);
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
 
     // Cleanup should expire the request and return count = 1
     let expired_count = client.cleanup_expired_requests();
@@ -986,11 +981,8 @@ fn test_cleanup_skips_active_requests() {
     params.certificate_id = BytesN::from_array(&env, &[43u8; 32]);
 
     let requester = Address::generate(&env);
-    let _request_id = client.create_multisig_request(
-        &requester,
-        &params,
-        &String::from_str(&env, "Active test"),
-    );
+    let _request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Active test"));
 
     // Do NOT advance ledger — request is still within its deadline
     let expired_count = client.cleanup_expired_requests();
@@ -1022,7 +1014,9 @@ fn test_approval_on_expired_request_fails() {
     );
 
     // Advance past timeout
-    env.ledger().set_timestamp(env.ledger().timestamp() + min_timeout + 1);
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
 
     let result = client.try_process_multisig_approval(
         &approver,
