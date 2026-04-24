@@ -3,6 +3,7 @@ extern crate alloc;
 
 pub mod access_control;
 pub mod config;
+pub mod cors_config;
 pub mod error_codes;
 pub mod error_handling;
 pub mod errors;
