@@ -3,6 +3,8 @@
 pub mod errors;
 pub mod events;
 pub mod storage;
+pub mod storage_optimizer;
+pub mod two_factor_integration;
 pub mod types;
 
 #[cfg(test)]

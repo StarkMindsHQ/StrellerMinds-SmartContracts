@@ -11,6 +11,7 @@ use std::time::Duration;
 
 pub mod test_data;
 pub mod test_utils;
+pub mod certificate_integration;
 
 /// Configuration for the E2E test environment
 #[derive(Debug, Clone)]
