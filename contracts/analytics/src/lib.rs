@@ -13,13 +13,13 @@ mod storage;
 mod integration_tests;
 
 use crate::errors::AnalyticsError;
-use crate::reports::{ReportGenerator, generate_leaderboard_from_storage};
+use crate::reports::{generate_leaderboard_from_storage, ReportGenerator};
 use crate::storage::AnalyticsStorage;
 use crate::types::{
     Achievement, AchievementType, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter,
-    CourseAnalytics, DataKey, DifficultyRating, LeaderboardEntry,
-    LeaderboardMetric, LearningSession, ModuleAnalytics, PerformanceTrend,
-    ProgressAnalytics, ProgressReport, ReportPeriod,
+    CourseAnalytics, DataKey, DifficultyRating, LeaderboardEntry, LeaderboardMetric,
+    LearningSession, ModuleAnalytics, PerformanceTrend, ProgressAnalytics, ProgressReport,
+    ReportPeriod,
 };
 use shared::event_schema::{
     AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
@@ -27,7 +27,9 @@ use shared::event_schema::{
 };
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_analytics_event};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Symbol, Vec};
+use soroban_sdk::{
+    contract, contractimpl, symbol_short, Address, BytesN, Env, String, Symbol, Vec,
+};
 
 #[contract]
 pub struct Analytics;
@@ -60,28 +62,25 @@ fn update_progress_analytics(
     final_score: Option<u32>,
     completion_percentage: u32,
 ) {
-    let mut analytics = AnalyticsStorage::get_progress_analytics(env, &session.student, &session.course_id)
-        .unwrap_or(ProgressAnalytics {
-            student: session.student.clone(),
-            course_id: session.course_id.clone(),
-            total_modules: 0,
-            completed_modules: 0,
-            completion_percentage: 0,
-            total_time_spent: 0,
-            average_session_time: 0,
-            total_sessions: 0,
-            last_activity: 0,
-            first_activity: session.start_time,
-            average_score: None,
-            streak_days: 0,
-            performance_trend: PerformanceTrend::Insufficient,
-        });
+    let mut analytics =
+        AnalyticsStorage::get_progress_analytics(env, &session.student, &session.course_id)
+            .unwrap_or(ProgressAnalytics {
+                student: session.student.clone(),
+                course_id: session.course_id.clone(),
+                total_modules: 0,
+                completed_modules: 0,
+                completion_percentage: 0,
+                total_time_spent: 0,
+                average_session_time: 0,
+                total_sessions: 0,
+                last_activity: 0,
+                first_activity: session.start_time,
+                average_score: None,
+                streak_days: 0,
+                performance_trend: PerformanceTrend::Insufficient,
+            });
 
-    let time_spent = if end_time > session.start_time {
-        end_time - session.start_time
-    } else {
-        0
-    };
+    let time_spent = end_time.saturating_sub(session.start_time);
 
     analytics.total_sessions += 1;
     analytics.total_time_spent += time_spent;
@@ -126,7 +125,8 @@ fn update_progress_analytics(
     // Track module completion
     if completion_percentage == 100 {
         // Count unique completed modules
-        let sessions = AnalyticsStorage::get_student_sessions(env, &session.student, &session.course_id);
+        let sessions =
+            AnalyticsStorage::get_student_sessions(env, &session.student, &session.course_id);
         let mut completed_modules: Vec<Symbol> = Vec::new(env);
         for i in 0..sessions.len() {
             let sid = sessions.get(i).unwrap();
@@ -161,7 +161,8 @@ fn update_progress_analytics(
 
     // Count unique total modules
     {
-        let sessions = AnalyticsStorage::get_student_sessions(env, &session.student, &session.course_id);
+        let sessions =
+            AnalyticsStorage::get_student_sessions(env, &session.student, &session.course_id);
         let mut all_modules: Vec<Symbol> = Vec::new(env);
         for i in 0..sessions.len() {
             let sid = sessions.get(i).unwrap();
@@ -191,10 +192,8 @@ fn update_progress_analytics(
         analytics.total_modules = all_modules.len();
     }
 
-    if analytics.total_modules > 0 {
-        analytics.completion_percentage =
-            (analytics.completed_modules * 100) / analytics.total_modules;
-    }
+    analytics.completion_percentage =
+        (analytics.completed_modules * 100).checked_div(analytics.total_modules).unwrap_or(0);
 
     // Performance trend: compare last score vs running average
     analytics.performance_trend = if analytics.total_sessions < 3 {
@@ -317,7 +316,11 @@ impl Analytics {
     /// ```ignore
     /// client.initialize(&admin, &config);
     /// ```
-    pub fn initialize(env: Env, admin: Address, config: AnalyticsConfig) -> Result<(), AnalyticsError> {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        config: AnalyticsConfig,
+    ) -> Result<(), AnalyticsError> {
         if AnalyticsStorage::get_admin(&env).is_some() {
             return Err(AnalyticsError::AlreadyInitialized);
         }
@@ -402,11 +405,7 @@ impl Analytics {
 
         session.student.require_auth();
 
-        let time_spent = if end_time > session.start_time {
-            end_time - session.start_time
-        } else {
-            0
-        };
+        let time_spent = end_time.saturating_sub(session.start_time);
 
         session.end_time = end_time;
         session.score = final_score;
@@ -417,22 +416,23 @@ impl Analytics {
 
         update_progress_analytics(&env, &session, end_time, final_score, completion_percentage);
 
-        let updated_analytics = AnalyticsStorage::get_progress_analytics(&env, &session.student, &session.course_id)
-            .unwrap_or(ProgressAnalytics {
-                student: session.student.clone(),
-                course_id: session.course_id.clone(),
-                total_modules: 0,
-                completed_modules: 0,
-                completion_percentage: 0,
-                total_time_spent: 0,
-                average_session_time: 0,
-                total_sessions: 0,
-                last_activity: 0,
-                first_activity: 0,
-                average_score: None,
-                streak_days: 0,
-                performance_trend: PerformanceTrend::Insufficient,
-            });
+        let updated_analytics =
+            AnalyticsStorage::get_progress_analytics(&env, &session.student, &session.course_id)
+                .unwrap_or(ProgressAnalytics {
+                    student: session.student.clone(),
+                    course_id: session.course_id.clone(),
+                    total_modules: 0,
+                    completed_modules: 0,
+                    completion_percentage: 0,
+                    total_time_spent: 0,
+                    average_session_time: 0,
+                    total_sessions: 0,
+                    last_activity: 0,
+                    first_activity: 0,
+                    average_score: None,
+                    streak_days: 0,
+                    performance_trend: PerformanceTrend::Insufficient,
+                });
 
         check_and_award_achievements(&env, &session, final_score, &updated_analytics);
 
@@ -547,11 +547,7 @@ impl Analytics {
             }
         }
 
-        let completion_rate = if total_students > 0 {
-            (completed_students * 100) / total_students
-        } else {
-            0
-        };
+        let completion_rate = (completed_students * 100).checked_div(total_students).unwrap_or(0);
 
         let average_completion_time = if completed_students > 0 {
             total_completion_times / completed_students as u64
@@ -603,7 +599,8 @@ impl Analytics {
         course_id: Symbol,
         module_id: Symbol,
     ) -> Result<ModuleAnalytics, AnalyticsError> {
-        if let Some(existing) = AnalyticsStorage::get_module_analytics(&env, &course_id, &module_id) {
+        if let Some(existing) = AnalyticsStorage::get_module_analytics(&env, &course_id, &module_id)
+        {
             return Ok(existing);
         }
 
@@ -640,28 +637,22 @@ impl Analytics {
         }
 
         let completion_rate = (total_completions * 100) / total_attempts;
-        let average_time_to_complete = if total_attempts > 0 {
-            total_time / total_attempts as u64
-        } else {
-            0
-        };
-        let average_score = if score_count > 0 {
-            Some(score_sum / score_count)
-        } else {
-            None
-        };
+        let average_time_to_complete =
+            if total_attempts > 0 { total_time / total_attempts as u64 } else { 0 };
+        let average_score = score_sum.checked_div(score_count).map(Some).unwrap_or(None);
 
         let config = AnalyticsStorage::get_config(&env)
             .unwrap_or(AnalyticsStorage::get_default_config(&env));
-        let difficulty_rating = if completion_rate >= config.difficulty_thresholds.easy_completion_rate {
-            DifficultyRating::Easy
-        } else if completion_rate >= config.difficulty_thresholds.medium_completion_rate {
-            DifficultyRating::Medium
-        } else if completion_rate >= config.difficulty_thresholds.hard_completion_rate {
-            DifficultyRating::Hard
-        } else {
-            DifficultyRating::VeryHard
-        };
+        let difficulty_rating =
+            if completion_rate >= config.difficulty_thresholds.easy_completion_rate {
+                DifficultyRating::Easy
+            } else if completion_rate >= config.difficulty_thresholds.medium_completion_rate {
+                DifficultyRating::Medium
+            } else if completion_rate >= config.difficulty_thresholds.hard_completion_rate {
+                DifficultyRating::Hard
+            } else {
+                DifficultyRating::VeryHard
+            };
 
         let analytics = ModuleAnalytics {
             course_id: course_id.clone(),
@@ -1061,7 +1052,7 @@ mod tests {
     use crate::types::{AnalyticsConfig, DifficultyThresholds};
     use soroban_sdk::{testutils::Address as _, Address, BytesN, Env};
 
-    fn default_config(env: &Env) -> AnalyticsConfig {
+    fn default_config(_env: &Env) -> AnalyticsConfig {
         AnalyticsConfig {
             min_session_time: 60,
             max_session_time: 14400,

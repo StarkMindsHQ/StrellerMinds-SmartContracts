@@ -70,11 +70,7 @@ impl ReportGenerator {
 
         // Calculate average daily time
         let report_days = ((end_date - start_date) / 86400) + 1; // +1 to include both start and end days
-        let average_daily_time = if report_days > 0 {
-            total_time / report_days
-        } else {
-            0
-        };
+        let average_daily_time = total_time.checked_div(report_days).unwrap_or(0);
 
         // Calculate consistency score
         let consistency_score =
@@ -267,11 +263,7 @@ impl ReportGenerator {
 
         // Assign ranks and limit results
         let mut final_entries: Vec<LeaderboardEntry> = Vec::new(env);
-        let max_entries = if limit > 0 && limit < entries.len() {
-            limit
-        } else {
-            entries.len()
-        };
+        let max_entries = if limit > 0 && limit < entries.len() { limit } else { entries.len() };
 
         for i in 0..max_entries {
             let mut entry = entries.get(i).unwrap();

@@ -3,9 +3,9 @@ use crate::{
     errors::AnalyticsError,
     storage::AnalyticsStorage,
     types::{
-        Achievement, AchievementType, AnomalyData, AnomalySeverity, AnomalyType, CourseAnalytics,
-        CollaborativeInsight, CollaborationOpportunity, ContentAnalysis, DifficultyRating,
-        EffectivenessMetrics, EngagementMetrics, EngagementTrend, InsightType,
+        Achievement, AchievementType, AnomalyData, AnomalySeverity, AnomalyType,
+        CollaborationOpportunity, CollaborativeInsight, ContentAnalysis, CourseAnalytics,
+        DifficultyRating, EffectivenessMetrics, EngagementMetrics, EngagementTrend, InsightType,
         KnowledgeGap, KnowledgeGapAnalysis, LearningPathOptimization, LearningRecommendation,
         LearningSession, MLInsight, ModuleAnalytics, PeerComparison, PerformanceTrend,
         PredictionMetrics, ProgressAnalytics, SessionType,
@@ -25,10 +25,8 @@ impl AnalyticsEngine {
         let mut data = [0u8; 32];
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
         BytesN::from_array(env, &data)
     }
 
@@ -39,7 +37,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Learning pattern analysis completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -60,7 +58,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Completion prediction completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -81,7 +79,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Adaptive recommendations generated");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -102,7 +100,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Engagement prediction completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -123,7 +121,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Knowledge gaps identified");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -144,7 +142,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Collaborative learning analysis completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -165,7 +163,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Advanced anomaly detection completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -186,7 +184,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Learning path optimization completed");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),
@@ -207,7 +205,7 @@ impl AnalyticsEngine {
         course_id: &Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         let insight_data = String::from_str(env, "Effectiveness metrics calculated");
-        
+
         Ok(MLInsight {
             insight_id: Self::generate_insight_id(env),
             student: student.clone(),

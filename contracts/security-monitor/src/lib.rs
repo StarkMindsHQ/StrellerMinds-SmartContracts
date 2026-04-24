@@ -813,7 +813,10 @@ impl SecurityMonitor {
                         if now > exp {
                             assignment.is_active = false;
                             SecurityStorage::set_role_assignment(
-                                &env, &user, &role_id, &assignment,
+                                &env,
+                                &user,
+                                &role_id,
+                                &assignment,
                             );
                             revoked += 1;
                         }

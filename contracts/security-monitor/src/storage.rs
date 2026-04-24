@@ -263,12 +263,18 @@ impl SecurityStorage {
         env.storage().persistent().has(&key)
     }
 
-    pub fn set_role_assignment(env: &Env, user: &Address, role_id: &Symbol, assignment: &RoleAssignment) {
+    pub fn set_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+        assignment: &RoleAssignment,
+    ) {
         let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
         env.storage().persistent().set(&key, assignment);
 
         let user_key = SecurityDataKey::RbacUserRoles(user.clone());
-        let mut roles: Vec<Symbol> = env.storage().persistent().get(&user_key).unwrap_or(Vec::new(env));
+        let mut roles: Vec<Symbol> =
+            env.storage().persistent().get(&user_key).unwrap_or(Vec::new(env));
         let mut already_tracked = false;
         for i in 0..roles.len() {
             if roles.get(i).unwrap() == *role_id {
@@ -282,7 +288,11 @@ impl SecurityStorage {
         }
     }
 
-    pub fn get_role_assignment(env: &Env, user: &Address, role_id: &Symbol) -> Option<RoleAssignment> {
+    pub fn get_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+    ) -> Option<RoleAssignment> {
         let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
         env.storage().persistent().get(&key)
     }
@@ -292,14 +302,24 @@ impl SecurityStorage {
         env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
-    pub fn add_role_delegation(env: &Env, delegator: &Address, role_id: &Symbol, delegation: &RoleDelegation) {
+    pub fn add_role_delegation(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+        delegation: &RoleDelegation,
+    ) {
         let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
-        let mut delegations: Vec<RoleDelegation> = env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+        let mut delegations: Vec<RoleDelegation> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
         delegations.push_back(delegation.clone());
         env.storage().persistent().set(&key, &delegations);
     }
 
-    pub fn get_role_delegations(env: &Env, delegator: &Address, role_id: &Symbol) -> Vec<RoleDelegation> {
+    pub fn get_role_delegations(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+    ) -> Vec<RoleDelegation> {
         let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
         env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }

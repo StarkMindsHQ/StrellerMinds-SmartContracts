@@ -16,12 +16,7 @@ impl AnalyticsStorage {
         env.storage().persistent().set(&key, session);
 
         // Also add to student's session list
-        Self::add_student_session(
-            env,
-            &session.student,
-            &session.course_id,
-            &session.session_id,
-        );
+        Self::add_student_session(env, &session.student, &session.course_id, &session.session_id);
     }
 
     /// Get a learning session by ID
@@ -38,11 +33,8 @@ impl AnalyticsStorage {
         session_id: &BytesN<32>,
     ) {
         let key = DataKey::StudentSessions(student.clone(), course_id.clone());
-        let mut sessions: Vec<BytesN<32>> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env));
+        let mut sessions: Vec<BytesN<32>> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         // Check if session already exists
         for i in 0..sessions.len() {
@@ -62,10 +54,7 @@ impl AnalyticsStorage {
         course_id: &Symbol,
     ) -> Vec<BytesN<32>> {
         let key = DataKey::StudentSessions(student.clone(), course_id.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     /// Store progress analytics
@@ -104,11 +93,8 @@ impl AnalyticsStorage {
     /// Add student to course
     pub fn add_course_student(env: &Env, course_id: &Symbol, student: &Address) {
         let key = DataKey::CourseStudents(course_id.clone());
-        let mut students: Vec<Address> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env));
+        let mut students: Vec<Address> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         // Check if student already exists
         for i in 0..students.len() {
@@ -124,10 +110,7 @@ impl AnalyticsStorage {
     /// Get all students in a course
     pub fn get_course_students(env: &Env, course_id: &Symbol) -> Vec<Address> {
         let key = DataKey::CourseStudents(course_id.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     /// Store module analytics
@@ -204,10 +187,7 @@ impl AnalyticsStorage {
     /// Get student achievements
     pub fn get_student_achievements(env: &Env, student: &Address) -> Vec<Achievement> {
         let key = DataKey::StudentAchievements(student.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     /// Add achievement to student
@@ -235,10 +215,7 @@ impl AnalyticsStorage {
         metric: &crate::types::LeaderboardMetric,
     ) -> Vec<LeaderboardEntry> {
         let key = DataKey::Leaderboard(course_id.clone(), metric.clone());
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or(Vec::new(env))
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 
     /// Store an ML insight

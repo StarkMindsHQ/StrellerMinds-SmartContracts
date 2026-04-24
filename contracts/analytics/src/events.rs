@@ -1,10 +1,10 @@
 #![allow(dead_code)]
-use soroban_sdk::{Address, BytesN, Env, Symbol};
+use crate::types::LeaderboardMetric;
 use shared::event_schema::{
     AnalyticsEventData, EventData, MetricsUpdatedEvent, SessionCompletedEvent,
     SessionRecordedEvent, StandardEvent,
 };
-use crate::types::LeaderboardMetric;
+use soroban_sdk::{Address, BytesN, Env, Symbol};
 
 /// Analytics contract events
 pub struct AnalyticsEvents;

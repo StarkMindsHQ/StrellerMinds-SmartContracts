@@ -550,9 +550,7 @@ impl CrossChainCredentials {
             created_at: env.ledger().timestamp(),
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::BridgeRequest(request_id.clone()), &request);
+        env.storage().persistent().set(&DataKey::BridgeRequest(request_id.clone()), &request);
 
         emit_crosschain_event!(
             &env,
@@ -602,9 +600,7 @@ impl CrossChainCredentials {
         }
 
         credential.chain_id = new_chain.clone();
-        env.storage()
-            .persistent()
-            .set(&DataKey::Credential(credential_id.clone()), &credential);
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
 
         emit_crosschain_event!(
             &env,

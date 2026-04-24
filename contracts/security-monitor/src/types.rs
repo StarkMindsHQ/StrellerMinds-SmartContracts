@@ -221,10 +221,10 @@ pub enum SecurityDataKey {
     IncidentReport(ThreatId),        // incident_id
     Oracle(Address),                 // Authorized oracle
     // RBAC keys
-    RbacRole(Symbol),                      // role_id -> RbacRole
-    RbacUserRoles(Address),                // user -> Vec<Symbol>
-    RbacAssignment(Address, Symbol),       // (user, role_id) -> RoleAssignment
-    RbacDelegations(Address, Symbol),      // (delegator, role_id) -> Vec<RoleDelegation>
+    RbacRole(Symbol),                 // role_id -> RbacRole
+    RbacUserRoles(Address),           // user -> Vec<Symbol>
+    RbacAssignment(Address, Symbol),  // (user, role_id) -> RoleAssignment
+    RbacDelegations(Address, Symbol), // (delegator, role_id) -> Vec<RoleDelegation>
 }
 
 /// A role definition in the RBAC hierarchy.
