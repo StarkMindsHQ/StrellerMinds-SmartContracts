@@ -792,6 +792,9 @@ version = "0.1.0"
 dependencies = [
  "analytics",
  "anyhow",
+ "assessment",
+ "certificate",
+ "community",
  "futures",
  "hex",
  "rand 0.8.6",
