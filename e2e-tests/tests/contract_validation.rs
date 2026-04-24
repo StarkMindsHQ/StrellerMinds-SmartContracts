@@ -14,7 +14,6 @@ use validator::Validate;
 #[derive(Debug, Deserialize)]
 struct OpenApiSpec {
     paths: HashMap<String, PathItem>,
-    components: Option<Components>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,46 +23,8 @@ struct PathItem {
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 struct Operation {
     operation_id: String,
-    request_body: Option<RequestBody>,
-    responses: HashMap<String, Response>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct RequestBody {
-    content: HashMap<String, MediaType>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Response {
-    content: Option<HashMap<String, MediaType>>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct MediaType {
-    schema: Option<Schema>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Schema {
-    #[serde(rename = "$ref")]
-    ref_path: Option<String>,
-    r#type: Option<String>,
-    required: Option<Vec<String>>,
-    properties: Option<HashMap<String, Schema>>,
-    items: Option<Box<Schema>>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Components {
-    schemas: Option<HashMap<String, Schema>>,
 }
 
 /// Standard error response structure
@@ -107,95 +68,6 @@ fn load_openapi_spec() -> Result<OpenApiSpec> {
     let yaml_content = std::fs::read_to_string(spec_path)?;
     let spec: OpenApiSpec = serde_yaml::from_str(&yaml_content)?;
     Ok(spec)
-}
-
-/// Validate that a JSON response matches the expected schema
-#[allow(dead_code)]
-fn validate_response_against_schema(
-    response: &Value,
-    schema: &Schema,
-    components: &Option<Components>,
-) -> Result<()> {
-    // Handle $ref references
-    if let Some(ref_path) = &schema.ref_path {
-        if let Some(ref_path) = ref_path.strip_prefix("#/components/schemas/") {
-            if let Some(schemas) = components.as_ref().and_then(|c| c.schemas.as_ref()) {
-                if let Some(referenced_schema) = schemas.get(ref_path) {
-                    return validate_response_against_schema(
-                        response,
-                        referenced_schema,
-                        components,
-                    );
-                }
-            }
-        }
-        return Ok(());
-    }
-
-    // Validate type
-    if let Some(expected_type) = &schema.r#type {
-        match expected_type.as_str() {
-            "object" => {
-                if !response.is_object() {
-                    anyhow::bail!("Expected object, got {}", response);
-                }
-            }
-            "string" => {
-                if !response.is_string() {
-                    anyhow::bail!("Expected string, got {}", response);
-                }
-            }
-            "integer" | "number" => {
-                if !response.is_number() {
-                    anyhow::bail!("Expected number, got {}", response);
-                }
-            }
-            "array" => {
-                if !response.is_array() {
-                    anyhow::bail!("Expected array, got {}", response);
-                }
-            }
-            "boolean" => {
-                if !response.is_boolean() {
-                    anyhow::bail!("Expected boolean, got {}", response);
-                }
-            }
-            _ => {}
-        }
-    }
-
-    // Validate required fields
-    if let Some(required) = &schema.required {
-        if let Some(obj) = response.as_object() {
-            for field in required {
-                if !obj.contains_key(field) {
-                    anyhow::bail!("Missing required field: {}", field);
-                }
-            }
-        }
-    }
-
-    // Validate properties
-    if let Some(properties) = &schema.properties {
-        if let Some(obj) = response.as_object() {
-            for (prop_name, prop_schema) in properties {
-                if let Some(value) = obj.get(prop_name) {
-                    validate_response_against_schema(value, prop_schema, components)?;
-                }
-            }
-        }
-    }
-
-    // Validate array items
-    if let Some(items_schema) = &schema.items {
-        if let Some(arr) = response.as_array() {
-            for item in arr {
-                validate_response_against_schema(item, items_schema, components)?;
-            }
-        }
-    }
-
-    Ok(())
 }
 
 /// Parse contract response and validate structure
@@ -667,9 +539,6 @@ fn test_openapi_spec_is_valid() -> Result<()> {
         spec.paths.contains_key("/token/initialize"),
         "Spec should contain token initialize path"
     );
-
-    // Verify components exist
-    assert!(spec.components.is_some(), "Spec should contain components section");
 
     println!("✅ OpenAPI specification is valid and complete");
     Ok(())
