@@ -261,10 +261,13 @@ pub struct AnalyticsFilter {
     pub min_score: Option<u32>,
 }
 
+/// Optional wrapper for `SessionType` used in analytics filter queries.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[contracttype]
 pub enum OptionalSessionType {
+    /// No session type filter applied.
     None,
+    /// Filter by this specific session type.
     Some(SessionType),
 }
 

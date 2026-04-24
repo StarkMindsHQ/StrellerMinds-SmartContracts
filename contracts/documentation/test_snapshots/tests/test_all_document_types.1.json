@@ -43,7 +43,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -87,7 +87,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -131,7 +131,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -175,7 +175,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -219,7 +219,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -263,7 +263,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -307,7 +307,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -351,7 +351,7 @@
                   "string": "Title"
                 },
                 {
-                  "string": "Content"
+                  "string": "This is test content for document types"
                 },
                 {
                   "vec": [
@@ -867,6 +867,30 @@
                     },
                     {
                       "key": {
+                        "symbol": "rate_limit_contribution"
+                      },
+                      "val": {
+                        "u32": 20
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_create_doc"
+                      },
+                      "val": {
+                        "u32": 10
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_limit_window"
+                      },
+                      "val": {
+                        "u64": 3600
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "require_review"
                       },
                       "val": {
@@ -948,7 +972,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1120,7 +1144,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1292,7 +1316,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1464,7 +1488,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1636,7 +1660,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1808,7 +1832,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -1980,7 +2004,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -2152,7 +2176,7 @@
                         "symbol": "content"
                       },
                       "val": {
-                        "string": "Content"
+                        "string": "This is test content for document types"
                       }
                     },
                     {
@@ -2367,6 +2391,74 @@
                 "durability": "persistent",
                 "val": {
                   "bool": true
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "RateLimit"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "u64": 1
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "RateLimit"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                    },
+                    {
+                      "u64": 1
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "bucket"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "count"
+                      },
+                      "val": {
+                        "u32": 8
+                      }
+                    }
+                  ]
                 }
               }
             },

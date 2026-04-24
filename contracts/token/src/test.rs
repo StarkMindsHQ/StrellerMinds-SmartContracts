@@ -1,4 +1,5 @@
 use super::*;
+use shared::monitoring::ContractHealthStatus;
 use soroban_sdk::{testutils::Address as _, Address, Env};
 
 // Helper function to create a test environment
@@ -258,4 +259,38 @@ fn test_burn_for_upgrade() {
 
     // Check that user's balance is reduced
     assert_eq!(client.balance(&user), 800);
+}
+
+#[test]
+fn test_health_check_before_init() {
+    let (env, client, _admin) = setup_test_env();
+    env.mock_all_auths();
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Unknown);
+    assert!(!report.initialized);
+}
+
+#[test]
+fn test_health_check_after_init() {
+    let (env, client, admin) = setup_test_env();
+    env.mock_all_auths();
+
+    client.initialize(&admin);
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Healthy);
+    assert!(report.initialized);
+    assert_eq!(report.custom_metrics.len(), 1);
+}
+
+#[test]
+fn test_health_check_emits_event() {
+    let (env, client, admin) = setup_test_env();
+    env.mock_all_auths();
+
+    client.initialize(&admin);
+    client.health_check();
+
+    let events = env.events().all();
+    assert!(!events.is_empty());
 }

@@ -5519,6 +5519,74 @@
             "key": {
               "vec": [
                 {
+                  "symbol": "RateLimit"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                },
+                {
+                  "u64": 2
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "RateLimit"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                    },
+                    {
+                      "u64": 2
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "bucket"
+                      },
+                      "val": {
+                        "u64": 11
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "count"
+                      },
+                      "val": {
+                        "u32": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          4095
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+            "key": {
+              "vec": [
+                {
                   "symbol": "RecognitionCounter"
                 }
               ]
@@ -6315,6 +6383,30 @@
                             },
                             {
                               "key": {
+                                "symbol": "rate_limit_activity"
+                              },
+                              "val": {
+                                "u32": 100
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_recognition"
+                              },
+                              "val": {
+                                "u32": 10
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "rate_limit_window"
+                              },
+                              "val": {
+                                "u64": 86400
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "streak_weekly_bonus"
                               },
                               "val": {
@@ -6433,16 +6525,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "rep_upd"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "reputation_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "u32": 3
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -6460,16 +6573,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "rep_upd"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "reputation_updated"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                  "u32": 1
                 },
                 {
-                  "u32": 5
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }
@@ -6487,16 +6621,37 @@
           "v0": {
             "topics": [
               {
-                "symbol": "recog"
+                "symbol": "standard_event"
+              },
+              {
+                "symbol": "gam"
+              },
+              {
+                "symbol": "gamification"
+              },
+              {
+                "symbol": "recognized"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
               }
             ],
             "data": {
               "vec": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "u32": 1
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                  "u64": 1000000
+                },
+                {
+                  "bytes": "000000000000000000000000000f424000000000000f424000000000000f4240"
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "string": "gamification_event"
                 }
               ]
             }

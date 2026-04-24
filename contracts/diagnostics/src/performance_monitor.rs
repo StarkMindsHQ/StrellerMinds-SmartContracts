@@ -120,8 +120,11 @@ impl PerformanceMonitor {
             0
         };
 
-        let error_rate =
-            if total_transactions > 0 { (total_errors * 100) / total_transactions } else { 0 };
+        let error_rate = if total_transactions > 0 {
+            (total_errors * 100).checked_div(total_transactions).unwrap_or(0)
+        } else {
+            0
+        };
 
         Ok(PerformanceReport {
             contract_address: contract_address.clone(),
@@ -143,6 +146,7 @@ impl PerformanceMonitor {
     }
 
     /// Profile a specific operation
+    #[allow(clippy::too_many_arguments)]
     pub fn profile_operation(
         env: &Env,
         contract_address: &Address,
@@ -184,10 +188,8 @@ impl PerformanceMonitor {
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
 
-        for i in 0..8 {
-            data[i] = ts_bytes[i];
-            data[i + 8] = seq_bytes[i];
-        }
+        data[0..8].copy_from_slice(&ts_bytes);
+        data[8..16].copy_from_slice(&seq_bytes);
 
         BytesN::from_array(env, &data)
     }

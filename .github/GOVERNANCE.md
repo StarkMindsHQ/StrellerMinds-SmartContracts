@@ -2,6 +2,7 @@
 
 This document outlines the governance structure and triage processes for the StrellerMinds Smart Contracts project.
 
+
 ## Issue Triage Process
 
 ### Bug Reports
@@ -93,6 +94,21 @@ All PRs must meet the following criteria:
 - Tag maintainers for urgent security issues
 - Follow the project's code of conduct
 
+### Engagement Cadence
+
+- Weekly: triage new issues and respond to questions
+- Monthly: review open PR queue and stale issues, and refresh good-first-issue labeling
+- Quarterly: perform a community health review and adjust processes as needed
+
+### Community Health Review
+
+Use this checklist quarterly:
+- Time to first maintainer response on issues and PRs
+- Number of stale issues and PRs and common reasons
+- CI failure themes (fmt/clippy/tests) and recurring contributor friction
+- Documentation gaps and repeated questions
+- Onboarding outcomes tracked via the training effectiveness framework in [docs/tool-effectiveness-review.md](../docs/tool-effectiveness-review.md)
+
 ## Security Policy
 
 ### Reporting Security Issues
@@ -125,4 +141,4 @@ All PRs must meet the following criteria:
 
 ---
 
-For questions about governance or triage processes, please open an issue or contact the maintainers.d
+For questions about governance or triage processes, please open an issue or contact the maintainers.

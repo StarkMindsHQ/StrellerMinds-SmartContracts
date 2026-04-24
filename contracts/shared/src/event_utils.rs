@@ -99,7 +99,17 @@ impl EventUtils {
             EventData::Token(_) => 64,
             EventData::Progress(_) => 64,
             EventData::System(_) => 64,
+            EventData::Mentorship(_) => 96,
+            EventData::Governance(_) => 128,
+            EventData::Security(_) => 128,
+            EventData::Certification(_) => 128,
+            EventData::Gamification(_) => 128,
+            EventData::CrossChain(_) => 128,
+            EventData::Assessment(_) => 128,
+            EventData::Community(_) => 128,
+            EventData::Search(_) => 128,
             EventData::Err(_) => 64,
+            EventData::Monitoring(_) => 96,
         }
     }
 
@@ -154,20 +164,14 @@ impl EventUtils {
                     return Err(String::from_str(env, "Rate limit exceeded"));
                 }
                 // Increment count
-                env.storage()
-                    .temporary()
-                    .set(&key, &(count + 1, reset_time));
+                env.storage().temporary().set(&key, &(count + 1, reset_time));
             } else {
                 // Reset period
-                env.storage()
-                    .temporary()
-                    .set(&key, &(1, current_time + period_seconds));
+                env.storage().temporary().set(&key, &(1, current_time + period_seconds));
             }
         } else {
             // First event in period
-            env.storage()
-                .temporary()
-                .set(&key, &(1, current_time + period_seconds));
+            env.storage().temporary().set(&key, &(1, current_time + period_seconds));
         }
 
         Ok(())

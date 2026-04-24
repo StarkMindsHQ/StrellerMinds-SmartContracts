@@ -133,10 +133,7 @@ impl TransactionTracer {
             if trace.execution_time_ms > baseline_avg_time * 3 {
                 anomalies.push_back(String::from_str(
                     env,
-                    &format!(
-                        "Slow execution: {}ms (baseline: {}ms)",
-                        trace.execution_time_ms, baseline_avg_time
-                    ),
+                    "Slow execution: execution time significantly exceeds baseline",
                 ));
             }
 

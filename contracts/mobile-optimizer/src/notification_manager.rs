@@ -126,7 +126,7 @@ impl NotificationManager {
         let mut sent_reminder: Option<LearningReminder> = None;
 
         for reminder in reminders.iter() {
-            let mut r = reminder.clone();
+            let mut r: LearningReminder = reminder.clone();
             if r.reminder_id == reminder_id {
                 r.last_sent = now;
                 if r.repeat_interval == RepeatInterval::Once {
@@ -177,7 +177,7 @@ impl NotificationManager {
 
         let mut updated = Vec::new(env);
         for reminder in reminders.iter() {
-            let mut r = reminder.clone();
+            let mut r: LearningReminder = reminder.clone();
             if r.reminder_id == reminder_id {
                 r.is_active = false;
             }
@@ -321,7 +321,7 @@ impl NotificationManager {
         let now = env.ledger().timestamp();
 
         for record in history.iter() {
-            let mut r = record.clone();
+            let mut r: NotificationRecord = record.clone();
             if r.notification_id == notification_id {
                 r.clicked_at = now;
                 r.action_taken = true;
