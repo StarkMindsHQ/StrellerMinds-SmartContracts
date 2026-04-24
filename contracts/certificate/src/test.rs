@@ -715,6 +715,39 @@ fn test_verify_revoked_cert_not_authentic() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Reproduce Issue #378: Revoked certificate still passing verification
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_reproduce_issue_378() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "REPRO_378", &student);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    // Verify it is active first
+    assert!(client.verify_certificate(&params.certificate_id));
+
+    // Revoke the certificate
+    client.revoke_certificate(
+        &admin,
+        &params.certificate_id,
+        &String::from_str(&env, "Test Revocation"),
+        &false,
+    );
+
+    // Verify certificate SHOULD BE false
+    let is_valid = client.verify_certificate(&params.certificate_id);
+    assert!(!is_valid, "Revoked certificate should not be valid");
+
+    // Verify authenticity SHOULD BE false
+    let is_authentic = client.verify_authenticity(&params.certificate_id);
+    assert!(!is_authentic, "Revoked certificate should not be authentic");
+}
+
+// ─────────────────────────────────────────────────────────────
 // 12. Audit Trail
 // ─────────────────────────────────────────────────────────────
 #[test]
@@ -846,6 +879,22 @@ fn test_student_certificates() {
 
     let certs = client.get_student_certificates(&student);
     assert_eq!(certs.len(), 3);
+
+    // Revoke one
+    client.revoke_certificate(
+        &admin,
+        &certs.get(0).unwrap(),
+        &String::from_str(&env, "Revoked"),
+        &false,
+    );
+
+    // Should now have 2 active
+    let active_certs = client.get_student_certificates(&student);
+    assert_eq!(active_certs.len(), 2);
+
+    // Should still have 3 total
+    let all_certs = client.get_all_student_certificates(&student);
+    assert_eq!(all_certs.len(), 3);
 }
 
 // ─────────────────────────────────────────────────────────────
