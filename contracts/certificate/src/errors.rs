@@ -87,6 +87,12 @@ pub enum CertificateError {
 
     // Rate limiting
     RateLimitExceeded = 90,
+
+    // ZKP
+    /// The provided zero-knowledge proof is invalid or malformed.
+    InvalidProof = 100,
+    /// The zero-knowledge verification process failed.
+    VerificationFailed = 101,
 }
 
 impl CertificateError {
@@ -125,6 +131,8 @@ impl CertificateError {
             Self::InvalidInput => "CERT-080",
             Self::InternalError => "CERT-099",
             Self::RateLimitExceeded => "CERT-090",
+            Self::InvalidProof => "CERT-100",
+            Self::VerificationFailed => "CERT-101",
         }
     }
 
@@ -149,6 +157,9 @@ impl CertificateError {
             }
             Self::ComplianceCheckFailed | Self::UnsupportedStandard => {
                 "Review compliance requirements and supported standards before retrying"
+            }
+            Self::InvalidProof | Self::VerificationFailed => {
+                "Verify the zero-knowledge proof data and re-generate the proof if necessary"
             }
             _ => "Review the certificate workflow state and retry the next valid operation",
         }

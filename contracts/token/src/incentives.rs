@@ -11,7 +11,6 @@ use crate::types::{
 };
 use shared::access_control::AccessControl;
 use shared::roles::Permission;
-use soroban_sdk::testutils::Address as TestAddress;
 use soroban_sdk::{contracttype, Address, Env, String, Vec};
 
 /// Token incentive management system

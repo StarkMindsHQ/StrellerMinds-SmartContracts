@@ -2,6 +2,7 @@
 name = "e2e-tests"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 
 [dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

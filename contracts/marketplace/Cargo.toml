@@ -1,21 +1,16 @@
 [package]
-name = "community"
+name = "marketplace"
 version = "0.1.0"
 edition = "2021"
+publish = false
 license = "Apache-2.0"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
-shared = { path = "../shared" }
+shared = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
-
-[features]
-testutils = ["soroban-sdk/testutils"]
-
-[package.metadata.docs.rs]
-all-features = true

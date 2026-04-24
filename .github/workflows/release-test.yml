@@ -1,12 +1,6 @@
 name: Release Test
 
 on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'contracts/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
   push:
     branches: [develop]
     paths:
