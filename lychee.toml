@@ -1,0 +1,51 @@
+# Lychee link checker configuration
+# https://lychee.cli.rs/
+
+# Maximum number of concurrent network requests
+max_concurrency = 10
+
+# Check links inside `<code>` and `<pre>` blocks as well as Markdown code blocks
+include_verbatim = false
+
+# Proceed for server connections considered insecure (invalid TLS)
+insecure = false
+
+# Comma-separated list of accepted status codes for valid links
+accept = [200, 204, 206, 301, 302, 307, 308, 429]
+
+# Maximum number of redirects to follow
+max_redirects = 5
+
+# Request timeout in seconds
+timeout = 30
+
+# Maximum number of retries per request
+max_retries = 3
+
+# Wait time between retry attempts in seconds
+retry_wait_time = 2
+
+# Exclude URLs and mail addresses from checking
+exclude = [
+  # Exclude example URLs that are placeholders
+  'https://github.com/your-username/*',
+  'http://example.com',
+  'https://example.com',
+
+  # Exclude localhost and local file paths
+  'http://localhost*',
+  'http://127.0.0.1*',
+  'file://*',
+]
+
+# User agent to send with each request
+user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:115.0) Gecko/20100101 Firefox/115.0"
+
+# Skip checking links that match these schemes
+exclude_link_local = true
+
+# Exclude all private network addresses
+exclude_private = true
+
+# Check mail addresses
+include_mail = false

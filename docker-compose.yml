@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  stellar:
+    image: stellar/quickstart:latest
+    container_name: soroban-localnet
+    ports:
+      - "8000:8000"     # Horizon API
+      - "11626:11626"   # Stellar Core peer port
+      - "11625:11625"   # Stellar Core admin port
+    environment:
+      - NETWORK_PASSPHRASE=Standalone Network ; February 2017
+      - SOROBAN_RPC_PORT=8000
+      - ENABLE_SOROBAN_RPC=true
+    command: >
+      --standalone
+      --enable-soroban-rpc
+    volumes:
+      - stellar-data:/opt/stellar
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - soroban-network
+
+volumes:
+  stellar-data:
+    driver: local
+
+networks:
+  soroban-network:
+    driver: bridge

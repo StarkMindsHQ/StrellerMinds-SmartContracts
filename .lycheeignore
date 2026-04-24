@@ -1,0 +1,15 @@
+# Ignore local file paths and localhost URLs
+file://
+localhost
+127.0.0.1
+
+# Ignore example/placeholder URLs
+example.com
+your-username
+
+# Ignore URLs that may require authentication or be rate-limited
+github.com/login
+linkedin.com/login
+
+# Ignore mail links (optional - remove if you want to check email addresses)
+mailto:

@@ -1,0 +1,12 @@
+[package]
+name = "strellerminds-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Rust SDK extensions and client helpers for StrellerMinds"
+license = "MIT"
+
+[dependencies]
+soroban-sdk = "20.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "20.0.0", features = ["testutils"] }
