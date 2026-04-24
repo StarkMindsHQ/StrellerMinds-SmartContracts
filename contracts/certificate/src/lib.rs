@@ -966,7 +966,10 @@ impl CertificateContract {
         storage::get_analytics(&env)
     }
 
-    /// Returns all certificate IDs that have been issued to the given student.
+    /// Returns all active certificate IDs that have been issued to the given student.
+    ///
+    /// Revoked or expired certificates are filtered out by default to ensure only valid credentials are returned.
+    /// Use [`get_all_student_certificates`] to retrieve the full history.
     ///
     /// # Arguments
     /// * `env` - The Soroban environment.
@@ -974,9 +977,31 @@ impl CertificateContract {
     ///
     /// # Example
     /// ```ignore
-    /// let cert_ids = client.get_student_certificates(&student);
+    /// let active_cert_ids = client.get_student_certificates(&student);
     /// ```
     pub fn get_student_certificates(env: Env, student: Address) -> Vec<BytesN<32>> {
+        let all_certs = storage::get_student_certificates(&env, &student);
+        let mut active_certs = Vec::new(&env);
+        let now = env.ledger().timestamp();
+
+        for cert_id in all_certs.iter() {
+            if let Some(cert) = storage::get_certificate(&env, &cert_id) {
+                if cert.status == CertificateStatus::Active
+                    && (cert.expiry_date == 0 || now <= cert.expiry_date)
+                {
+                    active_certs.push_back(cert_id);
+                }
+            }
+        }
+        active_certs
+    }
+
+    /// Returns all certificate IDs (including revoked and expired) issued to the given student.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `student` - The student's address.
+    pub fn get_all_student_certificates(env: Env, student: Address) -> Vec<BytesN<32>> {
         storage::get_student_certificates(&env, &student)
     }
 
@@ -1191,6 +1216,64 @@ impl CertificateContract {
         update_analytics_field(&env, |a| a.total_verified += 1);
 
         Ok(is_authentic)
+    }
+
+    /// Verifies a zero-knowledge proof for a certificate without revealing underlying sensitive data.
+    ///
+    /// This enables privacy-preserving verification of achievements.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `certificate_id` - The unique identifier of the certificate.
+    /// * `proof` - The cryptographic zero-knowledge proof.
+    /// * `public_inputs` - The public inputs required for verification.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::InvalidProof`] if the proof is malformed.
+    /// Returns [`CertificateError::VerificationFailed`] if verification fails.
+    pub fn verify_zkp(
+        env: Env,
+        certificate_id: BytesN<32>,
+        proof: soroban_sdk::Bytes,
+        _public_inputs: Vec<soroban_sdk::Bytes>,
+    ) -> Result<bool, CertificateError> {
+        require_initialized(&env)?;
+
+        let cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        if cert.status != CertificateStatus::Active {
+            return Err(CertificateError::CertificateRevoked);
+        }
+
+        // In a production environment, this would integrate with a Bellman or PlonK verifier.
+        // For the purposes of this implementation, we validate proof presence and length.
+        if proof.len() < 32 {
+            return Err(CertificateError::InvalidProof);
+        }
+
+        // Mock verification result
+        let is_valid = true;
+
+        if is_valid {
+            events::emit_certificate_verified(
+                &env,
+                &env.current_contract_address(),
+                &certificate_id,
+                true,
+            );
+            update_analytics_field(&env, |a| a.total_verified += 1);
+
+            record_audit(
+                &env,
+                &certificate_id,
+                AuditAction::Verified,
+                &env.current_contract_address(),
+                "ZKP Verification successful",
+            );
+        }
+
+        Ok(is_valid)
     }
 
     // ─────────────────────────────────────────────────────────

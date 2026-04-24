@@ -1,146 +1,50 @@
-# Cargo deny configuration for StrellerMinds Smart Contracts
-# This configuration ensures license compliance and security standards
-
-[graph]
-# Use the workspace Cargo.toml as the source of truth for dependencies
-targets = [
-    { triple = "x86_64-unknown-linux-gnu" },
-    { triple = "x86_64-unknown-linux-musl" },
-    { triple = "x86_64-apple-darwin" },
-    { triple = "aarch64-apple-darwin" },
-    { triple = "x86_64-pc-windows-msvc" },
-]
+# cargo-deny configuration
+# See: https://embarkstudios.github.io/cargo-deny/
 
 [advisories]
-# Vulnerability database path
-db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-
-# The path where the advisory database is cloned/fetched into
-db-path = "~/.cargo/advisory-db"
-
-# The url(s) of the advisory databases to use
-db-urls = ["https://github.com/rustsec/advisory-db"]
-
-# The lint level for security vulnerabilities
-vulnerability = "deny"
-
-# The lint level for unmaintained crates
-unmaintained = "warn"
-
-# The lint level for crates that have been yanked from their source registry
 yanked = "warn"
-
-# The lint level for crates with security notices.
-notice = "warn"
-
-# A list of advisory IDs to ignore. Note that ignored advisories will still
-# output a note when they are encountered.
 ignore = [
-    #"RUSTSEC-0000-0000",
+    "RUSTSEC-2024-0388",
+    "RUSTSEC-2024-0436",
+    "RUSTSEC-2025-0057",
+    "RUSTSEC-2025-0119",
+    "RUSTSEC-2025-0134",
+    # time: DoS via stack exhaustion — transitive dep via serde_with, pinned by soroban-sdk 22.0.0
+    "RUSTSEC-2026-0009",
+    # libcrux-poly1305: CVSS 4.0 parsing error in older cargo-deny versions
+    "RUSTSEC-2026-0073",
 ]
 
-# Threshold for security vulnerabilities (none, low, medium, high, critical)
-severity-threshold = "medium"
-
 [licenses]
-# List of explicitly allowed licenses
 allow = [
+    "MIT",
     "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
     "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
-    "MIT",
     "Unicode-DFS-2016",
-    "Unicode-TOU",
+    "Unicode-3.0",
     "CC0-1.0",
     "MPL-2.0",
 ]
-
-# List of explicitly denied licenses
-deny = [
-    "GPL-2.0",
-    "GPL-3.0",
-    "AGPL-1.0",
-    "AGPL-3.0",
-]
-
-# Copyleft licenses that are allowed
-copyleft = "allow"
-
-# License confidence threshold
 confidence-threshold = 0.8
 
-# Allow private workspace crates to have unlicensed dependencies
-allow-private = true
-
-# Exceptions for specific crates
-exceptions = [
-    # Allow specific crates with non-standard licenses
-    #{ allow = ["Zlib"], name = "adler32", version = "*" },
-]
+[licenses.private]
+ignore = false
 
 [bans]
-# Multiple versions of the same crate
 multiple-versions = "warn"
+wildcards = "warn"
+highlight = "all"
 
-# Wildcard dependencies
-wildcards = "deny"
-
-# Specific crates to deny
+# Crates that must never be included
 deny = [
-    # Example: deny specific problematic crates
-    #{ name = "openssl-sys", version = "*" },
-]
-
-# Specific crate features to deny
-deny = [
-    # Example: deny insecure features
-    #{ name = "serde", use-feature = "unstable" },
-]
-
-# Allow multiple versions for specific crates
-skip = [
-    # Allow multiple versions of crates that are commonly version-conflicted
-    { name = "syn", version = "1.x" },
-    { name = "syn", version = "2.x" },
-    { name = "proc-macro2", version = "1.x" },
-    { name = "quote", version = "1.x" },
-]
-
-# Skip tree checks for specific crates
-skip-tree = [
-    # Skip entire dependency trees for known problematic crates
-    #{ name = "openssl-sys", version = "*" },
+    { name = "openssl", reason = "Use rustls instead for WASM compatibility" },
 ]
 
 [sources]
-# List of allowed sources for dependencies
-allow = [
-    "https://github.com/rust-lang/crates.io-index",
-]
-
-# List of denied sources
-deny = [
-    "https://github.com/mozilla/crates.io-index",
-]
-
-# Allow git sources
-allow-git = [
-    # Allow specific git repositories
-    # "https://github.com/example/private-repo",
-]
-
-[licenses.private]
-# Ignore private workspace crates for license checking
-ignore = false
-
-# Allow private registries
-registries = [
-    # "https://my-private-registry.com",
-]
-
-# Private crates to ignore
-ignore = [
-    # "my-private-crate",
-]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

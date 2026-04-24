@@ -12,7 +12,7 @@ keywords = ["stellar", "blockchain", "education", "utilities", "soroban"]
 categories = ["cryptography::cryptocurrencies", "web-programming"]
 
 [lib]
-crate-type = ["lib", "cdylib"]
+crate-type = ["lib"]
 
 # Inherit workspace linting configuration
 [lints]
@@ -23,7 +23,6 @@ testutils = []
 
 [dependencies]
 soroban-sdk = { workspace = true }
-dlmalloc = { version = "0.2", features = ["global"] }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

@@ -28,6 +28,3 @@ testutils = ["soroban-sdk/testutils"]
 [package.metadata.docs.rs]
 all-features = true
 
-[[bin]]
-name = "search"
-path = "src/bin/search.rs"
