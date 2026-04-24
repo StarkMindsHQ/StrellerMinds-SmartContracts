@@ -1,6 +1,6 @@
+#![allow(dead_code, unused_imports)]
 use crate::{
     errors::AnalyticsError,
-    events::AnalyticsEvents,
     storage::AnalyticsStorage,
     types::{
         Achievement, AchievementType, AnomalyData, AnomalySeverity, AnomalyType, CourseAnalytics,

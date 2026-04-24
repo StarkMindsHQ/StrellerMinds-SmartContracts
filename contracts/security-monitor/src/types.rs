@@ -220,6 +220,61 @@ pub enum SecurityDataKey {
     TrainingStatus(Address),         // user -> training status
     IncidentReport(ThreatId),        // incident_id
     Oracle(Address),                 // Authorized oracle
+    // RBAC keys
+    RbacRole(Symbol),                      // role_id -> RbacRole
+    RbacUserRoles(Address),                // user -> Vec<Symbol>
+    RbacAssignment(Address, Symbol),       // (user, role_id) -> RoleAssignment
+    RbacDelegations(Address, Symbol),      // (delegator, role_id) -> Vec<RoleDelegation>
+}
+
+/// A role definition in the RBAC hierarchy.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct RbacRole {
+    /// Unique identifier for this role.
+    pub role_id: Symbol,
+    /// Optional parent role for hierarchy inheritance.
+    pub parent_role: Option<Symbol>,
+    /// Human-readable description of the role.
+    pub description: String,
+    /// Whether this role is currently active and assignable.
+    pub is_active: bool,
+    /// Unix timestamp when the role was created.
+    pub created_at: u64,
+}
+
+/// An assignment of a role to a user.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct RoleAssignment {
+    /// The user who holds this role.
+    pub user: Address,
+    /// The role being assigned.
+    pub role_id: Symbol,
+    /// Address that performed the assignment.
+    pub assigned_by: Address,
+    /// Unix timestamp when the assignment was made.
+    pub assigned_at: u64,
+    /// Optional expiry timestamp; `None` means the assignment never expires.
+    pub expires_at: Option<u64>,
+    /// Whether this assignment is currently active.
+    pub is_active: bool,
+}
+
+/// A delegation of a role from one user to another.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct RoleDelegation {
+    /// User who is delegating the role.
+    pub delegator: Address,
+    /// User receiving the delegated role.
+    pub delegate: Address,
+    /// The role being delegated.
+    pub role_id: Symbol,
+    /// Unix timestamp when the delegation was created.
+    pub delegated_at: u64,
+    /// Optional expiry timestamp for the delegation.
+    pub expires_at: Option<u64>,
 }
 
 /// Persistent tracking for an actor's current rate-limit bucket.

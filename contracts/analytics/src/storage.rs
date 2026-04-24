@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::types::{
     Achievement, AggregatedMetrics, AnalyticsConfig, CourseAnalytics, DataKey, InsightType,
     LeaderboardEntry, LearningSession, MLInsight, ModuleAnalytics, ProgressAnalytics,

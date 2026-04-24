@@ -323,6 +323,8 @@ pub struct CertificateAnalytics {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ComplianceStandard {
+    /// ISO 9001 quality management systems standard.
+    Iso9001,
     /// ISO 17024 personnel certification standard.
     Iso17024,
     /// ISO 27001 information security management standard.

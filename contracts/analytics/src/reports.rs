@@ -504,3 +504,15 @@ impl ReportGenerator {
         Ok(monthly_metrics)
     }
 }
+
+/// Free-function wrapper around `ReportGenerator::generate_leaderboard` used
+/// as a fallback when no pre-cached leaderboard exists.
+pub fn generate_leaderboard_from_storage(
+    env: &Env,
+    course_id: &Symbol,
+    metric: &LeaderboardMetric,
+    limit: u32,
+) -> Vec<LeaderboardEntry> {
+    ReportGenerator::generate_leaderboard(env, course_id, metric, limit)
+        .unwrap_or_else(|_| Vec::new(env))
+}
