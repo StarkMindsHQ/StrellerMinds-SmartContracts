@@ -452,6 +452,8 @@ pub enum CertDataKey {
     StudentCertificates(Address),
     /// List of certificate IDs issued for a particular course.
     CourseCertificates(String),
+    /// Mapping from course and student to their certificate ID to prevent duplicates.
+    CourseStudentCertificate(String, Address),
 
     // Approver tracking
     /// List of pending request IDs assigned to an approver.

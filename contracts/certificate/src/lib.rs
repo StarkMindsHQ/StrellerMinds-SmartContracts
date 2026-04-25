@@ -268,6 +268,10 @@ impl CertificateContract {
         let config = storage::get_multisig_config(&env, &params.course_id)
             .ok_or(CertificateError::ConfigNotFound)?;
 
+        if storage::has_course_student_certificate(&env, &params.course_id, &params.student) {
+            return Err(CertificateError::CertificateAlreadyExists);
+        }
+
         let request_id = generate_request_id(&env);
         let now = env.ledger().timestamp();
 
@@ -523,6 +527,12 @@ impl CertificateContract {
 
         storage::set_certificate(env, &params.certificate_id, &certificate);
         storage::add_student_certificate(env, &params.student, &params.certificate_id);
+        storage::set_course_student_certificate(
+            env,
+            &params.course_id,
+            &params.student,
+            &params.certificate_id,
+        );
 
         request.status = MultiSigRequestStatus::Executed;
         storage::set_multisig_request(env, &request.request_id, request);
@@ -590,20 +600,28 @@ impl CertificateContract {
         // Using a Map<BytesN<32>, bool> gives O(1) membership checks without extra storage ops.
         let mut seen: Map<BytesN<32>, bool> = Map::new(&env);
 
+        // Dedup set: tracks (student, course_id) to prevent logical duplicates in the same batch.
+        let mut seen_course: Map<(Address, String), bool> = Map::new(&env);
+
         // Accumulate (student, cert_id) pairs for a single batched student-list write.
         let mut student_cert_pairs: Vec<(Address, BytesN<32>)> = Vec::new(&env);
 
         let now = env.ledger().timestamp();
 
         for params in params_list.iter() {
+            let student_course = (params.student.clone(), params.course_id.clone());
+
             // Skip if already seen in this batch or already exists in storage
             if seen.contains_key(params.certificate_id.clone())
+                || seen_course.contains_key(student_course.clone())
                 || storage::get_certificate(&env, &params.certificate_id).is_some()
+                || storage::has_course_student_certificate(&env, &params.course_id, &params.student)
             {
                 failed += 1;
                 continue;
             }
             seen.set(params.certificate_id.clone(), true);
+            seen_course.set(student_course, true);
 
             let anchor = generate_blockchain_anchor(&env, &params.certificate_id);
             let certificate = Certificate {
@@ -624,6 +642,12 @@ impl CertificateContract {
             };
 
             storage::set_certificate(&env, &params.certificate_id, &certificate);
+            storage::set_course_student_certificate(
+                &env,
+                &params.course_id,
+                &params.student,
+                &params.certificate_id,
+            );
             student_cert_pairs.push_back((params.student.clone(), params.certificate_id.clone()));
             cert_ids.push_back(params.certificate_id.clone());
             succeeded += 1;
@@ -816,6 +840,12 @@ impl CertificateContract {
 
         storage::set_certificate(&env, &new_params.certificate_id, &new_cert);
         storage::add_student_certificate(&env, &new_params.student, &new_params.certificate_id);
+        storage::set_course_student_certificate(
+            &env,
+            &new_params.course_id,
+            &new_params.student,
+            &new_params.certificate_id,
+        );
 
         events::emit_certificate_reissued(
             &env,
@@ -952,6 +982,12 @@ impl CertificateContract {
 
         storage::set_certificate(&env, &params.certificate_id, &certificate);
         storage::add_student_certificate(&env, &params.student, &params.certificate_id);
+        storage::set_course_student_certificate(
+            &env,
+            &params.course_id,
+            &params.student,
+            &params.certificate_id,
+        );
 
         events::emit_certificate_issued(
             &env,
