@@ -1,0 +1,94 @@
+---
+# Alert Rules for Strellerminds Logging System
+
+groups:
+  - name: strellerminds.logs
+    interval: 5m
+    rules:
+      # Alert on high error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(strellerminds_logs_error_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected in {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+
+      # Alert on missing logs from a service
+      - alert: ServiceLogsNotReceived
+        expr: |
+          rate(strellerminds_logs_received_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No logs received from {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has not sent logs for more than 10 minutes"
+
+      # Alert on search latency
+      - alert: SearchLatencyHigh
+        expr: |
+          histogram_quantile(0.95, rate(elasticsearch_search_duration_seconds_bucket[5m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elasticsearch search latency is high"
+          description: "95th percentile search latency is {{ $value }}s"
+
+      # Alert on index size
+      - alert: IndexSizeTooLarge
+        expr: |
+          elasticsearch_indices_store_size_bytes{index=~"strellerminds.*"} > 107374182400
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Index {{ $labels.index }} is larger than 100GB"
+          description: "Index size is {{ $value | humanize }}B"
+
+      # Alert on storage usage
+      - alert: StorageUsageCritical
+        expr: |
+          (elasticsearch_fs_data_used_bytes / elasticsearch_fs_data_total_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch disk usage is critical"
+          description: "Disk usage is {{ $value | humanizePercentage }}"
+
+      # Alert on failed log deliveries
+      - alert: FailedLogDeliveries
+        expr: |
+          rate(fluent_bit_output_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Log delivery failures detected in {{ $labels.output }}"
+          description: "{{ $value }} errors per second in the last 5 minutes"
+
+      # Alert on slow API responses
+      - alert: SlowAPIResponse
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API response time is slow"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.path }}"
+
+      # Alert on authentication failures
+      - alert: AuthenticationFailures
+        expr: |
+          rate(http_requests_total{status=~"401|403"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of authentication failures"
+          description: "Authentication failure rate is {{ $value | humanizePercentage }} for {{ $labels.path }}"
