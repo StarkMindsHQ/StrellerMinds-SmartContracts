@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Marketplace Contract
+  description: Learning path marketplace
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize contract
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Initialized
+  /list_learning_path:
+    post:
+      operationId: list_learning_path
+      summary: List learning path
+      parameters:
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/LearningPath'
+      responses:
+        '200':
+          description: Listed
+  /purchase_learning_path:
+    post:
+      operationId: purchase_learning_path
+      summary: Purchase learning path
+      parameters:
+        - name: buyer
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: path_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Purchased
+  /get_learning_path:
+    get:
+      operationId: get_learning_path
+      summary: Get learning path
+      parameters:
+        - name: path_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Path retrieved
+  /get_learning_paths:
+    get:
+      operationId: get_learning_paths
+      summary: Get all learning paths
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paths retrieved
+  /review_learning_path:
+    post:
+      operationId: review_learning_path
+      summary: Review learning path
+      parameters:
+        - name: reviewer
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: path_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+        - name: rating
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: comment
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Review submitted
+  /get_reviews:
+    get:
+      operationId: get_reviews
+      summary: Get reviews for path
+      parameters:
+        - name: path_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Reviews retrieved
+  /get_user_purchases:
+    get:
+      operationId: get_user_purchases
+      summary: Get user's purchases
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Purchases retrieved
+components:
+  schemas:
+    LearningPath:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        course_ids:
+          type: array
+          items:
+            type: string
+        price:
+          type: integer
+        creator:
+          type: string
+    Review:
+      type: object
+      properties:
+        reviewer:
+          type: string
+        path_id:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+        created_at:
+          type: integer

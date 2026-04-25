@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Certificate Contract
+  description: Multi-sig certificate issuance, verification, and revocation
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize contract
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Initialized
+        '400':
+          description: Already initialized
+  /configure_multisig:
+    post:
+      operationId: configure_multisig
+      summary: Configure multi-sig for course
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: config
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/MultiSigConfig'
+      responses:
+        '200':
+          description: Configured
+  /create_multisig_request:
+    post:
+      operationId: create_multisig_request
+      summary: Create issuance request
+      parameters:
+        - name: requester
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: params
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/MintCertificateParams'
+        - name: reason
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request created
+          content:
+            application/json:
+              schema:
+                type: string
+  /process_multisig_approval:
+    post:
+      operationId: process_multisig_approval
+      summary: Approve or reject request
+      parameters:
+        - name: approver
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: request_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: approved
+          in: query
+          required: true
+          schema:
+            type: boolean
+        - name: comments
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: signature_hash
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Approval processed
+  /execute_multisig_request:
+    post:
+      operationId: execute_multisig_request
+      summary: Execute approved request
+      parameters:
+        - name: executor
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: request_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Executed
+  /batch_issue_certificates:
+    post:
+      operationId: batch_issue_certificates
+      summary: Batch issue certificates
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: params_list
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/MintCertificateParams'
+      responses:
+        '200':
+          description: Batch completed
+  /verify_certificate:
+    get:
+      operationId: verify_certificate
+      summary: Verify certificate
+      parameters:
+        - name: certificate_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /revoke_certificate:
+    post:
+      operationId: revoke_certificate
+      summary: Revoke certificate
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: certificate_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reason
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reissuance_eligible
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Revoked
+  /reissue_certificate:
+    post:
+      operationId: reissue_certificate
+      summary: Reissue certificate
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: old_certificate_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: new_params
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/MintCertificateParams'
+      responses:
+        '200':
+          description: Reissued
+  /get_certificate:
+    get:
+      operationId: get_certificate
+      summary: Get certificate
+      parameters:
+        - name: certificate_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Certificate data
+  /get_student_certificates:
+    get:
+      operationId: get_student_certificates
+      summary: Get active student certificates
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Certificate IDs
+  /share_certificate:
+    post:
+      operationId: share_certificate
+      summary: Share certificate
+      parameters:
+        - name: owner
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: certificate_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: platform
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: verification_url
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shared
+components:
+  schemas:
+    MultiSigConfig:
+      type: object
+      properties:
+        course_id:
+          type: string
+        required_approvals:
+          type: integer
+        authorized_approvers:
+          type: array
+          items:
+            type: string
+        timeout_duration:
+          type: integer
+        auto_execute:
+          type: boolean
+    MintCertificateParams:
+      type: object
+      properties:
+        certificate_id:
+          type: string
+        course_id:
+          type: string
+        student:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        metadata_uri:
+          type: string
+        expiry_date:
+          type: integer

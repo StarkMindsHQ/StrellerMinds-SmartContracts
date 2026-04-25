@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: Assessment Contract
+  description: Assessment creation, submission, and grading
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize contract
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Initialized
+  /create_assessment:
+    post:
+      operationId: create_assessment
+      summary: Create assessment
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: metadata
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/AssessmentMetadata'
+        - name: config
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/AssessmentConfig'
+        - name: question_ids
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: uint64
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: uint64
+  /add_questions:
+    post:
+      operationId: add_questions
+      summary: Add questions to assessment
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: assessment_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+        - name: questions
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Question'
+      responses:
+        '200':
+          description: Questions added
+  /start_submission:
+    post:
+      operationId: start_submission
+      summary: Start submission
+      description: Start a new submission. Rate limited to 3 per day per student per assessment.
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: assessment_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Submission started
+          content:
+            application/json:
+              schema:
+                type: string
+        '429':
+          description: Rate limit exceeded
+  /submit_answers:
+    post:
+      operationId: submit_answers
+      summary: Submit answers
+      description: Submit or update answers. Rate limited to 5 updates per day per student.
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: answers
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Answer'
+      responses:
+        '200':
+          description: Answers submitted
+        '429':
+          description: Rate limit exceeded
+  /grade_submission:
+    post:
+      operationId: grade_submission
+      summary: Grade submission
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: grades
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Grade'
+      responses:
+        '200':
+          description: Graded
+  /get_submission:
+    get:
+      operationId: get_submission
+      summary: Get submission
+      parameters:
+        - name: submission_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Submission data
+  /get_student_submissions:
+    get:
+      operationId: get_student_submissions
+      summary: Get student's submissions
+      parameters:
+        - name: student
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: assessment_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Submissions
+components:
+  schemas:
+    AssessmentMetadata:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        course_id:
+          type: string
+    AssessmentConfig:
+      type: object
+      properties:
+        time_limit_seconds:
+          type: integer
+        max_score:
+          type: integer
+        passing_score:
+          type: integer
+        randomization_seed:
+          type: integer
+    Question:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        question_type:
+          type: string
+        prompt:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correct_answer:
+          type: string
+        points:
+          type: integer
+    Answer:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        answer:
+          type: string
+    Grade:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        score:
+          type: integer
+        feedback:
+          type: string
