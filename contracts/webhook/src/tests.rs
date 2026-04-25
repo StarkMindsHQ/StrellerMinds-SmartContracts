@@ -80,7 +80,7 @@ fn progress_payload(env: &Env, student: &Address) -> StudentProgressPayload {
     }
 }
 
-fn achievement_payload(env: &Env, student: &Address) -> AchievementUnlockedPayload {
+fn achievement_payload(_env: &Env, student: &Address) -> AchievementUnlockedPayload {
     AchievementUnlockedPayload {
         student: student.clone(),
         achievement_id: 42,
@@ -124,10 +124,8 @@ fn test_register_webhook_succeeds() {
 fn test_register_returns_incrementing_ids() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id0 =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
-    let id1 =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id0 = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id1 = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     assert_eq!(id0, 0);
     assert_eq!(id1, 1);
 }
@@ -166,8 +164,7 @@ fn test_register_too_many_webhooks_fails() {
 fn test_get_webhook_after_register() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     let wh = client.get_webhook(&id);
     assert_eq!(wh.id, id);
     assert_eq!(wh.owner, owner);
@@ -178,10 +175,8 @@ fn test_get_webhook_after_register() {
 fn test_get_owner_webhooks() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id0 =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
-    let id1 =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id0 = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id1 = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     let ids = client.get_owner_webhooks(&owner);
     assert_eq!(ids.len(), 2);
     assert_eq!(ids.get(0).unwrap(), id0);
@@ -196,8 +191,7 @@ fn test_get_owner_webhooks() {
 fn test_unregister_deactivates_webhook() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     client.unregister(&owner, &id);
     let wh = client.get_webhook(&id);
     assert!(!wh.active);
@@ -208,8 +202,7 @@ fn test_unregister_wrong_owner_fails() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
     let other = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     assert!(client.try_unregister(&other, &id).is_err());
 }
 
@@ -237,8 +230,7 @@ fn test_dispatch_certificate_issued_no_subscribers() {
 fn test_dispatch_certificate_issued_creates_delivery() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -328,8 +320,7 @@ fn test_dispatch_to_multiple_subscribers() {
 fn test_inactive_webhook_skipped_on_dispatch() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
     client.unregister(&owner, &id);
 
     let caller = Address::generate(&env);
@@ -346,8 +337,7 @@ fn test_inactive_webhook_skipped_on_dispatch() {
 fn test_retry_too_early_fails() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -361,8 +351,7 @@ fn test_retry_too_early_fails() {
 fn test_retry_after_backoff_succeeds() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -377,8 +366,7 @@ fn test_retry_after_backoff_succeeds() {
 fn test_retry_increments_attempts() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -396,8 +384,7 @@ fn test_retry_increments_attempts() {
 fn test_retry_exhaustion_removes_delivery() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -424,8 +411,7 @@ fn test_retry_nonexistent_delivery_fails() {
 fn test_retry_inactive_webhook_fails() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let caller = Address::generate(&env);
     let student = Address::generate(&env);
@@ -445,8 +431,7 @@ fn test_retry_inactive_webhook_fails() {
 fn test_compute_signature_returns_bytes() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let message = Bytes::from_slice(&env, b"hello webhook");
     let sig = client.compute_signature(&id, &owner, &message);
@@ -457,8 +442,7 @@ fn test_compute_signature_returns_bytes() {
 fn test_compute_signature_deterministic() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let message = Bytes::from_slice(&env, b"deterministic");
     let sig1 = client.compute_signature(&id, &owner, &message);
@@ -470,8 +454,7 @@ fn test_compute_signature_deterministic() {
 fn test_compute_signature_different_messages_differ() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let msg1 = Bytes::from_slice(&env, b"message one");
     let msg2 = Bytes::from_slice(&env, b"message two");
@@ -485,8 +468,7 @@ fn test_compute_signature_wrong_owner_fails() {
     let (env, client, _) = setup();
     let owner = Address::generate(&env);
     let other = Address::generate(&env);
-    let id =
-        client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
+    let id = client.register(&owner, &make_url(&env), &make_secret(&env), &event_types_cert(&env));
 
     let message = Bytes::from_slice(&env, b"test");
     assert!(client.try_compute_signature(&id, &other, &message).is_err());

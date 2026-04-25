@@ -323,8 +323,7 @@ impl WebhookContract {
         let mut seqs = Vec::new(env);
 
         for id in 0..next_id {
-            let wh: Option<WebhookEndpoint> =
-                env.storage().persistent().get(&DataKey::Webhook(id));
+            let wh: Option<WebhookEndpoint> = env.storage().persistent().get(&DataKey::Webhook(id));
             let wh = match wh {
                 Some(w) if w.active => w,
                 _ => continue,
