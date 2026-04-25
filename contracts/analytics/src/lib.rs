@@ -19,8 +19,9 @@ use crate::storage::AnalyticsStorage;
 use crate::types::{
     Achievement, AchievementType, AggregatedMetrics, AnalyticsConfig, AnalyticsFilter,
     CourseAnalytics, DataKey, DifficultyRating, InsightType, LeaderboardEntry, LeaderboardMetric,
-    LearningPathOptimization, LearningRecommendation, LearningSession, MLInsight, ModuleAnalytics,
-    PerformanceTrend, ProgressAnalytics, ProgressReport, ReportPeriod,
+    LearningPathOptimization, LearningRecommendation, LearningSession, LearningVelocity,
+    MLInsight, ModuleAnalytics, PerformanceTrend, ProgressAnalytics, ProgressInsightsReport,
+    ProgressReport, ReportPeriod, SkillGap,
 };
 use shared::event_schema::{
     AccessControlEventData, AnalyticsEventData, ContractInitializedEvent, SessionCompletedEvent,
@@ -1347,7 +1348,8 @@ impl Analytics {
         };
 
         // Estimated time saved by skipping already-mastered content
-        let estimated_time_savings = analytics.completed_modules.saturating_mul(30); // ~30 min/module
+        // ~30 min/module
+        let estimated_time_savings = analytics.completed_modules.saturating_mul(30);
 
         let adaptation_reason = if is_struggling {
             String::from_str(&env, "Remedial path selected based on performance below threshold")
@@ -1422,6 +1424,195 @@ impl Analytics {
 
         AnalyticsStorage::set_ml_insight(&env, &insight);
         Ok(insight)
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Progress Insights
+    // ─────────────────────────────────────────────────────────
+
+    /// Generates a consolidated progress insights report for a student covering:
+    /// learning velocity, peer comparison, skill gaps, and recommended next steps.
+    ///
+    /// # Arguments
+    /// * `student`   - Address of the student.
+    /// * `course_id` - Target course.
+    ///
+    /// # Errors
+    /// Returns [`AnalyticsError::StudentNotFound`] if no analytics exist for the student.
+    pub fn generate_progress_insights(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<ProgressInsightsReport, AnalyticsError> {
+        require_initialized(&env)?;
+
+        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
+            .ok_or(AnalyticsError::StudentNotFound)?;
+
+        let now = env.ledger().timestamp();
+
+        // ── 1. Learning velocity ──────────────────────────────
+        let elapsed_days = {
+            let secs = now.saturating_sub(analytics.first_activity);
+            (secs / 86400).max(1)
+        };
+        let sessions_per_day =
+            analytics.total_sessions.checked_div(elapsed_days as u32).unwrap_or(0);
+        let elapsed_weeks = (elapsed_days / 7).max(1);
+        let modules_per_week =
+            analytics.completed_modules.checked_div(elapsed_weeks as u32).unwrap_or(0);
+        let avg_daily_time_secs =
+            analytics.total_time_spent.checked_div(elapsed_days).unwrap_or(0);
+
+        let velocity = LearningVelocity {
+            sessions_per_day,
+            modules_per_week,
+            avg_daily_time_secs,
+            streak_days: analytics.streak_days,
+            trend: analytics.performance_trend.clone(),
+        };
+
+        // ── 2. Peer comparison ────────────────────────────────
+        let students = AnalyticsStorage::get_course_students(&env, &course_id);
+        let total_peers = students.len();
+        let student_score = analytics.average_score.unwrap_or(0);
+        let mut below_count: u32 = 0;
+        let mut score_sum: u64 = 0;
+        let mut score_count: u32 = 0;
+
+        for i in 0..total_peers {
+            let peer = students.get(i).unwrap();
+            if let Some(pa) =
+                AnalyticsStorage::get_progress_analytics(&env, &peer, &course_id)
+            {
+                if let Some(s) = pa.average_score {
+                    score_sum += s as u64;
+                    score_count += 1;
+                    if s < student_score {
+                        below_count += 1;
+                    }
+                }
+            }
+        }
+
+        let peer_percentile = if total_peers > 0 {
+            (below_count * 100).checked_div(total_peers).unwrap_or(0)
+        } else {
+            50
+        };
+        let course_avg = if score_count > 0 {
+            (score_sum / score_count as u64) as i32
+        } else {
+            0
+        };
+        let score_vs_avg = student_score as i32 - course_avg;
+
+        // ── 3. Skill gaps ─────────────────────────────────────
+        let mut skill_gaps: Vec<SkillGap> = Vec::new(&env);
+        let session_ids = AnalyticsStorage::get_student_sessions(&env, &student, &course_id);
+        let mut seen_modules: Vec<Symbol> = Vec::new(&env);
+
+        for i in 0..session_ids.len() {
+            let sid = session_ids.get(i).unwrap();
+            if let Some(session) = AnalyticsStorage::get_session(&env, &sid) {
+                if let Some(score) = session.score {
+                    if score < 70 {
+                        let mut already = false;
+                        for j in 0..seen_modules.len() {
+                            if seen_modules.get(j).unwrap() == session.module_id {
+                                already = true;
+                                break;
+                            }
+                        }
+                        if !already {
+                            seen_modules.push_back(session.module_id.clone());
+                            skill_gaps.push_back(SkillGap {
+                                topic: session.module_id.clone(),
+                                severity: 70u32.saturating_sub(score),
+                                remediation: String::from_str(
+                                    &env,
+                                    "Review module content and retry assessment",
+                                ),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        if skill_gaps.is_empty() && student_score < 70 {
+            skill_gaps.push_back(SkillGap {
+                topic: course_id.clone(),
+                severity: 70u32.saturating_sub(student_score),
+                remediation: String::from_str(&env, "Revisit course fundamentals"),
+            });
+        }
+
+        // ── 4. Next steps ─────────────────────────────────────
+        let is_struggling = student_score < 70;
+        let is_declining = analytics.performance_trend == PerformanceTrend::Declining;
+        let is_advanced = student_score >= 85
+            && analytics.performance_trend == PerformanceTrend::Improving;
+
+        let mut next_steps: Vec<LearningRecommendation> = Vec::new(&env);
+
+        if is_struggling || is_declining {
+            next_steps.push_back(LearningRecommendation {
+                target_module: Symbol::new(&env, "REMEDIAL"),
+                reason: String::from_str(
+                    &env,
+                    "Score below threshold – remedial review recommended",
+                ),
+                priority: 1,
+                estimated_difficulty: 2,
+                prerequisites: Vec::new(&env),
+                learning_resources: Vec::new(&env),
+                adaptive_path: true,
+            });
+        } else if is_advanced {
+            next_steps.push_back(LearningRecommendation {
+                target_module: Symbol::new(&env, "ADVANCED"),
+                reason: String::from_str(&env, "Strong performance – advanced content unlocked"),
+                priority: 1,
+                estimated_difficulty: 8,
+                prerequisites: Vec::new(&env),
+                learning_resources: Vec::new(&env),
+                adaptive_path: true,
+            });
+        } else {
+            next_steps.push_back(LearningRecommendation {
+                target_module: Symbol::new(&env, "NEXT_MOD"),
+                reason: String::from_str(&env, "Continue with next scheduled module"),
+                priority: 2,
+                estimated_difficulty: 5,
+                prerequisites: Vec::new(&env),
+                learning_resources: Vec::new(&env),
+                adaptive_path: false,
+            });
+        }
+
+        if analytics.streak_days == 0 {
+            next_steps.push_back(LearningRecommendation {
+                target_module: Symbol::new(&env, "CATCH_UP"),
+                reason: String::from_str(&env, "Re-engage: no active streak detected"),
+                priority: 3,
+                estimated_difficulty: 3,
+                prerequisites: Vec::new(&env),
+                learning_resources: Vec::new(&env),
+                adaptive_path: true,
+            });
+        }
+
+        Ok(ProgressInsightsReport {
+            student,
+            course_id,
+            generated_at: now,
+            velocity,
+            peer_percentile,
+            score_vs_avg,
+            skill_gaps,
+            next_steps,
+        })
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {
