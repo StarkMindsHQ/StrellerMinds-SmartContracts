@@ -8,8 +8,13 @@ import { config } from "./config";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
 import { cdnMiddleware } from "./middleware/cdn";
+import { i18nMiddleware } from "./middleware/i18n";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
+import { preloadLocales } from "./i18n";
+
+// Pre-load all locale files into memory at startup
+preloadLocales();
 
 import authRouter from "./routes/auth";
 import certificatesRouter from "./routes/certificates";
@@ -18,6 +23,7 @@ import analyticsRouter from "./routes/analytics";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
+import i18nRouter from "./routes/i18n";
 
 const app = express();
 
@@ -48,7 +54,6 @@ app.use(
         upgradeInsecureRequests: [],
         reportUri: ["/api/v1/security/csp-report"],
       },
-      blockAllMixedContent: true,
     },
     crossOriginEmbedderPolicy: true,
     crossOriginOpenerPolicy: true,
@@ -59,7 +64,7 @@ app.use(
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     ieNoOpen: true,
     noSniff: true,
-    referrerPolicy: { policy: "strict-no-referrer" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     xssFilter: true,
   })
 );
@@ -69,8 +74,8 @@ app.use(
   cors({
     origin: config.cors.origins,
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"],
-    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID", "X-Language", "Accept-Language"],
+    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "Content-Language", "X-Text-Direction"],
   })
 );
 
@@ -81,6 +86,9 @@ app.use(express.json({ limit: "16kb" }));
 app.use(requestId);
 app.use(metricsMiddleware);
 app.use(cdnMiddleware);
+
+// ── i18n: language detection ──────────────────────────────────────────────────
+app.use(i18nMiddleware);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
@@ -110,6 +118,7 @@ app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/i18n", i18nRouter);
 
 // ── CSP Violation Reporter ─────────────────────────────────────────────────────
 app.post("/api/v1/security/csp-report", express.json({ type: "application/csp-report" }), (req: express.Request, res: express.Response) => {

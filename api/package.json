@@ -7,32 +7,53 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src/**/*.ts",
+    "test": "jest --runInBand",
+    "test:ci": "jest --runInBand --ci"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^12.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "etag": "^1.8.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "rate-limiter-flexible": "^5.0.3",
-    "jsonwebtoken": "^9.0.2",
+    "fresh": "^0.5.2",
     "helmet": "^7.1.0",
-    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.2",
     "prom-client": "^15.1.0",
+    "rate-limiter-flexible": "^5.0.3",
     "swagger-ui-express": "^5.0.0",
     "winston": "^3.11.0",
-    "dotenv": "^16.4.5",
-    "zod": "^3.22.4",
-    "etag": "^1.8.1",
-    "fresh": "^0.5.2"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.5",
     "@types/cors": "^2.8.17",
-    "@types/swagger-ui-express": "^4.1.6",
-    "@types/node": "^20.11.0",
     "@types/etag": "^1.8.3",
+    "@types/express": "^4.17.21",
     "@types/fresh": "^0.5.2",
+    "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.11.0",
+    "@types/swagger-ui-express": "^4.1.6",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ]
   }
 }
