@@ -1,0 +1,27 @@
+feat(api): user-specific rate limiting and CDN static asset delivery
+
+Implements per-user graduated rate limiting with burst handling and
+a CDN layer for static asset delivery with cache invalidation support.
+
+User-specific rate limiting:
+- Four tiers: free (30rpm/10burst), pro (120/30), enterprise (600/100), internal (6000/500)
+- Token-bucket algorithm via rate-limiter-flexible (main window + burst window)
+- Unauthenticated requests fall back to existing IP-based limiter
+- Clear limit headers on every response: X-RateLimit-Tier/Limit/Remaining/Reset/Burst-Limit
+- 429 responses include tier info, retry-after, and upgrade URL
+- GET /api/v1/rate-limit/status — live usage status for authenticated user
+- GET /api/v1/rate-limit/tiers  — public tier definitions
+- Prometheus metrics: hit counters, consumed ratio histogram, burst usage counter
+- All limits configurable via environment variables
+
+CDN static asset delivery:
+- ETag generation and conditional 304 responses on all GET endpoints
+- Cache-Control strategy by asset type (static=immutable 1yr, api-docs=1h, api-response=30s CDN + SWR, dynamic=no-store)
+- Cache invalidation via HMAC-SHA256 signed webhook (POST /api/v1/cdn/invalidate)
+- GET /api/v1/cdn/status — CDN config and active invalidation store
+- CloudFront distribution config (api/cdn/cloudfront-config.json)
+- Cloudflare cache rules (api/cdn/cloudflare-cache-rules.json)
+- Prometheus metrics: cache hits/misses, invalidations, asset serve time
+
+Closes #470
+Closes #473
