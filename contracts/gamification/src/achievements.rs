@@ -126,10 +126,14 @@ impl AchievementManager {
         user: &Address,
         profile: &GamificationProfile,
     ) -> Vec<u64> {
-        let qualifying = Self::qualifying_milestones(env, profile);
         let mut awarded = Vec::new(env);
+        let counter: u64 = env
+            .storage()
+            .persistent()
+            .get(&GamificationKey::AchievementCounter)
+            .unwrap_or(MILESTONE_RESERVE);
 
-        for id in qualifying.iter() {
+        for id in 1..=counter {
             let earned_key = GamificationKey::UserAchievement(user.clone(), id);
             if env.storage().persistent().has(&earned_key) {
                 continue; // already earned
@@ -143,26 +147,29 @@ impl AchievementManager {
                 if !ach.is_active {
                     continue;
                 }
-                let ua = UserAchievement {
-                    user: user.clone(),
-                    achievement_id: id,
-                    earned_at: env.ledger().timestamp(),
-                    token_reward_claimed: false,
-                    xp_reward: ach.xp_reward,
-                    token_reward: ach.token_reward,
-                };
 
-                env.storage().persistent().set(&earned_key, &ua);
+                if Self::meets_requirements(env, user, profile, &ach.requirements) {
+                    let ua = UserAchievement {
+                        user: user.clone(),
+                        achievement_id: id,
+                        earned_at: env.ledger().timestamp(),
+                        token_reward_claimed: false,
+                        xp_reward: ach.xp_reward,
+                        token_reward: ach.token_reward,
+                    };
 
-                // Append to user's achievement list
-                let list_key = GamificationKey::UserAchievements(user.clone());
-                let mut list: Vec<u64> =
-                    env.storage().persistent().get(&list_key).unwrap_or_else(|| Vec::new(env));
-                list.push_back(id);
-                env.storage().persistent().set(&list_key, &list);
+                    env.storage().persistent().set(&earned_key, &ua);
 
-                awarded.push_back(id);
-                GamificationEvents::emit_achievement_earned(env, user, id, ach.xp_reward);
+                    // Append to user's achievement list
+                    let list_key = GamificationKey::UserAchievements(user.clone());
+                    let mut list: Vec<u64> =
+                        env.storage().persistent().get(&list_key).unwrap_or_else(|| Vec::new(env));
+                    list.push_back(id);
+                    env.storage().persistent().set(&list_key, &list);
+
+                    awarded.push_back(id);
+                    GamificationEvents::emit_achievement_earned(env, user, id, ach.xp_reward);
+                }
             }
         }
 
@@ -650,93 +657,61 @@ impl AchievementManager {
         (weeks * config.streak_weekly_bonus).min(config.max_streak_bonus_xp)
     }
 
-    /// Returns the set of milestone IDs the user now qualifies for.
-    fn qualifying_milestones(env: &Env, profile: &GamificationProfile) -> Vec<u64> {
-        let mut q = Vec::new(env);
-
-        // Courses
-        if profile.courses_completed >= 1 {
-            q.push_back(1u64);
+    fn meets_requirements(
+        env: &Env,
+        user: &Address,
+        profile: &GamificationProfile,
+        reqs: &AchievementRequirements,
+    ) -> bool {
+        if reqs.courses_completed > 0 && profile.courses_completed < reqs.courses_completed {
+            return false;
         }
-        if profile.courses_completed >= 5 {
-            q.push_back(2u64);
+        if reqs.modules_completed > 0 && profile.modules_completed < reqs.modules_completed {
+            return false;
         }
-        if profile.courses_completed >= 10 {
-            q.push_back(3u64);
+        if reqs.streak_days > 0
+            && profile.current_streak < reqs.streak_days
+            && profile.max_streak < reqs.streak_days
+        {
+            return false;
         }
-        if profile.courses_completed >= 25 {
-            q.push_back(4u64);
+        if reqs.total_xp > 0 && profile.total_xp < reqs.total_xp {
+            return false;
         }
-        if profile.courses_completed >= 50 {
-            q.push_back(5u64);
+        if reqs.challenges_completed > 0 && profile.challenges_completed < reqs.challenges_completed
+        {
+            return false;
         }
-
-        // Streaks (current and max)
-        if profile.current_streak >= 7 {
-            q.push_back(6u64);
+        if reqs.endorsements_received > 0
+            && profile.endorsements_received < reqs.endorsements_received
+        {
+            return false;
         }
-        if profile.current_streak >= 30 {
-            q.push_back(7u64);
+        if reqs.guild_contributions > 0
+            && Self::guild_contribution(env, user) < reqs.guild_contributions
+        {
+            return false;
         }
-        if profile.current_streak >= 100 {
-            q.push_back(8u64);
-        }
-        if profile.current_streak >= 365 {
-            q.push_back(9u64);
-        }
-        if profile.max_streak >= 30 {
-            q.push_back(10u64);
-        }
-
-        // XP
-        if profile.total_xp >= 1_000 {
-            q.push_back(11u64);
-        }
-        if profile.total_xp >= 5_000 {
-            q.push_back(12u64);
-        }
-        if profile.total_xp >= 10_000 {
-            q.push_back(13u64);
-        }
-        if profile.total_xp >= 50_000 {
-            q.push_back(14u64);
-        }
-        if profile.total_xp >= 100_000 {
-            q.push_back(15u64);
+        if reqs.seasons_completed > 0
+            && Self::count_user_seasons(env, user) < reqs.seasons_completed
+        {
+            return false;
         }
 
-        // Social
-        if profile.endorsements_received >= 1 {
-            q.push_back(16u64);
-        }
-        if profile.endorsements_received >= 10 {
-            q.push_back(17u64);
-        }
-        if profile.endorsements_received >= 50 {
-            q.push_back(18u64);
-        }
+        true
+    }
 
-        // Challenges
-        if profile.challenges_completed >= 1 {
-            q.push_back(19u64);
+    fn count_user_seasons(env: &Env, user: &Address) -> u32 {
+        let counter: u64 =
+            env.storage().persistent().get(&GamificationKey::SeasonCounter).unwrap_or(0);
+        let mut count = 0;
+        for sid in 1..=counter {
+            let key = GamificationKey::UserSeasonXP(user.clone(), sid);
+            if env.storage().persistent().has(&key) {
+                count += 1;
+            }
         }
-        if profile.challenges_completed >= 10 {
-            q.push_back(20u64);
-        }
-
-        // Guild contributions (stored in GuildMember)
-        let guild_contrib = Self::guild_contribution(env, &profile.user);
-        if guild_contrib >= 1_000 {
-            q.push_back(21u64);
-        }
-        if guild_contrib >= 10_000 {
-            q.push_back(22u64);
-        }
-        if guild_contrib >= 50_000 {
-            q.push_back(23u64);
-        }
-
-        q
+        count
     }
 
     fn guild_contribution(env: &Env, user: &Address) -> u32 {
