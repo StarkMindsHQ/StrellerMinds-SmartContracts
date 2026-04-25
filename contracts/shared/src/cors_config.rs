@@ -2,6 +2,8 @@
 extern crate alloc;
 
 use soroban_sdk::{Env, String, Vec};
+use alloc::format;
+use alloc::string::ToString;
 
 /// CORS configuration for external academic verification services
 #[derive(Clone, Debug, PartialEq)]
@@ -22,34 +24,35 @@ pub struct CorsConfig {
 
 impl Default for CorsConfig {
     fn default() -> Self {
-        Self::permissive()
+        let env = Env::default();
+        Self::permissive(&env)
     }
 }
 
 impl CorsConfig {
     /// Creates a permissive CORS configuration for development
-    pub fn permissive() -> Self {
+    pub fn permissive(env: &Env) -> Self {
         Self {
-            allowed_origins: Vec::from_array(&Env::current(), [
-                String::from_str(&Env::current(), "*"),
+            allowed_origins: Vec::from_array(env, [
+                String::from_str(env, "*"),
             ]),
-            allowed_methods: Vec::from_array(&Env::current(), [
-                String::from_str(&Env::current(), "GET"),
-                String::from_str(&Env::current(), "POST"),
-                String::from_str(&Env::current(), "PUT"),
-                String::from_str(&Env::current(), "DELETE"),
-                String::from_str(&Env::current(), "OPTIONS"),
+            allowed_methods: Vec::from_array(env, [
+                String::from_str(env, "GET"),
+                String::from_str(env, "POST"),
+                String::from_str(env, "PUT"),
+                String::from_str(env, "DELETE"),
+                String::from_str(env, "OPTIONS"),
             ]),
-            allowed_headers: Vec::from_array(&Env::current(), [
-                String::from_str(&Env::current(), "Content-Type"),
-                String::from_str(&Env::current(), "Authorization"),
-                String::from_str(&Env::current(), "X-Requested-With"),
-                String::from_str(&Env::current(), "Accept"),
-                String::from_str(&Env::current(), "Origin"),
+            allowed_headers: Vec::from_array(env, [
+                String::from_str(env, "Content-Type"),
+                String::from_str(env, "Authorization"),
+                String::from_str(env, "X-Requested-With"),
+                String::from_str(env, "Accept"),
+                String::from_str(env, "Origin"),
             ]),
-            exposed_headers: Vec::from_array(&Env::current(), [
-                String::from_str(&Env::current(), "X-Total-Count"),
-                String::from_str(&Env::current(), "X-Page-Count"),
+            exposed_headers: Vec::from_array(env, [
+                String::from_str(env, "X-Total-Count"),
+                String::from_str(env, "X-Page-Count"),
             ]),
             max_age: 86400, // 24 hours
             allow_credentials: false,
@@ -118,7 +121,7 @@ impl CorsConfig {
             if allowed_origin == String::from_str(env, "*") {
                 return true;
             }
-            if self.matches_pattern(env, allowed_origin, origin) {
+            if self.matches_pattern(env, &allowed_origin, origin) {
                 return true;
             }
         }
@@ -128,7 +131,7 @@ impl CorsConfig {
     /// Validates if a method is allowed
     pub fn is_method_allowed(&self, env: &Env, method: &String) -> bool {
         for allowed_method in self.allowed_methods.iter() {
-            if allowed_method == method {
+            if allowed_method == *method {
                 return true;
             }
         }
@@ -138,7 +141,7 @@ impl CorsConfig {
     /// Validates if a header is allowed
     pub fn is_header_allowed(&self, env: &Env, header: &String) -> bool {
         for allowed_header in self.allowed_headers.iter() {
-            if allowed_header == header {
+            if allowed_header == *header {
                 return true;
             }
         }
@@ -147,26 +150,32 @@ impl CorsConfig {
 
     /// Pattern matching for wildcard origins
     fn matches_pattern(&self, env: &Env, pattern: &String, origin: &String) -> bool {
-        let pattern_bytes = pattern.to_bytes();
-        let origin_bytes = origin.to_bytes();
-        
         // Simple wildcard matching for now
         // In a real implementation, you'd want more sophisticated pattern matching
-        if pattern_bytes.len() > origin_bytes.len() {
+        let pattern_str = pattern.to_string();
+        let origin_str = origin.to_string();
+        
+        if pattern_str.len() > origin_str.len() {
             return false;
         }
         
-        // Check if pattern ends with wildcard
-        if pattern_bytes.len() > 2 {
-            let last_two = pattern_bytes.slice(pattern_bytes.len() - 2..);
-            if last_two == soroban_sdk::Bytes::from_slice(env, b"*") {
-                let prefix = pattern_bytes.slice(0..pattern_bytes.len() - 2);
-                let origin_prefix = origin_bytes.slice(0..prefix.len());
-                return prefix == origin_prefix;
+        // Check if pattern contains wildcard
+        if let Some(wildcard_pos) = pattern_str.find('*') {
+            // Handle patterns like "https://*.edu"
+            if wildcard_pos < pattern_str.len() - 1 {
+                let prefix = &pattern_str[..wildcard_pos];
+                let suffix = &pattern_str[wildcard_pos + 1..];
+                
+                // Check if origin starts with prefix and ends with suffix
+                if origin_str.len() >= prefix.len() + suffix.len() {
+                    let origin_prefix = &origin_str[..prefix.len()];
+                    let origin_suffix = &origin_str[origin_str.len() - suffix.len()..];
+                    return origin_prefix == prefix && origin_suffix == suffix;
+                }
             }
         }
         
-        pattern == origin
+        pattern_str == origin_str
     }
 }
 
@@ -194,10 +203,11 @@ impl CorsHeaders {
             String::from_str(env, "*")
         };
 
-        let allow_methods = self::join_strings(env, &config.allowed_methods, ", ");
-        let allow_headers = self::join_strings(env, &config.allowed_headers, ", ");
-        let expose_headers = self::join_strings(env, &config.exposed_headers, ", ");
-        let max_age = String::from_slice(env, &config.max_age.to_string().as_bytes());
+        let allow_methods = join_strings(env, &config.allowed_methods, ", ");
+        let allow_headers = join_strings(env, &config.allowed_headers, ", ");
+        let expose_headers = join_strings(env, &config.exposed_headers, ", ");
+        let max_age_str = format!("{}", config.max_age);
+        let max_age = String::from_str(env, &max_age_str);
         let allow_credentials = String::from_str(env, if config.allow_credentials { "true" } else { "false" });
 
         Self {
@@ -213,19 +223,18 @@ impl CorsHeaders {
 
 /// Helper function to join strings with a separator
 fn join_strings(env: &Env, strings: &Vec<String>, separator: &str) -> String {
-    let mut result = String::new(env);
-    let sep = String::from_str(env, separator);
-    
+    let mut result_str = alloc::string::String::new();
     let mut first = true;
+    
     for s in strings.iter() {
         if !first {
-            result = result.concat(&sep);
+            result_str.push_str(separator);
         }
-        result = result.concat(s);
+        result_str.push_str(&s.to_string());
         first = false;
     }
     
-    result
+    String::from_str(env, &result_str)
 }
 
 #[cfg(test)]
