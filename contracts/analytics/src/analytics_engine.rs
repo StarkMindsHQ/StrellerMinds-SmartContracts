@@ -26,7 +26,7 @@ impl AnalyticsEngine {
         let ts_bytes = timestamp.to_be_bytes();
         let seq_bytes = sequence.to_be_bytes();
         data[..8].copy_from_slice(&ts_bytes);
-        data[8..16].copy_from_slice(&seq_bytes);
+        data[8..12].copy_from_slice(&seq_bytes);
         BytesN::from_array(env, &data)
     }
 

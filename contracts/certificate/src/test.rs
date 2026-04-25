@@ -1,5 +1,8 @@
 use shared::monitoring::ContractHealthStatus;
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Vec};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger as _},
+    Address, BytesN, Env, String, Vec,
+};
 
 use crate::{
     types::{
@@ -920,6 +923,112 @@ fn test_student_certificates() {
     // Should still have 3 total
     let all_certs = client.get_all_student_certificates(&student);
     assert_eq!(all_certs.len(), 3);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 15b. Multi-sig Timeout Enforcement (Issue #366)
+// ─────────────────────────────────────────────────────────────
+
+/// Verifies that `cleanup_expired_requests` correctly transitions pending requests
+/// to `Expired` once their `expires_at` deadline has passed and updates analytics.
+#[test]
+fn test_cleanup_expired_requests() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver1 = Address::generate(&env);
+    let approver2 = Address::generate(&env);
+
+    // Use minimum timeout so we can advance the ledger past it easily.
+    let min_timeout: u64 = 3_600; // 1 hour (MIN_TIMEOUT in lib.rs)
+    let mut config =
+        make_multisig_config(&env, "EXPIRE_COURSE", &[approver1.clone(), approver2.clone()], 2);
+    config.timeout_duration = min_timeout;
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "EXPIRE_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[42u8; 32]);
+
+    let requester = Address::generate(&env);
+    let request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Expiry test"));
+
+    // Confirm request is pending
+    let req = client.get_multisig_request(&request_id).unwrap();
+    assert_eq!(req.status, MultiSigRequestStatus::Pending);
+
+    // Advance the ledger timestamp past the timeout
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
+
+    // Cleanup should expire the request and return count = 1
+    let expired_count = client.cleanup_expired_requests();
+    assert_eq!(expired_count, 1);
+
+    // Request status must now be Expired
+    let req_after = client.get_multisig_request(&request_id).unwrap();
+    assert_eq!(req_after.status, MultiSigRequestStatus::Expired);
+}
+
+/// Verifies that a request that has not yet reached its deadline is NOT cleaned up.
+#[test]
+fn test_cleanup_skips_active_requests() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver = Address::generate(&env);
+
+    let config = make_multisig_config(&env, "ACTIVE_COURSE", core::slice::from_ref(&approver), 1);
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "ACTIVE_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[43u8; 32]);
+
+    let requester = Address::generate(&env);
+    let _request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Active test"));
+
+    // Do NOT advance ledger — request is still within its deadline
+    let expired_count = client.cleanup_expired_requests();
+    assert_eq!(expired_count, 0);
+}
+
+/// Verifies that `process_multisig_approval` returns `MultiSigRequestExpired` when
+/// an approver tries to act on a request whose deadline has passed.
+#[test]
+fn test_approval_on_expired_request_fails() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver = Address::generate(&env);
+
+    let min_timeout: u64 = 3_600;
+    let mut config =
+        make_multisig_config(&env, "EXP_APPR_COURSE", core::slice::from_ref(&approver), 1);
+    config.timeout_duration = min_timeout;
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "EXP_APPR_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[44u8; 32]);
+
+    let requester = Address::generate(&env);
+    let request_id = client.create_multisig_request(
+        &requester,
+        &params,
+        &String::from_str(&env, "Expired approval test"),
+    );
+
+    // Advance past timeout
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
+
+    let result = client.try_process_multisig_approval(
+        &approver,
+        &request_id,
+        &true,
+        &String::from_str(&env, "Too late"),
+        &None,
+    );
+    assert!(result.is_err(), "Approval on expired request must fail");
 }
 
 // ─────────────────────────────────────────────────────────────
