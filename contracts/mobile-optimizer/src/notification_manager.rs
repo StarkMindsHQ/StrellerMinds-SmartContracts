@@ -216,8 +216,10 @@ impl NotificationManager {
 
         // Mirror email/push toggles and frequency into the underlying NotificationConfig
         // so the existing delivery pipeline honours the new preferences automatically.
-        if let Some(mut config) =
-            env.storage().persistent().get::<_, NotificationConfig>(&DataKey::NotifConfig(user.clone()))
+        if let Some(mut config) = env
+            .storage()
+            .persistent()
+            .get::<_, NotificationConfig>(&DataKey::NotifConfig(user.clone()))
         {
             config.channel_preferences.set(String::from_str(env, "email"), prefs.email_enabled);
             config.channel_preferences.set(String::from_str(env, "push"), prefs.push_enabled);

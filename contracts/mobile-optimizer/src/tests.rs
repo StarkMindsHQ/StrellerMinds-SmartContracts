@@ -1047,7 +1047,7 @@ fn test_set_and_get_notification_preferences() {
     };
 
     client.set_notification_preferences(&user, &prefs);
-    let retrieved = client.get_notification_preferences(&user).unwrap();
+    let retrieved = client.get_notification_preferences(&user);
 
     assert!(retrieved.email_enabled);
     assert!(!retrieved.push_enabled);
@@ -1074,12 +1074,12 @@ fn test_preferences_mirrored_into_notification_config() {
     client.set_notification_preferences(&user, &prefs);
 
     // The underlying NotificationConfig should reflect the new values
-    let config = client.get_notification_config(&user).unwrap();
+    let config = client.get_notification_config(&user);
     assert_eq!(config.max_daily_notifications, 3);
     assert_eq!(config.quiet_hours_start, 23);
     assert_eq!(config.quiet_hours_end, 6);
-    assert_eq!(config.channel_preferences.get(String::from_str(&env, "email")).unwrap(), true);
-    assert_eq!(config.channel_preferences.get(String::from_str(&env, "push")).unwrap(), true);
+    assert!(config.channel_preferences.get(String::from_str(&env, "email")).unwrap());
+    assert!(config.channel_preferences.get(String::from_str(&env, "push")).unwrap());
 }
 
 #[test]
@@ -1106,7 +1106,7 @@ fn test_digest_frequency_none() {
     };
 
     client.set_notification_preferences(&user, &prefs);
-    let retrieved = client.get_notification_preferences(&user).unwrap();
+    let retrieved = client.get_notification_preferences(&user);
     assert_eq!(retrieved.digest_frequency, DigestFrequency::None);
     assert!(!retrieved.email_enabled);
     assert!(!retrieved.push_enabled);
