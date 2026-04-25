@@ -2,17 +2,16 @@
 
 mod errors;
 mod types;
-#[cfg(test)]
-mod tests;
+
 #[cfg(test)]
 mod integration_tests;
+#[cfg(test)]
+mod tests;
 
 use errors::WebhookError;
 use types::*;
 
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Bytes, BytesN, Env, String, Vec,
-};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Vec};
 
 // ---------------------------------------------------------------------------
 // HMAC-SHA256 signing (pure Soroban, no external crates)
