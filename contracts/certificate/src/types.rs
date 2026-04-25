@@ -459,6 +459,65 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Certificate Recovery
+// ─────────────────────────────────────────────────────────────
+/// Status of a certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RecoveryStatus {
+    /// Recovery request is pending verification.
+    Pending,
+    /// Recovery request has been approved.
+    Approved,
+    /// Recovery request was rejected.
+    Rejected,
+    /// Recovery process completed successfully.
+    Recovered,
+}
+
+/// Backup record for certificate recovery purposes.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CertificateBackup {
+    /// Unique identifier for this backup.
+    pub backup_id: BytesN<32>,
+    /// ID of the certificate being backed up.
+    pub certificate_id: BytesN<32>,
+    /// Student's address.
+    pub student: Address,
+    /// Encrypted backup data hash for verification.
+    pub data_hash: BytesN<32>,
+    /// Unix timestamp (seconds) when backup was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which backup expires.
+    pub expires_at: u64,
+    /// Current status of the backup.
+    pub status: RecoveryStatus,
+}
+
+/// Certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecoveryRequest {
+    /// Unique identifier for recovery request.
+    pub request_id: BytesN<32>,
+    /// ID of certificate to recover.
+    pub certificate_id: BytesN<32>,
+    /// Student requesting recovery.
+    pub requester: Address,
+    /// Backup ID being used for recovery.
+    pub backup_id: BytesN<32>,
+    /// Current status of recovery request.
+    pub status: RecoveryStatus,
+    /// Unix timestamp (seconds) when request was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which request expires.
+    pub expires_at: u64,
+    /// Verification data provided by requester.
+    pub verification_data: Bytes,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Storage Keys
 // ─────────────────────────────────────────────────────────────
 /// Storage key enum used to namespace all certificate contract state in the ledger.
@@ -529,6 +588,16 @@ pub enum CertDataKey {
     // Rate Limiting
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // CertRateLimitConfig
+
+    // Certificate Recovery
+    /// Backup record for a certificate.
+    CertificateBackup(BytesN<32>),
+    /// List of backup IDs for a student.
+    StudentBackups(Address),
+    /// Recovery request keyed by request ID.
+    RecoveryRequest(BytesN<32>),
+    /// List of pending recovery request IDs.
+    PendingRecoveryRequests,
 }
 
 /// Configurable rate limits for certificate operations.
