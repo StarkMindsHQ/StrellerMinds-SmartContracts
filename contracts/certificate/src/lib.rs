@@ -15,7 +15,9 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{
+    contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Map, String, Vec,
+};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
@@ -58,6 +60,21 @@ fn require_initialized(env: &Env) -> Result<(), CertificateError> {
         return Err(CertificateError::NotInitialized);
     }
     Ok(())
+}
+
+/// Computes a deterministic SHA-256 checksum over a certificate's immutable fields.
+/// Fields included: certificate_id, course_id, title, issued_at.
+fn compute_checksum(env: &Env, cert: &Certificate) -> BytesN<32> {
+    let mut data = Bytes::new(env);
+    // certificate_id (32 bytes)
+    data.append(&Bytes::from_array(env, &cert.certificate_id.to_array()));
+    // course_id
+    data.append(&cert.course_id.to_bytes());
+    // title
+    data.append(&cert.title.to_bytes());
+    // issued_at (8 bytes big-endian)
+    data.append(&Bytes::from_array(env, &cert.issued_at.to_be_bytes()));
+    env.crypto().sha256(&data)
 }
 
 /// Deterministic request ID from counter.

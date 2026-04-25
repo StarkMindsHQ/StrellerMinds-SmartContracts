@@ -93,6 +93,12 @@ pub enum CertificateError {
     InvalidProof = 100,
     /// The zero-knowledge verification process failed.
     VerificationFailed = 101,
+
+    // Tamper Detection
+    /// Certificate integrity check failed — the stored checksum does not match.
+    TamperDetected = 110,
+    /// Certificate has not been sealed yet; call seal_certificate first.
+    NotSealed = 111,
 }
 
 impl CertificateError {
@@ -133,6 +139,8 @@ impl CertificateError {
             Self::RateLimitExceeded => "CERT-090",
             Self::InvalidProof => "CERT-100",
             Self::VerificationFailed => "CERT-101",
+            Self::TamperDetected => "CERT-110",
+            Self::NotSealed => "CERT-111",
         }
     }
 
