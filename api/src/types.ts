@@ -55,6 +55,48 @@ export interface CertificateAnalytics {
   lastUpdated: number;
 }
 
+// ── Social Sharing types ─────────────────────────────────────────────────────
+
+export type SharePlatform = "Twitter" | "LinkedIn" | "Facebook";
+
+export interface ShareRecord {
+  certificateId: string;
+  user: string; // Stellar address
+  platform: SharePlatform;
+  customMessage: string;
+  shareUrl: string;
+  timestamp: number;
+  engagementCount: number;
+  verified: boolean;
+}
+
+export interface SocialSharingAnalytics {
+  totalShares: number;
+  twitterShares: number;
+  linkedinShares: number;
+  facebookShares: number;
+  totalEngagement: number;
+  averageEngagement: number;
+  uniqueSharers: number;
+  lastUpdated: number;
+}
+
+export interface ShareRequest {
+  certificateId: string;
+  platform: SharePlatform;
+  customMessage?: string;
+}
+
+export interface ShareResponse {
+  success: boolean;
+  shareRecord: ShareRecord;
+  engagement: {
+    platform: SharePlatform;
+    shareUrl: string;
+    engagementTarget: number; // target engagement for 20% user engagement goal
+  };
+}
+
 // ── API response envelope ────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
