@@ -1,17 +1,16 @@
 #![no_std]
 
 mod errors;
-mod types;
-
 #[cfg(test)]
 mod integration_tests;
 #[cfg(test)]
 mod tests;
+mod types;
 
 use errors::WebhookError;
-use types::*;
-
+use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Vec};
+use types::*;
 
 // ---------------------------------------------------------------------------
 // HMAC-SHA256 signing (pure Soroban, no external crates)
@@ -25,7 +24,6 @@ fn hmac_sha256(env: &Env, key: &BytesN<32>, message: &Bytes) -> BytesN<32> {
     const IPAD: u8 = 0x36;
     const OPAD: u8 = 0x5c;
 
-    // Build ipad-key and opad-key blocks (key is 32 bytes, zero-pad to 64)
     let mut ikey = [0u8; BLOCK];
     let mut okey = [0u8; BLOCK];
     for i in 0..32usize {
@@ -38,13 +36,11 @@ fn hmac_sha256(env: &Env, key: &BytesN<32>, message: &Bytes) -> BytesN<32> {
         okey[i] = OPAD;
     }
 
-    // inner = H(ikey || message)
     let mut inner_input = Bytes::new(env);
     inner_input.extend_from_array(&ikey);
     inner_input.append(message);
     let inner_hash: BytesN<32> = env.crypto().sha256(&inner_input).into();
 
-    // outer = H(okey || inner)
     let mut outer_input = Bytes::new(env);
     outer_input.extend_from_array(&okey);
     let inner_bytes: Bytes = inner_hash.into();
@@ -60,13 +56,13 @@ fn hash_certificate_payload(env: &Env, p: &CertificateIssuedPayload) -> BytesN<3
     let mut b = Bytes::new(env);
     let cert_bytes: Bytes = p.certificate_id.clone().into();
     b.append(&cert_bytes);
-    b.append(&p.course_id.to_xdr(env));
+    b.append(&p.course_id.clone().to_xdr(env));
     env.crypto().sha256(&b).into()
 }
 
 fn hash_progress_payload(env: &Env, p: &StudentProgressPayload) -> BytesN<32> {
     let mut b = Bytes::new(env);
-    b.append(&p.course_id.to_xdr(env));
+    b.append(&p.course_id.clone().to_xdr(env));
     let pct_bytes = p.progress_pct.to_be_bytes();
     b.extend_from_array(&pct_bytes);
     env.crypto().sha256(&b).into()
@@ -86,31 +82,23 @@ fn hash_achievement_payload(env: &Env, p: &AchievementUnlockedPayload) -> BytesN
 // ---------------------------------------------------------------------------
 
 fn get_admin(env: &Env) -> Result<Address, WebhookError> {
-    env.storage()
-        .instance()
-        .get(&DataKey::Admin)
-        .ok_or(WebhookError::NotInitialized)
+    env.storage().instance().get(&DataKey::Admin).ok_or(WebhookError::NotInitialized)
 }
 
 fn next_webhook_id(env: &Env) -> u32 {
     let id: u32 = env.storage().instance().get(&DataKey::NextWebhookId).unwrap_or(0);
-    let next = id + 1;
-    env.storage().instance().set(&DataKey::NextWebhookId, &next);
+    env.storage().instance().set(&DataKey::NextWebhookId, &(id + 1));
     id
 }
 
 fn next_delivery_seq(env: &Env) -> u32 {
     let seq: u32 = env.storage().instance().get(&DataKey::NextDeliverySeq).unwrap_or(0);
-    let next = seq + 1;
-    env.storage().instance().set(&DataKey::NextDeliverySeq, &next);
+    env.storage().instance().set(&DataKey::NextDeliverySeq, &(seq + 1));
     seq
 }
 
 fn get_webhook(env: &Env, id: u32) -> Result<WebhookEndpoint, WebhookError> {
-    env.storage()
-        .persistent()
-        .get(&DataKey::Webhook(id))
-        .ok_or(WebhookError::WebhookNotFound)
+    env.storage().persistent().get(&DataKey::Webhook(id)).ok_or(WebhookError::WebhookNotFound)
 }
 
 fn save_webhook(env: &Env, wh: &WebhookEndpoint) {
@@ -137,10 +125,6 @@ pub struct WebhookContract;
 
 #[contractimpl]
 impl WebhookContract {
-    // -----------------------------------------------------------------------
-    // Admin
-    // -----------------------------------------------------------------------
-
     /// Initialize the contract with an admin address.
     pub fn initialize(env: Env, admin: Address) -> Result<(), WebhookError> {
         if env.storage().instance().has(&DataKey::Admin) {
@@ -151,14 +135,7 @@ impl WebhookContract {
         Ok(())
     }
 
-    // -----------------------------------------------------------------------
-    // Registration
-    // -----------------------------------------------------------------------
-
     /// Register a new webhook endpoint.
-    /// `url`        – UTF-8 encoded URL bytes
-    /// `secret`     – 32-byte HMAC signing secret
-    /// `event_types`– list of event types to subscribe to
     pub fn register(
         env: Env,
         owner: Address,
@@ -166,7 +143,7 @@ impl WebhookContract {
         secret: BytesN<32>,
         event_types: Vec<WebhookEventType>,
     ) -> Result<u32, WebhookError> {
-        get_admin(&env)?; // ensure initialized
+        get_admin(&env)?;
         owner.require_auth();
 
         if url.is_empty() {
@@ -199,7 +176,7 @@ impl WebhookContract {
         Ok(id)
     }
 
-    /// Deactivate (unregister) a webhook. Only the owner may do this.
+    /// Deactivate a webhook. Only the owner may do this.
     pub fn unregister(env: Env, owner: Address, webhook_id: u32) -> Result<(), WebhookError> {
         owner.require_auth();
         let mut wh = get_webhook(&env, webhook_id)?;
@@ -212,12 +189,7 @@ impl WebhookContract {
         Ok(())
     }
 
-    // -----------------------------------------------------------------------
-    // Event dispatch
-    // -----------------------------------------------------------------------
-
     /// Dispatch a CertificateIssued event to all matching active webhooks.
-    /// Returns the list of delivery sequence numbers created.
     pub fn dispatch_certificate_issued(
         env: Env,
         caller: Address,
@@ -225,11 +197,9 @@ impl WebhookContract {
     ) -> Result<Vec<u32>, WebhookError> {
         caller.require_auth();
         get_admin(&env)?;
-
         let payload_hash = hash_certificate_payload(&env, &payload);
         let deliveries =
             Self::create_deliveries(&env, WebhookEventType::CertificateIssued, &payload_hash);
-
         env.events().publish(
             (symbol_short!("wh_cert"), payload.student.clone()),
             payload.certificate_id.clone(),
@@ -245,15 +215,11 @@ impl WebhookContract {
     ) -> Result<Vec<u32>, WebhookError> {
         caller.require_auth();
         get_admin(&env)?;
-
         let payload_hash = hash_progress_payload(&env, &payload);
         let deliveries =
             Self::create_deliveries(&env, WebhookEventType::StudentProgress, &payload_hash);
-
-        env.events().publish(
-            (symbol_short!("wh_prog"), payload.student.clone()),
-            payload.progress_pct,
-        );
+        env.events()
+            .publish((symbol_short!("wh_prog"), payload.student.clone()), payload.progress_pct);
         Ok(deliveries)
     }
 
@@ -265,35 +231,23 @@ impl WebhookContract {
     ) -> Result<Vec<u32>, WebhookError> {
         caller.require_auth();
         get_admin(&env)?;
-
         let payload_hash = hash_achievement_payload(&env, &payload);
         let deliveries =
             Self::create_deliveries(&env, WebhookEventType::AchievementUnlocked, &payload_hash);
-
-        env.events().publish(
-            (symbol_short!("wh_ach"), payload.student.clone()),
-            payload.achievement_id,
-        );
+        env.events()
+            .publish((symbol_short!("wh_ach"), payload.student.clone()), payload.achievement_id);
         Ok(deliveries)
     }
 
-    // -----------------------------------------------------------------------
-    // Retry
-    // -----------------------------------------------------------------------
-
-    /// Retry a pending delivery. Can be called by anyone (e.g. a keeper).
-    /// Enforces backoff: next_attempt_ledger must have passed.
+    /// Retry a pending delivery. Enforces backoff: next_attempt_ledger must have passed.
     pub fn retry_delivery(
         env: Env,
         webhook_id: u32,
         delivery_seq: u32,
     ) -> Result<(), WebhookError> {
         let key = DataKey::PendingDelivery(webhook_id, delivery_seq);
-        let mut delivery: PendingDelivery = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .ok_or(WebhookError::DeliveryNotFound)?;
+        let mut delivery: PendingDelivery =
+            env.storage().persistent().get(&key).ok_or(WebhookError::DeliveryNotFound)?;
 
         if delivery.attempts >= MAX_RETRY_ATTEMPTS {
             return Err(WebhookError::RetryLimitExceeded);
@@ -308,7 +262,6 @@ impl WebhookContract {
             return Err(WebhookError::WebhookInactive);
         }
 
-        // Compute HMAC signature over payload_hash for the retry attempt
         let payload_bytes: Bytes = delivery.payload_hash.clone().into();
         let _signature = hmac_sha256(&env, &wh.secret, &payload_bytes);
 
@@ -317,12 +270,8 @@ impl WebhookContract {
             current_ledger + RETRY_BACKOFF_LEDGERS * (1u32 << delivery.attempts.min(4));
 
         if delivery.attempts >= MAX_RETRY_ATTEMPTS {
-            // Remove exhausted delivery
             env.storage().persistent().remove(&key);
-            env.events().publish(
-                (symbol_short!("wh_fail"), webhook_id),
-                delivery_seq,
-            );
+            env.events().publish((symbol_short!("wh_fail"), webhook_id), delivery_seq);
         } else {
             env.storage().persistent().set(&key, &delivery);
             env.events().publish(
@@ -334,12 +283,7 @@ impl WebhookContract {
         Ok(())
     }
 
-    // -----------------------------------------------------------------------
-    // Signing helper (callable externally for verification)
-    // -----------------------------------------------------------------------
-
     /// Compute HMAC-SHA256 signature for a given webhook and message.
-    /// Callers can use this to verify webhook payloads on their end.
     pub fn compute_signature(
         env: Env,
         webhook_id: u32,
@@ -353,10 +297,6 @@ impl WebhookContract {
         }
         Ok(hmac_sha256(&env, &wh.secret, &message))
     }
-
-    // -----------------------------------------------------------------------
-    // Queries
-    // -----------------------------------------------------------------------
 
     pub fn get_webhook(env: Env, webhook_id: u32) -> Result<WebhookEndpoint, WebhookError> {
         get_webhook(&env, webhook_id)
@@ -374,10 +314,6 @@ impl WebhookContract {
         env.storage().persistent().get(&DataKey::PendingDelivery(webhook_id, delivery_seq))
     }
 
-    // -----------------------------------------------------------------------
-    // Internal helpers
-    // -----------------------------------------------------------------------
-
     fn create_deliveries(
         env: &Env,
         event_type: WebhookEventType,
@@ -394,7 +330,6 @@ impl WebhookContract {
                 _ => continue,
             };
 
-            // Check if this webhook subscribes to the event type
             let mut subscribed = false;
             for et in wh.event_types.iter() {
                 if et == event_type {
@@ -406,11 +341,9 @@ impl WebhookContract {
                 continue;
             }
 
-            // Compute HMAC signature
             let payload_bytes: Bytes = payload_hash.clone().into();
             let _sig = hmac_sha256(env, &wh.secret, &payload_bytes);
 
-            // Record pending delivery for retry tracking
             let seq = next_delivery_seq(env);
             let delivery = PendingDelivery {
                 webhook_id: id,
@@ -420,9 +353,7 @@ impl WebhookContract {
                 next_attempt_ledger: env.ledger().sequence() + RETRY_BACKOFF_LEDGERS,
                 created_at: env.ledger().timestamp(),
             };
-            env.storage()
-                .persistent()
-                .set(&DataKey::PendingDelivery(id, seq), &delivery);
+            env.storage().persistent().set(&DataKey::PendingDelivery(id, seq), &delivery);
             seqs.push_back(seq);
         }
 
