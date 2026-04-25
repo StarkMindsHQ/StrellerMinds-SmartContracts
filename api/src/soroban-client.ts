@@ -21,6 +21,9 @@ import type {
   CertificateAnalytics,
   RevocationRecord,
   VerificationResult,
+  ShareRecord,
+  SocialSharingAnalytics,
+  SharePlatform,
 } from "./types";
 
 const DUMMY_SOURCE = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
@@ -257,6 +260,177 @@ export class CertificateContractClient {
       this.hexToScVal(certificateId),
     ])) as Record<string, unknown> | null;
     return raw ? this.mapRevocation(raw) : null;
+  }
+
+  // ── Social Sharing Methods ─────────────────────────────────────────────────
+
+  /**
+   * Record a share of an achievement to social media.
+   */
+  async shareAchievement(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<ShareRecord> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const platformArg = nativeToScVal(platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2);
+    const messageArg = nativeToScVal(customMessage);
+
+    const raw = (await this.simulate("share_achievement", [
+      userArg,
+      certArg,
+      platformArg,
+      messageArg,
+    ])) as Record<string, unknown>;
+
+    return this.mapShareRecord(raw);
+  }
+
+  /**
+   * Get all shares for a specific certificate.
+   */
+  async getCertificateShares(certificateId: string): Promise<ShareRecord[]> {
+    const certArg = this.hexToScVal(certificateId);
+    const rawArray = (await this.simulate("get_certificate_shares", [
+      certArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Get all shares by a user.
+   */
+  async getUserShares(userAddress: string): Promise<ShareRecord[]> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const rawArray = (await this.simulate("get_user_shares", [
+      userArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Update engagement metrics for a share (admin only).
+   */
+  async updateEngagement(
+    adminAddress: string,
+    certificateId: string,
+    userAddress: string,
+    platform: SharePlatform,
+    engagementCount: number
+  ): Promise<void> {
+    const adminArg = nativeToScVal(
+      Address.fromString(adminAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const platformArg = nativeToScVal(
+      platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2
+    );
+    const engagementArg = nativeToScVal(engagementCount);
+
+    await this.simulate("update_engagement", [
+      adminArg,
+      certArg,
+      userArg,
+      platformArg,
+      engagementArg,
+    ]);
+  }
+
+  /**
+   * Get global social sharing analytics.
+   */
+  async getSocialSharingAnalytics(): Promise<SocialSharingAnalytics> {
+    const raw = (await this.simulate("get_analytics", [])) as Record<
+      string,
+      unknown
+    >;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Get analytics for a specific certificate.
+   */
+  async getCertificateSocialAnalytics(
+    certificateId: string
+  ): Promise<SocialSharingAnalytics> {
+    const certArg = this.hexToScVal(certificateId);
+    const raw = (await this.simulate("get_certificate_analytics", [
+      certArg,
+    ])) as Record<string, unknown>;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Track a social share for analytics.
+   */
+  async trackSocialShare(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<void> {
+    // Log analytics event
+    logger.info("Social share tracked", {
+      user: userAddress,
+      certificateId,
+      platform,
+      messageLength: customMessage.length,
+    });
+
+    // This could be extended to track in a separate analytics database
+    // or call a dedicated analytics contract method
+  }
+
+  // ── Helper methods ─────────────────────────────────────────────────────────
+
+  private mapShareRecord(raw: Record<string, unknown>): ShareRecord {
+    return {
+      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString(
+        "hex"
+      ),
+      user: raw.user as string,
+      platform: ["Twitter", "LinkedIn", "Facebook"][
+        Number(raw.platform)
+      ] as SharePlatform,
+      customMessage: raw.custom_message as string,
+      shareUrl: raw.share_url as string,
+      timestamp: Number(raw.timestamp),
+      engagementCount: Number(raw.engagement_count),
+      verified: raw.verified as boolean,
+    };
   }
 }
 
