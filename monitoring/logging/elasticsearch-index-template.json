@@ -1,0 +1,81 @@
+{
+  "template": "strellerminds-*",
+  "version": 1,
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 2,
+    "index.lifecycle.name": "strellerminds-policy",
+    "index.lifecycle.rollover_alias": "strellerminds",
+    "index.codec": "best_compression",
+    "index.refresh_interval": "30s",
+    "index.max_result_window": 50000
+  },
+  "mappings": {
+    "properties": {
+      "timestamp": {
+        "type": "date",
+        "format": "strict_date_optional_time||epoch_millis"
+      },
+      "hostname": {
+        "type": "keyword"
+      },
+      "environment": {
+        "type": "keyword"
+      },
+      "service_version": {
+        "type": "keyword"
+      },
+      "log_level": {
+        "type": "keyword"
+      },
+      "logger": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "request_id": {
+        "type": "keyword"
+      },
+      "user_id": {
+        "type": "keyword"
+      },
+      "method": {
+        "type": "keyword"
+      },
+      "path": {
+        "type": "keyword"
+      },
+      "status_code": {
+        "type": "integer"
+      },
+      "response_time_ms": {
+        "type": "integer"
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "keyword"
+          },
+          "message": {
+            "type": "text"
+          },
+          "stack_trace": {
+            "type": "text"
+          }
+        }
+      },
+      "context": {
+        "type": "object",
+        "enabled": true
+      }
+    }
+  }
+}

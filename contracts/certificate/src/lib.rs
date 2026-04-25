@@ -20,9 +20,10 @@ use soroban_sdk::{
 };
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
-    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard, CustodyEntry,
-    MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
-    MultiSigRequestStatus, RevocationRecord, ShareRecord, TamperRecord, TemplateField,
+    CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
+    ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
+    MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
+    ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -1446,112 +1447,180 @@ impl CertificateContract {
         Ok(cleaned)
     }
 
-    // ─────────────────────────────────────────────────────────
-    // 15. Tamper Detection
-    // ─────────────────────────────────────────────────────────
-
-    /// Seals a certificate by computing a SHA-256 checksum of its immutable fields
-    /// and storing a [`TamperRecord`] with the initial chain-of-custody entry.
-    ///
-    /// Must be called by the admin after a certificate is issued. Subsequent calls
-    /// to [`verify_integrity`] will recompute the checksum and compare it against
-    /// this sealed value.
-    ///
-    /// # Errors
-    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
-    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
-    pub fn seal_certificate(
+    pub fn create_backup(
         env: Env,
-        admin: Address,
+        caller: Address,
         certificate_id: BytesN<32>,
+        data_hash: BytesN<32>,
+        backup_duration_days: u32,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
+
+        if let Some(cert) = storage::get_certificate(&env, &certificate_id) {
+            if cert.student != caller {
+                return Err(CertificateError::Unauthorized);
+            }
+
+            let now = env.ledger().timestamp();
+            let backup_id = generate_request_id(&env);
+            let expires_at = now + (backup_duration_days as u64 * 86_400);
+
+            let backup = CertificateBackup {
+                backup_id: backup_id.clone(),
+                certificate_id,
+                student: caller.clone(),
+                data_hash,
+                created_at: now,
+                expires_at,
+                status: RecoveryStatus::Approved,
+            };
+
+            storage::set_certificate_backup(&env, &backup_id, &backup);
+            storage::add_student_backup(&env, &caller, &backup_id);
+
+            log_info!(&env, symbol_short!("recov"), symbol_short!("backp"));
+            Ok(backup_id)
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn request_recovery(
+        env: Env,
+        caller: Address,
+        certificate_id: BytesN<32>,
+        backup_id: BytesN<32>,
+        verification_data: soroban_sdk::Bytes,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
+
+        if let Some(backup) = storage::get_certificate_backup(&env, &backup_id) {
+            if backup.student != caller {
+                return Err(CertificateError::Unauthorized);
+            }
+
+            if backup.certificate_id != certificate_id {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            let now = env.ledger().timestamp();
+            if now > backup.expires_at {
+                return Err(CertificateError::CertificateNotFound); // Backup expired
+            }
+
+            let request_id = generate_request_id(&env);
+            let recovery_request = RecoveryRequest {
+                request_id: request_id.clone(),
+                certificate_id,
+                requester: caller.clone(),
+                backup_id,
+                status: RecoveryStatus::Pending,
+                created_at: now,
+                expires_at: now + 604_800, // 7 days
+                verification_data,
+            };
+
+            storage::set_recovery_request(&env, &request_id, &recovery_request);
+            storage::add_pending_recovery_request(&env, &request_id);
+
+            log_info!(&env, symbol_short!("recov"), symbol_short!("reque"));
+            Ok(request_id)
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn approve_recovery(
+        env: Env,
+        caller: Address,
+        request_id: BytesN<32>,
     ) -> Result<(), CertificateError> {
         require_initialized(&env)?;
-        require_admin(&env, &admin)?;
+        require_admin(&env, &caller)?;
 
-        let cert = storage::get_certificate(&env, &certificate_id)
-            .ok_or(CertificateError::CertificateNotFound)?;
+        if let Some(mut recovery_req) = storage::get_recovery_request(&env, &request_id) {
+            let now = env.ledger().timestamp();
+            if now > recovery_req.expires_at {
+                recovery_req.status = RecoveryStatus::Rejected;
+                storage::set_recovery_request(&env, &request_id, &recovery_req);
+                return Err(CertificateError::InvalidInput); // Recovery request expired
+            }
 
-        let checksum = compute_checksum(&env, &cert);
-        let now = env.ledger().timestamp();
+            recovery_req.status = RecoveryStatus::Approved;
+            storage::set_recovery_request(&env, &request_id, &recovery_req);
 
-        let mut custody_log: Vec<CustodyEntry> = Vec::new(&env);
-        custody_log.push_back(CustodyEntry {
-            actor: admin.clone(),
-            timestamp: now,
-            action: String::from_str(&env, "sealed"),
-        });
-
-        let record = TamperRecord {
-            checksum,
-            sealed_at: now,
-            custody_log,
-            tampered: false,
-        };
-
-        storage::set_tamper_record(&env, &certificate_id, &record);
-        Ok(())
-    }
-
-    /// Verifies the integrity of a sealed certificate by recomputing its checksum
-    /// and comparing it to the stored value.
-    ///
-    /// Appends a custody entry on every call. If tampering is detected the record
-    /// is flagged and a tamper-alert event is emitted (via `emit_certificate_verified`
-    /// with `is_valid = false`).
-    ///
-    /// Returns `true` if the certificate is intact, `false` if tampered.
-    ///
-    /// # Errors
-    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
-    /// Returns [`CertificateError::NotSealed`] if `seal_certificate` has not been called.
-    /// Returns [`CertificateError::TamperDetected`] if the checksum does not match.
-    pub fn verify_integrity(
-        env: Env,
-        verifier: Address,
-        certificate_id: BytesN<32>,
-    ) -> Result<bool, CertificateError> {
-        require_initialized(&env)?;
-        verifier.require_auth();
-
-        let cert = storage::get_certificate(&env, &certificate_id)
-            .ok_or(CertificateError::CertificateNotFound)?;
-
-        let mut record = storage::get_tamper_record(&env, &certificate_id)
-            .ok_or(CertificateError::NotSealed)?;
-
-        let now = env.ledger().timestamp();
-        let current_checksum = compute_checksum(&env, &cert);
-        let intact = current_checksum == record.checksum;
-
-        // Append custody entry
-        record.custody_log.push_back(CustodyEntry {
-            actor: verifier.clone(),
-            timestamp: now,
-            action: String::from_str(
-                &env,
-                if intact { "verified_ok" } else { "tamper_detected" },
-            ),
-        });
-
-        if !intact {
-            record.tampered = true;
-            storage::set_tamper_record(&env, &certificate_id, &record);
-            // Emit tamper alert
-            events::emit_certificate_verified(&env, &verifier, &certificate_id, false);
-            return Err(CertificateError::TamperDetected);
+            log_info!(&env, symbol_short!("recov"), symbol_short!("appr"));
+            Ok(())
+        } else {
+            Err(CertificateError::CertificateNotFound)
         }
-
-        storage::set_tamper_record(&env, &certificate_id, &record);
-        events::emit_certificate_verified(&env, &verifier, &certificate_id, true);
-        Ok(true)
     }
 
-    /// Returns the tamper-detection record for a certificate, or `None` if not yet sealed.
-    pub fn get_tamper_record(
+    pub fn execute_recovery(
         env: Env,
-        certificate_id: BytesN<32>,
-    ) -> Option<TamperRecord> {
-        storage::get_tamper_record(&env, &certificate_id)
+        caller: Address,
+        request_id: BytesN<32>,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
+
+        if let Some(mut recovery_req) = storage::get_recovery_request(&env, &request_id) {
+            if recovery_req.requester != caller {
+                return Err(CertificateError::Unauthorized);
+            }
+
+            if recovery_req.status != RecoveryStatus::Approved {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            let now = env.ledger().timestamp();
+            if now > recovery_req.expires_at {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            if let Some(old_cert) = storage::get_certificate(&env, &recovery_req.certificate_id) {
+                let new_cert_id = generate_request_id(&env);
+                let new_cert = Certificate {
+                    certificate_id: new_cert_id.clone(),
+                    course_id: old_cert.course_id,
+                    student: old_cert.student,
+                    title: old_cert.title,
+                    description: old_cert.description,
+                    metadata_uri: old_cert.metadata_uri,
+                    issued_at: now,
+                    expiry_date: old_cert.expiry_date,
+                    status: CertificateStatus::Active,
+                    issuer: storage::get_admin(&env),
+                    version: old_cert.version + 1,
+                    blockchain_anchor: Some(generate_blockchain_anchor(&env, &new_cert_id)),
+                    template_id: old_cert.template_id,
+                    share_count: 0,
+                };
+
+                storage::set_certificate(&env, &new_cert_id, &new_cert);
+                storage::add_student_certificate(&env, &caller, &new_cert_id);
+
+                recovery_req.status = RecoveryStatus::Recovered;
+                storage::set_recovery_request(&env, &request_id, &recovery_req);
+
+                log_info!(&env, symbol_short!("recov"), symbol_short!("exec"));
+                Ok(new_cert_id)
+            } else {
+                Err(CertificateError::CertificateNotFound)
+            }
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn get_certificate_backups(env: Env, student: Address) -> Vec<BytesN<32>> {
+        storage::get_student_backups(&env, &student)
+    }
+
+    pub fn get_recovery_request(env: Env, request_id: BytesN<32>) -> Option<RecoveryRequest> {
+        storage::get_recovery_request(&env, &request_id)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

@@ -424,6 +424,65 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Certificate Recovery
+// ─────────────────────────────────────────────────────────────
+/// Status of a certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RecoveryStatus {
+    /// Recovery request is pending verification.
+    Pending,
+    /// Recovery request has been approved.
+    Approved,
+    /// Recovery request was rejected.
+    Rejected,
+    /// Recovery process completed successfully.
+    Recovered,
+}
+
+/// Backup record for certificate recovery purposes.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CertificateBackup {
+    /// Unique identifier for this backup.
+    pub backup_id: BytesN<32>,
+    /// ID of the certificate being backed up.
+    pub certificate_id: BytesN<32>,
+    /// Student's address.
+    pub student: Address,
+    /// Encrypted backup data hash for verification.
+    pub data_hash: BytesN<32>,
+    /// Unix timestamp (seconds) when backup was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which backup expires.
+    pub expires_at: u64,
+    /// Current status of the backup.
+    pub status: RecoveryStatus,
+}
+
+/// Certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecoveryRequest {
+    /// Unique identifier for recovery request.
+    pub request_id: BytesN<32>,
+    /// ID of certificate to recover.
+    pub certificate_id: BytesN<32>,
+    /// Student requesting recovery.
+    pub requester: Address,
+    /// Backup ID being used for recovery.
+    pub backup_id: BytesN<32>,
+    /// Current status of recovery request.
+    pub status: RecoveryStatus,
+    /// Unix timestamp (seconds) when request was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which request expires.
+    pub expires_at: u64,
+    /// Verification data provided by requester.
+    pub verification_data: Bytes,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Storage Keys
 // ─────────────────────────────────────────────────────────────
 /// Storage key enum used to namespace all certificate contract state in the ledger.
@@ -495,39 +554,15 @@ pub enum CertDataKey {
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // CertRateLimitConfig
 
-    // Tamper Detection
-    /// Tamper-detection record for a specific certificate.
-    TamperRecord(BytesN<32>),
-}
-
-// ─────────────────────────────────────────────────────────────
-// Tamper Detection
-// ─────────────────────────────────────────────────────────────
-
-/// A single chain-of-custody entry recording who touched the certificate and when.
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CustodyEntry {
-    /// Address that performed the action.
-    pub actor: Address,
-    /// Unix timestamp of the action.
-    pub timestamp: u64,
-    /// Short description of the action (e.g. "issued", "verified", "tamper_check").
-    pub action: String,
-}
-
-/// Tamper-detection record sealed at issuance time.
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TamperRecord {
-    /// SHA-256 checksum of the certificate's immutable fields at issuance.
-    pub checksum: BytesN<32>,
-    /// Ledger timestamp when the seal was created.
-    pub sealed_at: u64,
-    /// Chain-of-custody log.
-    pub custody_log: Vec<CustodyEntry>,
-    /// Whether a tamper alert has been raised for this certificate.
-    pub tampered: bool,
+    // Certificate Recovery
+    /// Backup record for a certificate.
+    CertificateBackup(BytesN<32>),
+    /// List of backup IDs for a student.
+    StudentBackups(Address),
+    /// Recovery request keyed by request ID.
+    RecoveryRequest(BytesN<32>),
+    /// List of pending recovery request IDs.
+    PendingRecoveryRequests,
 }
 
 /// Configurable rate limits for certificate operations.
