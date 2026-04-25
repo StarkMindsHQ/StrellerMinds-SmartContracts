@@ -15,12 +15,13 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, format, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
 use types::{
     AuditAction, BatchExportEntry, BatchResult, CertDataKey, CertRateLimitConfig, Certificate,
     CertificateAnalytics, CertificateStatus, CertificateTemplate, ComplianceRecord,
     ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
-    MultiSigConfig, MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
+    MultiSigConfig, MultiSigRequestStatus, OptionalCompliance, OptionalRevocation,
+    RevocationRecord, ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -1478,11 +1479,17 @@ impl CertificateContract {
                     failed += 1;
                 }
                 Some(cert) => {
-                    let compliance = storage::get_compliance(&env, &cert_id);
-                    let revocation = storage::get_revocation(&env, &cert_id);
+                    let compliance = match storage::get_compliance(&env, &cert_id) {
+                        Some(c) => OptionalCompliance::Some(c),
+                        None => OptionalCompliance::None,
+                    };
+                    let revocation = match storage::get_revocation(&env, &cert_id) {
+                        Some(r) => OptionalRevocation::Some(r),
+                        None => OptionalRevocation::None,
+                    };
                     // Filename: "<course_id>_cert.json"
                     // Clients use the cert_id field in the entry for per-file uniqueness.
-                    let filename = format!(&env, "{}_cert.json", cert.course_id);
+                    let filename = String::from_str(&env, "certificate.json");
                     entries.push_back(BatchExportEntry {
                         certificate: cert,
                         compliance,

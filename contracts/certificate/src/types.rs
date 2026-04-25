@@ -290,6 +290,22 @@ pub struct BatchResult {
 // ─────────────────────────────────────────────────────────────
 // Batch Export
 // ─────────────────────────────────────────────────────────────
+/// Optional compliance record wrapper (Soroban does not support `Option<CustomType>`).
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum OptionalCompliance {
+    None,
+    Some(ComplianceRecord),
+}
+
+/// Optional revocation record wrapper (Soroban does not support `Option<CustomType>`).
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum OptionalRevocation {
+    None,
+    Some(RevocationRecord),
+}
+
 /// A single entry in a batch certificate export, bundling the certificate with its
 /// associated compliance and revocation metadata for ZIP packaging by the client.
 #[contracttype]
@@ -298,9 +314,9 @@ pub struct BatchExportEntry {
     /// The full certificate record.
     pub certificate: Certificate,
     /// Compliance record, if one exists for this certificate.
-    pub compliance: Option<ComplianceRecord>,
+    pub compliance: OptionalCompliance,
     /// Revocation record, if the certificate has been revoked.
-    pub revocation: Option<RevocationRecord>,
+    pub revocation: OptionalRevocation,
     /// Suggested filename for this certificate in the ZIP archive
     /// (e.g. `"<course_id>_<student_short>.json"`).
     pub filename: String,

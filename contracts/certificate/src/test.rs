@@ -7,7 +7,8 @@ use soroban_sdk::{
 use crate::{
     types::{
         CertificatePriority, CertificateStatus, ComplianceStandard, FieldType,
-        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, TemplateField,
+        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, OptionalRevocation,
+        TemplateField,
     },
     CertificateContract, CertificateContractClient,
 };
@@ -1143,7 +1144,7 @@ fn test_batch_export_returns_entries() {
     ids.push_back(id1.clone());
     ids.push_back(id2.clone());
 
-    let entries = client.batch_export_certificates(&admin, &ids).unwrap();
+    let entries = client.batch_export_certificates(&admin, &ids);
     assert_eq!(entries.len(), 2);
     assert_eq!(entries.get(0).unwrap().certificate.certificate_id, id1);
     assert_eq!(entries.get(1).unwrap().certificate.certificate_id, id2);
@@ -1174,7 +1175,7 @@ fn test_batch_export_skips_missing_certificates() {
     ids.push_back(id_missing.clone());
 
     // Missing cert is skipped; only 1 entry returned
-    let entries = client.batch_export_certificates(&admin, &ids).unwrap();
+    let entries = client.batch_export_certificates(&admin, &ids);
     assert_eq!(entries.len(), 1);
     assert_eq!(entries.get(0).unwrap().certificate.certificate_id, id_real);
 }
@@ -1197,20 +1198,15 @@ fn test_batch_export_includes_revocation_metadata() {
         expiry_date: 0,
     });
     client.batch_issue_certificates(&admin, &params_list);
-    client.revoke_certificate(
-        &admin,
-        &id,
-        &String::from_str(&env, "Test revocation"),
-        &false,
-    );
+    client.revoke_certificate(&admin, &id, &String::from_str(&env, "Test revocation"), &false);
 
     let mut ids: Vec<BytesN<32>> = Vec::new(&env);
     ids.push_back(id.clone());
 
-    let entries = client.batch_export_certificates(&admin, &ids).unwrap();
+    let entries = client.batch_export_certificates(&admin, &ids);
     assert_eq!(entries.len(), 1);
     let entry = entries.get(0).unwrap();
-    assert!(entry.revocation.is_some());
+    assert!(matches!(entry.revocation, OptionalRevocation::Some(_)));
     assert_eq!(entry.certificate.status, CertificateStatus::Revoked);
 }
 
