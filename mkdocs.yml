@@ -56,6 +56,7 @@ nav:
     - Token Rewards: TOKEN_INCENTIVE_SYSTEM.md
     - Upgrade Framework: UPGRADE_FRAMEWORK.md
   - Developer Reference:
+    - Developer Onboarding: ONBOARDING.md
     - Code Style: CODE_STYLE.md
     - Contributing: contributing.md
     - Event Monitoring: event-monitoring.md
