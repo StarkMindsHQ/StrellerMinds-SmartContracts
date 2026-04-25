@@ -15,12 +15,12 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, format, symbol_short, Address, BytesN, Env, Map, String, Vec};
 use types::{
-    AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
-    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
-    MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
-    MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
+    AuditAction, BatchExportEntry, BatchResult, CertDataKey, CertRateLimitConfig, Certificate,
+    CertificateAnalytics, CertificateStatus, CertificateTemplate, ComplianceRecord,
+    ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
+    MultiSigConfig, MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -1427,6 +1427,77 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 14. Batch Export (ZIP Download)
+    // ─────────────────────────────────────────────────────────
+    /// Exports a batch of certificates by ID, returning each certificate bundled with its
+    /// compliance and revocation metadata. The caller (admin) is responsible for packaging
+    /// the returned entries into a ZIP archive client-side.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `admin` - Admin address authorizing the export.
+    /// * `certificate_ids` - List of certificate IDs to export (max `MAX_BATCH_SIZE`).
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::BatchEmpty`] if the list is empty.
+    /// Returns [`CertificateError::BatchTooLarge`] if the list exceeds `MAX_BATCH_SIZE`.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    ///
+    /// Certificates that do not exist are silently skipped; the caller can detect them by
+    /// comparing the returned count against the input list length.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let entries = client.batch_export_certificates(&admin, &cert_ids);
+    /// ```
+    pub fn batch_export_certificates(
+        env: Env,
+        admin: Address,
+        certificate_ids: Vec<BytesN<32>>,
+    ) -> Result<Vec<BatchExportEntry>, CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+
+        if certificate_ids.is_empty() {
+            return Err(CertificateError::BatchEmpty);
+        }
+        if certificate_ids.len() > MAX_BATCH_SIZE {
+            return Err(CertificateError::BatchTooLarge);
+        }
+
+        let mut entries: Vec<BatchExportEntry> = Vec::new(&env);
+        let mut succeeded: u32 = 0;
+        let mut failed: u32 = 0;
+
+        for cert_id in certificate_ids.iter() {
+            match storage::get_certificate(&env, &cert_id) {
+                None => {
+                    failed += 1;
+                }
+                Some(cert) => {
+                    let compliance = storage::get_compliance(&env, &cert_id);
+                    let revocation = storage::get_revocation(&env, &cert_id);
+                    // Filename: "<course_id>_cert.json"
+                    // Clients use the cert_id field in the entry for per-file uniqueness.
+                    let filename = format!(&env, "{}_cert.json", cert.course_id);
+                    entries.push_back(BatchExportEntry {
+                        certificate: cert,
+                        compliance,
+                        revocation,
+                        filename,
+                    });
+                    succeeded += 1;
+                }
+            }
+        }
+
+        let total = certificate_ids.len();
+        events::emit_batch_completed(&env, &admin, total, succeeded, failed);
+
+        Ok(entries)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

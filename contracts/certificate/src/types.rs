@@ -288,6 +288,25 @@ pub struct BatchResult {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Batch Export
+// ─────────────────────────────────────────────────────────────
+/// A single entry in a batch certificate export, bundling the certificate with its
+/// associated compliance and revocation metadata for ZIP packaging by the client.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatchExportEntry {
+    /// The full certificate record.
+    pub certificate: Certificate,
+    /// Compliance record, if one exists for this certificate.
+    pub compliance: Option<ComplianceRecord>,
+    /// Revocation record, if the certificate has been revoked.
+    pub revocation: Option<RevocationRecord>,
+    /// Suggested filename for this certificate in the ZIP archive
+    /// (e.g. `"<course_id>_<student_short>.json"`).
+    pub filename: String,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Certificate Analytics
 // ─────────────────────────────────────────────────────────────
 /// Aggregate analytics counters for the certificate contract.
