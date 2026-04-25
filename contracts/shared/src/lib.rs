@@ -25,6 +25,7 @@ pub mod rate_limiter;
 pub mod reentrancy_guard;
 pub mod roles;
 pub mod storage;
+pub mod two_factor_auth;
 pub mod upgrade;
 pub mod validation;
 pub mod validation_core;

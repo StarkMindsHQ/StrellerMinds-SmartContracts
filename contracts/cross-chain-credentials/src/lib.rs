@@ -20,7 +20,8 @@ mod types;
 
 use storage::{get_admin, is_oracle, DataKey};
 use types::{
-    ChainId, Credential, CredentialStatus, CrossChainProof, Transcript, VerificationRequest,
+    BridgeRequest, BridgeStatus, ChainId, Credential, CredentialStatus, CrossChainProof,
+    Transcript, VerificationRequest,
 };
 
 #[contract]
@@ -491,6 +492,151 @@ impl CrossChainCredentials {
     /// ```
     pub fn is_oracle(env: Env, oracle: Address) -> bool {
         is_oracle(&env, &oracle)
+    }
+
+    /// Returns the estimated gas cost for a bridge operation to the specified target chain.
+    ///
+    /// # Arguments
+    /// * `target_chain` - The destination chain for which to estimate gas.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let estimate = client.estimate_bridge_gas(&ChainId::Arbitrum);
+    /// ```
+    pub fn estimate_bridge_gas(_env: Env, target_chain: ChainId) -> u64 {
+        target_chain.gas_estimate()
+    }
+
+    /// Initiates a bridge request to move a credential to a different chain.
+    ///
+    /// The credential must be active. Creates a [`BridgeRequest`] record in `Pending` state.
+    ///
+    /// # Arguments
+    /// * `credential_id` - ID of the credential to bridge.
+    /// * `target_chain` - Destination chain for the credential.
+    ///
+    /// # Errors
+    /// Returns [`CrossChainError::CredentialNotFound`] if the credential does not exist.
+    /// Returns [`CrossChainError::CredentialNotActive`] if the credential is not active.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let bridge_req = client.initiate_bridge(&cred_id, &ChainId::Arbitrum);
+    /// ```
+    pub fn initiate_bridge(
+        env: Env,
+        credential_id: String,
+        target_chain: ChainId,
+    ) -> Result<BridgeRequest, CrossChainError> {
+        let credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
+
+        if credential.status != CredentialStatus::Active {
+            return Err(CrossChainError::CredentialNotActive);
+        }
+
+        let gas_estimate = target_chain.gas_estimate();
+        let request_id = String::from_str(&env, "BRIDGE");
+
+        let request = BridgeRequest {
+            request_id: request_id.clone(),
+            credential_id: credential_id.clone(),
+            student: credential.student.clone(),
+            source_chain: credential.chain_id.clone(),
+            target_chain: target_chain.clone(),
+            status: BridgeStatus::Pending,
+            gas_estimate,
+            created_at: env.ledger().timestamp(),
+        };
+
+        env.storage().persistent().set(&DataKey::BridgeRequest(request_id.clone()), &request);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            credential.student,
+            CrossChainEventData::ProofGenerated(ProofGeneratedEvent {
+                credential_id,
+                target_chain: target_chain.to_u32(),
+            })
+        );
+
+        Ok(request)
+    }
+
+    /// Migrates a credential to a new chain, updating its `chain_id` in place.
+    ///
+    /// Requires admin authorization. The credential must be active.
+    ///
+    /// # Arguments
+    /// * `credential_id` - ID of the credential to migrate.
+    /// * `new_chain` - The chain to which the credential is being migrated.
+    ///
+    /// # Errors
+    /// Returns [`CrossChainError::CredentialNotFound`] if the credential does not exist.
+    /// Returns [`CrossChainError::CredentialNotActive`] if the credential is not active.
+    ///
+    /// # Example
+    /// ```ignore
+    /// client.migrate_credential(&cred_id, &ChainId::Arbitrum);
+    /// ```
+    pub fn migrate_credential(
+        env: Env,
+        credential_id: String,
+        new_chain: ChainId,
+    ) -> Result<(), CrossChainError> {
+        let admin = get_admin(&env);
+        admin.require_auth();
+
+        let mut credential: Credential = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Credential(credential_id.clone()))
+            .ok_or(CrossChainError::CredentialNotFound)?;
+
+        if credential.status != CredentialStatus::Active {
+            return Err(CrossChainError::CredentialNotActive);
+        }
+
+        credential.chain_id = new_chain.clone();
+        env.storage().persistent().set(&DataKey::Credential(credential_id.clone()), &credential);
+
+        emit_crosschain_event!(
+            &env,
+            symbol_short!("creds"),
+            admin,
+            CrossChainEventData::ProofGenerated(ProofGeneratedEvent {
+                credential_id,
+                target_chain: new_chain.to_u32(),
+            })
+        );
+
+        Ok(())
+    }
+
+    /// Returns a previously created bridge request by its ID.
+    ///
+    /// # Arguments
+    /// * `request_id` - ID of the bridge request to retrieve.
+    ///
+    /// # Errors
+    /// Returns [`CrossChainError::VerificationRequestNotFound`] if the request does not exist.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let req = client.get_bridge_request(&request_id);
+    /// ```
+    pub fn get_bridge_request(
+        env: Env,
+        request_id: String,
+    ) -> Result<BridgeRequest, CrossChainError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::BridgeRequest(request_id))
+            .ok_or(CrossChainError::VerificationRequestNotFound)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

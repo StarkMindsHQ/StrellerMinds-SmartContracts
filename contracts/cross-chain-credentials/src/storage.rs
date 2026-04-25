@@ -10,7 +10,7 @@ pub enum DataKey {
     Request(String),
     StudentCreds(Address),
     ChainBridge(u32),
-    // Note: VerificationResult removed - see storage.md for documentation
+    BridgeRequest(String),
 }
 
 pub fn set_admin(env: &Env, admin: &Address) {

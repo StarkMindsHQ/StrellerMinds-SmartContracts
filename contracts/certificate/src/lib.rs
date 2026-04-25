@@ -3,6 +3,8 @@
 pub mod errors;
 pub mod events;
 pub mod storage;
+pub mod storage_optimizer;
+pub mod two_factor_integration;
 pub mod types;
 
 #[cfg(test)]
@@ -13,7 +15,7 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
@@ -28,7 +30,7 @@ const MIN_TIMEOUT: u64 = 3_600;
 /// Maximum timeout: 30 days.
 const MAX_TIMEOUT: u64 = 2_592_000;
 /// Maximum batch size (gas guard).
-const MAX_BATCH_SIZE: u32 = 25;
+const MAX_BATCH_SIZE: u32 = 100;
 /// Maximum share records per certificate.
 const MAX_SHARES_PER_CERT: u32 = 100;
 /// Rate limit operation ID for multisig requests.
@@ -584,12 +586,24 @@ impl CertificateContract {
         let mut failed: u32 = 0;
         let mut cert_ids: Vec<BytesN<32>> = Vec::new(&env);
 
+        // Dedup set: tracks cert IDs seen in this batch to avoid redundant storage reads.
+        // Using a Map<BytesN<32>, bool> gives O(1) membership checks without extra storage ops.
+        let mut seen: Map<BytesN<32>, bool> = Map::new(&env);
+
+        // Accumulate (student, cert_id) pairs for a single batched student-list write.
+        let mut student_cert_pairs: Vec<(Address, BytesN<32>)> = Vec::new(&env);
+
+        let now = env.ledger().timestamp();
+
         for params in params_list.iter() {
-            // Skip duplicates
-            if storage::get_certificate(&env, &params.certificate_id).is_some() {
+            // Skip if already seen in this batch or already exists in storage
+            if seen.contains_key(params.certificate_id.clone())
+                || storage::get_certificate(&env, &params.certificate_id).is_some()
+            {
                 failed += 1;
                 continue;
             }
+            seen.set(params.certificate_id.clone(), true);
 
             let anchor = generate_blockchain_anchor(&env, &params.certificate_id);
             let certificate = Certificate {
@@ -599,7 +613,7 @@ impl CertificateContract {
                 title: params.title.clone(),
                 description: params.description.clone(),
                 metadata_uri: params.metadata_uri.clone(),
-                issued_at: env.ledger().timestamp(),
+                issued_at: now,
                 expiry_date: params.expiry_date,
                 status: CertificateStatus::Active,
                 issuer: admin.clone(),
@@ -610,11 +624,15 @@ impl CertificateContract {
             };
 
             storage::set_certificate(&env, &params.certificate_id, &certificate);
-            storage::add_student_certificate(&env, &params.student, &params.certificate_id);
+            student_cert_pairs.push_back((params.student.clone(), params.certificate_id.clone()));
             cert_ids.push_back(params.certificate_id.clone());
             succeeded += 1;
         }
 
+        // Batch all student certificate list writes: O(2 * unique_students) instead of O(2N)
+        storage::add_student_certificates_batch(&env, &student_cert_pairs);
+
+        // Single analytics update for the entire batch instead of one per certificate
         update_analytics_field(&env, |a| {
             a.total_issued += succeeded;
             a.active_certificates += succeeded;

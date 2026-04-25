@@ -12,6 +12,8 @@ pub enum ChainId {
     Polygon,
     /// The Binance Smart Chain network.
     Bsc,
+    /// The Arbitrum Layer-2 network.
+    Arbitrum,
 }
 
 impl ChainId {
@@ -21,8 +23,56 @@ impl ChainId {
             ChainId::Ethereum => 1,
             ChainId::Polygon => 2,
             ChainId::Bsc => 3,
+            ChainId::Arbitrum => 4,
         }
     }
+
+    /// Returns estimated gas cost (in gwei-equivalent units) for this chain.
+    pub fn gas_estimate(&self) -> u64 {
+        match self {
+            ChainId::Stellar => 100,
+            ChainId::Ethereum => 50_000,
+            ChainId::Polygon => 5_000,
+            ChainId::Bsc => 8_000,
+            ChainId::Arbitrum => 3_000,
+        }
+    }
+}
+
+/// Lifecycle status of a cross-chain bridge request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BridgeStatus {
+    /// Bridge request submitted and awaiting processing.
+    Pending,
+    /// Bridge operation is currently being processed.
+    Processing,
+    /// Bridge operation completed successfully.
+    Completed,
+    /// Bridge operation failed; credential remains on source chain.
+    Failed,
+}
+
+/// A request to bridge a credential from one chain to another.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BridgeRequest {
+    /// Unique identifier for this bridge request.
+    pub request_id: String,
+    /// Identifier of the credential being bridged.
+    pub credential_id: String,
+    /// Address of the student whose credential is being bridged.
+    pub student: Address,
+    /// Chain on which the credential currently resides.
+    pub source_chain: ChainId,
+    /// Destination chain for the credential.
+    pub target_chain: ChainId,
+    /// Current status of the bridge request.
+    pub status: BridgeStatus,
+    /// Estimated gas cost for this bridge operation.
+    pub gas_estimate: u64,
+    /// Unix timestamp (seconds) when the request was created.
+    pub created_at: u64,
 }
 
 /// Current validity status of a cross-chain credential.

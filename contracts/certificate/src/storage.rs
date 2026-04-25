@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, Map, String, Vec};
 
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateTemplate, ComplianceRecord,
@@ -124,6 +124,35 @@ pub fn get_student_certificates(env: &Env, student: &Address) -> Vec<BytesN<32>>
         .persistent()
         .get(&CertDataKey::StudentCertificates(student.clone()))
         .unwrap_or_else(|| Vec::new(env))
+}
+
+/// Batch-appends multiple certificate IDs for multiple students in a single pass.
+/// Groups cert IDs by student, then does one read + one write per unique student,
+/// reducing storage ops from O(2N) to O(2 * unique_students).
+pub fn add_student_certificates_batch(env: &Env, entries: &Vec<(Address, BytesN<32>)>) {
+    // Group cert_ids by student using a Map for O(1) lookup
+    let mut student_map: Map<Address, Vec<BytesN<32>>> = Map::new(env);
+
+    for (student, cert_id) in entries.iter() {
+        let mut ids = student_map.get(student.clone()).unwrap_or_else(|| Vec::new(env));
+        ids.push_back(cert_id.clone());
+        student_map.set(student.clone(), ids);
+    }
+
+    // One read + one write per unique student
+    for (student, new_ids) in student_map.iter() {
+        let mut existing: Vec<BytesN<32>> = env
+            .storage()
+            .persistent()
+            .get(&CertDataKey::StudentCertificates(student.clone()))
+            .unwrap_or_else(|| Vec::new(env));
+        for id in new_ids.iter() {
+            existing.push_back(id);
+        }
+        env.storage()
+            .persistent()
+            .set(&CertDataKey::StudentCertificates(student.clone()), &existing);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
