@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
+import { cdnMiddleware } from "./middleware/cdn";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
 
@@ -14,6 +15,8 @@ import certificatesRouter from "./routes/certificates";
 import studentsRouter from "./routes/students";
 import analyticsRouter from "./routes/analytics";
 import healthRouter from "./routes/health";
+import rateLimitRouter from "./routes/rateLimit";
+import cdnRouter from "./routes/cdn";
 
 const app = express();
 
@@ -47,6 +50,7 @@ app.use(express.json({ limit: "16kb" }));
 // ── Request ID + metrics ──────────────────────────────────────────────────────
 app.use(requestId);
 app.use(metricsMiddleware);
+app.use(cdnMiddleware);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
@@ -74,6 +78,8 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/certificates", certificatesRouter);
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
+app.use("/api/v1/rate-limit", rateLimitRouter);
+app.use("/api/v1/cdn", cdnRouter);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req: express.Request, res: express.Response) => {
