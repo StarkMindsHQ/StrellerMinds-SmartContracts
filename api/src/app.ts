@@ -1,38 +1,47 @@
 import express from "express";
-import helmet from "helmet";
-import cors from "cors";
-import swaggerUi from "swagger-ui-express";
-
-import { config } from "./config";
-import { requestId } from "./middleware/requestId";
-import { metricsMiddleware } from "./middleware/metricsMiddleware";
-import { cdnMiddleware } from "./middleware/cdn";
-import { openApiSpec } from "./openapi";
-import { logger } from "./logger";
-
-import authRouter from "./routes/auth";
-import certificatesRouter from "./routes/certificates";
-import studentsRouter from "./routes/students";
-import analyticsRouter from "./routes/analytics";
-import healthRouter from "./routes/health";
-import rateLimitRouter from "./routes/rateLimit";
-import cdnRouter from "./routes/cdn";
+  import helmet from "helmet";
+  import cors from "cors";
+  import swaggerUi from "swagger-ui-express";
+ 
+  import { config } from "./config";
+  import { requestId } from "./middleware/requestId";
+  import { metricsMiddleware } from "./middleware/metricsMiddleware";
+  import { cdnMiddleware } from "./middleware/cdn";
+  import { securityHeadersValidator } from "./middleware/securityHeaders";
+  import { openApiSpec } from "./openapi";
+  import { logger } from "./logger";
+ 
+  import authRouter from "./routes/auth";
+  import certificatesRouter from "./routes/certificates";
+  import studentsRouter from "./routes/students";
+  import analyticsRouter from "./routes/analytics";
+  import healthRouter from "./routes/health";
+  import rateLimitRouter from "./routes/rateLimit";
+  import cdnRouter from "./routes/cdn";
 
 const app = express();
 
-// ── Security headers ──────────────────────────────────────────────────────────
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // needed for Swagger UI
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:"],
+ // ── Security headers ──────────────────────────────────────────────────────────
+  app.use(
+    helmet({
+      hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
       },
-    },
-  })
-);
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"], // needed for Swagger UI
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:"],
+        },
+      },
+      frameguard: {
+        action: 'sameorigin',
+      },
+    })
+  );
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(
@@ -52,16 +61,19 @@ app.use(requestId);
 app.use(metricsMiddleware);
 app.use(cdnMiddleware);
 
-// ── Request logging ───────────────────────────────────────────────────────────
-app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
-  logger.debug("Incoming request", {
-    method: req.method,
-    path: req.path,
-    requestId: req.requestId,
-    ip: req.ip,
+ // ── Request logging ───────────────────────────────────────────────────────────
+  app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
+    logger.debug("Incoming request", {
+      method: req.method,
+      path: req.path,
+      requestId: req.requestId,
+      ip: req.ip,
+    });
+    next();
   });
-  next();
-});
+
+  // ── Security headers validator ────────────────────────────────────────────────
+  app.use(securityHeadersValidator);
 
 // ── API docs ──────────────────────────────────────────────────────────────────
 app.use(
