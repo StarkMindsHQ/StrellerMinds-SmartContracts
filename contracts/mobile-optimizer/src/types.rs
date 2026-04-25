@@ -1122,6 +1122,43 @@ pub enum NotificationPriorityLevel {
     CriticalOnly,
 }
 
+/// How often the user wants to receive digest summaries.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DigestFrequency {
+    /// No digest; individual notifications only.
+    None,
+    /// One digest per day.
+    Daily,
+    /// One digest per week.
+    Weekly,
+    /// One digest per month.
+    Monthly,
+}
+
+/// User-controlled notification preferences covering channel toggles,
+/// delivery frequency, and digest settings.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserNotificationPreferences {
+    /// Address of the user these preferences belong to.
+    pub user: Address,
+    /// Whether email notifications are enabled.
+    pub email_enabled: bool,
+    /// Whether push notifications are enabled.
+    pub push_enabled: bool,
+    /// Maximum notifications delivered per day (0 = unlimited).
+    pub max_daily: u32,
+    /// Hour (0–23) at which the quiet period starts.
+    pub quiet_hours_start: u32,
+    /// Hour (0–23) at which the quiet period ends.
+    pub quiet_hours_end: u32,
+    /// How often digest summaries are sent.
+    pub digest_frequency: DigestFrequency,
+    /// Unix timestamp when these preferences were last updated.
+    pub updated_at: u64,
+}
+
 /// Record of a notification that was dispatched to a user.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1810,6 +1847,8 @@ pub enum DataKey {
     BatteryConfig(Address),
     /// Notification history for a user.
     NotifHistory(Address),
+    /// User-controlled notification preferences.
+    NotifPreferences(Address),
     /// Authentication events for a user.
     AuthEvents(Address),
     /// Security alerts for a user.
