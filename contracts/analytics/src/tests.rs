@@ -732,7 +732,8 @@ mod analytics_tests {
         ];
 
         for i in 0..10 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i % 3 + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i % 3 + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.session_type = session_types[i % 4].clone();
             session.interactions = 15 + i * 2;
@@ -762,7 +763,8 @@ mod analytics_tests {
 
         // Create sessions with varying engagement patterns
         for i in 0..8 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.interactions = 20 + i * 3;
             client.record_session(&session);
@@ -775,7 +777,8 @@ mod analytics_tests {
         // Request engagement prediction
         client.request_ml_insight(&student, &course_id, &InsightType::EngagementPrediction);
 
-        let insight = client.get_ml_insight(&student, &course_id, &InsightType::EngagementPrediction);
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::EngagementPrediction);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::EngagementPrediction);
@@ -789,7 +792,8 @@ mod analytics_tests {
         let course_id = Symbol::new(&env, "RUST101");
 
         // Create sessions with varying performance to simulate knowledge gaps
-        let modules_scores = [("module_1", 85), ("module_2", 45), ("module_3", 90), ("module_4", 55)];
+        let modules_scores =
+            [("module_1", 85), ("module_2", 45), ("module_3", 90), ("module_4", 55)];
         
         for (i, (module, score)) in modules_scores.iter().enumerate() {
             let mut session = create_test_session(&env, &student, "RUST101", module);
@@ -804,7 +808,8 @@ mod analytics_tests {
         // Request knowledge gap analysis
         client.request_ml_insight(&student, &course_id, &InsightType::KnowledgeGapAnalysis);
 
-        let insight = client.get_ml_insight(&student, &course_id, &InsightType::KnowledgeGapAnalysis);
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::KnowledgeGapAnalysis);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::KnowledgeGapAnalysis);
@@ -828,7 +833,8 @@ mod analytics_tests {
 
         for (student, score, _label) in students_data {
             for i in 0..3 {
-                let mut session = create_test_session(&env, student, "RUST101", &format!("module_{}", i + 1));
+                let mut session =
+                    create_test_session(&env, student, "RUST101", &format!("module_{}", i + 1));
                 session.session_id = BytesN::from_array(&env, &[score as u8 + i as u8; 32]);
                 client.record_session(&session);
 
@@ -841,7 +847,8 @@ mod analytics_tests {
         // Request collaborative learning insight for student1
         client.request_ml_insight(&student1, &course_id, &InsightType::CollaborativeInsight);
 
-        let insight = client.get_ml_insight(&student1, &course_id, &InsightType::CollaborativeInsight);
+        let insight =
+            client.get_ml_insight(&student1, &course_id, &InsightType::CollaborativeInsight);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::CollaborativeInsight);
@@ -856,7 +863,8 @@ mod analytics_tests {
 
         // Create normal sessions first
         for i in 0..5 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.interactions = 20;
             client.record_session(&session);
@@ -871,13 +879,17 @@ mod analytics_tests {
         short_session.session_id = BytesN::from_array(&env, &[10u8; 32]);
         short_session.interactions = 5;
         client.record_session(&short_session);
-        client.complete_session(&short_session.session_id, &(short_session.start_time + 300), &Some(40), &50);
+        client.complete_session(
+            &short_session.session_id, &(short_session.start_time + 300), &Some(40), &50
+        );
 
         let mut long_session = create_test_session(&env, &student, "RUST101", "module_7");
         long_session.session_id = BytesN::from_array(&env, &[11u8; 32]);
         long_session.interactions = 50;
         client.record_session(&long_session);
-        client.complete_session(&long_session.session_id, &(long_session.start_time + 7200), &Some(85), &100);
+        client.complete_session(
+            &long_session.session_id, &(long_session.start_time + 7200), &Some(85), &100
+        );
 
         // Request anomaly detection
         client.request_ml_insight(&student, &course_id, &InsightType::AnomalyDetection);
@@ -918,7 +930,8 @@ mod analytics_tests {
         // Request learning path optimization
         client.request_ml_insight(&student, &course_id, &InsightType::LearningPathOptimization);
 
-        let insight = client.get_ml_insight(&student, &course_id, &InsightType::LearningPathOptimization);
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::LearningPathOptimization);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::LearningPathOptimization);
@@ -943,7 +956,8 @@ mod analytics_tests {
         ];
 
         for (i, (session_type, score, duration)) in session_types_data.iter().enumerate() {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.session_type = session_type.clone();
             session.interactions = 15 + i * 2;
@@ -957,7 +971,8 @@ mod analytics_tests {
         // Request effectiveness metrics
         client.request_ml_insight(&student, &course_id, &InsightType::EffectivenessMetrics);
 
-        let insight = client.get_ml_insight(&student, &course_id, &InsightType::EffectivenessMetrics);
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::EffectivenessMetrics);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::EffectivenessMetrics);
@@ -991,7 +1006,8 @@ mod analytics_tests {
         // Request adaptive recommendations
         client.request_ml_insight(&student, &course_id, &InsightType::AdaptiveRecommendation);
 
-        let insight = client.get_ml_insight(&student, &course_id, &InsightType::AdaptiveRecommendation);
+        let insight =
+            client.get_ml_insight(&student, &course_id, &InsightType::AdaptiveRecommendation);
         assert!(insight.is_some());
         let insight = insight.unwrap();
         assert_eq!(insight.insight_type, InsightType::AdaptiveRecommendation);
@@ -1006,7 +1022,8 @@ mod analytics_tests {
 
         // Create only 2 sessions (insufficient for most ML analyses)
         for i in 0..2 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             client.record_session(&session);
 
@@ -1045,7 +1062,8 @@ mod analytics_tests {
 
         // Create sufficient data for pattern recognition
         for i in 0..6 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.interactions = 20 + i * 5;
             client.record_session(&session);
@@ -1094,7 +1112,8 @@ mod analytics_tests {
 
         // Create comprehensive data
         for i in 0..8 {
-            let mut session = create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
+            let mut session =
+                create_test_session(&env, &student, "RUST101", &format!("module_{}", i + 1));
             session.session_id = BytesN::from_array(&env, &[i as u8; 32]);
             session.interactions = 15 + i * 3;
             client.record_session(&session);

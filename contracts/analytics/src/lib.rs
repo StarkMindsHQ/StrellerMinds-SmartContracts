@@ -1348,7 +1348,8 @@ impl Analytics {
         };
 
         // Estimated time saved by skipping already-mastered content
-        let estimated_time_savings = analytics.completed_modules.saturating_mul(30); // ~30 min/module
+        // ~30 min/module
+        let estimated_time_savings = analytics.completed_modules.saturating_mul(30);
 
         let adaptation_reason = if is_struggling {
             String::from_str(&env, "Remedial path selected based on performance below threshold")
