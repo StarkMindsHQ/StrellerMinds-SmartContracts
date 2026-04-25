@@ -1,23 +1,18 @@
 #![no_std]
+extern crate alloc;
 
 pub mod errors;
 
 use crate::errors::ProgressError;
+use alloc::string::ToString;
 use shared::event_schema::{
     AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
 };
+use shared::gdpr_types::GdprProgressExport;
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{emit_access_control_event, emit_progress_event};
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
-
-#[contracttype]
-#[derive(Clone)]
-pub struct ProgressExport {
-    pub course_id: Symbol,
-    pub progress_percentage: u32,
-    pub last_updated: u64,
-}
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Symbol, Vec};
 
 /// Storage key for progress records.
 #[contracttype]
@@ -147,15 +142,26 @@ impl Progress {
         env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(&env))
     }
 
-    pub fn export_user_data(env: Env, user: Address) -> Vec<ProgressExport> {
+    pub fn export_user_data(env: Env, user: Address) -> Vec<GdprProgressExport> {
         let courses = Self::get_student_courses(env.clone(), user.clone());
-        let mut exports: Vec<ProgressExport> = Vec::new(&env);
+        let mut exports: Vec<GdprProgressExport> = Vec::new(&env);
 
         for i in 0..courses.len() {
             if let Some(course_id) = courses.get(i) {
                 if let Ok(progress) = Self::get_progress(env.clone(), user.clone(), course_id.clone()) {
-                    exports.push_back(ProgressExport {
-                        course_id,
+                    let mut bytes = [0u8; 32];
+                    bytes[31] = (i as u8).wrapping_mul(3);
+                    let mut j: usize = 0;
+                    let course_str = course_id.to_string();
+                    for (idx, b) in course_str.as_bytes().iter().enumerate() {
+                        if idx < 31 {
+                            bytes[idx] = *b;
+                            j = idx + 1;
+                        }
+                    }
+                    bytes[31] = bytes[31].wrapping_add(j as u8);
+                    exports.push_back(GdprProgressExport {
+                        course_id: BytesN::from_array(&env, &bytes),
                         progress_percentage: progress,
                         last_updated: env.ledger().timestamp(),
                     });

@@ -17,7 +17,18 @@ mod tests;
 
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct GamificationExport {
+    pub xp_total: u32,
+    pub level: u32,
+    pub achievements_count: u32,
+    pub guild_id: u64,
+    pub has_guild: bool,
+    pub current_streak: u32,
+}
 
 pub use errors::Error;
 pub use errors::GamificationError;
@@ -615,6 +626,18 @@ impl Gamification {
     /// ```
     pub fn get_admin(env: Env) -> Option<Address> {
         env.storage().instance().get(&GamificationKey::Admin)
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> GamificationExport {
+        let profile = GamificationStorage::get_profile(&env, &user);
+        GamificationExport {
+            xp_total: profile.total_xp,
+            level: profile.level,
+            achievements_count: profile.achievements_count,
+            guild_id: profile.guild_id,
+            has_guild: profile.guild_id != 0,
+            current_streak: profile.current_streak,
+        }
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

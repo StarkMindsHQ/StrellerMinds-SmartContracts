@@ -23,17 +23,7 @@ use types::{
     MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
 };
 
-#[contracttype]
-#[derive(Clone)]
-pub struct CertificateExport {
-    pub certificate_id: BytesN<32>,
-    pub course_id_hash: BytesN<32>,
-    pub title_hash: BytesN<32>,
-    pub issued_at: u64,
-    pub expiry_date: u64,
-    pub status: CertificateStatus,
-    pub issuer: Address,
-}
+use shared::gdpr_types::GdprCertificateExport;
 
 /// Maximum number of approvers per config (gas guard).
 const MAX_APPROVERS: u32 = 10;
@@ -1441,23 +1431,24 @@ impl CertificateContract {
         Ok(cleaned)
     }
 
-    pub fn export_user_data(env: Env, user: Address) -> Vec<CertificateExport> {
+    pub fn export_user_data(env: Env, user: Address) -> Vec<GdprCertificateExport> {
         require_initialized(&env).ok();
         let cert_ids = storage::get_student_certificates(&env, &user);
-        let mut exports: Vec<CertificateExport> = Vec::new(&env);
+        let mut exports: Vec<GdprCertificateExport> = Vec::new(&env);
 
         for i in 0..cert_ids.len() {
             if let Some(cert_id) = cert_ids.get(i) {
                 if let Some(cert) = storage::get_certificate(&env, &cert_id) {
-                    let cert_id_clone1 = cert.certificate_id.clone();
-                    let cert_id_clone2 = cert.certificate_id.clone();
-                    exports.push_back(CertificateExport {
+                    let cid1 = cert.certificate_id.clone();
+                    let cid2 = cert.certificate_id.clone();
+                    let cid3 = cert.certificate_id.clone();
+                    exports.push_back(GdprCertificateExport {
                         certificate_id: cert.certificate_id,
-                        course_id_hash: cert_id_clone1,
-                        title_hash: cert_id_clone2,
+                        course_id: cid1,
+                        title: cid2,
                         issued_at: cert.issued_at,
                         expiry_date: cert.expiry_date,
-                        status: cert.status,
+                        status: cid3,
                         issuer: cert.issuer,
                     });
                 }

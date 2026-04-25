@@ -16,6 +16,7 @@ pub mod event_utils;
 pub mod events;
 pub mod gas_optimizer;
 pub mod gas_testing;
+pub mod gdpr_types;
 pub mod log_aggregator;
 pub mod logger;
 pub mod monitoring;
