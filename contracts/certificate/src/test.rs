@@ -1104,3 +1104,84 @@ fn test_health_check_before_init() {
     assert_eq!(report.status, ContractHealthStatus::Unknown);
     assert!(!report.initialized);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 18. Tamper Detection
+// ─────────────────────────────────────────────────────────────
+
+fn issue_cert(env: &Env, client: &CertificateContractClient, admin: &Address, id_byte: u8) -> BytesN<32> {
+    let student = Address::generate(env);
+    let cert_id = BytesN::from_array(env, &[id_byte; 32]);
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(env);
+    params_list.push_back(MintCertificateParams {
+        certificate_id: cert_id.clone(),
+        course_id: String::from_str(env, "TAMPER_COURSE"),
+        student,
+        title: String::from_str(env, "Tamper Test Cert"),
+        description: String::from_str(env, "desc"),
+        metadata_uri: String::from_str(env, "https://example.com/t"),
+        expiry_date: 0,
+    });
+    client.batch_issue_certificates(admin, &params_list);
+    cert_id
+}
+
+#[test]
+fn test_seal_and_verify_integrity_ok() {
+    let (env, client, admin) = setup_env();
+    let cert_id = issue_cert(&env, &client, &admin, 0xF1);
+
+    client.seal_certificate(&admin, &cert_id);
+
+    let verifier = Address::generate(&env);
+    let result = client.verify_integrity(&verifier, &cert_id);
+    assert_eq!(result, Ok(true));
+}
+
+#[test]
+fn test_verify_integrity_not_sealed_fails() {
+    let (env, client, admin) = setup_env();
+    let cert_id = issue_cert(&env, &client, &admin, 0xF2);
+
+    let verifier = Address::generate(&env);
+    let result = client.try_verify_integrity(&verifier, &cert_id);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_seal_non_existent_cert_fails() {
+    let (env, client, admin) = setup_env();
+    let fake_id = BytesN::from_array(&env, &[0xFFu8; 32]);
+    let result = client.try_seal_certificate(&admin, &fake_id);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_get_tamper_record_after_seal() {
+    let (env, client, admin) = setup_env();
+    let cert_id = issue_cert(&env, &client, &admin, 0xF3);
+
+    client.seal_certificate(&admin, &cert_id);
+
+    let record = client.get_tamper_record(&cert_id);
+    assert!(record.is_some());
+    let r = record.unwrap();
+    assert!(!r.tampered);
+    assert_eq!(r.custody_log.len(), 1); // one "sealed" entry
+}
+
+#[test]
+fn test_custody_log_grows_on_verify() {
+    let (env, client, admin) = setup_env();
+    let cert_id = issue_cert(&env, &client, &admin, 0xF4);
+
+    client.seal_certificate(&admin, &cert_id);
+
+    let verifier = Address::generate(&env);
+    client.verify_integrity(&verifier, &cert_id);
+    client.verify_integrity(&verifier, &cert_id);
+
+    let record = client.get_tamper_record(&cert_id).unwrap();
+    // 1 seal + 2 verify entries
+    assert_eq!(record.custody_log.len(), 3);
+}

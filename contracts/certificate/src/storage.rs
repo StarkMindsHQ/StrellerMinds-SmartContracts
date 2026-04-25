@@ -3,6 +3,7 @@ use soroban_sdk::{Address, BytesN, Env, Map, String, Vec};
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateTemplate, ComplianceRecord,
     MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig, RevocationRecord, ShareRecord,
+    TamperRecord,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -288,4 +289,15 @@ pub fn next_certificate_counter(env: &Env) -> u64 {
     let next = c + 1;
     env.storage().instance().set(&CertDataKey::CertificateCounter, &next);
     next
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tamper Detection
+// ─────────────────────────────────────────────────────────────
+pub fn set_tamper_record(env: &Env, cert_id: &BytesN<32>, record: &TamperRecord) {
+    env.storage().persistent().set(&CertDataKey::TamperRecord(cert_id.clone()), record);
+}
+
+pub fn get_tamper_record(env: &Env, cert_id: &BytesN<32>) -> Option<TamperRecord> {
+    env.storage().persistent().get(&CertDataKey::TamperRecord(cert_id.clone()))
 }

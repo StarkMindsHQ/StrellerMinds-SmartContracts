@@ -15,12 +15,12 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Map, String, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
-    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
+    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard, CustodyEntry,
     MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
-    MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
+    MultiSigRequestStatus, RevocationRecord, ShareRecord, TamperRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -57,6 +57,21 @@ fn require_initialized(env: &Env) -> Result<(), CertificateError> {
         return Err(CertificateError::NotInitialized);
     }
     Ok(())
+}
+
+/// Computes a deterministic SHA-256 checksum over a certificate's immutable fields.
+/// Fields included: certificate_id, course_id, title, issued_at.
+fn compute_checksum(env: &Env, cert: &Certificate) -> BytesN<32> {
+    let mut data = Bytes::new(env);
+    // certificate_id (32 bytes)
+    data.append(&Bytes::from_array(env, &cert.certificate_id.to_array()));
+    // course_id
+    data.append(&cert.course_id.to_bytes());
+    // title
+    data.append(&cert.title.to_bytes());
+    // issued_at (8 bytes big-endian)
+    data.append(&Bytes::from_array(env, &cert.issued_at.to_be_bytes()));
+    env.crypto().sha256(&data)
 }
 
 /// Deterministic request ID from counter.
@@ -1427,6 +1442,114 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 15. Tamper Detection
+    // ─────────────────────────────────────────────────────────
+
+    /// Seals a certificate by computing a SHA-256 checksum of its immutable fields
+    /// and storing a [`TamperRecord`] with the initial chain-of-custody entry.
+    ///
+    /// Must be called by the admin after a certificate is issued. Subsequent calls
+    /// to [`verify_integrity`] will recompute the checksum and compare it against
+    /// this sealed value.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the admin.
+    pub fn seal_certificate(
+        env: Env,
+        admin: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+
+        let cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        let checksum = compute_checksum(&env, &cert);
+        let now = env.ledger().timestamp();
+
+        let mut custody_log: Vec<CustodyEntry> = Vec::new(&env);
+        custody_log.push_back(CustodyEntry {
+            actor: admin.clone(),
+            timestamp: now,
+            action: String::from_str(&env, "sealed"),
+        });
+
+        let record = TamperRecord {
+            checksum,
+            sealed_at: now,
+            custody_log,
+            tampered: false,
+        };
+
+        storage::set_tamper_record(&env, &certificate_id, &record);
+        Ok(())
+    }
+
+    /// Verifies the integrity of a sealed certificate by recomputing its checksum
+    /// and comparing it to the stored value.
+    ///
+    /// Appends a custody entry on every call. If tampering is detected the record
+    /// is flagged and a tamper-alert event is emitted (via `emit_certificate_verified`
+    /// with `is_valid = false`).
+    ///
+    /// Returns `true` if the certificate is intact, `false` if tampered.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate does not exist.
+    /// Returns [`CertificateError::NotSealed`] if `seal_certificate` has not been called.
+    /// Returns [`CertificateError::TamperDetected`] if the checksum does not match.
+    pub fn verify_integrity(
+        env: Env,
+        verifier: Address,
+        certificate_id: BytesN<32>,
+    ) -> Result<bool, CertificateError> {
+        require_initialized(&env)?;
+        verifier.require_auth();
+
+        let cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        let mut record = storage::get_tamper_record(&env, &certificate_id)
+            .ok_or(CertificateError::NotSealed)?;
+
+        let now = env.ledger().timestamp();
+        let current_checksum = compute_checksum(&env, &cert);
+        let intact = current_checksum == record.checksum;
+
+        // Append custody entry
+        record.custody_log.push_back(CustodyEntry {
+            actor: verifier.clone(),
+            timestamp: now,
+            action: String::from_str(
+                &env,
+                if intact { "verified_ok" } else { "tamper_detected" },
+            ),
+        });
+
+        if !intact {
+            record.tampered = true;
+            storage::set_tamper_record(&env, &certificate_id, &record);
+            // Emit tamper alert
+            events::emit_certificate_verified(&env, &verifier, &certificate_id, false);
+            return Err(CertificateError::TamperDetected);
+        }
+
+        storage::set_tamper_record(&env, &certificate_id, &record);
+        events::emit_certificate_verified(&env, &verifier, &certificate_id, true);
+        Ok(true)
+    }
+
+    /// Returns the tamper-detection record for a certificate, or `None` if not yet sealed.
+    pub fn get_tamper_record(
+        env: Env,
+        certificate_id: BytesN<32>,
+    ) -> Option<TamperRecord> {
+        storage::get_tamper_record(&env, &certificate_id)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

@@ -494,6 +494,40 @@ pub enum CertDataKey {
     // Rate Limiting
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // CertRateLimitConfig
+
+    // Tamper Detection
+    /// Tamper-detection record for a specific certificate.
+    TamperRecord(BytesN<32>),
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tamper Detection
+// ─────────────────────────────────────────────────────────────
+
+/// A single chain-of-custody entry recording who touched the certificate and when.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CustodyEntry {
+    /// Address that performed the action.
+    pub actor: Address,
+    /// Unix timestamp of the action.
+    pub timestamp: u64,
+    /// Short description of the action (e.g. "issued", "verified", "tamper_check").
+    pub action: String,
+}
+
+/// Tamper-detection record sealed at issuance time.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TamperRecord {
+    /// SHA-256 checksum of the certificate's immutable fields at issuance.
+    pub checksum: BytesN<32>,
+    /// Ledger timestamp when the seal was created.
+    pub sealed_at: u64,
+    /// Chain-of-custody log.
+    pub custody_log: Vec<CustodyEntry>,
+    /// Whether a tamper alert has been raised for this certificate.
+    pub tampered: bool,
 }
 
 /// Configurable rate limits for certificate operations.
