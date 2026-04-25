@@ -1259,6 +1259,40 @@ impl MobileOptimizerContract {
         NotificationManager::get_notification_config(&env, &user)
     }
 
+    /// Save a user's notification preferences (email/push toggles, frequency, digest).
+    ///
+    /// Requires authorization from `user`. Also mirrors the settings into the underlying
+    /// [`NotificationConfig`] so the delivery pipeline honours them immediately.
+    ///
+    /// # Arguments
+    /// * `user` - Address of the user updating their preferences.
+    /// * `prefs` - The [`UserNotificationPreferences`] to persist.
+    ///
+    /// # Errors
+    /// Returns [`MobileOptimizerError::NotificationError`] on storage failure.
+    pub fn set_notification_preferences(
+        env: Env,
+        user: Address,
+        prefs: UserNotificationPreferences,
+    ) -> Result<(), MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::set_notification_preferences(&env, &user, prefs)
+    }
+
+    /// Retrieve the stored notification preferences for a user.
+    ///
+    /// Requires authorization from `user`.
+    ///
+    /// # Errors
+    /// Returns [`MobileOptimizerError::NotificationError`] if no preferences have been saved yet.
+    pub fn get_notification_preferences(
+        env: Env,
+        user: Address,
+    ) -> Result<UserNotificationPreferences, MobileOptimizerError> {
+        user.require_auth();
+        NotificationManager::get_notification_preferences(&env, &user)
+    }
+
     /// Create a streak-maintenance reminder celebrating a user's current learning streak.
     ///
     /// Requires authorization from `user`.
