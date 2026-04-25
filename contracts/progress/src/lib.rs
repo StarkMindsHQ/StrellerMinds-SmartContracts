@@ -11,6 +11,14 @@ use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{emit_access_control_event, emit_progress_event};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
 
+#[contracttype]
+#[derive(Clone)]
+pub struct ProgressExport {
+    pub course_id: Symbol,
+    pub progress_percentage: u32,
+    pub last_updated: u64,
+}
+
 /// Storage key for progress records.
 #[contracttype]
 #[derive(Clone)]
@@ -137,6 +145,25 @@ impl Progress {
     pub fn get_student_courses(env: Env, student: Address) -> Vec<Symbol> {
         let key = ProgressKey::StudentCourses(student);
         env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(&env))
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> Vec<ProgressExport> {
+        let courses = Self::get_student_courses(env.clone(), user.clone());
+        let mut exports: Vec<ProgressExport> = Vec::new(&env);
+
+        for i in 0..courses.len() {
+            if let Some(course_id) = courses.get(i) {
+                if let Ok(progress) = Self::get_progress(env.clone(), user.clone(), course_id.clone()) {
+                    exports.push_back(ProgressExport {
+                        course_id,
+                        progress_percentage: progress,
+                        last_updated: env.ledger().timestamp(),
+                    });
+                }
+            }
+        }
+
+        exports
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

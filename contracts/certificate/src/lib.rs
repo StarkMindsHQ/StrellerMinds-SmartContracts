@@ -15,13 +15,25 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
     MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
     MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
 };
+
+#[contracttype]
+#[derive(Clone)]
+pub struct CertificateExport {
+    pub certificate_id: BytesN<32>,
+    pub course_id_hash: BytesN<32>,
+    pub title_hash: BytesN<32>,
+    pub issued_at: u64,
+    pub expiry_date: u64,
+    pub status: CertificateStatus,
+    pub issuer: Address,
+}
 
 /// Maximum number of approvers per config (gas guard).
 const MAX_APPROVERS: u32 = 10;
@@ -1427,6 +1439,32 @@ impl CertificateContract {
         });
 
         Ok(cleaned)
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> Vec<CertificateExport> {
+        require_initialized(&env).ok();
+        let cert_ids = storage::get_student_certificates(&env, &user);
+        let mut exports: Vec<CertificateExport> = Vec::new(&env);
+
+        for i in 0..cert_ids.len() {
+            if let Some(cert_id) = cert_ids.get(i) {
+                if let Some(cert) = storage::get_certificate(&env, &cert_id) {
+                    let cert_id_clone1 = cert.certificate_id.clone();
+                    let cert_id_clone2 = cert.certificate_id.clone();
+                    exports.push_back(CertificateExport {
+                        certificate_id: cert.certificate_id,
+                        course_id_hash: cert_id_clone1,
+                        title_hash: cert_id_clone2,
+                        issued_at: cert.issued_at,
+                        expiry_date: cert.expiry_date,
+                        status: cert.status,
+                        issuer: cert.issuer,
+                    });
+                }
+            }
+        }
+
+        exports
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {
