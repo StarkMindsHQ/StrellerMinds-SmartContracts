@@ -7,7 +7,8 @@ use soroban_sdk::{
 use crate::{
     types::{
         CertificatePriority, CertificateStatus, ComplianceStandard, FieldType,
-        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, TemplateField,
+        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, OptionalRevocation,
+        TemplateField,
     },
     CertificateContract, CertificateContractClient,
 };
@@ -1103,4 +1104,127 @@ fn test_health_check_before_init() {
     let report = client.health_check();
     assert_eq!(report.status, ContractHealthStatus::Unknown);
     assert!(!report.initialized);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 18. Batch Export (ZIP Download)
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_batch_export_returns_entries() {
+    let (env, client, admin) = setup_env();
+
+    // Issue two certificates via batch_issue
+    let student1 = Address::generate(&env);
+    let student2 = Address::generate(&env);
+    let id1 = BytesN::from_array(&env, &[0xA1u8; 32]);
+    let id2 = BytesN::from_array(&env, &[0xA2u8; 32]);
+
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(&env);
+    params_list.push_back(MintCertificateParams {
+        certificate_id: id1.clone(),
+        course_id: String::from_str(&env, "EXPORT_COURSE"),
+        student: student1.clone(),
+        title: String::from_str(&env, "Export Cert 1"),
+        description: String::from_str(&env, "desc"),
+        metadata_uri: String::from_str(&env, "https://example.com/1"),
+        expiry_date: 0,
+    });
+    params_list.push_back(MintCertificateParams {
+        certificate_id: id2.clone(),
+        course_id: String::from_str(&env, "EXPORT_COURSE"),
+        student: student2.clone(),
+        title: String::from_str(&env, "Export Cert 2"),
+        description: String::from_str(&env, "desc"),
+        metadata_uri: String::from_str(&env, "https://example.com/2"),
+        expiry_date: 0,
+    });
+    client.batch_issue_certificates(&admin, &params_list);
+
+    let mut ids: Vec<BytesN<32>> = Vec::new(&env);
+    ids.push_back(id1.clone());
+    ids.push_back(id2.clone());
+
+    let entries = client.batch_export_certificates(&admin, &ids);
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries.get(0).unwrap().certificate.certificate_id, id1);
+    assert_eq!(entries.get(1).unwrap().certificate.certificate_id, id2);
+}
+
+#[test]
+fn test_batch_export_skips_missing_certificates() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let id_real = BytesN::from_array(&env, &[0xB1u8; 32]);
+    let id_missing = BytesN::from_array(&env, &[0xB2u8; 32]);
+
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(&env);
+    params_list.push_back(MintCertificateParams {
+        certificate_id: id_real.clone(),
+        course_id: String::from_str(&env, "SKIP_COURSE"),
+        student: student.clone(),
+        title: String::from_str(&env, "Real Cert"),
+        description: String::from_str(&env, "desc"),
+        metadata_uri: String::from_str(&env, "https://example.com/real"),
+        expiry_date: 0,
+    });
+    client.batch_issue_certificates(&admin, &params_list);
+
+    let mut ids: Vec<BytesN<32>> = Vec::new(&env);
+    ids.push_back(id_real.clone());
+    ids.push_back(id_missing.clone());
+
+    // Missing cert is skipped; only 1 entry returned
+    let entries = client.batch_export_certificates(&admin, &ids);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries.get(0).unwrap().certificate.certificate_id, id_real);
+}
+
+#[test]
+fn test_batch_export_includes_revocation_metadata() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let id = BytesN::from_array(&env, &[0xC1u8; 32]);
+
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(&env);
+    params_list.push_back(MintCertificateParams {
+        certificate_id: id.clone(),
+        course_id: String::from_str(&env, "REVOKE_COURSE"),
+        student: student.clone(),
+        title: String::from_str(&env, "Revoked Cert"),
+        description: String::from_str(&env, "desc"),
+        metadata_uri: String::from_str(&env, "https://example.com/rev"),
+        expiry_date: 0,
+    });
+    client.batch_issue_certificates(&admin, &params_list);
+    client.revoke_certificate(&admin, &id, &String::from_str(&env, "Test revocation"), &false);
+
+    let mut ids: Vec<BytesN<32>> = Vec::new(&env);
+    ids.push_back(id.clone());
+
+    let entries = client.batch_export_certificates(&admin, &ids);
+    assert_eq!(entries.len(), 1);
+    let entry = entries.get(0).unwrap();
+    assert!(matches!(entry.revocation, OptionalRevocation::Some(_)));
+    assert_eq!(entry.certificate.status, CertificateStatus::Revoked);
+}
+
+#[test]
+fn test_batch_export_empty_list_fails() {
+    let (env, client, admin) = setup_env();
+    let ids: Vec<BytesN<32>> = Vec::new(&env);
+    let result = client.try_batch_export_certificates(&admin, &ids);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_batch_export_non_admin_fails() {
+    let (env, client, _admin) = setup_env();
+    let non_admin = Address::generate(&env);
+    let id = BytesN::from_array(&env, &[0xD1u8; 32]);
+    let mut ids: Vec<BytesN<32>> = Vec::new(&env);
+    ids.push_back(id);
+    let result = client.try_batch_export_certificates(&non_admin, &ids);
+    assert!(result.is_err());
 }
