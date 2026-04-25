@@ -1561,10 +1561,8 @@ mod tests {
         assert_eq!(page.total_students, 2);
 
         // Offset past all students returns nothing meaningful but shouldn't panic
-        let empty_page = client
-            .try_get_course_analytics_paginated(&course, &100, &10)
-            .unwrap()
-            .unwrap();
+        let empty_page =
+            client.try_get_course_analytics_paginated(&course, &100, &10).unwrap().unwrap();
         assert_eq!(empty_page.total_students, 2); // total_students is always full count
     }
 
