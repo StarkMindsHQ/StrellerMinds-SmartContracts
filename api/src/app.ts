@@ -17,6 +17,7 @@ import analyticsRouter from "./routes/analytics";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
+import certificateTemplatesRouter from "./certificate-templates/certificate-templates.route";
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/certificate-templates", certificateTemplatesRouter);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req: express.Request, res: express.Response) => {
