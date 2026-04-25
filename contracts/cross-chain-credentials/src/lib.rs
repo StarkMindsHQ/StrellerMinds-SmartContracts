@@ -15,7 +15,8 @@ use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Ve
 
 mod storage;
 mod types;
-mod enhanced_verification;
+// Note: enhanced_verification module replaced with documentation
+// See enhanced_verification.md for implementation details
 
 use storage::{get_admin, is_oracle, DataKey};
 use types::{

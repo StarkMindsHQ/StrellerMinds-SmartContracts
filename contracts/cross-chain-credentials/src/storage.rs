@@ -10,7 +10,7 @@ pub enum DataKey {
     Request(String),
     StudentCreds(Address),
     ChainBridge(u32),
-    VerificationResult(String),
+    // Note: VerificationResult removed - see storage.md for documentation
 }
 
 pub fn set_admin(env: &Env, admin: &Address) {
@@ -28,3 +28,6 @@ pub fn is_oracle(env: &Env, oracle: &Address) -> bool {
 pub fn add_oracle(env: &Env, oracle: &Address) {
     env.storage().instance().set(&DataKey::Oracle(oracle.clone()), &true);
 }
+
+// Note: Enhanced verification storage functions removed
+// See storage.md for complete documentation of the storage architecture
