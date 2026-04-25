@@ -15,7 +15,9 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{
+    contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Map, String, Vec,
+};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard, CustodyEntry,

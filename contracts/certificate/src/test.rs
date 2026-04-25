@@ -1109,7 +1109,12 @@ fn test_health_check_before_init() {
 // 18. Tamper Detection
 // ─────────────────────────────────────────────────────────────
 
-fn issue_cert(env: &Env, client: &CertificateContractClient, admin: &Address, id_byte: u8) -> BytesN<32> {
+fn issue_cert(
+    env: &Env,
+    client: &CertificateContractClient,
+    admin: &Address,
+    id_byte: u8,
+) -> BytesN<32> {
     let student = Address::generate(env);
     let cert_id = BytesN::from_array(env, &[id_byte; 32]);
     let mut params_list: Vec<MintCertificateParams> = Vec::new(env);
