@@ -1462,10 +1462,10 @@ impl CertificateContract {
             storage::set_certificate_backup(&env, &backup_id, &backup);
             storage::add_student_backup(&env, &caller, &backup_id);
 
-            log_info!(env, symbol_short!("recov"), symbol_short!("backp"));
+            log_info!(&env, symbol_short!("recov"), symbol_short!("backp"));
             Ok(backup_id)
         } else {
-            Err(CertificateError::NotFound)
+            Err(CertificateError::CertificateNotFound)
         }
     }
 
@@ -1490,7 +1490,7 @@ impl CertificateContract {
 
             let now = env.ledger().timestamp();
             if now > backup.expires_at {
-                return Err(CertificateError::NotFound); // Backup expired
+                return Err(CertificateError::CertificateNotFound); // Backup expired
             }
 
             let request_id = generate_request_id(&env);
@@ -1508,10 +1508,10 @@ impl CertificateContract {
             storage::set_recovery_request(&env, &request_id, &recovery_request);
             storage::add_pending_recovery_request(&env, &request_id);
 
-            log_info!(env, symbol_short!("recov"), symbol_short!("reque"));
+            log_info!(&env, symbol_short!("recov"), symbol_short!("reque"));
             Ok(request_id)
         } else {
-            Err(CertificateError::NotFound)
+            Err(CertificateError::CertificateNotFound)
         }
     }
 
@@ -1534,10 +1534,10 @@ impl CertificateContract {
             recovery_req.status = RecoveryStatus::Approved;
             storage::set_recovery_request(&env, &request_id, &recovery_req);
 
-            log_info!(env, symbol_short!("recov"), symbol_short!("appr"));
+            log_info!(&env, symbol_short!("recov"), symbol_short!("appr"));
             Ok(())
         } else {
-            Err(CertificateError::NotFound)
+            Err(CertificateError::CertificateNotFound)
         }
     }
 
@@ -1588,13 +1588,13 @@ impl CertificateContract {
                 recovery_req.status = RecoveryStatus::Recovered;
                 storage::set_recovery_request(&env, &request_id, &recovery_req);
 
-                log_info!(env, symbol_short!("recov"), symbol_short!("exec"));
+                log_info!(&env, symbol_short!("recov"), symbol_short!("exec"));
                 Ok(new_cert_id)
             } else {
-                Err(CertificateError::NotFound)
+                Err(CertificateError::CertificateNotFound)
             }
         } else {
-            Err(CertificateError::NotFound)
+            Err(CertificateError::CertificateNotFound)
         }
     }
 
