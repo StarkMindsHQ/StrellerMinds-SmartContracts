@@ -308,54 +308,108 @@ generate_html_dashboard() {
     
     cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>StrellerMinds Test Coverage Dashboard</title>
     <style>
+        :root {
+            --page-bg: #f5f7fb;
+            --panel-bg: #ffffff;
+            --section-bg: #f9fafc;
+            --text-primary: #273142;
+            --text-muted: #667085;
+            --border: #d8dee8;
+            --table-header-bg: #2563eb;
+            --table-header-text: #ffffff;
+            --progress-track: #e7edf5;
+            --recommendation-bg: #fff7d8;
+            --recommendation-border: #f5d66b;
+            --recommendation-heading: #6b4e00;
+            --shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+            color-scheme: light;
+        }
+        :root[data-theme="dark"] {
+            --page-bg: #101820;
+            --panel-bg: #17212b;
+            --section-bg: #1d2935;
+            --text-primary: #edf3f8;
+            --text-muted: #b8c3cf;
+            --border: #344454;
+            --table-header-bg: #3b82f6;
+            --table-header-text: #ffffff;
+            --progress-track: #2e3a46;
+            --recommendation-bg: #322b14;
+            --recommendation-border: #806b24;
+            --recommendation-heading: #f7d66a;
+            --shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+            color-scheme: dark;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: white;
+            background-color: var(--panel-bg);
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+        }
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .toolbar label {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .toolbar select {
+            min-width: 170px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--panel-bg);
+            color: var(--text-primary);
+            font: inherit;
         }
         .header {
             text-align: center;
             margin-bottom: 40px;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 2px solid var(--border);
             padding-bottom: 20px;
         }
         .header h1 {
-            color: #2c3e50;
+            color: var(--text-primary);
             margin: 0;
             font-size: 2.5em;
         }
         .header p {
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin: 10px 0 0 0;
             font-size: 1.2em;
         }
         .section {
             margin-bottom: 30px;
             padding: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            background-color: #fafafa;
+            background-color: var(--section-bg);
         }
         .section h2 {
-            color: #2c3e50;
+            color: var(--text-primary);
             margin-top: 0;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
         }
         .coverage-table {
@@ -367,17 +421,17 @@ generate_html_dashboard() {
         .coverage-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border);
         }
         .coverage-table th {
-            background-color: #3498db;
-            color: white;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
             font-weight: bold;
         }
         .coverage-bar {
             width: 100%;
             height: 20px;
-            background-color: #ecf0f1;
+            background-color: var(--progress-track);
             border-radius: 10px;
             overflow: hidden;
         }
@@ -398,41 +452,41 @@ generate_html_dashboard() {
             margin-top: 15px;
         }
         .metric-card {
-            background-color: white;
+            background-color: var(--panel-bg);
             padding: 20px;
             border-radius: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             text-align: center;
         }
         .metric-value {
             font-size: 2em;
             font-weight: bold;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
         .metric-label {
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin-top: 5px;
         }
         .recommendations {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
+            background-color: var(--recommendation-bg);
+            border: 1px solid var(--recommendation-border);
             border-radius: 8px;
             padding: 15px;
         }
         .recommendations h3 {
-            color: #856404;
+            color: var(--recommendation-heading);
             margin-top: 0;
         }
         .recommendation-item {
             margin: 10px 0;
             padding: 10px;
-            background-color: white;
+            background-color: var(--panel-bg);
             border-radius: 5px;
             border-left: 4px solid #f39c12;
         }
         .last-updated {
             text-align: center;
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin-top: 30px;
             font-size: 0.9em;
         }
@@ -440,6 +494,14 @@ generate_html_dashboard() {
 </head>
 <body>
     <div class="container">
+        <div class="toolbar">
+            <label for="theme-select">Theme</label>
+            <select id="theme-select" aria-label="Theme">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        </div>
         <div class="header">
             <h1>🧪 StrellerMinds Test Coverage Dashboard</h1>
             <p>Comprehensive test coverage analysis and quality metrics</p>
@@ -482,8 +544,36 @@ generate_html_dashboard() {
     </div>
     
     <script>
-        // This would be populated by the script with actual data
-        // For now, showing static structure
+        const themeSelect = document.getElementById('theme-select');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const savedTheme = localStorage.getItem('coverage-dashboard-theme') || 'system';
+
+        function resolveTheme(theme) {
+            if (theme === 'dark' || theme === 'light') {
+                return theme;
+            }
+
+            return systemTheme.matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+            const resolvedTheme = resolveTheme(theme);
+            document.documentElement.dataset.theme = resolvedTheme;
+            themeSelect.value = theme;
+            localStorage.setItem('coverage-dashboard-theme', theme);
+        }
+
+        themeSelect.addEventListener('change', (event) => {
+            applyTheme(event.target.value);
+        });
+
+        systemTheme.addEventListener('change', () => {
+            if (themeSelect.value === 'system') {
+                applyTheme('system');
+            }
+        });
+
+        applyTheme(savedTheme);
         document.getElementById('last-updated-time').textContent = new Date().toLocaleString();
     </script>
 </body>
