@@ -20,6 +20,8 @@ export const openApiSpec = {
     { name: "Certificates", description: "Certificate verification and retrieval" },
     { name: "Students", description: "Student certificate listings" },
     { name: "Analytics", description: "Aggregate platform analytics" },
+    { name: "Rate Limiting", description: "Per-user rate limit status and tier info" },
+    { name: "CDN", description: "Cache invalidation and CDN configuration" },
     { name: "Health", description: "Service health and monitoring" },
   ],
   components: {
@@ -123,6 +125,21 @@ export const openApiSpec = {
           pendingRequests: { type: "integer" },
           avgApprovalTime: { type: "integer", description: "Seconds" },
           lastUpdated: { type: "integer" },
+        },
+      },
+      UserRateLimitStatus: {
+        type: "object",
+        properties: {
+          userId: { type: "string" },
+          tier: { type: "string", enum: ["free", "pro", "enterprise", "internal"] },
+          consumed: { type: "integer", description: "Requests consumed in current window" },
+          remaining: { type: "integer", description: "Requests remaining in current window" },
+          limit: { type: "integer", description: "Requests per minute for this tier" },
+          burstLimit: { type: "integer", description: "Burst allowance per 10 seconds" },
+          burstConsumed: { type: "integer" },
+          resetAt: { type: "integer", description: "Unix timestamp when window resets" },
+          throttled: { type: "boolean" },
+          windowRemainingMs: { type: "integer" },
         },
       },
     },
@@ -359,6 +376,108 @@ export const openApiSpec = {
             },
           },
           "401": { description: "Unauthorized" },
+        },
+      },
+    },
+    "/rate-limit/status": {
+      get: {
+        tags: ["Rate Limiting"],
+        summary: "Get current user rate limit status",
+        security: [{ BearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Rate limit status for the authenticated user",
+            content: {
+              "application/json": {
+                schema: {
+                  allOf: [
+                    { $ref: "#/components/schemas/ApiResponse" },
+                    {
+                      properties: {
+                        data: { $ref: "#/components/schemas/UserRateLimitStatus" },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+          "401": { description: "Unauthorized" },
+        },
+      },
+    },
+    "/rate-limit/tiers": {
+      get: {
+        tags: ["Rate Limiting"],
+        summary: "Get available rate limit tier definitions (public)",
+        responses: {
+          "200": {
+            description: "Tier definitions",
+            content: {
+              "application/json": {
+                schema: {
+                  allOf: [
+                    { $ref: "#/components/schemas/ApiResponse" },
+                    {
+                      properties: {
+                        data: {
+                          type: "object",
+                          properties: {
+                            tiers: {
+                              type: "array",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  tier: { type: "string", enum: ["free", "pro", "enterprise", "internal"] },
+                                  requestsPerMinute: { type: "integer" },
+                                  burstAllowance: { type: "integer" },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/cdn/invalidate": {
+      post: {
+        tags: ["CDN"],
+        summary: "Trigger cache invalidation for path patterns",
+        description: "Requires HMAC-SHA256 signature in X-CDN-Signature header (sha256=<hex>).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["patterns"],
+                properties: {
+                  patterns: { type: "array", items: { type: "string" }, maxItems: 50 },
+                  reason: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Invalidation triggered" },
+          "401": { description: "Missing or invalid signature" },
+        },
+      },
+    },
+    "/cdn/status": {
+      get: {
+        tags: ["CDN"],
+        summary: "CDN configuration and active invalidations",
+        responses: {
+          "200": { description: "CDN status" },
         },
       },
     },

@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
+import { cdnMiddleware } from "./middleware/cdn";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
 
@@ -15,6 +16,8 @@ import studentsRouter from "./routes/students";
 import analyticsRouter from "./routes/analytics";
 import socialSharingRouter from "./routes/social-sharing";
 import healthRouter from "./routes/health";
+import rateLimitRouter from "./routes/rateLimit";
+import cdnRouter from "./routes/cdn";
 
 const app = express();
 
@@ -48,6 +51,7 @@ app.use(express.json({ limit: "16kb" }));
 // ── Request ID + metrics ──────────────────────────────────────────────────────
 app.use(requestId);
 app.use(metricsMiddleware);
+app.use(cdnMiddleware);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
