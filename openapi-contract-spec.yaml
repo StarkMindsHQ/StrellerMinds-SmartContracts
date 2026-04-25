@@ -1,0 +1,496 @@
+openapi: 3.0.3
+info:
+  title: StrellerMinds Smart Contracts API
+  description: OpenAPI specification for StrellerMinds Soroban smart contract APIs
+  version: 1.0.0
+  contact:
+    name: StrellerMinds Team
+
+servers:
+  - url: http://localhost:8000
+    description: Soroban Localnet
+
+paths:
+  /analytics/initialize:
+    post:
+      summary: Initialize Analytics Contract
+      operationId: analytics_initialize
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - admin
+              properties:
+                admin:
+                  type: string
+                  description: Admin address
+                  example: "GABCD..."
+                config:
+                  type: object
+                  description: Optional configuration
+                  properties:
+                    min_session_duration:
+                      type: integer
+                      minimum: 0
+                      default: 60
+                    max_session_duration:
+                      type: integer
+                      minimum: 0
+                      default: 86400
+      responses:
+        '200':
+          description: Contract initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  contract_id:
+                    type: string
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - already initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/record_session:
+    post:
+      summary: Record Learning Session
+      operationId: analytics_record_session
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - session_id
+                - course_id
+                - start_time
+              properties:
+                user:
+                  type: string
+                  description: Student address
+                  example: "GABCD..."
+                session_id:
+                  type: string
+                  format: bytes
+                  minLength: 32
+                  maxLength: 32
+                  description: 32-byte unique session identifier
+                course_id:
+                  type: string
+                  description: Course identifier
+                  example: "course_101"
+                module_id:
+                  type: string
+                  description: Optional module identifier
+                start_time:
+                  type: integer
+                  format: uint64
+                  description: Unix timestamp
+      responses:
+        '200':
+          description: Session recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  session_id:
+                    type: string
+        '400':
+          description: Bad request - invalid session data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - caller not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - session already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/complete_session:
+    post:
+      summary: Complete Learning Session
+      operationId: analytics_complete_session
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - session_id
+                - end_time
+                - final_score
+                - completion_percentage
+              properties:
+                user:
+                  type: string
+                  description: Student address
+                session_id:
+                  type: string
+                  format: bytes
+                  minLength: 32
+                  maxLength: 32
+                end_time:
+                  type: integer
+                  format: uint64
+                  description: Unix timestamp
+                final_score:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 100
+                completion_percentage:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+      responses:
+        '200':
+          description: Session completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/get_session:
+    get:
+      summary: Get Session Data
+      operationId: analytics_get_session
+      tags:
+        - Analytics
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: bytes
+            minLength: 32
+            maxLength: 32
+      responses:
+        '200':
+          description: Session data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionData'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /token/initialize:
+    post:
+      summary: Initialize Token Contract
+      operationId: token_initialize
+      tags:
+        - Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - admin
+              properties:
+                admin:
+                  type: string
+                  description: Admin address
+      responses:
+        '200':
+          description: Contract initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+        '409':
+          description: Conflict - already initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /token/mint:
+    post:
+      summary: Mint Tokens
+      operationId: token_mint
+      tags:
+        - Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to
+                - amount
+              properties:
+                to:
+                  type: string
+                  description: Recipient address
+                amount:
+                  type: integer
+                  format: i128
+                  minimum: 1
+                  description: Amount to mint
+      responses:
+        '200':
+          description: Tokens minted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  amount:
+                    type: integer
+        '400':
+          description: Bad request - invalid amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - not admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /token/transfer:
+    post:
+      summary: Transfer Tokens
+      operationId: token_transfer
+      tags:
+        - Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - from
+                - to
+                - amount
+              properties:
+                from:
+                  type: string
+                  description: Sender address
+                to:
+                  type: string
+                  description: Recipient address
+                amount:
+                  type: integer
+                  format: i128
+                  minimum: 1
+                  description: Amount to transfer
+      responses:
+        '200':
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - not sender
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '402':
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /token/balance:
+    get:
+      summary: Get Token Balance
+      operationId: token_balance
+      tags:
+        - Token
+      parameters:
+        - name: account
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Account address
+      responses:
+        '200':
+          description: Balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    type: string
+                  balance:
+                    type: integer
+                    format: i128
+        '400':
+          description: Bad request - invalid address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+          example: 1
+        details:
+          type: object
+          description: Additional error details
+
+    SessionData:
+      type: object
+      required:
+        - session_id
+        - user
+        - course_id
+        - start_time
+        - status
+      properties:
+        session_id:
+          type: string
+          format: bytes
+        user:
+          type: string
+        course_id:
+          type: string
+        module_id:
+          type: string
+        start_time:
+          type: integer
+          format: uint64
+        end_time:
+          type: integer
+          format: uint64
+        final_score:
+          type: number
+          format: float
+        completion_percentage:
+          type: integer
+        status:
+          type: string
+          enum: [recorded, completed]
+
+    StandardEvent:
+      type: object
+      required:
+        - version
+        - contract
+        - actor
+        - timestamp
+        - event_data
+      properties:
+        version:
+          type: integer
+          description: Event schema version
+          example: 1
+        contract:
+          type: string
+          description: Contract identifier
+        actor:
+          type: string
+          description: Address that triggered the event
+        timestamp:
+          type: integer
+          format: uint64
+          description: Ledger timestamp
+        tx_hash:
+          type: string
+          format: bytes
+          description: Transaction hash
+        sequence:
+          type: integer
+          description: Event sequence number
+        event_data:
+          type: object
+          description: Contract-specific event payload

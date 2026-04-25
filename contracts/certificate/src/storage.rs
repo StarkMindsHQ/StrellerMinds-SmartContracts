@@ -126,6 +126,23 @@ pub fn get_student_certificates(env: &Env, student: &Address) -> Vec<BytesN<32>>
         .unwrap_or_else(|| Vec::new(env))
 }
 
+pub fn has_course_student_certificate(env: &Env, course_id: &String, student: &Address) -> bool {
+    env.storage()
+        .persistent()
+        .has(&CertDataKey::CourseStudentCertificate(course_id.clone(), student.clone()))
+}
+
+pub fn set_course_student_certificate(
+    env: &Env,
+    course_id: &String,
+    student: &Address,
+    cert_id: &BytesN<32>,
+) {
+    env.storage()
+        .persistent()
+        .set(&CertDataKey::CourseStudentCertificate(course_id.clone(), student.clone()), cert_id);
+}
+
 /// Batch-appends multiple certificate IDs for multiple students in a single pass.
 /// Groups cert IDs by student, then does one read + one write per unique student,
 /// reducing storage ops from O(2N) to O(2 * unique_students).
