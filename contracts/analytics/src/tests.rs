@@ -1123,3 +1123,113 @@ mod analytics_tests {
         }
     }
 }
+
+    // ── Progress Insights ────────────────────────────────────
+
+    fn setup_student_with_session(
+        env: &Env,
+        client: &AnalyticsClient,
+        student: &Address,
+        course: &str,
+        module: &str,
+        score: u32,
+        session_byte: u8,
+    ) {
+        let session_id = BytesN::from_array(env, &[session_byte; 32]);
+        let ts = env.ledger().timestamp();
+        let session = LearningSession {
+            session_id: session_id.clone(),
+            student: student.clone(),
+            course_id: Symbol::new(env, course),
+            module_id: Symbol::new(env, module),
+            start_time: ts,
+            end_time: 0,
+            completion_percentage: 0,
+            time_spent: 0,
+            interactions: 5,
+            score: None,
+            session_type: SessionType::Study,
+        };
+        client.record_session(&session);
+        client.complete_session(&session_id, &3600, &Some(score), &100);
+    }
+
+    #[test]
+    fn test_generate_progress_insights_basic() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        setup_student_with_session(&env, &client, &student, "COURSE1", "MOD1", 80, 0xA1);
+
+        let report = client
+            .generate_progress_insights(&student, &Symbol::new(&env, "COURSE1"))
+            .unwrap();
+
+        assert_eq!(report.student, student);
+        assert!(report.generated_at > 0);
+        assert!(!report.next_steps.is_empty());
+    }
+
+    #[test]
+    fn test_insights_velocity_populated() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        setup_student_with_session(&env, &client, &student, "COURSE2", "MOD1", 75, 0xB1);
+
+        let report = client
+            .generate_progress_insights(&student, &Symbol::new(&env, "COURSE2"))
+            .unwrap();
+
+        assert!(report.velocity.sessions_per_day >= 1);
+    }
+
+    #[test]
+    fn test_insights_skill_gap_detected_for_low_score() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        // Score 50 < 70 threshold → skill gap with severity 20
+        setup_student_with_session(&env, &client, &student, "COURSE3", "MOD_HARD", 50, 0xC1);
+
+        let report = client
+            .generate_progress_insights(&student, &Symbol::new(&env, "COURSE3"))
+            .unwrap();
+
+        assert!(!report.skill_gaps.is_empty());
+        assert_eq!(report.skill_gaps.get(0).unwrap().severity, 20);
+    }
+
+    #[test]
+    fn test_insights_no_skill_gap_for_high_score() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        setup_student_with_session(&env, &client, &student, "COURSE4", "MOD_EASY", 90, 0xD1);
+
+        let report = client
+            .generate_progress_insights(&student, &Symbol::new(&env, "COURSE4"))
+            .unwrap();
+
+        assert!(report.skill_gaps.is_empty());
+    }
+
+    #[test]
+    fn test_insights_peer_percentile_single_student() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+        setup_student_with_session(&env, &client, &student, "COURSE5", "MOD1", 85, 0xE1);
+
+        let report = client
+            .generate_progress_insights(&student, &Symbol::new(&env, "COURSE5"))
+            .unwrap();
+
+        // Only student in course → 0 peers below them
+        assert_eq!(report.peer_percentile, 0);
+    }
+
+    #[test]
+    fn test_insights_not_found_without_session() {
+        let (env, admin, _, student) = create_test_env();
+        let client = setup_analytics_contract(&env, &admin);
+
+        let result =
+            client.try_generate_progress_insights(&student, &Symbol::new(&env, "GHOST"));
+        assert_eq!(result, Err(Ok(AnalyticsError::StudentNotFound)));
+    }
