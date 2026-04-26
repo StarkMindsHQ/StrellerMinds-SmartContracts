@@ -10,7 +10,7 @@ use e2e_tests::{setup_test_harness, E2ETestHarness};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// Scenario 1: High Transaction Volume - Multi-user Analytics Recording
-/// Simulates 100 concurrent-like requests for recording learning sessions.
+/// Simulates up to 10,000 concurrent-like requests for recording learning sessions.
 #[tokio::test]
 #[ignore = "requires running Soroban localnet at localhost:8000"]
 async fn test_load_analytics_recording_stress() -> Result<()> {
@@ -33,12 +33,14 @@ async fn test_load_analytics_recording_stress() -> Result<()> {
         )
         .await?;
 
-    println!("Starting Load Test: 100 Session Records");
+    // Allow configuration via environment variable, defaulting to 10,000 for full load testing
+    let total_requests: usize = std::env::var("LOAD_TEST_REQUESTS").unwrap_or_else(|_| "10000".to_string()).parse().unwrap_or(10000);
+    println!("Starting Load Test: {} Session Records", total_requests);
     let start_time = Instant::now();
 
     let mut tasks = Vec::new();
-    for i in 0..100 {
-        let student_name = format!("user_{}", i % 5); // Distribute across 5 test users
+    for i in 0..total_requests {
+        let student_name = format!("user_{}", i % 50); // Distribute across 50 test users to handle nonce scaling
         let student_address = harness.client.get_account_address(&student_name)?;
 
         let session = LearningSession {
@@ -69,8 +71,8 @@ async fn test_load_analytics_recording_stress() -> Result<()> {
     }
 
     let duration = start_time.elapsed();
-    println!("Completed 100 records in {:?}", duration);
-    println!("Throughput: {:.2} ops/sec", 100.0 / duration.as_secs_f64());
+    println!("Completed {} records in {:?}", total_requests, duration);
+    println!("Throughput: {:.2} ops/sec", total_requests as f64 / duration.as_secs_f64());
 
     Ok(())
 }
