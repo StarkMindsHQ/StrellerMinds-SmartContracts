@@ -11,6 +11,8 @@ import { z } from "zod";
 import { config } from "../config";
 import { sendSuccess, sendError } from "../utils/response";
 import { generalLimiter } from "../middleware/rateLimiter";
+import { trackAuthTokenIssued, anonymizeClientId } from "../analytics";
+
 
 const router = Router();
 
@@ -59,6 +61,14 @@ router.post("/token", generalLimiter, (req: Request, res: Response) => {
   const token = jwt.sign(payload, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn as jwt.SignOptions["expiresIn"],
   });
+
+  // ── GA4: auth conversion event ─────────────────────────────────────────────
+  // Fire-and-forget — never awaited, cannot delay or fail the response.
+  trackAuthTokenIssued(
+    anonymizeClientId(payload.sub),
+    payload.scope,
+    req.analyticsOptOut
+  );
 
   sendSuccess(
     res,

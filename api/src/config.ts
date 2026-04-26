@@ -34,4 +34,15 @@ export const config = {
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
   },
+
+  analytics: {
+    /** GA4 Measurement ID — format: G-XXXXXXXXXX */
+    ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? "",
+    /** GA4 Measurement Protocol API secret (from GA4 → Admin → Data Streams) */
+    ga4ApiSecret: process.env.GA4_API_SECRET ?? "",
+    /** Set GA4_ENABLED=false to disable all tracking (useful in test envs) */
+    enabled: process.env.GA4_ENABLED !== "false",
+    /** Set GA4_DEBUG=true to log GA4 validation responses during development */
+    debug: process.env.GA4_DEBUG === "true",
+  },
 } as const;

@@ -9,6 +9,8 @@ import { generalLimiter } from "../middleware/rateLimiter";
 import { sendSuccess, sendError } from "../utils/response";
 import { stellarAddressSchema } from "../utils/validate";
 import { logger } from "../logger";
+import { trackStudentCertsListed, anonymizeClientId } from "../analytics";
+
 
 const router = Router();
 
@@ -32,6 +34,14 @@ router.get(
 
     try {
       const ids = await contractClient.getStudentCertificates(parsed.data);
+
+      // ── GA4: student_certs_listed ──────────────────────────────────────────
+      trackStudentCertsListed(
+        anonymizeClientId(req.auth?.sub ?? "anonymous"),
+        parsed.data,
+        req.analyticsOptOut
+      );
+
       sendSuccess(
         res,
         { student: parsed.data, certificateIds: ids, total: ids.length },

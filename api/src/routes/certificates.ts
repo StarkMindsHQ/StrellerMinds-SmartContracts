@@ -14,6 +14,12 @@ import { sendSuccess, sendError } from "../utils/response";
 import { certificateIdSchema, stellarAddressSchema, normalizeCertId } from "../utils/validate";
 import { verificationTotal } from "../metrics";
 import { logger } from "../logger";
+import {
+  trackCertificateVerified,
+  trackCertificateDetailFetched,
+  trackRevocationChecked,
+  anonymizeClientId,
+} from "../analytics";
 
 const router = Router();
 
@@ -38,16 +44,19 @@ router.get(
 
     const certId = normalizeCertId(parsed.data);
 
+    // Use the request IP as the anonymous client identifier for public endpoints
+    const clientId = anonymizeClientId(req.ip ?? req.socket.remoteAddress ?? "unknown");
+
     try {
       const result = await contractClient.verifyCertificate(certId);
 
-      verificationTotal.inc({
-        result: result.isValid
-          ? "valid"
-          : result.certificate === null
-          ? "not_found"
-          : "invalid",
-      });
+      const verResult = result.isValid
+        ? "valid"
+        : result.certificate === null
+        ? "not_found"
+        : "invalid";
+
+      verificationTotal.inc({ result: verResult });
 
       logger.info("Certificate verified", {
         certificateId: certId,
@@ -56,10 +65,17 @@ router.get(
         requestId: req.requestId,
       });
 
+      // ── GA4: certificate_verified (primary conversion) ──────────────────
+      trackCertificateVerified(clientId, certId, verResult, req.analyticsOptOut);
+
       sendSuccess(res, result, 200, req.requestId);
     } catch (err) {
       logger.error("Verification failed", { certId, error: err, requestId: req.requestId });
       verificationTotal.inc({ result: "error" });
+
+      // ── GA4: track error outcome too ────────────────────────────────────
+      trackCertificateVerified(clientId, certId, "error", req.analyticsOptOut);
+
       sendError(
         res,
         502,
@@ -85,6 +101,7 @@ router.get(
     }
 
     const certId = normalizeCertId(parsed.data);
+    const clientId = anonymizeClientId(req.auth?.sub ?? "anonymous");
 
     try {
       const cert = await contractClient.getCertificate(certId);
@@ -92,6 +109,10 @@ router.get(
         sendError(res, 404, "CERTIFICATE_NOT_FOUND", "Certificate not found", undefined, req.requestId);
         return;
       }
+
+      // ── GA4: certificate_detail_fetched ─────────────────────────────────
+      trackCertificateDetailFetched(clientId, certId, req.analyticsOptOut);
+
       sendSuccess(res, cert, 200, req.requestId);
     } catch (err) {
       logger.error("Get certificate failed", { certId, error: err });
@@ -113,13 +134,20 @@ router.get(
     }
 
     const certId = normalizeCertId(parsed.data);
+    const clientId = anonymizeClientId(req.auth?.sub ?? "anonymous");
 
     try {
       const record = await contractClient.getRevocationRecord(certId);
       if (!record) {
+        // ── GA4: revocation_checked (not found) ─────────────────────────
+        trackRevocationChecked(clientId, certId, false, req.analyticsOptOut);
         sendError(res, 404, "REVOCATION_NOT_FOUND", "No revocation record found for this certificate", undefined, req.requestId);
         return;
       }
+
+      // ── GA4: revocation_checked (found) ─────────────────────────────────
+      trackRevocationChecked(clientId, certId, true, req.analyticsOptOut);
+
       sendSuccess(res, record, 200, req.requestId);
     } catch (err) {
       logger.error("Get revocation failed", { certId, error: err });
