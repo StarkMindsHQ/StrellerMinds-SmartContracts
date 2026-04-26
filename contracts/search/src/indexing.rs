@@ -51,7 +51,20 @@ impl SearchIndexer {
         };
 
         Self::store_search_document(env, search_document)?;
+        
+        // Populate fast filtering indexes
+        Self::add_to_index(env, DataKey::CategoryIndex(course.category.clone()), course.course_id.clone());
+        Self::add_to_index(env, DataKey::DifficultyIndex(course.difficulty.clone()), course.course_id.clone());
+
         Ok(())
+    }
+
+    fn add_to_index(env: &Env, key: DataKey, id: String) {
+        let mut ids: Vec<String> = env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
+        if !ids.contains(&id) {
+            ids.push_back(id);
+            env.storage().persistent().set(&key, &ids);
+        }
     }
 
     /// Index individual certificate content
