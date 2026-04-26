@@ -2,12 +2,7 @@ use crate::types::*;
 use crate::{MobileOptimizerContract, MobileOptimizerContractClient};
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Map, String, Vec};
 
-fn setup_contract() -> (
-    Env,
-    MobileOptimizerContractClient<'static>,
-    Address,
-    Address,
-) {
+fn setup_contract() -> (Env, MobileOptimizerContractClient<'static>, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(MobileOptimizerContract, ());
@@ -241,14 +236,7 @@ fn test_cache_content_and_retrieve() {
     let key = String::from_str(&env, "course_materials_101");
     let hash = BytesN::from_array(&env, &[1u8; 32]);
 
-    client.cache_content(
-        &user,
-        &key,
-        &hash,
-        &ContentType::CourseMaterial,
-        &1024,
-        &86400,
-    );
+    client.cache_content(&user, &key, &hash, &ContentType::CourseMaterial, &1024, &86400);
 
     let entry = client.get_cached_content(&user, &key);
     assert_eq!(entry.content_type, ContentType::CourseMaterial);
@@ -261,14 +249,7 @@ fn test_cache_invalidation() {
     let key = String::from_str(&env, "old_data");
     let hash = BytesN::from_array(&env, &[2u8; 32]);
 
-    client.cache_content(
-        &user,
-        &key,
-        &hash,
-        &ContentType::SearchResults,
-        &512,
-        &86400,
-    );
+    client.cache_content(&user, &key, &hash, &ContentType::SearchResults, &512, &86400);
     client.invalidate_cache(&user, &key);
 
     let stats = client.get_cache_stats(&user);
@@ -416,12 +397,205 @@ fn test_notification_config() {
         max_daily_notifications: 5,
         channel_preferences: channel_prefs,
         priority_threshold: NotificationPriorityLevel::High,
+        language_preference: String::from_str(&env, "es"),
+        marketing_consent: true,
     };
 
     client.update_notification_config(&user, &config);
     let retrieved = client.get_notification_config(&user);
     assert_eq!(retrieved.max_daily_notifications, 5);
     assert_eq!(retrieved.quiet_hours_start, 23);
+    assert_eq!(retrieved.language_preference, String::from_str(&env, "es"));
+}
+
+#[test]
+fn test_notification_templates_and_campaigns() {
+    let (env, client, admin, _user) = setup_contract();
+
+    // Create Template
+    let mut localized = Map::new(&env);
+    localized.set(String::from_str(&env, "es"), String::from_str(&env, "Hola"));
+
+    let mut channels = Vec::new(&env);
+    channels.push_back(String::from_str(&env, "push"));
+
+    let template = client.create_notification_template(
+        &admin,
+        &String::from_str(&env, "tpl_001"),
+        &ReminderType::DailyStudy,
+        &String::from_str(&env, "Hello"),
+        &localized,
+        &channels,
+    );
+    assert_eq!(template.template_id, String::from_str(&env, "tpl_001"));
+
+    // Create Campaign
+    let mut variants = Vec::new(&env);
+    variants.push_back(ABTestVariant {
+        variant_id: String::from_str(&env, "v1"),
+        template_id: String::from_str(&env, "tpl_001"),
+        weight: 100,
+    });
+
+    let campaign = client.create_notification_campaign(
+        &admin,
+        &String::from_str(&env, "camp_001"),
+        &String::from_str(&env, "Summer Learning"),
+        &variants,
+        &1000,
+        &2000,
+    );
+    assert_eq!(campaign.campaign_id, String::from_str(&env, "camp_001"));
+    assert_eq!(campaign.variants.len(), 1);
+}
+
+#[test]
+fn test_content_management() {
+    let (env, client, _, user) = setup_contract();
+    let content_id = String::from_str(&env, "content_101");
+    let hash = BytesN::from_array(&env, &[1u8; 32]);
+
+    let delivery_config = ContentDeliveryConfig {
+        cdn_enabled: true,
+        region_restrictions: Vec::new(&env),
+        optimization_level: 1,
+        drm_enabled: false,
+    };
+
+    let metadata = client.publish_content(
+        &user,
+        &content_id,
+        &ContentType::VideoLesson,
+        &String::from_str(&env, "Intro to Rust"),
+        &String::from_str(&env, "https://cdn.example.com/v1"),
+        &ContentAccessRule::Public,
+        &delivery_config,
+        &hash,
+    );
+
+    assert_eq!(metadata.current_version, 1);
+    assert_eq!(metadata.title, String::from_str(&env, "Intro to Rust"));
+
+    let new_hash = BytesN::from_array(&env, &[2u8; 32]);
+    let version = client.update_content_version(
+        &user,
+        &content_id,
+        &String::from_str(&env, "https://cdn.example.com/v2"),
+        &new_hash,
+        &String::from_str(&env, "Fixed audio"),
+    );
+
+    assert_eq!(version.version, 2);
+
+    let history = client.get_content_history(&content_id);
+    assert_eq!(history.len(), 2);
+}
+
+// ============================================================================
+// Collaboration Tests
+// ============================================================================
+
+#[test]
+fn test_study_group_creation_and_join() {
+    let (env, client, _, user) = setup_contract();
+    let group_id = String::from_str(&env, "group_rust");
+
+    let group = client.create_study_group(
+        &user,
+        &group_id,
+        &String::from_str(&env, "Rust Learners"),
+        &String::from_str(&env, "Rust"),
+        &5,
+    );
+    assert_eq!(group.members.len(), 1);
+
+    let user2 = Address::generate(&env);
+    client.join_study_group(&user2, &group_id);
+
+    // Verify profile update
+    let profile = client.get_collaboration_profile(&user2);
+    assert_eq!(profile.groups_joined, 1);
+}
+
+#[test]
+fn test_peer_review_and_reputation() {
+    let (env, client, _, reviewer) = setup_contract();
+    let target = Address::generate(&env);
+    let review_id = String::from_str(&env, "rev_001");
+
+    client.submit_peer_review(
+        &reviewer,
+        &target,
+        &review_id,
+        &String::from_str(&env, "project_1"),
+        &90,
+        &String::from_str(&env, "Great work!"),
+    );
+
+    let profile = client.get_collaboration_profile(&target);
+    // Initial 50, new score 90. Avg = (50+90)/2 = 70
+    assert_eq!(profile.reputation_score, 70);
+}
+
+#[test]
+fn test_mentorship_flow() {
+    let (env, client, _, mentee) = setup_contract();
+    let mentor = Address::generate(&env);
+    let session_id = String::from_str(&env, "sess_001");
+
+    let session = client.request_mentorship(
+        &mentee,
+        &mentor,
+        &session_id,
+        &String::from_str(&env, "Career Advice"),
+        &1000,
+        &30,
+    );
+    assert_eq!(session.status, MentorshipStatus::Pending);
+
+    client.update_mentorship_status(&mentor, &session_id, &MentorshipStatus::Accepted);
+}
+
+// ============================================================================
+// User Experience Tests
+// ============================================================================
+
+#[test]
+fn test_ui_preferences() {
+    let (env, client, _, user) = setup_contract();
+    let theme = String::from_str(&env, "dark_mode");
+    let lang = String::from_str(&env, "en");
+    let access = Map::new(&env);
+
+    let prefs = client.set_ui_preferences(
+        &user,
+        &theme,
+        &lang,
+        &100,
+        &true,
+        &false,
+        &LayoutMode::MobileOptimized,
+        &access,
+    );
+
+    assert_eq!(prefs.theme_id, theme);
+    assert!(prefs.high_contrast);
+    assert_eq!(prefs.layout_mode, LayoutMode::MobileOptimized);
+}
+
+#[test]
+fn test_onboarding_flow() {
+    let (env, client, _, user) = setup_contract();
+    let step = String::from_str(&env, "welcome");
+
+    let state = client.update_onboarding_progress(&user, &step, &false);
+    assert_eq!(state.current_step, 1);
+    assert_eq!(state.completed_steps.len(), 1);
+
+    let step2 = String::from_str(&env, "profile_setup");
+    let state2 = client.update_onboarding_progress(&user, &step2, &true);
+    assert_eq!(state2.current_step, 2);
+    assert_eq!(state2.skipped_steps.len(), 1);
 }
 
 // ============================================================================

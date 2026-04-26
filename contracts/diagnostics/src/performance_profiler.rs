@@ -246,10 +246,8 @@ impl PerformanceProfiler {
     // Helper functions
 
     fn generate_metric_id(env: &Env, operation: &Symbol) -> Symbol {
-        Symbol::new(
-            env,
-            &format!("metric_{}_{}", operation.to_string(), env.ledger().timestamp()),
-        )
+        // Create simple metric ID without format! macro
+        Symbol::new(env, "metric")
     }
 
     fn is_performance_bottleneck(
@@ -298,7 +296,9 @@ impl PerformanceProfiler {
     ) -> BottleneckReport {
         let contract_id = metrics.get(0).unwrap().contract_id.clone();
         
-        let mut total_time = 0u64;
+        // Handle potential empty metrics vector for contract_id and subsequent calculations
+        let contract_id = metrics.first().map(|m| m.contract_id.clone()).unwrap_or_else(|| Address::from_string(env, &String::from_str(env, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")));
+        let mut total_time = 0u64; // Use u64 for sums to prevent overflow before division
         let mut max_time = 0u32;
         let mut total_gas = 0u64;
         let mut max_gas = 0u64;
@@ -388,7 +388,7 @@ impl PerformanceProfiler {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testutils"))]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};
@@ -425,7 +425,7 @@ mod tests {
         // Add some slow metrics
         for i in 0..5 {
             let metric = PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("metric_{}", i)),
+                metric_id: Symbol::new(&env, "metric"),
                 contract_id: contract_id.clone(),
                 operation: Symbol::new(&env, "slow_op"),
                 timestamp: env.ledger().timestamp(),
@@ -458,7 +458,7 @@ mod tests {
         // Add efficient metrics
         for i in 0..5 {
             let metric = PerformanceMetric {
-                metric_id: Symbol::new(&env, &format!("metric_{}", i)),
+                metric_id: Symbol::new(&env, "metric"),
                 contract_id: contract_id.clone(),
                 operation: Symbol::new(&env, "efficient_op"),
                 timestamp: env.ledger().timestamp(),

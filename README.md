@@ -27,7 +27,7 @@ cd StrellerMinds-SmartContracts
 cargo test
 ```
 
-That's it! Your contracts are built and tested. See [Getting Started](#getting-started) for detailed installation instructions.
+That's it! Your contracts are built and tested. See the [Developer Onboarding Guide](docs/ONBOARDING.md) for new team members.
 
 ## ✨ Features
 
@@ -64,6 +64,48 @@ This script will automatically:
 ### Required Environment Variables
 
 - `STELLAR_SECRET_KEY` - Your Stellar secret key for deployment
+
+## 📦 Release Management
+
+This project features a comprehensive release automation system for producing production-ready smart contract artifacts.
+
+### Quick Release Commands
+
+```bash
+# Validate release readiness
+./scripts/pre-release-validation.sh v1.2.3
+
+# Create automated release
+./scripts/release.sh -y v1.2.3
+
+# Run release tests
+./scripts/release-test.sh all
+
+# Collect release metrics
+./scripts/release-monitor.sh
+
+# Conduct post-release review
+./scripts/post-release-review.sh v1.2.3
+```
+
+### Release Documentation
+
+- **[Quick Start Guide](RELEASE_QUICK_START.md)** - Fast reference for common tasks
+- **[Release Management](docs/RELEASE_MANAGEMENT.md)** - Complete management guide
+- **[Process Documentation](docs/RELEASE_PROCESS.md)** - Standardized procedures
+- **[Implementation Summary](RELEASE_IMPLEMENTATION_SUMMARY.md)** - System overview
+
+### Release Workflow
+
+1. **Pre-Release Validation** → Comprehensive checks before release
+2. **Automated Testing** → Full test suite execution
+3. **Build & Optimize** → WASM compilation and optimization
+4. **Artifact Generation** → SBOM, checksums, signing
+5. **GitHub Release** → Automated release creation
+6. **Monitoring** → Metrics collection and analysis
+7. **Post-Release Review** → Retrospective and improvement
+
+For detailed information, see the [Release Management Guide](docs/RELEASE_MANAGEMENT.md).
 
 ## 🛠️ Getting Started
 
@@ -105,6 +147,16 @@ Run unit tests to ensure everything is functioning as expected:
 cargo test
 ```
 
+#### Property-Based Tests
+
+We use `proptest` to verify contract invariants with random inputs:
+
+```bash
+cargo test -p token --lib property_tests
+```
+
+For more details, see [PROPERTY_TESTING.md](contracts/token/PROPERTY_TESTING.md).
+
 #### End-to-End (E2E) Tests
 
 Run the complete E2E test suite against a local Soroban network:
@@ -133,10 +185,26 @@ To maintain code quality and consistency, run the following commands locally bef
 
 - **Check for linting issues:**
   ```bash
-  cargo clippy -- -D warnings
+  cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
   ```
 
 These checks are also enforced in CI and will fail the build if there are formatting issues or warnings.
+Naming and formatting conventions are documented in [docs/CODE_STYLE.md](docs/CODE_STYLE.md).
+
+### Pre-commit Hooks
+
+Install and enable pre-commit hooks to auto-run formatting and style checks before each commit:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+To run the same checks manually:
+
+```bash
+pre-commit run --all-files
+```
 
 ## 🚢 Deployment
 
@@ -330,6 +398,8 @@ StrellerMinds-SmartContracts/
 ### Contribution Resources
 - **[Contributing Guidelines](docs/contributing.md)** - Detailed contribution process
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
+- **[Community Guidelines](COMMUNITY_GUIDELINES.md)** - How we engage and keep the project healthy
+- **[Governance and Triage](.github/GOVERNANCE.md)** - Maintainer process and review expectations
 - **[Release Process](docs/RELEASE_PROCESS.md)** - How releases are managed
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - High-level system design
 

@@ -5,6 +5,14 @@ use crate::types::*;
 pub struct SessionManager;
 
 impl SessionManager {
+    fn session_timeout_seconds(env: &Env) -> u64 {
+        env.storage()
+            .persistent()
+            .get::<DataKey, MobileOptimizerConfig>(&DataKey::Config)
+            .map(|config| config.session_timeout_seconds)
+            .unwrap_or(3600)
+    }
+
     pub fn create_session(
         env: &Env,
         user: Address,
@@ -19,7 +27,7 @@ impl SessionManager {
             device_id,
             created_at: env.ledger().timestamp(),
             last_activity: env.ledger().timestamp(),
-            expires_at: env.ledger().timestamp() + 86400,
+            expires_at: env.ledger().timestamp() + Self::session_timeout_seconds(env),
             network_quality: NetworkQuality::Good,
             cached_data: Map::new(env),
             pending_operations: Vec::new(env),
@@ -27,9 +35,7 @@ impl SessionManager {
             session_state: SessionState::Active,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(session_id.clone()), &session);
+        env.storage().persistent().set(&DataKey::MobileSession(session_id.clone()), &session);
         Self::add_to_user_sessions(env, &user, &session_id);
 
         Ok(session_id)
@@ -65,9 +71,7 @@ impl SessionManager {
             session.session_state = new_state;
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MobileSession(session_id), &session);
         Ok(())
     }
 
@@ -84,9 +88,7 @@ impl SessionManager {
 
         session.preferences = preferences;
         session.last_activity = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MobileSession(session_id), &session);
         Ok(())
     }
 
@@ -104,9 +106,7 @@ impl SessionManager {
 
         session.cached_data.set(key, value);
         session.last_activity = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MobileSession(session_id), &session);
         Ok(())
     }
 
@@ -136,9 +136,7 @@ impl SessionManager {
 
         session.pending_operations.push_back(batch_id);
         session.last_activity = env.ledger().timestamp();
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(session_id), &session);
+        env.storage().persistent().set(&DataKey::MobileSession(session_id), &session);
         Ok(())
     }
 
@@ -151,12 +149,7 @@ impl SessionManager {
         session_id: String,
         network_quality: NetworkQuality,
     ) -> Result<(), MobileOptimizerError> {
-        Self::update_session(
-            env,
-            session_id,
-            Some(network_quality),
-            Some(SessionState::Active),
-        )
+        Self::update_session(env, session_id, Some(network_quality), Some(SessionState::Active))
     }
 
     pub fn end_session(env: &Env, session_id: String) -> Result<(), MobileOptimizerError> {
@@ -186,7 +179,7 @@ impl SessionManager {
             device_id: target_device_id,
             created_at: env.ledger().timestamp(),
             last_activity: env.ledger().timestamp(),
-            expires_at: env.ledger().timestamp() + 86400,
+            expires_at: env.ledger().timestamp() + Self::session_timeout_seconds(env),
             network_quality: NetworkQuality::Good,
             cached_data: source.cached_data.clone(),
             pending_operations: source.pending_operations.clone(),
@@ -194,9 +187,7 @@ impl SessionManager {
             session_state: SessionState::Active,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::MobileSession(target_session_id.clone()), &target);
+        env.storage().persistent().set(&DataKey::MobileSession(target_session_id.clone()), &target);
         Self::add_to_user_sessions(env, user, &target_session_id);
 
         Ok(target_session_id)
@@ -224,10 +215,7 @@ impl SessionManager {
             }
         }
 
-        SessionStats {
-            total_sessions: total,
-            active_sessions: active,
-        }
+        SessionStats { total_sessions: total, active_sessions: active }
     }
 
     pub fn optimize_session_performance(
@@ -244,25 +232,19 @@ impl SessionManager {
         let mut score = 100u32;
 
         if session.cached_data.len() > 50 {
-            suggestions.push_back(String::from_str(
-                env,
-                "Clear old cached data to improve performance",
-            ));
+            suggestions
+                .push_back(String::from_str(env, "Clear old cached data to improve performance"));
             score = score.saturating_sub(10);
         }
         if session.pending_operations.len() > 10 {
-            suggestions.push_back(String::from_str(
-                env,
-                "Execute or cancel old pending operations",
-            ));
+            suggestions
+                .push_back(String::from_str(env, "Execute or cancel old pending operations"));
             score = score.saturating_sub(15);
         }
         match session.network_quality {
             NetworkQuality::Poor | NetworkQuality::Offline => {
-                suggestions.push_back(String::from_str(
-                    env,
-                    "Switch to WiFi for better performance",
-                ));
+                suggestions
+                    .push_back(String::from_str(env, "Switch to WiFi for better performance"));
                 score = score.saturating_sub(20);
             }
             NetworkQuality::Fair => {
@@ -289,9 +271,7 @@ impl SessionManager {
             .get(&DataKey::UserSessions(user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         sessions.push_back(session_id.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::UserSessions(user.clone()), &sessions);
+        env.storage().persistent().set(&DataKey::UserSessions(user.clone()), &sessions);
     }
 }
 

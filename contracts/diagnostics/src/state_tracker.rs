@@ -1,6 +1,6 @@
 use crate::types::*;
 use soroban_sdk::{
-    contract, contractimpl, Address, BytesN, Env, Map, String, Symbol, Vec,
+    contract, contractimpl, Address, Bytes, BytesN, Env, Map, String, Symbol, Vec,
 };
 
 /// State tracker for real-time contract state visualization
@@ -92,8 +92,11 @@ impl StateTracker {
         }
 
         // Calculate growth rate
-        let first = snapshots.get(0).unwrap();
-        let last = snapshots.get(snapshots.len() - 1).unwrap();
+        let first = match snapshots.first() {
+            Some(s) => s,
+            None => return evolution,
+        };
+        let last = snapshots.last().unwrap_or(first.clone());
 
         let storage_growth = last.storage_entries.saturating_sub(first.storage_entries) as u64;
         let memory_growth = last.memory_usage_bytes.saturating_sub(first.memory_usage_bytes);
@@ -143,15 +146,7 @@ impl StateTracker {
     ) -> String {
         // In a real implementation, this would create a detailed visualization
         // For now, we'll create a summary
-        String::from_str(
-            env,
-            &format!(
-                "Contract State - Entries: {}, Memory: {} bytes, Seq: {}",
-                snapshot.storage_entries,
-                snapshot.memory_usage_bytes,
-                snapshot.ledger_sequence
-            ),
-        )
+        String::from_str(env, "Contract State Summary")
     }
 
     // Helper functions (simplified implementations)
@@ -173,10 +168,9 @@ impl StateTracker {
         timestamp: u64,
     ) -> BytesN<32> {
         // In production, hash the actual state data
-        // For now, use a simple hash of contract_id + timestamp
-        env.crypto().sha256(
-            &format!("{}{}", contract_id.to_string(), timestamp).as_bytes()
-        )
+        // For now, use a simple hash based on timestamp
+        let timestamp_bytes = timestamp.to_be_bytes();
+        env.crypto().sha256(&Bytes::from_slice(env, &timestamp_bytes))
     }
 
     fn capture_storage_state(env: &Env) -> Map<Symbol, String> {
@@ -186,7 +180,7 @@ impl StateTracker {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testutils"))]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env};

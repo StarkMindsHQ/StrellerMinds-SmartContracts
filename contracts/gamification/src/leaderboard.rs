@@ -16,12 +16,7 @@ impl LeaderboardManager {
     /// Called whenever a user's profile changes to reflect the new score
     /// across all relevant leaderboard categories.
     pub fn update_user_score(env: &Env, profile: &GamificationProfile) {
-        Self::upsert(
-            env,
-            &profile.user,
-            profile.total_xp,
-            &LeaderboardCategory::TotalXP,
-        );
+        Self::upsert(env, &profile.user, profile.total_xp, &LeaderboardCategory::TotalXP);
         Self::upsert(
             env,
             &profile.user,
@@ -40,12 +35,7 @@ impl LeaderboardManager {
             profile.reputation_score,
             &LeaderboardCategory::Reputation,
         );
-        Self::upsert(
-            env,
-            &profile.user,
-            profile.season_xp,
-            &LeaderboardCategory::SeasonXP,
-        );
+        Self::upsert(env, &profile.user, profile.season_xp, &LeaderboardCategory::SeasonXP);
         Self::upsert(
             env,
             &profile.user,
@@ -85,11 +75,8 @@ impl LeaderboardManager {
 
     pub fn update_guild_score(env: &Env, guild: &Guild) {
         let key = GamificationKey::GuildLeaderboard;
-        let existing: Vec<GuildLeaderboardEntry> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| Vec::new(env));
+        let existing: Vec<GuildLeaderboardEntry> =
+            env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
 
         // Remove existing entry for this guild
         let filtered = Self::remove_guild(env, &existing, guild.id);
@@ -121,11 +108,8 @@ impl LeaderboardManager {
 
     pub fn update_season_score(env: &Env, season_id: u64, entry: SeasonLeaderboardEntry) {
         let key = GamificationKey::SeasonLeaderboard(season_id);
-        let existing: Vec<SeasonLeaderboardEntry> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| Vec::new(env));
+        let existing: Vec<SeasonLeaderboardEntry> =
+            env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
 
         // Remove old entry for this user
         let filtered = Self::remove_season_user(env, &existing, &entry.user);
@@ -148,22 +132,15 @@ impl LeaderboardManager {
 
     fn upsert(env: &Env, user: &soroban_sdk::Address, score: u32, category: &LeaderboardCategory) {
         let key = GamificationKey::Leaderboard(category.clone());
-        let existing: Vec<LeaderboardEntry> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| Vec::new(env));
+        let existing: Vec<LeaderboardEntry> =
+            env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
 
         // Remove old entry for this user
         let filtered = Self::remove_user(env, &existing, user);
 
         // Build new entry
-        let entry = LeaderboardEntry {
-            user: user.clone(),
-            score,
-            rank: 0,
-            category: category.clone(),
-        };
+        let entry =
+            LeaderboardEntry { user: user.clone(), score, rank: 0, category: category.clone() };
 
         // Insert at correct sorted position
         let mut sorted = Self::insert_sorted(env, &filtered, entry);
@@ -227,12 +204,10 @@ impl LeaderboardManager {
 
     fn assign_ranks(env: &Env, board: &mut Vec<LeaderboardEntry>, category: &LeaderboardCategory) {
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             e.category = category.clone();
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }
@@ -275,11 +250,9 @@ impl LeaderboardManager {
 
     fn assign_guild_ranks(env: &Env, board: &mut Vec<GuildLeaderboardEntry>) {
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }
@@ -323,12 +296,10 @@ impl LeaderboardManager {
     fn assign_season_ranks(env: &Env, board: &mut Vec<SeasonLeaderboardEntry>) {
         let total = board.len();
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             e.reward_tier = Self::season_reward_tier(rank, total);
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }

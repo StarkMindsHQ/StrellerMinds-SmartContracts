@@ -64,6 +64,31 @@ The repository uses a CODEOWNERS file (`.github/CODEOWNERS`) to automatically as
 2. Write comprehensive tests for all functionality.
 3. Document all public functions and modules.
 4. Maintain a security-first mindset.
+5. Follow the naming and formatting guide in [CODE_STYLE.md](CODE_STYLE.md).
+
+### Naming and Formatting Requirements
+
+- Use `snake_case` for variables and functions.
+- Use `PascalCase` for types (`struct`, `enum`, `trait`, `type` aliases).
+- Use `SCREAMING_SNAKE_CASE` for constants.
+- Format all code with `cargo fmt --all`.
+- Run clippy style checks:
+  - `cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style`
+
+### Pre-commit Hooks
+
+Install pre-commit hooks once after cloning:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run hooks manually at any time:
+
+```bash
+pre-commit run --all-files
+```
 
 ## Documentation Standards
 

@@ -1,21 +1,27 @@
 use crate::types::{
-    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatIntelligence,
-    ThreatLevel, ThreatType,
+    BreakerState, MitigationAction, RecommendationCategory, SecurityThreat, ThreatLevel, ThreatType,
 };
-use soroban_sdk::{Address, BytesN, Env, String, Symbol};
+use shared::event_schema::{
+    AccessControlEventData, AnomalyAnalysisRequestedEvent, BiometricsVerificationRequestedEvent,
+    ContractInitializedEvent, FraudVerificationRequestedEvent, IncidentReportGeneratedEvent,
+    SecurityEventData, SecurityTrainingRecordedEvent, ThreatIntelligenceAddedEvent,
+    UserRiskScoreUpdatedEvent,
+};
+use shared::{emit_access_control_event, emit_security_event};
+use soroban_sdk::{symbol_short, Address, BytesN, Env, String, Symbol};
 
 /// Security event emission utilities
 pub struct SecurityEvents;
 
 impl SecurityEvents {
-    /// Emit contract initialized event
     pub fn emit_initialized(env: &Env, admin: &Address) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "initialized"),
-            ),
-            admin,
+        emit_access_control_event!(
+            env,
+            symbol_short!("sec_mon"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent {
+                admin: admin.clone(),
+            })
         );
     }
 
@@ -46,10 +52,7 @@ impl SecurityEvents {
         action: &MitigationAction,
         mitigated_by: &Address,
     ) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "threat_mitigated"),
-        );
+        let topics = (Symbol::new(env, "security"), Symbol::new(env, "threat_mitigated"));
 
         let data = (
             threat_id.clone(),
@@ -68,11 +71,8 @@ impl SecurityEvents {
         function: &Symbol,
         failure_count: u32,
     ) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "circuit_opened"),
-            contract.clone(),
-        );
+        let topics =
+            (Symbol::new(env, "security"), Symbol::new(env, "circuit_opened"), contract.clone());
 
         let data = (function.clone(), failure_count, env.ledger().timestamp());
 
@@ -81,11 +81,8 @@ impl SecurityEvents {
 
     /// Emit circuit breaker closed event
     pub fn emit_circuit_breaker_closed(env: &Env, contract: &Symbol, function: &Symbol) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "circuit_closed"),
-            contract.clone(),
-        );
+        let topics =
+            (Symbol::new(env, "security"), Symbol::new(env, "circuit_closed"), contract.clone());
 
         let data = (function.clone(), env.ledger().timestamp());
 
@@ -99,11 +96,8 @@ impl SecurityEvents {
         function: &Symbol,
         new_state: &BreakerState,
     ) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "circuit_state"),
-            contract.clone(),
-        );
+        let topics =
+            (Symbol::new(env, "security"), Symbol::new(env, "circuit_state"), contract.clone());
 
         let data = (
             function.clone(),
@@ -122,11 +116,8 @@ impl SecurityEvents {
         event_count: u32,
         limit: u32,
     ) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "rate_limit"),
-            contract.clone(),
-        );
+        let topics =
+            (Symbol::new(env, "security"), Symbol::new(env, "rate_limit"), contract.clone());
 
         let data = (actor.clone(), event_count, limit, env.ledger().timestamp());
 
@@ -141,10 +132,7 @@ impl SecurityEvents {
         category: &RecommendationCategory,
         severity: &ThreatLevel,
     ) {
-        let topics = (
-            Symbol::new(env, "security"),
-            Symbol::new(env, "recommendation"),
-        );
+        let topics = (Symbol::new(env, "security"), Symbol::new(env, "recommendation"));
 
         let data = (
             recommendation_id.clone(),
@@ -160,110 +148,114 @@ impl SecurityEvents {
     /// Emit config updated event
     pub fn emit_config_updated(env: &Env, admin: &Address, change_type: &str) {
         env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "config_updated"),
-            ),
+            (Symbol::new(env, "security"), Symbol::new(env, "config_updated")),
             (admin.clone(), String::from_str(env, change_type)),
         );
     }
 
     // --- Advanced Feature Events ---
 
-    pub fn emit_anomaly_analysis_requested(
+    pub fn emit_anomaly_requested(
         env: &Env,
         actor: &Address,
         contract: &Symbol,
         request_id: &BytesN<32>,
     ) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "anomaly_requested"),
-                contract.clone(),
-            ),
-            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            actor.clone(),
+            SecurityEventData::AnomalyAnalysisRequested(AnomalyAnalysisRequestedEvent {
+                actor: actor.clone(),
+                contract: contract.clone(),
+                request_id: request_id.clone(),
+            })
         );
     }
 
-    pub fn emit_biometrics_verification_requested(
+    pub fn emit_biometrics_requested(env: &Env, user: &Address, request_id: &BytesN<32>) {
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            user.clone(),
+            SecurityEventData::BiometricsVerificationRequested(
+                BiometricsVerificationRequestedEvent {
+                    actor: user.clone(),
+                    request_id: request_id.clone(),
+                }
+            )
+        );
+    }
+
+    pub fn emit_fraud_requested(env: &Env, user: &Address, request_id: &BytesN<32>) {
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            user.clone(),
+            SecurityEventData::FraudVerificationRequested(FraudVerificationRequestedEvent {
+                actor: user.clone(),
+                request_id: request_id.clone(),
+            })
+        );
+    }
+
+    pub fn emit_intel_added(
         env: &Env,
-        actor: &Address,
-        request_id: &BytesN<32>,
+        source: &Symbol,
+        indicator_type: &Symbol,
+        indicator_value: &String,
+        threat_level: &ThreatLevel,
     ) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "biometrics_requested"),
-            ),
-            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+        let contract_addr = env.current_contract_address();
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            contract_addr,
+            SecurityEventData::ThreatIntelligenceAdded(ThreatIntelligenceAddedEvent {
+                source: source.clone(),
+                indicator_type: indicator_type.clone(),
+                indicator_value: indicator_value.clone(),
+                threat_level: Self::threat_level_to_string(env, threat_level),
+            })
         );
     }
 
-    pub fn emit_fraud_verification_requested(env: &Env, actor: &Address, request_id: &BytesN<32>) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "fraud_requested"),
-            ),
-            (actor.clone(), request_id.clone(), env.ledger().timestamp()),
+    pub fn emit_risk_score_updated(env: &Env, user: &Address, score: u32, risk_factor: &Symbol) {
+        let contract_addr = env.current_contract_address();
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            contract_addr,
+            SecurityEventData::UserRiskScoreUpdated(UserRiskScoreUpdatedEvent {
+                user: user.clone(),
+                score,
+                risk_factor: risk_factor.clone(),
+            })
         );
     }
 
-    pub fn emit_user_risk_score_updated(
-        env: &Env,
-        user: &Address,
-        new_score: u32,
-        risk_factor: &Symbol,
-    ) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "risk_score_updated"),
-            ),
-            (
-                user.clone(),
-                new_score,
-                risk_factor.clone(),
-                env.ledger().timestamp(),
-            ),
+    pub fn emit_training_recorded(env: &Env, user: &Address, module: &Symbol, score: u32) {
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            user.clone(),
+            SecurityEventData::SecurityTrainingRecorded(SecurityTrainingRecordedEvent {
+                user: user.clone(),
+                module: module.clone(),
+                score,
+            })
         );
     }
 
-    pub fn emit_threat_intelligence_added(env: &Env, intel: &ThreatIntelligence) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "intel_added"),
-                intel.indicator_type.clone(),
-            ),
-            (
-                intel.source.clone(),
-                intel.indicator_value.clone(),
-                Self::threat_level_to_string(env, &intel.threat_level),
-                env.ledger().timestamp(),
-            ),
-        );
-    }
-
-    pub fn emit_security_training_recorded(env: &Env, user: &Address, module: &Symbol, score: u32) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "training_recorded"),
-                module.clone(),
-            ),
-            (user.clone(), score, env.ledger().timestamp()),
-        );
-    }
-
-    pub fn emit_incident_report_generated(env: &Env, incident_id: &BytesN<32>, admin: &Address) {
-        env.events().publish(
-            (
-                Symbol::new(env, "security"),
-                Symbol::new(env, "incident_reported"),
-            ),
-            (incident_id.clone(), admin.clone(), env.ledger().timestamp()),
+    pub fn emit_incident_reported(env: &Env, incident_id: &BytesN<32>, admin: &Address) {
+        emit_security_event!(
+            env,
+            symbol_short!("sec_mon"),
+            admin.clone(),
+            SecurityEventData::IncidentReportGenerated(IncidentReportGeneratedEvent {
+                incident_id: incident_id.clone(),
+                admin: admin.clone(),
+            })
         );
     }
 

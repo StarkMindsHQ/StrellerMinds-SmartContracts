@@ -122,10 +122,7 @@ impl EventPublisher {
     /// Get subscriptions for a subscriber
     pub fn get_subscriptions(env: &Env, subscriber: &Address) -> Vec<u32> {
         let key = (Symbol::new(env, "subs"), subscriber.clone());
-        env.storage()
-            .persistent()
-            .get::<_, Vec<u32>>(&key)
-            .unwrap_or_else(|| Vec::new(env))
+        env.storage().persistent().get::<_, Vec<u32>>(&key).unwrap_or_else(|| Vec::new(env))
     }
 
     /// Check if an event matches the subscription
@@ -244,15 +241,8 @@ impl EventPublisher {
     }
 
     fn is_valid_category(env: &Env, category: &Symbol) -> bool {
-        let valid_categories = [
-            "access_control",
-            "certificate",
-            "analytics",
-            "token",
-            "progress",
-            "system",
-            "error",
-        ];
+        let valid_categories =
+            ["access_control", "certificate", "analytics", "token", "progress", "system", "error"];
 
         for valid in valid_categories.iter() {
             if *category == Symbol::new(env, valid) {

@@ -1,3 +1,5 @@
+use shared::emit_progress_event;
+use shared::event_schema::{ProgressEventData, ProgressUpdatedEvent};
 use shared::gas_optimizer::{BatchResult, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR};
 use soroban_sdk::{contracttype, symbol_short, Address, Env, Symbol, Vec};
 
@@ -53,32 +55,34 @@ fn progress_key(learner: &Address, course_id: u32) -> (Symbol, Address, u32) {
 }
 
 fn load_progress(env: &Env, learner: &Address, course_id: u32) -> PackedProgress {
-    env.storage()
-        .persistent()
-        .get(&progress_key(learner, course_id))
-        .unwrap_or_default()
+    env.storage().persistent().get(&progress_key(learner, course_id)).unwrap_or_default()
 }
 
 fn save_progress(env: &Env, learner: &Address, course_id: u32, prog: &PackedProgress) {
     let key = progress_key(learner, course_id);
     env.storage().persistent().set(&key, prog);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 pub fn start_course_optimized(env: &Env, learner: &Address, course_id: u32) {
     learner.require_auth();
-    if env
-        .storage()
-        .persistent()
-        .has(&progress_key(learner, course_id))
-    {
+    if env.storage().persistent().has(&progress_key(learner, course_id)) {
         return;
     }
     let mut prog = PackedProgress::default();
     prog.set_started_ledger(env.ledger().sequence());
     save_progress(env, learner, course_id, &prog);
+    emit_progress_event!(
+        env,
+        symbol_short!("progress"),
+        learner.clone(),
+        ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+            student: learner.clone(),
+            course_id: course_symbol(env, course_id),
+            module_id: symbol_short!("start"),
+            progress_percentage: 0,
+        })
+    );
 }
 
 pub fn complete_module_optimized(
@@ -96,6 +100,17 @@ pub fn complete_module_optimized(
     let pct = ((prog.completed_module_count() as u64 * 100) / total_modules as u64) as u8;
     prog.set_completion_pct(pct);
     save_progress(env, learner, course_id, &prog);
+    emit_progress_event!(
+        env,
+        symbol_short!("progress"),
+        learner.clone(),
+        ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+            student: learner.clone(),
+            course_id: course_symbol(env, course_id),
+            module_id: module_symbol(env, module_idx),
+            progress_percentage: pct as u32,
+        })
+    );
     true
 }
 
@@ -126,6 +141,17 @@ pub fn batch_complete_modules(
         let pct = ((prog.completed_module_count() as u64 * 100) / total_modules as u64) as u8;
         prog.set_completion_pct(pct);
         save_progress(env, learner, course_id, &prog);
+        emit_progress_event!(
+            env,
+            symbol_short!("progress"),
+            learner.clone(),
+            ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+                student: learner.clone(),
+                course_id: course_symbol(env, course_id),
+                module_id: symbol_short!("batch"),
+                progress_percentage: pct as u32,
+            })
+        );
     }
     result
 }
@@ -143,4 +169,12 @@ pub fn get_progress(env: &Env, learner: &Address, course_id: u32) -> PackedProgr
 
 pub fn is_course_complete(env: &Env, learner: &Address, course_id: u32, total_modules: u8) -> bool {
     load_progress(env, learner, course_id).is_completed(total_modules)
+}
+
+fn course_symbol(env: &Env, _course_id: u32) -> Symbol {
+    Symbol::new(env, "course")
+}
+
+fn module_symbol(env: &Env, _module_idx: u8) -> Symbol {
+    Symbol::new(env, "module")
 }

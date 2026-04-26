@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: Community Contract
+  description: Forum, events, mentorship, and governance
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize contract
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Initialized
+  /create_post:
+    post:
+      operationId: create_post
+      summary: Create forum post
+      parameters:
+        - name: author
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: content
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Post created
+  /create_reply:
+    post:
+      operationId: create_reply
+      summary: Reply to post
+      parameters:
+        - name: author
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: post_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+        - name: content
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reply created
+  /create_event:
+    post:
+      operationId: create_event
+      summary: Create event
+      parameters:
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: event
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Event created
+  /rsvp_event:
+    post:
+      operationId: rsvp_event
+      summary: RSVP to event
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: event_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+        - name: attending
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: RSVP recorded
+  /request_mentorship:
+    post:
+      operationId: request_mentorship
+      summary: Request mentorship
+      parameters:
+        - name: mentee
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: mentor
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reason
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Request submitted
+  /create_poll:
+    post:
+      operationId: create_poll
+      summary: Create governance poll
+      parameters:
+        - name: creator
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: poll
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Poll'
+      responses:
+        '200':
+          description: Poll created
+  /vote:
+    post:
+      operationId: vote
+      summary: Cast vote
+      parameters:
+        - name: voter
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: poll_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+        - name: option_index
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vote cast
+  /get_posts:
+    get:
+      operationId: get_posts
+      summary: Get forum posts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Posts retrieved
+  /get_events:
+    get:
+      operationId: get_events
+      summary: Get events
+      parameters:
+        - name: upcoming_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Events retrieved
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        event_type:
+          type: string
+        start_time:
+          type: integer
+        end_time:
+          type: integer
+        location:
+          type: string
+    Poll:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        start_time:
+          type: integer
+        end_time:
+          type: integer

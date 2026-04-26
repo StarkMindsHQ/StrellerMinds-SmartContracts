@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
 use crate::types::{GamificationKey, PeerEndorsement, PeerRecognition, RecognitionType};
+use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct SocialManager;
 
@@ -16,6 +17,15 @@ impl SocialManager {
         endorsee: &Address,
         skill: String,
     ) -> Result<(), Error> {
+        // Validate skill string
+        CoreValidator::validate_soroban_string_length(
+            &skill,
+            "skill",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_COURSE_ID_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+
         if endorser == endorsee {
             return Err(Error::SelfEndorsement);
         }
@@ -30,9 +40,7 @@ impl SocialManager {
         if given_today >= config.max_endorsements_per_day {
             return Err(Error::EndorsementLimitReached);
         }
-        env.storage()
-            .persistent()
-            .set(&rate_key, &(given_today + 1));
+        env.storage().persistent().set(&rate_key, &(given_today + 1));
 
         // Record endorsement
         let endorsement = PeerEndorsement {
@@ -44,11 +52,8 @@ impl SocialManager {
         };
 
         let key = GamificationKey::UserEndorsements(endorsee.clone());
-        let mut list: Vec<PeerEndorsement> = env
-            .storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| Vec::new(env));
+        let mut list: Vec<PeerEndorsement> =
+            env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
         list.push_back(endorsement);
         env.storage().persistent().set(&key, &list);
 
@@ -89,6 +94,15 @@ impl SocialManager {
         recognition_type: RecognitionType,
         message: String,
     ) -> Result<(), Error> {
+        // Validate message
+        CoreValidator::validate_soroban_string_length(
+            &message,
+            "message",
+            ValidationConfig::MIN_TITLE_LENGTH,
+            ValidationConfig::MAX_MESSAGE_LENGTH,
+        )
+        .map_err(|_| Error::InvalidInput)?;
+
         if from == to {
             return Err(Error::SelfEndorsement);
         }

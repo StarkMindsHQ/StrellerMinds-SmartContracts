@@ -25,9 +25,7 @@ impl OfflineManager {
         queue.queued_operations.push_back(operation);
         queue.last_sync_attempt = env.ledger().timestamp();
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
         Ok(())
     }
 
@@ -57,7 +55,7 @@ impl OfflineManager {
 
         let mut updated_ops = Vec::new(env);
         for op in queue.queued_operations.iter() {
-            let mut o = op.clone();
+            let mut o: QueuedOperation = op.clone();
             match Self::sync_single_operation(env, &o) {
                 Ok(()) => {
                     o.status = QueuedOperationStatus::Synced;
@@ -84,9 +82,7 @@ impl OfflineManager {
             SyncStatus::InSync
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
 
         Ok(OfflineSyncResult {
             total_operations: total_ops,
@@ -153,7 +149,7 @@ impl OfflineManager {
         let mut updated_ops = Vec::new(env);
 
         for op in queue.queued_operations.iter() {
-            let mut o = op.clone();
+            let mut o: QueuedOperation = op.clone();
             if o.status == QueuedOperationStatus::Conflict {
                 match resolution_strategy {
                     ConflictResolution::ServerWins | ConflictResolution::Abort => {
@@ -173,9 +169,7 @@ impl OfflineManager {
 
         queue.queued_operations = updated_ops;
         queue.conflict_resolution = resolution_strategy;
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
 
         Ok(resolved)
     }
@@ -210,9 +204,7 @@ impl OfflineManager {
         }
 
         queue.queued_operations = kept;
-        env.storage()
-            .persistent()
-            .set(&DataKey::OfflineQueue(user), &queue);
+        env.storage().persistent().set(&DataKey::OfflineQueue(user), &queue);
         Ok(cleaned)
     }
 

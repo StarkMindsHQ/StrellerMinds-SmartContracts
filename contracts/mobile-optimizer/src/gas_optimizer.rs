@@ -48,7 +48,7 @@ impl GasOptimizer {
     ) -> Result<BatchGasOptimization, MobileOptimizerError> {
         let mut total_original = 0u64;
         let mut total_optimized = 0u64;
-        let mut all_suggestions = Vec::new(env);
+        let mut all_suggestions: Vec<OptimizationSuggestion> = Vec::new(env);
 
         for operation in operations.iter() {
             let estimate = Self::estimate_operation_gas(env, &operation, network_quality)?;
@@ -65,7 +65,9 @@ impl GasOptimizer {
         total_optimized = total_optimized.saturating_sub(batch_savings);
 
         let savings_pct = if total_original > 0 {
-            ((total_original.saturating_sub(total_optimized)) * 100 / total_original) as u32
+            ((total_original.saturating_sub(total_optimized)) * 100)
+                .checked_div(total_original)
+                .unwrap_or(0) as u32
         } else {
             0
         };
@@ -90,18 +92,12 @@ impl GasOptimizer {
             env,
             "Execute non-urgent operations during off-peak hours",
         ));
-        tips.push_back(String::from_str(
-            env,
-            "Use WiFi connections for better network stability",
-        ));
+        tips.push_back(String::from_str(env, "Use WiFi connections for better network stability"));
         tips.push_back(String::from_str(
             env,
             "Cache frequently accessed data to avoid repeated queries",
         ));
-        tips.push_back(String::from_str(
-            env,
-            "Enable automatic retry with exponential backoff",
-        ));
+        tips.push_back(String::from_str(env, "Enable automatic retry with exponential backoff"));
         tips
     }
 
@@ -264,10 +260,7 @@ impl GasOptimizer {
     }
 
     fn is_cacheable(op_type: &OperationType) -> bool {
-        matches!(
-            op_type,
-            OperationType::SearchQuery | OperationType::PreferenceUpdate
-        )
+        matches!(op_type, OperationType::SearchQuery | OperationType::PreferenceUpdate)
     }
 
     fn calculate_cost_in_stroops(gas_amount: u64) -> i64 {

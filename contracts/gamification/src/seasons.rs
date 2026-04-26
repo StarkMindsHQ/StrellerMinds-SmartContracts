@@ -10,7 +10,7 @@ pub struct SeasonManager;
 impl SeasonManager {
     // ── Create ─────────────────────────────────────────────────────────────
 
-    pub fn create(env: &Env, mut season: Season) -> Result<u64, Error> {
+    pub fn create(env: &Env, admin: &Address, mut season: Season) -> Result<u64, Error> {
         if GamificationStorage::get_active_season_id(env) != 0 {
             return Err(Error::SeasonAlreadyActive);
         }
@@ -26,28 +26,23 @@ impl SeasonManager {
         season.is_active = true;
         season.total_participants = 0;
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Season(id), &season);
+        env.storage().persistent().set(&GamificationKey::Season(id), &season);
         GamificationStorage::set_active_season_id(env, id);
 
-        GamificationEvents::emit_season_started(env, id);
+        GamificationEvents::emit_season_started(env, admin, id);
         Ok(id)
     }
 
     // ── End current season ─────────────────────────────────────────────────
 
-    pub fn end_current_season(env: &Env) -> Result<(), Error> {
+    pub fn end_current_season(env: &Env, admin: &Address) -> Result<(), Error> {
         let id = GamificationStorage::get_active_season_id(env);
         if id == 0 {
             return Err(Error::SeasonInactive);
         }
 
-        let mut season: Season = env
-            .storage()
-            .persistent()
-            .get(&GamificationKey::Season(id))
-            .ok_or(Error::NotFound)?;
+        let mut season: Season =
+            env.storage().persistent().get(&GamificationKey::Season(id)).ok_or(Error::NotFound)?;
 
         let now = env.ledger().timestamp();
         if now < season.end_time {
@@ -55,12 +50,10 @@ impl SeasonManager {
         }
 
         season.is_active = false;
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Season(id), &season);
+        env.storage().persistent().set(&GamificationKey::Season(id), &season);
         GamificationStorage::set_active_season_id(env, 0);
 
-        GamificationEvents::emit_season_ended(env, id);
+        GamificationEvents::emit_season_ended(env, admin, id);
         Ok(())
     }
 
@@ -75,14 +68,11 @@ impl SeasonManager {
         }
 
         // Check season is still within time window
-        let season: Season = match env
-            .storage()
-            .persistent()
-            .get(&GamificationKey::Season(season_id))
-        {
-            Some(s) => s,
-            None => return 0,
-        };
+        let season: Season =
+            match env.storage().persistent().get(&GamificationKey::Season(season_id)) {
+                Some(s) => s,
+                None => return 0,
+            };
         let now = env.ledger().timestamp();
         if !season.is_active || now > season.end_time {
             return 0;
@@ -103,9 +93,7 @@ impl SeasonManager {
                 .get::<GamificationKey, Season>(&GamificationKey::Season(season_id))
             {
                 s.total_participants += 1;
-                env.storage()
-                    .persistent()
-                    .set(&GamificationKey::Season(season_id), &s);
+                env.storage().persistent().set(&GamificationKey::Season(season_id), &s);
             }
         }
 
@@ -145,9 +133,6 @@ impl SeasonManager {
             return 100;
         }
         let season: Option<Season> = env.storage().persistent().get(&GamificationKey::Season(id));
-        season
-            .filter(|s| s.is_active)
-            .map(|s| s.xp_multiplier)
-            .unwrap_or(100)
+        season.filter(|s| s.is_active).map(|s| s.xp_multiplier).unwrap_or(100)
     }
 }

@@ -1,29 +1,152 @@
-use soroban_sdk::{contract, contractimpl, Address, Env, Error, Symbol, Vec};
+#![no_std]
+
+pub mod errors;
+
+use crate::errors::ProgressError;
+use shared::event_schema::{
+    AccessControlEventData, ContractInitializedEvent, ProgressEventData, ProgressUpdatedEvent,
+};
+use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
+use shared::{emit_access_control_event, emit_progress_event};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
+
+/// Storage key for progress records.
+#[contracttype]
+#[derive(Clone)]
+pub enum ProgressKey {
+    /// Stores the progress percentage for (student, course_id).
+    Progress(Address, Symbol),
+    /// Stores the list of course IDs a student has recorded progress in.
+    StudentCourses(Address),
+    /// Rate limit state for a student's record_progress calls.
+    RateLimit(Address),
+}
+
+/// Rate limit: max 100 progress updates per day per student.
+const RATE_LIMIT_CFG: RateLimitConfig = RateLimitConfig { max_calls: 100, window_seconds: 86_400 };
 
 #[contract]
 pub struct Progress;
 
 #[contractimpl]
 impl Progress {
-    pub fn initialize(_env: Env, _admin: Address) -> Result<(), Error> {
+    /// Initializes the progress contract and records the admin address.
+    ///
+    /// # Arguments
+    /// * `admin` - Address that will have administrative control over the contract.
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::AlreadyInitialized`] if the contract has already been initialized.
+    pub fn initialize(env: Env, admin: Address) -> Result<(), ProgressError> {
+        admin.require_auth();
+        if env.storage().instance().has(&soroban_sdk::symbol_short!("admin")) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&soroban_sdk::symbol_short!("admin"), &admin);
+
+        emit_access_control_event!(
+            &env,
+            symbol_short!("progress"),
+            admin.clone(),
+            AccessControlEventData::ContractInitialized(ContractInitializedEvent { admin })
+        );
         Ok(())
     }
 
+    /// Records a student's progress percentage for a given course.
+    ///
+    /// Enforces a per-student rate limit (100 calls/day) to prevent abuse.
+    /// Stores the progress value on-chain and tracks the course in the student's course list.
+    /// Emits a `ProgressUpdated` event on success.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student whose progress is being recorded.
+    /// * `course_id` - Symbol identifier for the course.
+    /// * `progress` - Progress percentage (0–100).
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::Unauthorized`] if the caller is not authorized.
+    /// Returns [`ProgressError::InvalidProgress`] if `progress` exceeds 100.
     pub fn record_progress(
-        _env: Env,
-        _student: Address,
-        _course_id: Symbol,
-        _progress: u32,
-    ) -> Result<(), Error> {
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+        progress: u32,
+    ) -> Result<(), ProgressError> {
+        student.require_auth();
+
+        if progress > 100 {
+            return Err(ProgressError::InvalidProgress);
+        }
+
+        // Enforce per-student rate limit (#363)
+        let rl_key = ProgressKey::RateLimit(student.clone());
+        enforce_rate_limit(&env, &rl_key, &RATE_LIMIT_CFG)
+            .map_err(|_| ProgressError::Unauthorized)?;
+
+        // Store progress (#365)
+        let progress_key = ProgressKey::Progress(student.clone(), course_id.clone());
+        env.storage().persistent().set(&progress_key, &progress);
+
+        // Track course in student's course list if not already present (#365)
+        let courses_key = ProgressKey::StudentCourses(student.clone());
+        let mut courses: Vec<Symbol> =
+            env.storage().persistent().get(&courses_key).unwrap_or_else(|| Vec::new(&env));
+        let already_tracked = courses.iter().any(|c| c == course_id);
+        if !already_tracked {
+            courses.push_back(course_id.clone());
+            env.storage().persistent().set(&courses_key, &courses);
+        }
+
+        emit_progress_event!(
+            &env,
+            symbol_short!("progress"),
+            student.clone(),
+            ProgressEventData::ProgressUpdated(ProgressUpdatedEvent {
+                student,
+                course_id,
+                module_id: symbol_short!("record"),
+                progress_percentage: progress,
+            })
+        );
         Ok(())
     }
 
-    pub fn get_progress(_env: Env, _student: Address, _course_id: Symbol) -> Result<u32, Error> {
-        Ok(0)
+    /// Returns the recorded progress percentage for a student in a given course.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student to query.
+    /// * `course_id` - Symbol identifier for the course.
+    ///
+    /// # Errors
+    /// Returns [`ProgressError::ProgressNotFound`] if no progress has been recorded.
+    pub fn get_progress(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<u32, ProgressError> {
+        let key = ProgressKey::Progress(student, course_id);
+        env.storage().persistent().get(&key).ok_or(ProgressError::ProgressNotFound)
     }
 
-    pub fn get_student_courses(_env: Env, _student: Address) -> Vec<Symbol> {
-        Vec::new(&_env)
+    /// Returns all course IDs in which the student has recorded progress.
+    ///
+    /// # Arguments
+    /// * `student` - Address of the student to query.
+    pub fn get_student_courses(env: Env, student: Address) -> Vec<Symbol> {
+        let key = ProgressKey::StudentCourses(student);
+        env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(&env))
+    }
+
+    pub fn health_check(env: Env) -> ContractHealthReport {
+        let initialized = env.storage().instance().has(&symbol_short!("admin"));
+        let report = Monitor::build_health_report(&env, symbol_short!("progress"), initialized);
+        Monitor::emit_health_check(&env, &report);
+        report
     }
 }
 pub mod gas_optimized;
+
+#[cfg(test)]
+pub mod tests;

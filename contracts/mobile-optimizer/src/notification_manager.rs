@@ -19,11 +19,11 @@ impl NotificationManager {
             max_daily_notifications: 10,
             channel_preferences: channel_prefs,
             priority_threshold: NotificationPriorityLevel::All,
+            language_preference: String::from_str(env, "en"),
+            marketing_consent: false,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::NotifConfig(user.clone()), &config);
         config
     }
 
@@ -52,6 +52,8 @@ impl NotificationManager {
             is_active: true,
             last_sent: 0,
             course_id,
+            campaign_id: None,
+            variant_id: None,
         };
 
         let mut reminders: Vec<LearningReminder> = env
@@ -61,9 +63,7 @@ impl NotificationManager {
             .unwrap_or_else(|| Vec::new(env));
 
         reminders.push_back(reminder.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &reminders);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &reminders);
 
         Ok(reminder)
     }
@@ -123,22 +123,23 @@ impl NotificationManager {
 
         let now = env.ledger().timestamp();
         let mut updated = Vec::new(env);
+        let mut sent_reminder: Option<LearningReminder> = None;
 
         for reminder in reminders.iter() {
-            let mut r = reminder.clone();
+            let mut r: LearningReminder = reminder.clone();
             if r.reminder_id == reminder_id {
                 r.last_sent = now;
                 if r.repeat_interval == RepeatInterval::Once {
                     r.is_active = false;
                 }
+                sent_reminder = Some(r.clone());
             }
             updated.push_back(r);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &updated);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &updated);
 
+        let sent = sent_reminder.ok_or(MobileOptimizerError::NotificationError)?;
         let record = NotificationRecord {
             notification_id: reminder_id,
             user: user.clone(),
@@ -147,6 +148,9 @@ impl NotificationManager {
             read_at: 0,
             action_taken: false,
             delivery_status: DeliveryStatus::Sent,
+            campaign_id: sent.campaign_id.clone(),
+            variant_id: sent.variant_id.clone(),
+            clicked_at: 0,
         };
 
         let mut history: Vec<NotificationRecord> = env
@@ -155,9 +159,7 @@ impl NotificationManager {
             .get(&DataKey::NotifHistory(user.clone()))
             .unwrap_or_else(|| Vec::new(env));
         history.push_back(record);
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifHistory(user.clone()), &history);
+        env.storage().persistent().set(&DataKey::NotifHistory(user.clone()), &history);
 
         Ok(())
     }
@@ -175,16 +177,14 @@ impl NotificationManager {
 
         let mut updated = Vec::new(env);
         for reminder in reminders.iter() {
-            let mut r = reminder.clone();
+            let mut r: LearningReminder = reminder.clone();
             if r.reminder_id == reminder_id {
                 r.is_active = false;
             }
             updated.push_back(r);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Reminders(user.clone()), &updated);
+        env.storage().persistent().set(&DataKey::Reminders(user.clone()), &updated);
         Ok(())
     }
 
@@ -193,9 +193,7 @@ impl NotificationManager {
         user: &Address,
         config: NotificationConfig,
     ) -> Result<(), MobileOptimizerError> {
-        env.storage()
-            .persistent()
-            .set(&DataKey::NotifConfig(user.clone()), &config);
+        env.storage().persistent().set(&DataKey::NotifConfig(user.clone()), &config);
         Ok(())
     }
 
@@ -260,6 +258,79 @@ impl NotificationManager {
             .persistent()
             .get(&DataKey::NotifHistory(user.clone()))
             .unwrap_or_else(|| Vec::new(env))
+    }
+
+    pub fn create_notification_template(
+        env: &Env,
+        template_id: String,
+        category: ReminderType,
+        default_content: String,
+        localized_content: Map<String, String>,
+        supported_channels: Vec<String>,
+    ) -> Result<NotificationTemplate, MobileOptimizerError> {
+        let template = NotificationTemplate {
+            template_id: template_id.clone(),
+            category,
+            default_content,
+            localized_content,
+            supported_channels,
+            version: 1,
+        };
+
+        env.storage().persistent().set(&DataKey::NotificationTemplate(template_id), &template);
+
+        Ok(template)
+    }
+
+    pub fn create_campaign(
+        env: &Env,
+        campaign_id: String,
+        name: String,
+        variants: Vec<ABTestVariant>,
+        start_date: u64,
+        end_date: u64,
+    ) -> Result<NotificationCampaign, MobileOptimizerError> {
+        let campaign = NotificationCampaign {
+            campaign_id: campaign_id.clone(),
+            name,
+            variants,
+            start_date,
+            end_date,
+            is_active: true,
+            total_sent: 0,
+            total_engaged: 0,
+        };
+
+        env.storage().persistent().set(&DataKey::NotificationCampaign(campaign_id), &campaign);
+
+        Ok(campaign)
+    }
+
+    pub fn track_engagement(
+        env: &Env,
+        user: &Address,
+        notification_id: String,
+    ) -> Result<(), MobileOptimizerError> {
+        let history: Vec<NotificationRecord> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::NotifHistory(user.clone()))
+            .ok_or(MobileOptimizerError::NotificationError)?;
+
+        let mut updated_history = Vec::new(env);
+        let now = env.ledger().timestamp();
+
+        for record in history.iter() {
+            let mut r: NotificationRecord = record.clone();
+            if r.notification_id == notification_id {
+                r.clicked_at = now;
+                r.action_taken = true;
+            }
+            updated_history.push_back(r);
+        }
+
+        env.storage().persistent().set(&DataKey::NotifHistory(user.clone()), &updated_history);
+        Ok(())
     }
 
     fn is_quiet_hours(timestamp: u64, config: &NotificationConfig) -> bool {

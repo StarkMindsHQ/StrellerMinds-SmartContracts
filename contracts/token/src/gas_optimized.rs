@@ -1,3 +1,8 @@
+use shared::emit_token_event;
+use shared::event_schema::{
+    TokenEventData, TokensBurnedEvent, TokensMintedEvent, TokensStakedEvent,
+    TokensTransferredEvent, TokensUnstakedEvent,
+};
 use shared::gas_optimizer::{
     extend_instance_if_needed, pack_bool_u32, unpack_bool_u32, BatchResult, TTL_BUMP_THRESHOLD,
     TTL_PERSISTENT_YEAR,
@@ -30,18 +35,13 @@ fn account_key(owner: &Address) -> (Symbol, Address) {
 }
 
 fn load_account(env: &Env, owner: &Address) -> PackedAccount {
-    env.storage()
-        .persistent()
-        .get(&account_key(owner))
-        .unwrap_or_default()
+    env.storage().persistent().get(&account_key(owner)).unwrap_or_default()
 }
 
 fn save_account(env: &Env, owner: &Address, acc: &PackedAccount) {
     let key = account_key(owner);
     env.storage().persistent().set(&key, acc);
-    env.storage()
-        .persistent()
-        .extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+    env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 }
 
 fn load_supply(env: &Env) -> u64 {
@@ -61,6 +61,16 @@ pub fn transfer_optimized(env: &Env, from: &Address, to: &Address, amount: u64) 
     recipient.balance += amount;
     save_account(env, from, &sender);
     save_account(env, to, &recipient);
+    emit_token_event!(
+        env,
+        symbol_short!("token"),
+        from.clone(),
+        TokenEventData::TokensTransferred(TokensTransferredEvent {
+            from: from.clone(),
+            to: to.clone(),
+            amount: amount as i128,
+        })
+    );
 }
 
 pub fn batch_transfer(env: &Env, from: &Address, recipients: &Vec<(Address, u64)>) -> BatchResult {
@@ -100,6 +110,15 @@ pub fn stake_optimized(env: &Env, staker: &Address, amount: u32) {
     acc.balance -= amount as u64;
     acc.set_stake(false, current.saturating_add(amount));
     save_account(env, staker, &acc);
+    emit_token_event!(
+        env,
+        symbol_short!("token"),
+        staker.clone(),
+        TokenEventData::TokensStaked(TokensStakedEvent {
+            staker: staker.clone(),
+            amount: amount as u64,
+        })
+    );
 }
 
 pub fn unstake_optimized(env: &Env, staker: &Address, amount: u32) {
@@ -111,6 +130,15 @@ pub fn unstake_optimized(env: &Env, staker: &Address, amount: u32) {
     acc.balance += amount as u64;
     acc.set_stake(false, current - amount);
     save_account(env, staker, &acc);
+    emit_token_event!(
+        env,
+        symbol_short!("token"),
+        staker.clone(),
+        TokenEventData::TokensUnstaked(TokensUnstakedEvent {
+            staker: staker.clone(),
+            amount: amount as u64,
+        })
+    );
 }
 
 pub fn mint_optimized(env: &Env, admin: &Address, to: &Address, amount: u64) {
@@ -122,6 +150,12 @@ pub fn mint_optimized(env: &Env, admin: &Address, to: &Address, amount: u64) {
     save_supply(env, supply);
     save_account(env, to, &recipient);
     extend_instance_if_needed(env);
+    emit_token_event!(
+        env,
+        symbol_short!("token"),
+        to.clone(),
+        TokenEventData::TokensMinted(TokensMintedEvent { to: to.clone(), amount: amount as i128 })
+    );
 }
 
 pub fn burn_optimized(env: &Env, from: &Address, amount: u64) {
@@ -134,6 +168,15 @@ pub fn burn_optimized(env: &Env, from: &Address, amount: u64) {
     save_account(env, from, &acc);
     save_supply(env, supply);
     extend_instance_if_needed(env);
+    emit_token_event!(
+        env,
+        symbol_short!("token"),
+        from.clone(),
+        TokenEventData::TokensBurned(TokensBurnedEvent {
+            from: from.clone(),
+            amount: amount as i128,
+        })
+    );
 }
 
 pub fn balance_of(env: &Env, owner: &Address) -> u64 {

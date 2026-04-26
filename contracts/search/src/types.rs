@@ -1,47 +1,155 @@
-use soroban_sdk::{contracttype, Address, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, BytesN, Map, String, Vec};
 
-/// Search query structure for multi-criteria searches
+// ============================================================================
+// CORE ENUM TYPES (must be defined before Maybe wrappers)
+// ============================================================================
+
+/// Available sorting fields
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SearchQuery {
-    pub query_text: String,           // Text search query
-    pub filters: SearchFilters,       // Applied filters
-    pub sort_options: SortOptions,    // Sorting preferences
-    pub pagination: PaginationOptions, // Pagination settings
-    pub search_scope: SearchScope,    // What to search (courses, certificates, etc.)
+pub enum SortField {
+    Relevance,
+    Title,
+    CreatedDate,
+    UpdatedDate,
+    Rating,
+    Popularity,
+    Duration,
+    Difficulty,
+    Price,
+    CompletionRate,
+    IssueDate,
+    ExpiryDate,
+    Progress,
 }
 
-/// Comprehensive filtering options
+/// Frequency for auto-executing saved searches
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SearchFilters {
-    // Course filters
-    pub categories: Vec<String>,          // Course categories
-    pub difficulty_levels: Vec<DifficultyLevel>, // Difficulty filtering
-    pub duration_range: Option<DurationRange>,   // Duration filtering
-    pub instructor_ids: Vec<Address>,     // Filter by instructors
-    pub languages: Vec<String>,           // Course languages
-    pub price_range: Option<PriceRange>,  // Price filtering
-    pub rating_range: Option<RatingRange>, // Rating filtering
-    pub tags: Vec<String>,                // Course tags
-    
-    // Certificate filters
-    pub certificate_status: Vec<CertificateStatus>, // Certificate status
-    pub issue_date_range: Option<DateRange>,        // Issue date filtering
-    pub expiry_date_range: Option<DateRange>,       // Expiry date filtering
-    pub certificate_types: Vec<CertificateType>,    // Certificate types
-    
-    // Progress filters
-    pub completion_range: Option<CompletionRange>,  // Progress completion
-    pub enrollment_date_range: Option<DateRange>,   // Enrollment filtering
-    pub last_activity_range: Option<DateRange>,     // Last activity filtering
-    
-    // Advanced filters
-    pub has_prerequisites: Option<bool>,    // Filter by prerequisite requirements
-    pub has_certificate: Option<bool>,      // Filter by certificate availability
-    pub is_premium: Option<bool>,          // Premium content filter
-    pub is_featured: Option<bool>,         // Featured content filter
+pub enum ExecutionFrequency {
+    Daily,
+    Weekly,
+    Monthly,
+    Custom(u64),
 }
+
+// ============================================================================
+// OPTIONAL WRAPPER TYPES (Soroban doesn't support Option<T> in contracttype)
+// ============================================================================
+
+/// Optional wrapper for `DurationRange` (Soroban does not support `Option<T>` in `contracttype`).
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeDurationRange {
+    /// No duration range specified.
+    None,
+    /// A duration range value is present.
+    Some(DurationRange),
+}
+
+/// Optional wrapper for `PriceRange`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybePriceRange {
+    /// No price range specified.
+    None,
+    /// A price range value is present.
+    Some(PriceRange),
+}
+
+/// Optional wrapper for `RatingRange`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeRatingRange {
+    /// No rating range specified.
+    None,
+    /// A rating range value is present.
+    Some(RatingRange),
+}
+
+/// Optional wrapper for `DateRange`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeDateRange {
+    /// No date range specified.
+    None,
+    /// A date range value is present.
+    Some(DateRange),
+}
+
+/// Optional wrapper for `CompletionRange`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeCompletionRange {
+    /// No completion range specified.
+    None,
+    /// A completion range value is present.
+    Some(CompletionRange),
+}
+
+/// Optional wrapper for a boolean value.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeBool {
+    /// No boolean value specified.
+    None,
+    /// A boolean value is present.
+    Some(bool),
+}
+
+/// Optional wrapper for `SortField`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeSortField {
+    /// No sort field specified.
+    None,
+    /// A sort field value is present.
+    Some(SortField),
+}
+
+/// Optional wrapper for `ExecutionFrequency`.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeExecutionFrequency {
+    /// No execution frequency specified.
+    None,
+    /// An execution frequency value is present.
+    Some(ExecutionFrequency),
+}
+
+/// Optional wrapper for a `u64` value.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeU64 {
+    /// No u64 value specified.
+    None,
+    /// A u64 value is present.
+    Some(u64),
+}
+
+/// Optional wrapper for a `String` value.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeString {
+    /// No string value specified.
+    None,
+    /// A string value is present.
+    Some(String),
+}
+
+/// Optional wrapper for an `Address` value.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MaybeAddress {
+    /// No address specified.
+    None,
+    /// An address value is present.
+    Some(Address),
+}
+
+// ============================================================================
+// CORE TYPES
+// ============================================================================
 
 /// Difficulty level enumeration
 #[contracttype]
@@ -57,40 +165,40 @@ pub enum DifficultyLevel {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DurationRange {
-    pub min_hours: Option<u32>,
-    pub max_hours: Option<u32>,
+    pub min_hours: u32, // 0 means no minimum
+    pub max_hours: u32, // 0 means no maximum
 }
 
 /// Price range for filtering
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PriceRange {
-    pub min_price: Option<i64>,  // In stroops
-    pub max_price: Option<i64>,  // In stroops
+    pub min_price: i64, // In stroops, i64::MIN means no minimum
+    pub max_price: i64, // In stroops, i64::MAX means no maximum
 }
 
 /// Rating range for filtering
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RatingRange {
-    pub min_rating: u32,  // 1-5 stars (scaled to 1-50 for precision)
-    pub max_rating: u32,  // 1-5 stars (scaled to 1-50 for precision)
+    pub min_rating: u32, // 1-5 stars (scaled to 1-50 for precision)
+    pub max_rating: u32, // 1-5 stars (scaled to 1-50 for precision)
 }
 
 /// Date range for filtering
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DateRange {
-    pub start_date: Option<u64>,  // Unix timestamp
-    pub end_date: Option<u64>,    // Unix timestamp
+    pub start_date: u64, // Unix timestamp, 0 means no start date
+    pub end_date: u64,   // Unix timestamp, 0 means no end date
 }
 
 /// Completion range for progress filtering
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CompletionRange {
-    pub min_percentage: u32,  // 0-100
-    pub max_percentage: u32,  // 0-100
+    pub min_percentage: u32, // 0-100
+    pub max_percentage: u32, // 0-100
 }
 
 /// Certificate status for filtering
@@ -115,32 +223,56 @@ pub enum CertificateType {
     Micro,
 }
 
+/// Comprehensive filtering options
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SearchFilters {
+    // Course filters
+    pub categories: Vec<String>,                 // Course categories
+    pub difficulty_levels: Vec<DifficultyLevel>, // Difficulty filtering
+    pub duration_range: MaybeDurationRange,      // Duration filtering
+    pub instructor_ids: Vec<Address>,            // Filter by instructors
+    pub languages: Vec<String>,                  // Course languages
+    pub price_range: MaybePriceRange,            // Price filtering
+    pub rating_range: MaybeRatingRange,          // Rating filtering
+    pub tags: Vec<String>,                       // Course tags
+
+    // Certificate filters
+    pub certificate_status: Vec<CertificateStatus>, // Certificate status
+    pub issue_date_range: MaybeDateRange,           // Issue date filtering
+    pub expiry_date_range: MaybeDateRange,          // Expiry date filtering
+    pub certificate_types: Vec<CertificateType>,    // Certificate types
+
+    // Progress filters
+    pub completion_range: MaybeCompletionRange, // Progress completion
+    pub enrollment_date_range: MaybeDateRange,  // Enrollment filtering
+    pub last_activity_range: MaybeDateRange,    // Last activity filtering
+
+    // Advanced filters
+    pub has_prerequisites: MaybeBool, // Filter by prerequisite requirements
+    pub has_certificate: MaybeBool,   // Filter by certificate availability
+    pub is_premium: MaybeBool,        // Premium content filter
+    pub is_featured: MaybeBool,       // Featured content filter
+}
+
+/// Search query structure for multi-criteria searches
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SearchQuery {
+    pub query_text: String,            // Text search query
+    pub filters: SearchFilters,        // Applied filters
+    pub sort_options: SortOptions,     // Sorting preferences
+    pub pagination: PaginationOptions, // Pagination settings
+    pub search_scope: SearchScope,     // What to search (courses, certificates, etc.)
+}
+
 /// Sorting options for search results
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SortOptions {
     pub primary_sort: SortField,
-    pub secondary_sort: Option<SortField>,
+    pub secondary_sort: MaybeSortField,
     pub sort_order: SortOrder,
-}
-
-/// Available sorting fields
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SortField {
-    Relevance,          // Search relevance score
-    Title,              // Alphabetical by title
-    CreatedDate,        // Creation date
-    UpdatedDate,        // Last update date
-    Rating,             // User rating
-    Popularity,         // Enrollment count
-    Duration,           // Course duration
-    Difficulty,         // Difficulty level
-    Price,              // Course price
-    CompletionRate,     // Course completion rate
-    IssueDate,          // Certificate issue date (for certificates)
-    ExpiryDate,         // Certificate expiry date (for certificates)
-    Progress,           // User progress (for progress searches)
 }
 
 /// Sort order enumeration
@@ -155,9 +287,9 @@ pub enum SortOrder {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PaginationOptions {
-    pub page: u32,           // Page number (1-based)
-    pub page_size: u32,      // Results per page
-    pub max_results: u32,    // Maximum total results to return
+    pub page: u32,        // Page number (1-based)
+    pub page_size: u32,   // Results per page
+    pub max_results: u32, // Maximum total results to return
 }
 
 /// Search scope definition
@@ -187,30 +319,59 @@ pub enum SearchTarget {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SearchResults {
-    pub query_id: String,                    // Unique query identifier
-    pub total_results: u32,                  // Total matching results
-    pub page: u32,                          // Current page
-    pub page_size: u32,                     // Results per page
-    pub has_more: bool,                     // Whether more results exist
-    pub results: Vec<SearchResultItem>,     // Actual results
-    pub facets: Vec<SearchFacet>,          // Faceted search results
-    pub suggestions: Vec<String>,           // Search suggestions
-    pub execution_time_ms: u32,            // Query execution time
-    pub search_metadata: SearchMetadata,    // Additional metadata
+    pub query_id: String,                // Unique query identifier
+    pub total_results: u32,              // Total matching results
+    pub page: u32,                       // Current page
+    pub page_size: u32,                  // Results per page
+    pub has_more: bool,                  // Whether more results exist
+    pub results: Vec<SearchResultItem>,  // Actual results
+    pub facets: Vec<SearchFacet>,        // Faceted search results
+    pub suggestions: Vec<String>,        // Search suggestions
+    pub execution_time_ms: u32,          // Query execution time
+    pub search_metadata: SearchMetadata, // Additional metadata
+}
+
+/// Simple search result (for AI functions)
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SearchResult {
+    pub content_id: String,
+    pub score: u32,
+    pub rank: u32,
+}
+
+/// Simple search filter (for AI functions)
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SearchFilter {
+    pub field: String,
+    pub value: String,
+    pub operator: FilterOperator,
+}
+
+/// Filter operators
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FilterOperator {
+    Equal,
+    GreaterThan,
+    LessThan,
+    Contains,
+    In,
 }
 
 /// Individual search result item
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SearchResultItem {
-    pub item_id: String,                    // Unique item identifier
-    pub item_type: SearchResultType,        // Type of result
-    pub title: String,                      // Item title
-    pub description: String,                // Item description
-    pub relevance_score: u32,              // Relevance score (0-1000)
-    pub metadata: SearchResultMetadata,     // Type-specific metadata
-    pub highlights: Vec<SearchHighlight>,   // Text highlights
-    pub thumbnail_url: Option<String>,      // Optional thumbnail
+    pub item_id: String,                  // Unique item identifier
+    pub item_type: SearchResultType,      // Type of result
+    pub title: String,                    // Item title
+    pub description: String,              // Item description
+    pub relevance_score: u32,             // Relevance score (0-1000)
+    pub metadata: SearchResultMetadata,   // Type-specific metadata
+    pub highlights: Vec<SearchHighlight>, // Text highlights
+    pub thumbnail_url: Option<String>,    // Optional thumbnail
 }
 
 /// Search result types
@@ -246,9 +407,9 @@ pub struct CourseMetadata {
     pub difficulty: DifficultyLevel,
     pub duration_hours: u32,
     pub price: i64,
-    pub rating: u32,                        // 1-50 scale
+    pub rating: u32, // 1-50 scale
     pub enrollment_count: u32,
-    pub completion_rate: u32,               // Percentage
+    pub completion_rate: u32, // Percentage
     pub created_date: u64,
     pub updated_date: u64,
     pub tags: Vec<String>,
@@ -310,9 +471,9 @@ pub struct InstructorMetadata {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SearchHighlight {
-    pub field: String,                      // Field name that matched
-    pub original_text: String,              // Original text
-    pub highlighted_text: String,           // Text with highlights
+    pub field: String,                       // Field name that matched
+    pub original_text: String,               // Original text
+    pub highlighted_text: String,            // Text with highlights
     pub match_positions: Vec<MatchPosition>, // Position of matches
 }
 
@@ -377,19 +538,9 @@ pub struct SavedSearch {
     pub last_used: u64,
     pub use_count: u32,
     pub is_favorite: bool,
-    pub notification_enabled: bool,      // Notify when new results match
-    pub auto_execute: bool,              // Auto-execute periodically
-    pub execution_frequency: Option<ExecutionFrequency>,
-}
-
-/// Frequency for auto-executing saved searches
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ExecutionFrequency {
-    Daily,
-    Weekly,
-    Monthly,
-    Custom(u64),  // Custom interval in seconds
+    pub notification_enabled: bool, // Notify when new results match
+    pub auto_execute: bool,         // Auto-execute periodically
+    pub execution_frequency: MaybeExecutionFrequency,
 }
 
 /// Search preferences for users
@@ -420,7 +571,7 @@ pub struct SearchHistoryEntry {
     pub user_id: Address,
     pub query: SearchQuery,
     pub results_count: u32,
-    pub clicked_results: Vec<String>,    // IDs of results user clicked
+    pub clicked_results: Vec<String>, // IDs of results user clicked
     pub search_timestamp: u64,
     pub session_id: Option<String>,
     pub search_duration_ms: u32,
@@ -448,7 +599,7 @@ pub struct PopularQuery {
     pub search_count: u32,
     pub unique_users: u32,
     pub average_results: u32,
-    pub click_through_rate: u32,  // Percentage
+    pub click_through_rate: u32, // Percentage
 }
 
 /// Popular search result
@@ -460,7 +611,7 @@ pub struct PopularResult {
     pub title: String,
     pub click_count: u32,
     pub unique_users: u32,
-    pub average_position: u32,    // Average position in search results
+    pub average_position: u32, // Average position in search results
 }
 
 /// Search performance metrics
@@ -468,7 +619,7 @@ pub struct PopularResult {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PerformanceMetrics {
     pub average_query_time_ms: u32,
-    pub cache_hit_rate: u32,      // Percentage
+    pub cache_hit_rate: u32, // Percentage
     pub index_size_mb: u32,
     pub total_indexed_items: u32,
     pub search_success_rate: u32, // Percentage of searches with results
@@ -496,7 +647,7 @@ pub struct SearchIndexConfig {
 pub struct IndexedField {
     pub field_name: String,
     pub field_type: IndexFieldType,
-    pub weight: u32,              // Search weight (1-10)
+    pub weight: u32, // Search weight (1-10)
     pub searchable: bool,
     pub facetable: bool,
     pub sortable: bool,
@@ -554,12 +705,12 @@ pub struct SearchSuggestion {
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SuggestionType {
-    Query,           // Query completion
-    Course,          // Course suggestion
-    Category,        // Category suggestion
-    Instructor,      // Instructor suggestion
-    Tag,             // Tag suggestion
-    Correction,      // Spelling correction
+    Query,      // Query completion
+    Course,     // Course suggestion
+    Category,   // Category suggestion
+    Instructor, // Instructor suggestion
+    Tag,        // Tag suggestion
+    Correction, // Spelling correction
 }
 
 /// Storage keys for the search contract

@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
 use crate::types::{Challenge, GamificationKey, UserChallenge};
+use shared::validation::CoreValidator;
 
 pub struct ChallengeManager;
 
@@ -25,23 +26,16 @@ impl ChallengeManager {
         challenge.current_participants = 0;
         challenge.is_active = true;
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Challenge(id), &challenge);
+        env.storage().persistent().set(&GamificationKey::Challenge(id), &challenge);
 
         // Add to active-challenges list
         let active_key = GamificationKey::ActiveChallenges;
-        let mut active: Vec<u64> = env
-            .storage()
-            .persistent()
-            .get(&active_key)
-            .unwrap_or_else(|| Vec::new(env));
+        let mut active: Vec<u64> =
+            env.storage().persistent().get(&active_key).unwrap_or_else(|| Vec::new(env));
         active.push_back(id);
         env.storage().persistent().set(&active_key, &active);
 
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::ChallengeCompletionCount(id), &0u32);
+        env.storage().persistent().set(&GamificationKey::ChallengeCompletionCount(id), &0u32);
 
         GamificationEvents::emit_challenge_created(env, id, creator);
         Ok(id)
@@ -104,19 +98,14 @@ impl ChallengeManager {
 
         // Update user's active challenge list
         let ua_key = GamificationKey::UserActiveChallenges(user.clone());
-        let mut ua: Vec<u64> = env
-            .storage()
-            .persistent()
-            .get(&ua_key)
-            .unwrap_or_else(|| Vec::new(env));
+        let mut ua: Vec<u64> =
+            env.storage().persistent().get(&ua_key).unwrap_or_else(|| Vec::new(env));
         ua.push_back(challenge_id);
         env.storage().persistent().set(&ua_key, &ua);
 
         // Bump participant count
         challenge.current_participants += 1;
-        env.storage()
-            .persistent()
-            .set(&GamificationKey::Challenge(challenge_id), &challenge);
+        env.storage().persistent().set(&GamificationKey::Challenge(challenge_id), &challenge);
 
         GamificationEvents::emit_challenge_joined(env, user, challenge_id);
         Ok(())
@@ -131,6 +120,10 @@ impl ChallengeManager {
         challenge_id: u64,
         progress: u32,
     ) -> Result<bool, Error> {
+        // Validate progress range
+        CoreValidator::validate_range(progress, "progress", 0, 10_000)
+            .map_err(|_| Error::InvalidInput)?;
+
         let challenge: Challenge = env
             .storage()
             .persistent()
@@ -147,11 +140,8 @@ impl ChallengeManager {
         }
 
         let uc_key = GamificationKey::UserChallenge(user.clone(), challenge_id);
-        let mut uc: UserChallenge = env
-            .storage()
-            .persistent()
-            .get(&uc_key)
-            .ok_or(Error::NotJoinedChallenge)?;
+        let mut uc: UserChallenge =
+            env.storage().persistent().get(&uc_key).ok_or(Error::NotJoinedChallenge)?;
 
         if uc.completed {
             return Ok(true); // already done
@@ -247,9 +237,7 @@ impl ChallengeManager {
         user: &Address,
         challenge_id: u64,
     ) -> Option<UserChallenge> {
-        env.storage()
-            .persistent()
-            .get(&GamificationKey::UserChallenge(user.clone(), challenge_id))
+        env.storage().persistent().get(&GamificationKey::UserChallenge(user.clone(), challenge_id))
     }
 
     pub fn get_user_active_challenges(env: &Env, user: &Address) -> Vec<u64> {

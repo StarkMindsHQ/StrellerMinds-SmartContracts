@@ -1,7 +1,7 @@
 #[cfg(test)]
 extern crate std;
 mod integration_tests {
-    #![allow(clippy::module_inception)]
+    #![allow(clippy::module_inception, clippy::explicit_counter_loop)]
     use super::*;
     use crate::{
         errors::AnalyticsError,
@@ -407,11 +407,7 @@ mod integration_tests {
 
         // Create sessions with different types and scores
         // Create sessions with different types and scores
-        let session_types = [
-            SessionType::Study,
-            SessionType::Assessment,
-            SessionType::Practice,
-        ];
+        let session_types = [SessionType::Study, SessionType::Assessment, SessionType::Practice];
         let scores = [70, 85, 95];
 
         for (i, (session_type, score)) in session_types.iter().zip(scores.iter()).enumerate() {
@@ -442,10 +438,7 @@ mod integration_tests {
 
         let study_sessions = client.get_filtered_sessions(&study_filter);
         assert_eq!(study_sessions.len(), 1);
-        assert_eq!(
-            study_sessions.get(0).unwrap().session_type,
-            SessionType::Study
-        );
+        assert_eq!(study_sessions.get(0).unwrap().session_type, SessionType::Study);
 
         // Test filtering by minimum score
         let high_score_filter = AnalyticsFilter {
@@ -544,12 +537,8 @@ mod integration_tests {
         assert!(top_performers.len() <= 3);
         if !top_performers.is_empty() {
             // Student 1 should be ranked higher than Student 2
-            let student1_rank = top_performers
-                .iter()
-                .position(|entry| entry.student == student1);
-            let student2_rank = top_performers
-                .iter()
-                .position(|entry| entry.student == student2);
+            let student1_rank = top_performers.iter().position(|entry| entry.student == student1);
+            let student2_rank = top_performers.iter().position(|entry| entry.student == student2);
 
             if let (Some(rank1), Some(rank2)) = (student1_rank, student2_rank) {
                 assert!(rank1 < rank2);

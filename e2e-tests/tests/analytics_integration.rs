@@ -18,9 +18,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
 
     // Get contract addresses
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
     let student_address = harness.client.get_account_address("alice")?;
 
     // Initialize analytics contract
@@ -38,10 +36,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        !init_result.trim().is_empty(),
-        "Analytics initialization failed"
-    );
+    assert!(!init_result.trim().is_empty(), "Analytics initialization failed");
 
     // Test 1: Record individual learning sessions
     let sessions = create_realistic_learning_sessions(&student_address);
@@ -71,10 +66,7 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
             )
             .await?;
 
-        assert!(
-            !retrieved_session.trim().is_empty(),
-            "Failed to retrieve session"
-        );
+        assert!(!retrieved_session.trim().is_empty(), "Failed to retrieve session");
 
         // Parse and validate session data
         let session_data: LearningSession = serde_json::from_str(&retrieved_session)?;
@@ -119,18 +111,10 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
 
     let batch_result = harness
         .client
-        .invoke_contract(
-            analytics_id,
-            "batch_update_sessions",
-            &[batch_args],
-            "alice",
-        )
+        .invoke_contract(analytics_id, "batch_update_sessions", &[batch_args], "alice")
         .await?;
 
-    assert!(
-        !batch_result.trim().is_empty(),
-        "Failed to update batch sessions"
-    );
+    assert!(!batch_result.trim().is_empty(), "Failed to update batch sessions");
 
     // Test 5: Validate student session history
     let course_id = "intro_to_rust".to_string();
@@ -139,25 +123,16 @@ async fn test_learning_session_tracking_e2e() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_student_sessions",
-            &[
-                format!("--student {student_address}"),
-                format!("--course_id {course_id}"),
-            ],
+            &[format!("--student {student_address}"), format!("--course_id {course_id}")],
             "alice",
         )
         .await?;
 
-    assert!(
-        !student_sessions.trim().is_empty(),
-        "Failed to get student sessions"
-    );
+    assert!(!student_sessions.trim().is_empty(), "Failed to get student sessions");
 
     // Parse and validate session count
     let session_list: Vec<String> = serde_json::from_str(&student_sessions)?;
-    assert!(
-        session_list.len() >= sessions.len(),
-        "Not all sessions were stored"
-    );
+    assert!(session_list.len() >= sessions.len(), "Not all sessions were stored");
 
     println!("✅ Learning session tracking E2E test passed");
     Ok(())
@@ -170,9 +145,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
     let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
     let student_address = harness.client.get_account_address("bob")?;
 
     // Initialize contract
@@ -235,10 +208,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
             )
             .await?;
 
-        assert!(
-            !progress_analytics.trim().is_empty(),
-            "Failed to get progress analytics"
-        );
+        assert!(!progress_analytics.trim().is_empty(), "Failed to get progress analytics");
 
         // Parse and validate analytics
         let analytics: ProgressAnalytics = serde_json::from_str(&progress_analytics)?;
@@ -291,10 +261,7 @@ async fn test_progress_analytics_calculations() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        !course_analytics.trim().is_empty(),
-        "Failed to get course analytics"
-    );
+    assert!(!course_analytics.trim().is_empty(), "Failed to get course analytics");
 
     let course_analytics: CourseAnalytics = serde_json::from_str(&course_analytics)?;
     assert_eq!(course_analytics.course_id, course_id);
@@ -312,9 +279,7 @@ async fn test_leaderboard_generation() -> Result<()> {
     let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
 
     // Initialize contract
     let config = create_test_config();
@@ -346,12 +311,7 @@ async fn test_leaderboard_generation() -> Result<()> {
 
             harness
                 .client
-                .invoke_contract(
-                    analytics_id,
-                    "record_session",
-                    &[session_args],
-                    student_name,
-                )
+                .invoke_contract(analytics_id, "record_session", &[session_args], student_name)
                 .await?;
 
             // Complete session
@@ -397,10 +357,7 @@ async fn test_leaderboard_generation() -> Result<()> {
             )
             .await?;
 
-        assert!(
-            !leaderboard_result.trim().is_empty(),
-            "Failed to generate leaderboard"
-        );
+        assert!(!leaderboard_result.trim().is_empty(), "Failed to generate leaderboard");
 
         // Parse and validate leaderboard
         let leaderboard: Vec<LeaderboardEntry> = serde_json::from_str(&leaderboard_result)?;
@@ -441,16 +398,10 @@ async fn test_leaderboard_generation() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        !top_performers.trim().is_empty(),
-        "Failed to get top performers"
-    );
+    assert!(!top_performers.trim().is_empty(), "Failed to get top performers");
 
     let top_list: Vec<LeaderboardEntry> = serde_json::from_str(&top_performers)?;
-    assert!(
-        top_list.len() <= 3,
-        "Should return at most 3 top performers"
-    );
+    assert!(top_list.len() <= 3, "Should return at most 3 top performers");
 
     // Test struggling students identification
     let struggling_students = harness
@@ -458,18 +409,12 @@ async fn test_leaderboard_generation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_struggling_students",
-            &[
-                format!("--course_id {course_id}"),
-                "--threshold 50".to_string(),
-            ],
+            &[format!("--course_id {course_id}"), "--threshold 50".to_string()],
             &harness.client.config.admin_account,
         )
         .await?;
 
-    assert!(
-        !struggling_students.trim().is_empty(),
-        "Failed to get struggling students"
-    );
+    assert!(!struggling_students.trim().is_empty(), "Failed to get struggling students");
 
     println!("✅ Leaderboard generation test passed");
     Ok(())
@@ -482,9 +427,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
     let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
 
     // Initialize contract
     let config = create_test_config();
@@ -528,12 +471,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
 
                 harness
                     .client
-                    .invoke_contract(
-                        analytics_id,
-                        "record_session",
-                        &[session_args],
-                        student_name,
-                    )
+                    .invoke_contract(analytics_id, "record_session", &[session_args], student_name)
                     .await?;
 
                 // Complete session
@@ -565,18 +503,12 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
             .invoke_contract(
                 analytics_id,
                 "generate_daily_metrics",
-                &[
-                    format!("--course_id {course_id}"),
-                    format!("--date {day_timestamp}"),
-                ],
+                &[format!("--course_id {course_id}"), format!("--date {day_timestamp}")],
                 &harness.client.config.admin_account,
             )
             .await?;
 
-        assert!(
-            !daily_metrics.trim().is_empty(),
-            "Failed to generate daily metrics"
-        );
+        assert!(!daily_metrics.trim().is_empty(), "Failed to generate daily metrics");
 
         let metrics: AggregatedMetrics = serde_json::from_str(&daily_metrics)?;
         assert_eq!(metrics.course_id, course_id);
@@ -598,25 +530,15 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "generate_weekly_summary",
-            &[
-                format!("--course_id {course_id}"),
-                format!("--week_start {week_start}"),
-            ],
+            &[format!("--course_id {course_id}"), format!("--week_start {week_start}")],
             &harness.client.config.admin_account,
         )
         .await?;
 
-    assert!(
-        !weekly_summary.trim().is_empty(),
-        "Failed to generate weekly summary"
-    );
+    assert!(!weekly_summary.trim().is_empty(), "Failed to generate weekly summary");
 
     let weekly_data: Vec<AggregatedMetrics> = serde_json::from_str(&weekly_summary)?;
-    assert_eq!(
-        weekly_data.len(),
-        7,
-        "Weekly summary should have 7 days of data"
-    );
+    assert_eq!(weekly_data.len(), 7, "Weekly summary should have 7 days of data");
 
     // Test completion trends
     let trends = harness
@@ -658,10 +580,7 @@ async fn test_performance_metrics_aggregation() -> Result<()> {
             )
             .await?;
 
-        assert!(
-            !progress_report.trim().is_empty(),
-            "Failed to generate progress report"
-        );
+        assert!(!progress_report.trim().is_empty(), "Failed to generate progress report");
 
         let report: ProgressReport = serde_json::from_str(&progress_report)?;
         assert_eq!(report.student.to_string(), student_address);
@@ -689,9 +608,7 @@ async fn test_data_consistency_validation() -> Result<()> {
     let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
     let student_address = harness.client.get_account_address("alice")?;
 
     // Initialize contract
@@ -754,10 +671,7 @@ async fn test_data_consistency_validation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_student_sessions",
-            &[
-                format!("--student {student_address}"),
-                format!("--course_id {course_id}"),
-            ],
+            &[format!("--student {student_address}"), format!("--course_id {course_id}")],
             "alice",
         )
         .await?;
@@ -771,10 +685,7 @@ async fn test_data_consistency_validation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_progress_analytics",
-            &[
-                format!("--student {student_address}"),
-                format!("--course_id {course_id}"),
-            ],
+            &[format!("--student {student_address}"), format!("--course_id {course_id}")],
             "alice",
         )
         .await?;
@@ -816,10 +727,7 @@ async fn test_data_consistency_validation() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        !filtered_sessions.trim().is_empty(),
-        "Filtered sessions should not be empty"
-    );
+    assert!(!filtered_sessions.trim().is_empty(), "Filtered sessions should not be empty");
 
     let _filtered_data: Vec<LearningSession> = serde_json::from_str(&filtered_sessions)?;
 
@@ -841,14 +749,10 @@ async fn test_data_consistency_validation() -> Result<()> {
     let leaderboard_data: Vec<LeaderboardEntry> = serde_json::from_str(&leaderboard)?;
 
     // Find our student in the leaderboard
-    let student_in_leaderboard = leaderboard_data
-        .iter()
-        .find(|entry| entry.student == student_address);
+    let student_in_leaderboard =
+        leaderboard_data.iter().find(|entry| entry.student == student_address);
 
-    assert!(
-        student_in_leaderboard.is_some(),
-        "Student should appear in leaderboard"
-    );
+    assert!(student_in_leaderboard.is_some(), "Student should appear in leaderboard");
 
     // 6. Test data integrity after recalculation
     harness
@@ -856,10 +760,7 @@ async fn test_data_consistency_validation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "recalculate_course_analytics",
-            &[
-                format!("--admin {admin_address}"),
-                format!("--course_id {course_id}"),
-            ],
+            &[format!("--admin {admin_address}"), format!("--course_id {course_id}")],
             &harness.client.config.admin_account,
         )
         .await?;
@@ -870,20 +771,14 @@ async fn test_data_consistency_validation() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_progress_analytics",
-            &[
-                format!("--student {student_address}"),
-                format!("--course_id {course_id}"),
-            ],
+            &[format!("--student {student_address}"), format!("--course_id {course_id}")],
             "alice",
         )
         .await?;
 
     let recalculated_data: ProgressAnalytics = serde_json::from_str(&recalculated_analytics)?;
     assert_eq!(analytics.total_sessions, recalculated_data.total_sessions);
-    assert_eq!(
-        analytics.completion_percentage,
-        recalculated_data.completion_percentage
-    );
+    assert_eq!(analytics.completion_percentage, recalculated_data.completion_percentage);
 
     println!("✅ Data consistency validation test passed");
     Ok(())
@@ -896,9 +791,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
     let harness = setup_test_harness!();
 
     let analytics_id = harness.get_contract_id("analytics").unwrap();
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
     let student_address = harness.client.get_account_address("alice")?;
 
     // Initialize contract
@@ -958,12 +851,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
 
     let invalid_result = harness
         .client
-        .invoke_contract(
-            analytics_id,
-            "record_session",
-            &[invalid_session_args],
-            "alice",
-        )
+        .invoke_contract(analytics_id, "record_session", &[invalid_session_args], "alice")
         .await;
 
     assert!(invalid_result.is_err(), "Invalid session should fail");
@@ -1003,10 +891,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
         )
         .await;
 
-    assert!(
-        analytics_result.is_err(),
-        "Analytics for non-existent data should fail"
-    );
+    assert!(analytics_result.is_err(), "Analytics for non-existent data should fail");
 
     // Test 5: Batch operations with invalid data
     let invalid_batch = vec![session, invalid_session];
@@ -1021,12 +906,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
 
     let batch_result = harness
         .client
-        .invoke_contract(
-            analytics_id,
-            "batch_update_sessions",
-            &[batch_args],
-            "alice",
-        )
+        .invoke_contract(analytics_id, "batch_update_sessions", &[batch_args], "alice")
         .await;
 
     // Should either fail completely or process only valid sessions
@@ -1056,10 +936,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
         )
         .await;
 
-    assert!(
-        unauthorized_result.is_err(),
-        "Unauthorized config update should fail"
-    );
+    assert!(unauthorized_result.is_err(), "Unauthorized config update should fail");
 
     // Test 7: Edge case analytics calculations
     // Create a session with minimal valid data
@@ -1081,12 +958,7 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
 
     harness
         .client
-        .invoke_contract(
-            analytics_id,
-            "record_session",
-            &[minimal_session_args],
-            "alice",
-        )
+        .invoke_contract(analytics_id, "record_session", &[minimal_session_args], "alice")
         .await?;
 
     // Complete with minimal score
@@ -1111,18 +983,12 @@ async fn test_edge_cases_and_error_conditions() -> Result<()> {
         .invoke_contract(
             analytics_id,
             "get_progress_analytics",
-            &[
-                format!("--student {student_address}"),
-                format!("--course_id {}", "minimal_course"),
-            ],
+            &[format!("--student {student_address}"), format!("--course_id {}", "minimal_course")],
             "alice",
         )
         .await?;
 
-    assert!(
-        !minimal_analytics.trim().is_empty(),
-        "Minimal analytics should not be empty"
-    );
+    assert!(!minimal_analytics.trim().is_empty(), "Minimal analytics should not be empty");
 
     let minimal_data: ProgressAnalytics = serde_json::from_str(&minimal_analytics)?;
     assert_eq!(minimal_data.total_sessions, 1);
@@ -1148,9 +1014,7 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
     let analytics_id = harness.get_contract_id("analytics").unwrap();
 
     // Test contract initialization
-    let admin_address = harness
-        .client
-        .get_account_address(&harness.client.config.admin_account)?;
+    let admin_address = harness.client.get_account_address(&harness.client.config.admin_account)?;
     let config = create_test_config();
 
     let init_result = harness
@@ -1166,10 +1030,7 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
         )
         .await?;
 
-    assert!(
-        !init_result.trim().is_empty(),
-        "Contract initialization should succeed"
-    );
+    assert!(!init_result.trim().is_empty(), "Contract initialization should succeed");
 
     // Test basic functionality smoke test
     let student_address = harness.client.get_account_address("alice")?;
@@ -1182,31 +1043,20 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
         .invoke_contract(analytics_id, "record_session", &[session_args], "alice")
         .await?;
 
-    assert!(
-        !record_result.trim().is_empty(),
-        "Session recording should succeed"
-    );
+    assert!(!record_result.trim().is_empty(), "Session recording should succeed");
 
     // Test that the contract responds to health checks
-    let config_result = harness
-        .client
-        .invoke_contract(analytics_id, "get_config", &[], "alice")
-        .await?;
+    let config_result =
+        harness.client.invoke_contract(analytics_id, "get_config", &[], "alice").await?;
 
-    assert!(
-        !config_result.trim().is_empty(),
-        "Config retrieval should succeed"
-    );
+    assert!(!config_result.trim().is_empty(), "Config retrieval should succeed");
 
     // Test that all major functions are callable
     let course_id = "smoke_test_course".to_string();
 
     // Test analytics functions
     let functions_to_test = vec![
-        (
-            "get_course_analytics",
-            vec![format!("--course_id {}", course_id.to_string())],
-        ),
+        ("get_course_analytics", vec![format!("--course_id {}", course_id.to_string())]),
         (
             "get_progress_analytics",
             vec![
@@ -1224,10 +1074,7 @@ async fn test_cicd_pipeline_integration() -> Result<()> {
     ];
 
     for (function, args) in functions_to_test {
-        let result = harness
-            .client
-            .invoke_contract(analytics_id, function, &args, "alice")
-            .await;
+        let result = harness.client.invoke_contract(analytics_id, function, &args, "alice").await;
 
         // Some functions might fail due to insufficient data, but they should not crash
         match result {

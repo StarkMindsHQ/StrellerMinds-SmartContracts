@@ -293,15 +293,11 @@ impl Default for PerformanceTracker {
 
 impl PerformanceTracker {
     pub fn new() -> Self {
-        Self {
-            start_time: std::time::Instant::now(),
-            checkpoints: HashMap::new(),
-        }
+        Self { start_time: std::time::Instant::now(), checkpoints: HashMap::new() }
     }
 
     pub fn checkpoint(&mut self, name: &str) {
-        self.checkpoints
-            .insert(name.to_string(), std::time::Instant::now());
+        self.checkpoints.insert(name.to_string(), std::time::Instant::now());
     }
 
     pub fn elapsed_total(&self) -> std::time::Duration {
@@ -410,11 +406,9 @@ impl MockDataGenerator {
         target_score: u32,
         session_count: usize,
     ) -> Vec<LearningSession> {
-        let base_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            - (7 * 24 * 60 * 60);
+        let base_time =
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()
+                - (7 * 24 * 60 * 60);
 
         let mut sessions = Vec::new();
 
@@ -555,11 +549,8 @@ impl TestEnvironment {
     pub fn calculate_expected_analytics(sessions: &[LearningSession]) -> ProgressAnalytics {
         let total_sessions = sessions.len() as u32;
         let total_time_spent: u64 = sessions.iter().map(|s| s.time_spent).sum();
-        let average_session_time = if total_sessions > 0 {
-            total_time_spent / total_sessions as u64
-        } else {
-            0
-        };
+        let average_session_time =
+            if total_sessions > 0 { total_time_spent / total_sessions as u64 } else { 0 };
 
         let scores: Vec<u32> = sessions.iter().filter_map(|s| s.score).collect();
         let average_score = if !scores.is_empty() {
@@ -576,9 +567,7 @@ impl TestEnvironment {
             .len() as u32;
 
         let completion_percentage = if !sessions.is_empty()
-            && sessions
-                .iter()
-                .any(|s| s.course_id == sessions[0].course_id)
+            && sessions.iter().any(|s| s.course_id == sessions[0].course_id)
         {
             (completed_modules * 100) / 8 // Assume 8 modules total
         } else {
@@ -587,16 +576,10 @@ impl TestEnvironment {
 
         let last_activity = sessions.iter().map(|s| s.end_time).max().unwrap_or(0);
         let first_activity = sessions.iter().map(|s| s.start_time).min().unwrap_or(0);
-        let student = if sessions.is_empty() {
-            "".to_string()
-        } else {
-            sessions[0].student.clone()
-        };
-        let course_id = if sessions.is_empty() {
-            "".to_string()
-        } else {
-            sessions[0].course_id.clone()
-        };
+        let student =
+            if sessions.is_empty() { "".to_string() } else { sessions[0].student.clone() };
+        let course_id =
+            if sessions.is_empty() { "".to_string() } else { sessions[0].course_id.clone() };
 
         ProgressAnalytics {
             student,

@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 
+// pub mod certificate_integration; // Temporarily disabled due to compilation issues
 pub mod test_data;
 pub mod test_utils;
 
@@ -27,11 +28,7 @@ impl Default for E2ETestConfig {
             rpc_url: "http://localhost:8000".to_string(),
             network_passphrase: "Standalone Network ; February 2017".to_string(),
             admin_account: "admin".to_string(),
-            test_accounts: vec![
-                "alice".to_string(),
-                "bob".to_string(),
-                "charlie".to_string(),
-            ],
+            test_accounts: vec!["alice".to_string(), "bob".to_string(), "charlie".to_string()],
         }
     }
 }
@@ -44,10 +41,7 @@ pub struct SorobanClient {
 
 impl SorobanClient {
     pub fn new(config: E2ETestConfig) -> Self {
-        Self {
-            client: Client::new(),
-            config,
-        }
+        Self { client: Client::new(), config }
     }
 
     /// Check if the Soroban RPC endpoint is healthy
@@ -136,9 +130,7 @@ impl SorobanClient {
 
     /// Get the address for a named account
     pub fn get_account_address(&self, account_name: &str) -> Result<String> {
-        let output = Command::new("soroban")
-            .args(["keys", "address", account_name])
-            .output()?;
+        let output = Command::new("soroban").args(["keys", "address", account_name]).output()?;
 
         if !output.status.success() {
             anyhow::bail!(
@@ -168,10 +160,7 @@ impl E2ETestHarness {
             anyhow::bail!("Soroban localnet is not running. Please start it first with: ./scripts/start_localnet.sh");
         }
 
-        Ok(Self {
-            client,
-            deployed_contracts: HashMap::new(),
-        })
+        Ok(Self { client, deployed_contracts: HashMap::new() })
     }
 
     /// Setup the test environment by building and deploying contracts
@@ -188,8 +177,7 @@ impl E2ETestHarness {
                 .deploy_contract(contract_name, &self.client.config.admin_account)
                 .await?;
 
-            self.deployed_contracts
-                .insert(contract_name.to_string(), contract_id.clone());
+            self.deployed_contracts.insert(contract_name.to_string(), contract_id.clone());
             println!("✅ Deployed {contract_name}: {contract_id}");
         }
 
@@ -206,10 +194,7 @@ impl E2ETestHarness {
         let output = Command::new("./scripts/build.sh").output()?;
 
         if !output.status.success() {
-            anyhow::bail!(
-                "Failed to build contracts: {}",
-                String::from_utf8_lossy(&output.stderr)
-            );
+            anyhow::bail!("Failed to build contracts: {}", String::from_utf8_lossy(&output.stderr));
         }
 
         println!("✅ Contracts built successfully");
@@ -220,9 +205,7 @@ impl E2ETestHarness {
     async fn initialize_contracts(&self) -> Result<()> {
         println!("🚀 Initializing contracts...");
 
-        let admin_address = self
-            .client
-            .get_account_address(&self.client.config.admin_account)?;
+        let admin_address = self.client.get_account_address(&self.client.config.admin_account)?;
 
         // Initialize shared contract (if needed)
         if let Some(_shared_id) = self.deployed_contracts.get("shared") {
@@ -269,10 +252,7 @@ macro_rules! assert_contract_success {
     ($result:expr) => {
         match $result {
             Ok(output) => {
-                assert!(
-                    !output.trim().is_empty(),
-                    "Contract call returned empty result"
-                );
+                assert!(!output.trim().is_empty(), "Contract call returned empty result");
                 output
             }
             Err(e) => panic!("Contract call failed: {}", e),

@@ -5,7 +5,7 @@ use crate::types::{
     ActivityType, Challenge, ChallengeDifficulty, ChallengeType, LeaderboardCategory,
     RecognitionType, Season,
 };
-use crate::{Gamification, GamificationClient};
+use crate::{Gamification, GamificationClient, GamificationError};
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────
 
@@ -111,10 +111,7 @@ fn test_course_completion_awards_more_xp_than_module() {
     let p1 = client.get_user_profile(&s1);
     let p2 = client.get_user_profile(&s2);
 
-    assert!(
-        p2.total_xp > p1.total_xp,
-        "course completion should award more XP than module"
-    );
+    assert!(p2.total_xp > p1.total_xp, "course completion should award more XP than module");
 }
 
 #[test]
@@ -167,10 +164,7 @@ fn test_assessment_score_scales_xp() {
 
     let ph = client.get_user_profile(&s_high);
     let pl = client.get_user_profile(&s_low);
-    assert!(
-        ph.total_xp > pl.total_xp,
-        "higher score should give more XP"
-    );
+    assert!(ph.total_xp > pl.total_xp, "higher score should give more XP");
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -182,18 +176,12 @@ fn test_consecutive_day_streak_grows() {
 
     // Day 1
     env.ledger().with_mut(|l| l.timestamp = 0);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::ModuleCompleted, 0),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 0));
 
     // Day 2 (next day)
     let day2 = 86_400u64;
     env.ledger().with_mut(|l| l.timestamp = day2);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::ModuleCompleted, day2),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, day2));
 
     let profile = client.get_user_profile(&student);
     assert_eq!(profile.current_streak, 2);
@@ -207,25 +195,16 @@ fn test_missed_day_resets_streak() {
 
     // Day 1
     env.ledger().with_mut(|l| l.timestamp = 0);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::ModuleCompleted, 0),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 0));
 
     // Day 2
     env.ledger().with_mut(|l| l.timestamp = 86_400);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::ModuleCompleted, 86_400),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, 86_400));
 
     // Day 5 (2-day gap → streak broken)
     let day5 = 86_400 * 4;
     env.ledger().with_mut(|l| l.timestamp = day5);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::ModuleCompleted, day5),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::ModuleCompleted, day5));
 
     let profile = client.get_user_profile(&student);
     assert_eq!(profile.current_streak, 1, "streak should reset after gap");
@@ -278,10 +257,7 @@ fn test_admin_can_create_custom_achievement() {
     };
 
     let id = client.create_achievement(&admin, &ach);
-    assert!(
-        id > 25,
-        "custom achievement ID should be beyond reserved block"
-    );
+    assert!(id > 25, "custom achievement ID should be beyond reserved block");
 }
 
 #[test]
@@ -315,20 +291,11 @@ fn test_leaderboard_populates_after_activity() {
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
 
     // s2 completes a course (more XP); s1 completes a module
-    client.record_activity(
-        &s1,
-        &make_activity(&env, ActivityType::ModuleCompleted, 1_000_000),
-    );
-    client.record_activity(
-        &s2,
-        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-    );
+    client.record_activity(&s1, &make_activity(&env, ActivityType::ModuleCompleted, 1_000_000));
+    client.record_activity(&s2, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
 
     let board = client.get_leaderboard(&LeaderboardCategory::TotalXP, &10u32);
-    assert!(
-        board.len() >= 2,
-        "leaderboard should have at least 2 entries"
-    );
+    assert!(board.len() >= 2, "leaderboard should have at least 2 entries");
 
     // Top entry should be s2 (more XP)
     let top = board.get(0).unwrap();
@@ -345,10 +312,7 @@ fn test_leaderboard_limit_respected() {
     // Register 5 students
     for _ in 0..5 {
         let s = Address::generate(&env);
-        client.record_activity(
-            &s,
-            &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-        );
+        client.record_activity(&s, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
     }
 
     let board = client.get_leaderboard(&LeaderboardCategory::TotalXP, &3u32);
@@ -396,10 +360,7 @@ fn test_challenge_completion_awards_xp() {
     assert!(completed, "challenge should be completed");
 
     let after = client.get_user_profile(&student);
-    assert!(
-        after.total_xp > before.total_xp,
-        "completing a challenge should award XP"
-    );
+    assert!(after.total_xp > before.total_xp, "completing a challenge should award XP");
     assert_eq!(after.challenges_completed, 1);
 }
 
@@ -439,10 +400,7 @@ fn test_quest_chain_prerequisite_enforced() {
 
     // Should fail: prerequisite not met
     let result = client.try_join_challenge(&student, &child_id);
-    assert!(
-        result.is_err(),
-        "should not join child without completing parent"
-    );
+    assert!(result.is_err(), "should not join child without completing parent");
 
     // Complete parent, then join child
     client.join_challenge(&student, &parent_id);
@@ -516,10 +474,7 @@ fn test_leave_guild() {
     assert_eq!(guild.member_count, 1);
 
     let profile = client.get_user_profile(&joiner);
-    assert_eq!(
-        profile.guild_id, 0,
-        "guild_id should be cleared after leaving"
-    );
+    assert_eq!(profile.guild_id, 0, "guild_id should be cleared after leaving");
 }
 
 #[test]
@@ -536,16 +491,11 @@ fn test_guild_xp_accumulates_from_members() {
     );
 
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
-    client.record_activity(
-        &creator,
-        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-    );
+    client
+        .record_activity(&creator, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
 
     let guild = client.get_guild(&guild_id).unwrap();
-    assert!(
-        guild.total_xp > 0,
-        "guild should accumulate XP from member activity"
-    );
+    assert!(guild.total_xp > 0, "guild should accumulate XP from member activity");
 }
 
 #[test]
@@ -555,8 +505,8 @@ fn test_cannot_join_two_guilds() {
 
     let g1 = client.create_guild(
         &creator,
-        &String::from_str(&env, "G1"),
-        &String::from_str(&env, "First guild"),
+        &String::from_str(&env, "Guild One"),
+        &String::from_str(&env, "The first test guild for validation"),
         &10u32,
         &true,
     );
@@ -564,8 +514,8 @@ fn test_cannot_join_two_guilds() {
     let other_creator = Address::generate(&env);
     let g2 = client.create_guild(
         &other_creator,
-        &String::from_str(&env, "G2"),
-        &String::from_str(&env, "Second guild"),
+        &String::from_str(&env, "Guild Two"),
+        &String::from_str(&env, "The second test guild for validation"),
         &10u32,
         &true,
     );
@@ -604,16 +554,10 @@ fn test_create_season_and_earn_season_xp() {
     assert_eq!(active.unwrap().id, season_id);
 
     let student = Address::generate(&env);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::CourseCompleted, now),
-    );
+    client.record_activity(&student, &make_activity(&env, ActivityType::CourseCompleted, now));
 
     let profile = client.get_user_profile(&student);
-    assert!(
-        profile.season_xp > 0,
-        "should earn season XP during active season"
-    );
+    assert!(profile.season_xp > 0, "should earn season XP during active season");
 
     // Season XP should reflect the 2× multiplier
     let board = client.get_season_leaderboard(&season_id);
@@ -650,10 +594,8 @@ fn test_season_xp_multiplier_applies() {
     client.create_season(&admin, &season);
 
     let student_season = Address::generate(&env);
-    client.record_activity(
-        &student_season,
-        &make_activity(&env, ActivityType::CourseCompleted, now),
-    );
+    client
+        .record_activity(&student_season, &make_activity(&env, ActivityType::CourseCompleted, now));
     let xp_with_season = client.get_user_profile(&student_season).total_xp;
 
     assert!(
@@ -671,11 +613,7 @@ fn test_peer_endorsement() {
     let endorsee = Address::generate(&env);
 
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
-    client.endorse_peer(
-        &endorser,
-        &endorsee,
-        &String::from_str(&env, "Rust Programming"),
-    );
+    client.endorse_peer(&endorser, &endorsee, &String::from_str(&env, "Rust Programming"));
 
     let profile = client.get_user_profile(&endorsee);
     assert_eq!(profile.endorsements_received, 1);
@@ -711,10 +649,7 @@ fn test_endorsement_daily_rate_limit() {
     // 6th should fail
     let endorsee6 = Address::generate(&env);
     let result = client.try_endorse_peer(&endorser, &endorsee6, &String::from_str(&env, "Rust"));
-    assert!(
-        result.is_err(),
-        "6th endorsement in same day should be rate limited"
-    );
+    assert!(result.is_err(), "6th endorsement in same day should be rate limited");
 }
 
 #[test]
@@ -768,16 +703,11 @@ fn test_reputation_grows_with_activity() {
     assert_eq!(rep_before.total_score, 0);
 
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
-    client.record_activity(
-        &student,
-        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-    );
+    client
+        .record_activity(&student, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
 
     let rep_after = client.get_reputation(&student);
-    assert!(
-        rep_after.total_score > 0,
-        "reputation should grow after activity"
-    );
+    assert!(rep_after.total_score > 0, "reputation should grow after activity");
 }
 
 #[test]
@@ -797,10 +727,7 @@ fn test_high_score_boosts_quality_reputation() {
     client.record_activity(&student, &activity);
 
     let rep = client.get_reputation(&student);
-    assert!(
-        rep.quality_points > 0,
-        "high score should add quality reputation points"
-    );
+    assert!(rep.quality_points > 0, "high score should add quality reputation points");
 }
 
 // ─── Adaptive Difficulty ─────────────────────────────────────────────────────
@@ -812,10 +739,7 @@ fn test_adaptive_difficulty_defaults_to_beginner() {
 
     let ad = client.get_adaptive_difficulty(&student);
     // Fresh student should get beginner recommendation (level 1 < 5)
-    assert!(matches!(
-        ad.recommended_difficulty,
-        crate::types::ChallengeDifficulty::Beginner
-    ));
+    assert!(matches!(ad.recommended_difficulty, crate::types::ChallengeDifficulty::Beginner));
 }
 
 #[test]
@@ -832,10 +756,7 @@ fn test_adaptive_difficulty_updates_after_challenge() {
     client.update_challenge_progress(&student, &challenge_id, &3u32);
 
     let ad = client.get_adaptive_difficulty(&student);
-    assert!(
-        ad.completion_rate > 0,
-        "completion rate should update after challenge"
-    );
+    assert!(ad.completion_rate > 0, "completion rate should update after challenge");
 }
 
 // ─── Guild Leaderboard ───────────────────────────────────────────────────────
@@ -848,15 +769,15 @@ fn test_guild_leaderboard_updates() {
 
     let g1 = client.create_guild(
         &c1,
-        &String::from_str(&env, "Alpha"),
-        &String::from_str(&env, "desc"),
+        &String::from_str(&env, "Alpha Guild"),
+        &String::from_str(&env, "The alpha guild for leaderboard test"),
         &10u32,
         &true,
     );
     let _g2 = client.create_guild(
         &c2,
-        &String::from_str(&env, "Beta"),
-        &String::from_str(&env, "desc"),
+        &String::from_str(&env, "Beta Guild"),
+        &String::from_str(&env, "The beta guild for leaderboard test"),
         &10u32,
         &true,
     );
@@ -864,16 +785,161 @@ fn test_guild_leaderboard_updates() {
     env.ledger().with_mut(|l| l.timestamp = 1_000_000);
 
     // c1 earns more XP → g1 should rank above g2
-    client.record_activity(
-        &c1,
-        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-    );
-    client.record_activity(
-        &c1,
-        &make_activity(&env, ActivityType::CourseCompleted, 1_000_000),
-    );
+    client.record_activity(&c1, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
+    client.record_activity(&c1, &make_activity(&env, ActivityType::CourseCompleted, 1_000_000));
 
     let board = client.get_guild_leaderboard();
     assert!(board.len() >= 2);
     assert_eq!(board.get(0).unwrap().guild_id, g1, "guild 1 should lead");
+}
+
+// ─── Input Validation Tests ──────────────────────────────────────────────────
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_guild_short_name() {
+    let (env, client, _admin) = setup_env();
+    let creator = Address::generate(&env);
+
+    client.create_guild(
+        &creator,
+        &String::from_str(&env, "AB"),
+        &String::from_str(&env, "Valid guild description here"),
+        &10u32,
+        &true,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_guild_short_description() {
+    let (env, client, _admin) = setup_env();
+    let creator = Address::generate(&env);
+
+    client.create_guild(
+        &creator,
+        &String::from_str(&env, "Valid Name"),
+        &String::from_str(&env, "Short"),
+        &10u32,
+        &true,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_endorse_empty_skill() {
+    let (env, client, _admin) = setup_env();
+    let endorser = Address::generate(&env);
+    let endorsee = Address::generate(&env);
+
+    client.endorse_peer(&endorser, &endorsee, &String::from_str(&env, "AB"));
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_recognize_short_message() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    client.recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "AB"),
+    );
+}
+
+// ─── Rate Limiting Tests ──────────────────────────────────────────────────────
+
+#[test]
+fn test_recognize_peer_rate_limit() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // 10 recognitions should succeed (daily limit)
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great help!"),
+        );
+    }
+
+    // 11th should fail
+    let result = client.try_recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "One too many"),
+    );
+    assert!(result.is_err(), "11th recognition in same day should be rate limited");
+}
+
+#[test]
+fn test_recognize_peer_rate_limit_resets() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great!"),
+        );
+    }
+
+    // Advance to next day
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000 + 86_400);
+
+    // Should succeed again
+    client.recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "Next day!"),
+    );
+}
+
+// ─── Error Scenario Tests ─────────────────────────────────────────────────────
+
+#[test]
+fn test_initialize_already_initialized_returns_error() {
+    let (_env, client, admin) = setup_env();
+    // already initialized by setup_env(); second call should fail
+    let result = client.try_initialize(&admin);
+    assert_eq!(result, Err(Ok(GamificationError::AlreadyInitialized)));
+}
+
+#[test]
+fn test_join_nonexistent_challenge_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_challenge(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_join_nonexistent_guild_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_guild(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_gamification_error_derives_are_correct() {
+    // Verify Copy, Ord, PartialOrd
+    let e = GamificationError::Unauthorized;
+    let e2 = e; // Copy
+    assert_eq!(e, e2);
+    assert!(GamificationError::AlreadyInitialized < GamificationError::Unauthorized);
 }
