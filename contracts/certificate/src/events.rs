@@ -4,7 +4,7 @@ use shared::event_schema::{
     CertificateVerifiedEvent, CertificationEventData, CertificationIssuedEvent,
     CertificationRevokedEvent, ComplianceCheckedEvent, MultisigApprovalGrantedEvent,
     MultisigConfigUpdatedEvent, MultisigRequestApprovedEvent, MultisigRequestCreatedEvent,
-    MultisigRequestRejectedEvent, TemplateCreatedEvent,
+    MultisigRequestRejectedEvent, TemplateCreatedEvent, CertificateExportedEvent,
 };
 use soroban_sdk::{symbol_short, Address, BytesN, Env, String};
 
@@ -209,6 +209,24 @@ pub fn emit_certificate_verified(
         CertificationEventData::CertificateVerified(CertificateVerifiedEvent {
             certificate_id: certificate_id.clone(),
             is_valid: is_authentic,
+        })
+    );
+}
+
+/// Emit when a certificate is exported to another blockchain.
+pub fn emit_certificate_exported(
+    env: &Env,
+    certificate_id: &BytesN<32>,
+    user: &Address,
+    target_chain: &String,
+) {
+    emit_certification_event!(
+        env,
+        symbol_short!("cert"),
+        user.clone(),
+        CertificationEventData::CertificateExported(CertificateExportedEvent {
+            certificate_id: certificate_id.clone(),
+            target_chain: target_chain.clone(),
         })
     );
 }

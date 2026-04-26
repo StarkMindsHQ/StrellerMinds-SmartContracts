@@ -18,10 +18,10 @@ use shared::{log_error, log_info, log_warn};
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
-    CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
-    ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
-    MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
-    ShareRecord, TemplateField,
+    CertificateBackup, CertificateStatus, CertificateTemplate, ChainId, ComplianceRecord,
+    ComplianceStandard, ExportRecord, MintCertificateParams, MultiSigAuditEntry,
+    MultiSigCertificateRequest, MultiSigConfig, MultiSigRequestStatus, RecoveryRequest,
+    RecoveryStatus, RevocationRecord, ShareRecord, TemplateField,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -1611,5 +1611,86 @@ impl CertificateContract {
         let report = Monitor::build_health_report(&env, symbol_short!("certific"), initialized);
         Monitor::emit_health_check(&env, &report);
         report
+    }
+    /// Exports a certificate's data to an external blockchain ledger for additional transparency.
+    ///
+    /// The certificate holder must authorize the export. Records the target chain and a placeholder transaction hash.
+    ///
+    /// # Arguments
+    /// * `env` - The Soroban environment.
+    /// * `user` - The address of the certificate holder initiating the export.
+    /// * `certificate_id` - The unique identifier of the certificate to export.
+    /// * `target_chain` - The [`ChainId`] of the target blockchain ledger.
+    /// * `custom_chain_name` - Optional name if `target_chain` is `Custom`.
+    ///
+    /// # Errors
+    /// Returns [`CertificateError::CertificateNotFound`] if the certificate doesn't exist.
+    /// Returns [`CertificateError::Unauthorized`] if the caller is not the certificate holder.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let tx_hash = client.export_certificate(&user, &cert_id, &ChainId::Ethereum, None);
+    /// ```
+    pub fn export_certificate(
+        env: Env,
+        user: Address,
+        certificate_id: BytesN<32>,
+        target_chain: ChainId,
+        custom_chain_name: Option<String>,
+    ) -> Result<String, CertificateError> {
+        require_initialized(&env)?;
+        user.require_auth();
+
+        let cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
+
+        if cert.student != user {
+            return Err(CertificateError::Unauthorized);
+        }
+
+        let target_chain_str = match &target_chain {
+            ChainId::Stellar => String::from_str(&env, "Stellar"),
+            ChainId::Ethereum => String::from_str(&env, "Ethereum"),
+            ChainId::Polygon => String::from_str(&env, "Polygon"),
+            ChainId::Bsc => String::from_str(&env, "Bsc"),
+            ChainId::Arbitrum => String::from_str(&env, "Arbitrum"),
+            ChainId::Custom => {
+                custom_chain_name.clone().unwrap_or(String::from_str(&env, "Custom"))
+            }
+        };
+
+        // In a real-world scenario, this would involve a cross-chain bridge call
+        // or an oracle request to initiate the transfer. Here we simulate a pending TX.
+        let tx_hash = String::from_str(&env, "EXT-TX-PENDING-V2");
+
+        let record = ExportRecord {
+            certificate_id: certificate_id.clone(),
+            exported_by: user.clone(),
+            exported_at: env.ledger().timestamp(),
+            target_chain,
+            custom_chain_name,
+            target_tx_hash: tx_hash.clone(),
+        };
+
+        storage::add_export_record(&env, &certificate_id, &record);
+
+        record_audit(
+            &env,
+            &certificate_id,
+            AuditAction::Exported,
+            &user,
+            "Certificate exported to external ledger",
+        );
+
+        events::emit_certificate_exported(&env, &certificate_id, &user, &target_chain_str);
+
+        update_analytics_field(&env, |a| a.total_shared += 1);
+
+        Ok(tx_hash)
+    }
+
+    /// Returns a list of all export records for a specific certificate.
+    pub fn get_export_records(env: Env, certificate_id: BytesN<32>) -> Vec<ExportRecord> {
+        storage::get_export_records(&env, &certificate_id)
     }
 }
