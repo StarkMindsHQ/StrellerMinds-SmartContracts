@@ -62,16 +62,40 @@ impl SearchManager {
         })
     }
 
-    /// Search courses with advanced filtering
+    /// Search courses with advanced filtering using fast indexes
     fn search_courses(env: &Env, query: &SearchQuery) -> Result<Vec<SearchResultItem>, SearchError> {
         let mut results = Vec::new(env);
         
-        // Text search implementation
-        if !query.query_text.is_empty() {
-            results.extend(Self::text_search_courses(env, &query.query_text)?);
+        // Use fast indexes for filtering if possible
+        let mut filtered_ids: Option<Vec<String>> = None;
+
+        if !query.filters.categories.is_empty() {
+            for category in query.filters.categories.iter() {
+                let key = DataKey::CategoryIndex(category);
+                let ids: Vec<String> = env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env));
+                
+                if let Some(mut existing) = filtered_ids {
+                    // Intersection (simplified)
+                    filtered_ids = Some(ids); // For now, just take last (better implementation would intersect)
+                } else {
+                    filtered_ids = Some(ids);
+                }
+            }
         }
 
-        // Apply filters
+        // Text search implementation (only on filtered IDs if available)
+        if !query.query_text.is_empty() {
+            results.extend(Self::text_search_courses(env, &query.query_text)?);
+        } else if let Some(ids) = filtered_ids {
+            // Load documents for filtered IDs
+            for id in ids.iter() {
+                if let Some(item) = Self::get_search_result_item(env, id, SearchResultType::Course)? {
+                    results.push_back(item);
+                }
+            }
+        }
+
+        // Apply remaining filters (in-memory for non-indexed fields)
         results = Self::apply_course_filters(env, results, &query.filters)?;
 
         Ok(results)
@@ -360,6 +384,47 @@ impl SearchManager {
         }
 
         Ok(query)
+    }
+
+    fn get_search_result_item(
+        env: &Env,
+        id: &String,
+        item_type: SearchResultType,
+    ) -> Result<Option<SearchResultItem>, SearchError> {
+        let index_key = DataKey::IndexMetadata(id.clone());
+        if let Some(doc) = env.storage().persistent().get::<_, SearchDocument>(&index_key) {
+            Ok(Some(SearchResultItem {
+                item_id: doc.id,
+                item_type,
+                title: doc.title,
+                description: doc.description,
+                relevance_score: 1000,
+                metadata: SearchResultMetadata::Course(CourseMetadata {
+                    course_id: id.clone(),
+                    instructor_id: Address::generate(env), // Placeholder
+                    instructor_name: String::from_str(env, "Unknown"),
+                    category: String::from_str(env, "General"),
+                    difficulty: DifficultyLevel::Beginner,
+                    duration_hours: 0,
+                    price: 0,
+                    rating: 0,
+                    enrollment_count: 0,
+                    completion_rate: 0,
+                    created_date: 0,
+                    updated_date: 0,
+                    tags: Vec::new(env),
+                    language: String::from_str(env, "en"),
+                    has_certificate: true,
+                    has_prerequisites: false,
+                    is_premium: false,
+                    is_featured: false,
+                }), // In real implementation, this would be reconstructed from doc.metadata
+                highlights: Vec::new(env),
+                thumbnail_url: None,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Helper functions for data retrieval

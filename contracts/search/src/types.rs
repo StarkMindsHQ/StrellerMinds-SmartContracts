@@ -594,4 +594,8 @@ pub enum DataKey {
     SearchWeights,
     /// Auto-complete data
     AutoCompleteData(String), // Prefix
+    /// Category index for fast filtering
+    CategoryIndex(String),
+    /// Difficulty index for fast filtering
+    DifficultyIndex(DifficultyLevel),
 }
