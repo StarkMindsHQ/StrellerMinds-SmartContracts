@@ -17,6 +17,24 @@ pub enum CertificatePriority {
     Institutional,
 }
 
+/// Supported blockchain networks for certificate export operations.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ChainId {
+    /// The Stellar network.
+    Stellar,
+    /// The Ethereum mainnet.
+    Ethereum,
+    /// The Polygon (MATIC) network.
+    Polygon,
+    /// The Binance Smart Chain network.
+    Bsc,
+    /// The Arbitrum Layer-2 network.
+    Arbitrum,
+    /// A custom or private blockchain network.
+    Custom,
+}
+
 impl CertificatePriority {
     pub fn required_approvals(&self) -> u32 {
         match self {
@@ -375,6 +393,27 @@ pub struct ShareRecord {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Blockchain Export Record
+// ─────────────────────────────────────────────────────────────
+/// Record of a certificate being exported to an external blockchain ledger.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExportRecord {
+    /// Identifier of the exported certificate.
+    pub certificate_id: BytesN<32>,
+    /// Address of the user who initiated the export.
+    pub exported_by: Address,
+    /// Unix timestamp (seconds) when the export occurred.
+    pub exported_at: u64,
+    /// The target blockchain ledger.
+    pub target_chain: ChainId,
+    /// Optional name of the custom chain if target_chain is Custom.
+    pub custom_chain_name: Option<String>,
+    /// Transaction hash or reference on the target chain.
+    pub target_tx_hash: String,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Audit Trail Entry
 // ─────────────────────────────────────────────────────────────
 /// Action types that may appear in a certificate audit trail.
@@ -405,6 +444,8 @@ pub enum AuditAction {
     ConfigUpdated,
     /// The certificate passed its expiry date.
     Expired,
+    /// The certificate was exported to an external blockchain ledger.
+    Exported,
 }
 
 /// A single entry in the audit trail for a multi-sig certificate request.
@@ -563,6 +604,8 @@ pub enum CertDataKey {
     RecoveryRequest(BytesN<32>),
     /// List of pending recovery request IDs.
     PendingRecoveryRequests,
+    /// List of export records for a specific certificate.
+    ExportRecords(BytesN<32>),
 }
 
 /// Configurable rate limits for certificate operations.

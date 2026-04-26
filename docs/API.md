@@ -644,6 +644,41 @@ Share count is capped at 100 per certificate.
 
 ---
 
+### `export_certificate` *(Issue #449)*
+
+```
+export_certificate(
+    user:              Address,
+    certificate_id:    BytesN<32>,
+    target_chain:      ChainId,
+    custom_chain_name: Option<String>,
+) -> Result<String, CertificateError>
+```
+
+Exports a certificate's data to an external blockchain ledger for additional transparency.
+The certificate holder must authorize the export. Returns a transaction hash reference.
+
+| Parameter           | Type             | Description                                     |
+|---------------------|------------------|-------------------------------------------------|
+| `user`              | `Address`        | Address of the certificate holder.              |
+| `certificate_id`    | `BytesN<32>`     | Unique identifier of the certificate.           |
+| `target_chain`      | `ChainId`        | Target blockchain (Stellar, Ethereum, Polygon, Bsc, Arbitrum, Custom). |
+| `custom_chain_name` | `Option<String>` | Name of the custom chain if `target_chain` is `Custom`. |
+
+**Errors**: `CertificateNotFound`, `Unauthorized`
+
+---
+
+### `get_export_records`
+
+```
+get_export_records(certificate_id: BytesN<32>) -> Vec<ExportRecord>
+```
+
+Returns a list of all export records for a specific certificate.
+
+---
+
 ### `get_student_certificates`
 
 ```
@@ -744,6 +779,28 @@ get_course_completion(student: Address, course_id: Symbol) -> u32
 ```
 
 Returns the overall course completion percentage averaged across all modules.
+
+### `complete_module_weighted` *(Issue #397)*
+
+```
+complete_module_weighted(
+    learner:    Address,
+    course_id:  u32,
+    module_idx: u8,
+    score_x10:  u16,
+    weights:    Vec<u32>,
+) -> bool
+```
+
+Marks a module as complete and updates the course progress using a weighted average formula.
+
+| Parameter    | Type       | Description                                      |
+|--------------|------------|--------------------------------------------------|
+| `learner`    | `Address`  | Address of the student.                          |
+| `course_id`  | `u32`      | Unique course identifier.                        |
+| `module_idx` | `u8`       | Index of the module (0-63).                      |
+| `score_x10`  | `u16`      | Achievement score multiplied by 10 (0-1000).     |
+| `weights`    | `Vec<u32>` | List of weights for all modules in the course.   |
 
 ---
 

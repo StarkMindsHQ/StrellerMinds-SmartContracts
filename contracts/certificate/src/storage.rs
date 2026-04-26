@@ -2,7 +2,7 @@ use soroban_sdk::{Address, BytesN, Env, Map, String, Vec};
 
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateBackup, CertificateTemplate,
-    ComplianceRecord, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
+    ComplianceRecord, ExportRecord, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
     RecoveryRequest, RevocationRecord, ShareRecord,
 };
 
@@ -346,4 +346,24 @@ pub fn get_pending_recovery_requests(env: &Env) -> Vec<BytesN<32>> {
 
 pub fn set_pending_recovery_requests(env: &Env, pending: &Vec<BytesN<32>>) {
     env.storage().persistent().set(&CertDataKey::PendingRecoveryRequests, pending);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Export Records
+// ─────────────────────────────────────────────────────────────
+pub fn add_export_record(env: &Env, cert_id: &BytesN<32>, record: &ExportRecord) {
+    let mut records: Vec<ExportRecord> = env
+        .storage()
+        .persistent()
+        .get(&CertDataKey::ExportRecords(cert_id.clone()))
+        .unwrap_or_else(|| Vec::new(env));
+    records.push_back(record.clone());
+    env.storage().persistent().set(&CertDataKey::ExportRecords(cert_id.clone()), &records);
+}
+
+pub fn get_export_records(env: &Env, cert_id: &BytesN<32>) -> Vec<ExportRecord> {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::ExportRecords(cert_id.clone()))
+        .unwrap_or_else(|| Vec::new(env))
 }

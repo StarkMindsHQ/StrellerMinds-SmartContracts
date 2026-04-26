@@ -1046,6 +1046,12 @@ pub struct ComplianceCheckedEvent {
 pub struct TemplateCreatedEvent {
     pub template_id: String,
 }
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct CertificateExportedEvent {
+    pub certificate_id: BytesN<32>,
+    pub target_chain: String,
+}
 
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -1063,6 +1069,7 @@ pub enum CertificationEventData {
     CertificateShared(CertificateSharedEvent),
     ComplianceChecked(ComplianceCheckedEvent),
     TemplateCreated(TemplateCreatedEvent),
+    CertificateExported(CertificateExportedEvent),
 }
 
 // Gamification Event Structs
