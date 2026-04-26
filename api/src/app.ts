@@ -2,6 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
+import { randomBytes } from "crypto";
 
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
@@ -21,17 +22,46 @@ import cdnRouter from "./routes/cdn";
 
 const app = express();
 
+// ── CSP Nonce Middleware ──────────────────────────────────────────────────────
+const cspNonceMiddleware = (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+  const nonce = randomBytes(16).toString("hex");
+  (req as any).cspNonce = nonce;
+  next();
+};
+app.use(cspNonceMiddleware);
+
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // needed for Swagger UI
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:"],
+        scriptSrc: ["'self'", (req: any) => `'nonce-${req.cspNonce}'`, "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", (req: any) => `'nonce-${req.cspNonce}'`, "https://cdn.jsdelivr.net"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'", "https://api.stellar.org"],
+        frameSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        childSrc: ["'self'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: [],
+        reportUri: ["/api/v1/security/csp-report"],
       },
+      blockAllMixedContent: true,
     },
+    crossOriginEmbedderPolicy: true,
+    crossOriginOpenerPolicy: true,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    dnsPrefetchControl: true,
+    frameguard: { action: "deny" },
+    hidePoweredBy: true,
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    ieNoOpen: true,
+    noSniff: true,
+    referrerPolicy: { policy: "strict-no-referrer" },
+    xssFilter: true,
   })
 );
 
@@ -80,6 +110,24 @@ app.use("/api/v1/certificates", certificatesRouter);
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/social-sharing", socialSharingRouter);
+
+// ── CSP Violation Reporter ─────────────────────────────────────────────────────
+app.post("/api/v1/security/csp-report", express.json({ type: "application/csp-report" }), (req: express.Request, res: express.Response) => {
+  const violation = req.body["csp-report"];
+  if (violation) {
+    logger.warn("CSP violation detected", {
+      documentUri: violation["document-uri"],
+      violatedDirective: violation["violated-directive"],
+      effectiveDirective: violation["effective-directive"],
+      originalPolicy: violation["original-policy"],
+      sourceFile: violation["source-file"],
+      lineNumber: violation["line-number"],
+      columnNumber: violation["column-number"],
+      statusCode: violation["status-code"],
+    });
+  }
+  res.status(204).send();
+});
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req: express.Request, res: express.Response) => {
