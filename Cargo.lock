@@ -2844,14 +2844,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "strellerminds-certificate"
-version = "0.1.0"
-dependencies = [
- "shared",
- "soroban-sdk",
-]
-
-[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
