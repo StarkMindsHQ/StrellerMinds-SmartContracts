@@ -745,8 +745,384 @@ pub enum DataKey {
     SearchWeights,
     /// Auto-complete data
     AutoCompleteData(String), // Prefix
-    /// Category index for fast filtering
-    CategoryIndex(String),
-    /// Difficulty index for fast filtering
-    DifficultyIndex(DifficultyLevel),
+    // AI-Powered Search Keys
+    /// Semantic metadata for content
+    SemanticMetadata(String), // Content ID
+    /// User learning profile
+    UserProfile(Address),
+    /// Recommendation scores
+    RecommendationScores(Address),
+    /// Content analysis cache
+    ContentAnalysis(String), // Content ID
+    /// Similarity scores
+    SimilarityScores(String), // Item ID
+    /// Visual metadata
+    VisualMetadata(String), // Content ID
+    /// Learning paths
+    LearningPath(Address, String), // User + Path ID
+    /// Skill dependencies
+    SkillNode(String), // Skill name
+    /// Ranking signals
+    RankingSignals(String), // Content ID
+    /// Multilingual content
+    MultilingualContent(String), // Content ID
+    /// Language preferences
+    LanguagePreferences(Address),
+    /// Conversation sessions
+    ConversationSession(String), // Session ID
+    /// User interactions
+    UserInteractions(Address),
+    /// Oracle authorized addresses
+    AuthorizedOracles(Address), // Oracle address
+}
+
+// ============================================================================
+// AI-POWERED SEARCH TYPES
+// ============================================================================
+
+/// Semantic search metadata
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SemanticMetadata {
+    pub content_id: String,
+    pub topics: Vec<String>,
+    pub intent_scores: Map<String, u32>, // Intent type -> score (0-1000)
+    pub semantic_tags: Vec<String>,
+    pub entity_types: Vec<String>,
+    pub complexity_score: u32, // 0-100
+    pub last_updated: u64,
+}
+
+/// Processed query from NLP service
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProcessedQuery {
+    pub original_text: String,
+    pub normalized_text: String,
+    pub original_query: String,
+    pub extracted_intent: String,
+    pub intent: String,
+    pub entities: Vec<Entity>,
+    pub expanded_terms: Vec<String>,
+    pub semantic_tags: Vec<String>,
+    pub suggested_filters: Vec<String>,
+    pub query_type: String,
+    pub confidence: u32, // 0-1000
+}
+
+/// Extracted entity
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Entity {
+    pub entity_type: String, // "course", "topic", "skill", etc.
+    pub value: String,
+    pub confidence: u32, // 0-1000
+}
+
+/// User learning profile
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserProfile {
+    pub user_address: Address,
+    pub completed_courses: Vec<String>,
+    pub skill_levels: Map<String, u32>, // Skill -> Level (0-100)
+    pub interaction_counts: Map<String, u32>, // Category -> Count
+    pub preference_scores: Vec<u32>,    // Simplified preference vector
+    pub last_updated: u64,
+}
+
+/// Recommendation with score
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Recommendation {
+    pub content_id: String,
+    pub content_type: String,
+    pub score: u32, // 0-1000
+    pub reason: String,
+    pub confidence: u32, // 0-100
+    pub computed_at: u64,
+    pub expires_at: u64,
+}
+
+/// Content analysis result
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ContentAnalysis {
+    pub content_id: String,
+    pub auto_generated_tags: Vec<String>,
+    pub extracted_topics: Vec<Topic>,
+    pub identified_skills: Vec<Skill>,
+    pub difficulty_score: u32,   // 0-100
+    pub quality_score: u32,      // 0-100
+    pub readability_score: u32,  // 0-100
+    pub estimated_duration: u32, // minutes
+    pub prerequisite_skills: Vec<String>,
+    pub learning_outcomes: Vec<String>,
+    pub analysis_timestamp: u64,
+}
+
+/// Topic with relevance
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Topic {
+    pub name: String,
+    pub relevance_score: u32, // 0-1000
+    pub category: String,
+}
+
+/// Skill requirement
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Skill {
+    pub skill_name: String,
+    pub required_level: u32, // 0-100
+    pub importance: u32,     // 0-100
+}
+
+/// User interaction tracking
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserInteraction {
+    pub user_address: Address,
+    pub content_id: String,
+    pub interaction_type: InteractionType,
+    pub timestamp: u64,
+    pub value: u32, // Rating, time spent, etc.
+}
+
+/// Interaction types
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum InteractionType {
+    View,
+    Click,
+    Enroll,
+    Complete,
+    Rate,
+    Share,
+    Save,
+    Like,
+    Bookmark,
+}
+
+/// Similarity score between items
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SimilarityScore {
+    pub item_a: String,
+    pub item_b: String,
+    pub similarity: u32, // 0-1000
+    pub method: String,  // "collaborative", "content-based", etc.
+    pub computed_at: u64,
+}
+
+/// Visual metadata for images
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct VisualMetadata {
+    pub content_id: String,
+    pub image_hash: BytesN<32>,
+    pub dominant_colors: Vec<String>,  // Hex colors
+    pub detected_objects: Vec<String>, // Object names
+    pub visual_category: String,
+    pub style_tags: Vec<String>,
+    pub feature_vector_hash: BytesN<32>,
+    pub similarity_cluster: u32,
+    pub thumbnail_url: String,
+    pub aspect_ratio: u32,  // Width/height percentage
+    pub quality_score: u32, // 0-1000
+}
+
+/// Learning path
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LearningPath {
+    pub path_id: String,
+    pub user_address: Address,
+    pub target_skill: String,
+    pub courses: Vec<PathStep>,
+    pub steps: Vec<PathStep>, // Alias for courses
+    pub total_duration: u32,
+    pub estimated_completion: u64,
+    pub estimated_duration_days: u32,
+    pub progress_percentage: u32,
+    pub efficiency_score: u32, // 0-100
+    pub created_at: u64,
+    pub skill_nodes: Vec<SkillNode>, // For dependency tracking
+}
+
+/// Step in learning path
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PathStep {
+    pub content_id: String, // Course/content ID
+    pub course_id: String,
+    pub skill_id: String,
+    pub sequence_number: u32,
+    pub prerequisites_met: bool,
+    pub estimated_duration: u32,
+    pub estimated_effort: u32, // Difficulty score
+    pub skills_gained: Vec<String>,
+    pub importance_score: u32, // 0-100
+    pub completed: bool,
+}
+
+/// Skill node in dependency graph
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SkillNode {
+    pub skill_id: String,
+    pub skill_name: String,
+    pub prerequisites: Vec<String>,
+    pub difficulty: u32,     // 0-100
+    pub estimated_time: u32, // hours
+    pub related_courses: Vec<String>,
+}
+
+/// Ranking signals for results
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RankingSignals {
+    pub relevance_score: u32,       // 0-1000
+    pub quality_score: u32,         // 0-1000
+    pub engagement_score: u32,      // 0-1000
+    pub recency_score: u32,         // 0-1000
+    pub personalization_score: u32, // 0-1000
+    pub authority_score: u32,       // 0-1000
+    pub completion_rate: u32,       // 0-1000
+    pub user_rating: u32,           // 0-1000
+}
+
+/// Ranking configuration
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RankingConfig {
+    pub relevance_weight: u32,
+    pub quality_weight: u32,
+    pub engagement_weight: u32,
+    pub recency_weight: u32,
+    pub personalization_weight: u32,
+    pub authority_weight: u32,
+}
+
+/// Ranked search result
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RankedResult {
+    pub content_id: String, // Content ID
+    pub result: SearchResultItem,
+    pub score: u32, // Final ranking score
+    pub final_score: u32,
+    pub signals: RankingSignals,
+    pub rank_position: u32,
+}
+
+/// Supported languages
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Language {
+    English,
+    Spanish,
+    French,
+    German,
+    Chinese,
+    Mandarin, // Chinese Mandarin
+    Japanese,
+    Arabic,
+    Portuguese,
+    Russian,
+    Korean,
+    Hindi, // Add Hindi
+}
+
+/// Multilingual content metadata
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MultilingualContent {
+    pub content_id: String,
+    pub primary_language: Language,
+    pub available_languages: Vec<Language>,
+    pub translations: Map<String, TranslationMeta>, // Lang -> Meta
+}
+
+/// Translation metadata
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TranslationMeta {
+    pub target_language: Language,
+    pub translated_title: String,
+    pub translated_description: String,
+    pub quality_score: u32,       // 0-1000
+    pub translation_quality: u32, // 0-100
+    pub last_updated: u64,
+}
+
+/// Language preferences
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LanguagePreferences {
+    pub user_address: Address,
+    pub preferred_language: Language,
+    pub fallback_languages: Vec<Language>,
+}
+
+/// Conversation session for voice/chat
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ConversationSession {
+    pub session_id: String,
+    pub user: Address, // User address
+    pub start_time: u64,
+    pub last_interaction_time: u64,
+    pub queries: Vec<ProcessedVoiceQuery>, // Query history
+    pub context_entities: Vec<String>,     // Context tracking
+    pub is_active: bool,
+}
+
+/// Processed voice query
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProcessedVoiceQuery {
+    pub session_id: String,
+    pub transcribed_text: String,
+    pub detected_intent: String,
+    pub extracted_entities: Vec<Entity>,
+    pub entities: Vec<String>, // Simple entity list
+    pub confidence_score: u32, // 0-1000
+    pub confidence: u32,       // 0-1000
+    pub timestamp: u64,
+    pub requires_context: bool,
+}
+
+/// Oracle submission for verification
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OracleSubmission {
+    pub data_hash: BytesN<32>,
+    pub signature: BytesN<64>,
+    pub oracle_address: Address,
+    pub timestamp: u64,
+    pub nonce: u64,
+}
+
+/// Search event for analytics
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SearchEvent {
+    pub user: MaybeAddress,
+    pub query: String,
+    pub timestamp: u64,
+    pub results_count: u32,
+    pub filters_applied: Vec<String>,
+}
+
+/// Click tracking event
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ClickEvent {
+    pub user: MaybeAddress,
+    pub query: String,
+    pub content_id: String,
+    pub rank_position: u32,
+    pub timestamp: u64,
 }
