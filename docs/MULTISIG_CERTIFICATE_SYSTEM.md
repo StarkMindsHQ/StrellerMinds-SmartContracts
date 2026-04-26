@@ -195,26 +195,6 @@ Retrieve complete audit trail for a request.
 Clean up expired multi-signature requests.
 - **Returns**: `Result<u32, CertificateError>`
 
-## Blockchain Export
-
-StrellerMinds certificates can be exported to external blockchain ledgers for cross-platform transparency and verification.
-
-### Export Process
-
-1. **Initiation**: The certificate holder calls `export_certificate`.
-2. **Verification**: The contract verifies the holder's ownership and the certificate's validity.
-3. **Recording**: An `ExportRecord` is created on-chain, and an `Exported` event is emitted.
-4. **External Ledger**: A transaction hash (or placeholder) is stored to reference the external proof.
-
-### Supported Ledgers
-
-- Stellar (Mainnet)
-- Ethereum
-- Polygon
-- Bsc (Binance Smart Chain)
-- Arbitrum
-- Custom / Private Chains
-
 ## Events
 
 The system emits comprehensive events for monitoring and integration:
