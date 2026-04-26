@@ -127,49 +127,15 @@ pub fn complete_module_with_score(
     score_x10: u16,
     total_modules: u8,
 ) -> bool {
-    // Fallback to equal weights of 1
-    let mut weights = Vec::new(env);
-    for _ in 0..total_modules {
-        weights.push_back(1);
-    }
-    complete_module_weighted(env, learner, course_id, module_idx, score_x10, weights)
-}
-
-pub fn complete_module_weighted(
-    env: &Env,
-    learner: &Address,
-    course_id: u32,
-    module_idx: u8,
-    score_x10: u16,
-    weights: Vec<u32>,
-) -> bool {
     learner.require_auth();
     let mut prog = load_course(env, learner, course_id);
     if !prog.mark_module(module_idx) {
         return false;
     }
-
-    let mut total_weight = 0u64;
-    let mut completed_weight = 0u64;
-    for i in 0..weights.len() {
-        if let Some(w) = weights.get(i) {
-            let w_u64 = w as u64;
-            total_weight += w_u64;
-            if (prog.module_flags >> i) & 1 == 1 {
-                completed_weight += w_u64;
-            }
-        }
-    }
-
-    let pct = if total_weight > 0 {
-        ((completed_weight * 100) / total_weight) as u8
-    } else {
-        0
-    };
-
+    let done = prog.modules_done();
+    let pct = ((done as u64 * 100) / total_modules as u64) as u8;
     prog.update_meta(prog.best_score_x10().max(score_x10), pct, env.ledger().sequence());
     save_course(env, learner, course_id, &prog);
-
     if pct == 100 {
         let mut agg = load_student(env, learner);
         agg.increment_completed();
@@ -177,7 +143,6 @@ pub fn complete_module_weighted(
         agg.set_streak_and_level(agg.current_streak(), completed / 5);
         save_student(env, learner, &agg);
     }
-
     emit_progress_event!(
         env,
         symbol_short!("progress"),
@@ -199,25 +164,10 @@ pub fn batch_complete_modules(
     modules: &Vec<(u32, u64)>,
     total_modules: u8,
 ) -> BatchResult {
-    let mut weights = Vec::new(env);
-    for _ in 0..total_modules {
-        weights.push_back(1);
-    }
-    batch_complete_modules_weighted(env, learner, course_id, modules, weights)
-}
-
-pub fn batch_complete_modules_weighted(
-    env: &Env,
-    learner: &Address,
-    course_id: u32,
-    modules: &Vec<(u32, u64)>,
-    weights: Vec<u32>,
-) -> BatchResult {
     learner.require_auth();
     let mut prog = load_course(env, learner, course_id);
     let mut result = BatchResult::new();
     let mut best_score = prog.best_score_x10();
-
     for i in 0..modules.len() {
         if let Some((idx, score)) = modules.get(i) {
             if idx >= 64 {
@@ -232,26 +182,8 @@ pub fn batch_complete_modules_weighted(
             }
         }
     }
-
     if result.processed > 0 {
-        let mut total_weight = 0u64;
-        let mut completed_weight = 0u64;
-        for i in 0..weights.len() {
-            if let Some(w) = weights.get(i) {
-                let w_u64 = w as u64;
-                total_weight += w_u64;
-                if (prog.module_flags >> i) & 1 == 1 {
-                    completed_weight += w_u64;
-                }
-            }
-        }
-
-        let pct = if total_weight > 0 {
-            ((completed_weight * 100) / total_weight) as u8
-        } else {
-            0
-        };
-
+        let pct = ((prog.modules_done() as u64 * 100) / total_modules as u64) as u8;
         prog.update_meta(best_score, pct, env.ledger().sequence());
         save_course(env, learner, course_id, &prog);
         if pct == 100 {
