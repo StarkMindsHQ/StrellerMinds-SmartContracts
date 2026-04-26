@@ -10,6 +10,7 @@ import { Router, Request, Response } from "express";
 import { contractClient } from "../soroban-client";
 import { authenticate } from "../middleware/auth";
 import { verifyLimiter, generalLimiter } from "../middleware/rateLimiter";
+import { userRateLimit } from "../middleware/userRateLimiter";
 import { sendSuccess, sendError } from "../utils/response";
 import { certificateIdSchema, stellarAddressSchema, normalizeCertId } from "../utils/validate";
 import { verificationTotal } from "../metrics";
@@ -25,9 +26,11 @@ const router = Router();
 
 // ── GET /certificates/:id/verify ─────────────────────────────────────────────
 // Public endpoint — no auth required, stricter rate limit
+// Authenticated users get per-user limits on top of the IP-based limit
 router.get(
   "/:id/verify",
   verifyLimiter,
+  userRateLimit("verify"),
   async (req: Request, res: Response) => {
     const parsed = certificateIdSchema.safeParse(req.params.id);
     if (!parsed.success) {
@@ -93,6 +96,7 @@ router.get(
   "/:id",
   generalLimiter,
   authenticate,
+  userRateLimit("read"),
   async (req: Request, res: Response) => {
     const parsed = certificateIdSchema.safeParse(req.params.id);
     if (!parsed.success) {
@@ -126,6 +130,7 @@ router.get(
   "/:id/revocation",
   generalLimiter,
   authenticate,
+  userRateLimit("read"),
   async (req: Request, res: Response) => {
     const parsed = certificateIdSchema.safeParse(req.params.id);
     if (!parsed.success) {

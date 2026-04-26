@@ -78,9 +78,31 @@ export interface ResponseMeta {
 
 // ── Auth types ───────────────────────────────────────────────────────────────
 
+export type RateLimitTier = "free" | "pro" | "enterprise" | "internal";
+
 export interface JwtPayload {
-  sub: string; // subject (API key id or user id)
+  sub: string;       // subject (API key id or user id)
   iat: number;
   exp: number;
-  scope: string[]; // e.g. ['verify', 'read']
+  scope: string[];   // e.g. ['verify', 'read']
+  tier?: RateLimitTier; // rate limit tier, defaults to 'free'
+}
+
+// ── Rate limit usage analytics ───────────────────────────────────────────────
+
+export interface UserRateLimitStatus {
+  userId: string;
+  tier: RateLimitTier;
+  /** Requests consumed in the current window */
+  consumed: number;
+  /** Remaining requests in the current window */
+  remaining: number;
+  /** Requests per minute allowed for this tier */
+  limit: number;
+  /** Burst allowance for this tier */
+  burstLimit: number;
+  /** Unix timestamp when the window resets */
+  resetAt: number;
+  /** Whether the user is currently throttled */
+  throttled: boolean;
 }

@@ -1,0 +1,87 @@
+{
+  "_comment": "CloudFront distribution configuration for StrellerMinds Certificate API static assets.",
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "strellerminds-api-origin",
+        "DomainName": "api.strellerminds.com",
+        "CustomOriginConfig": {
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSSLProtocols": { "Quantity": 1, "Items": ["TLSv1.2"] },
+          "OriginReadTimeout": 30,
+          "OriginKeepaliveTimeout": 5
+        },
+        "OriginCustomHeaders": {
+          "Quantity": 1,
+          "Items": [
+            { "HeaderName": "X-Origin-Verify", "HeaderValue": "REPLACE_WITH_SECRET" }
+          ]
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "strellerminds-api-origin",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "CachePolicyId": "MANAGED_CachingOptimized",
+    "OriginRequestPolicyId": "MANAGED_AllViewerExceptHostHeader",
+    "Compress": true,
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": ["GET", "HEAD"],
+      "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] }
+    },
+    "FunctionAssociations": {
+      "Quantity": 0,
+      "Items": []
+    }
+  },
+  "CacheBehaviors": {
+    "Quantity": 3,
+    "Items": [
+      {
+        "_comment": "Static assets — long TTL, immutable",
+        "PathPattern": "/api/docs/*",
+        "TargetOriginId": "strellerminds-api-origin",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "DefaultTTL": 86400,
+        "MaxTTL": 31536000,
+        "MinTTL": 0,
+        "Compress": true,
+        "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] }
+      },
+      {
+        "_comment": "Certificate verify — short CDN TTL, stale-while-revalidate",
+        "PathPattern": "/api/v1/certificates/*/verify",
+        "TargetOriginId": "strellerminds-api-origin",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "DefaultTTL": 30,
+        "MaxTTL": 60,
+        "MinTTL": 0,
+        "Compress": true,
+        "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] },
+        "ForwardedValues": {
+          "QueryString": false,
+          "Headers": { "Quantity": 1, "Items": ["Authorization"] }
+        }
+      },
+      {
+        "_comment": "Health endpoints — no cache",
+        "PathPattern": "/health*",
+        "TargetOriginId": "strellerminds-api-origin",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "DefaultTTL": 0,
+        "MaxTTL": 0,
+        "MinTTL": 0,
+        "Compress": false,
+        "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] }
+      }
+    ]
+  },
+  "PriceClass": "PriceClass_All",
+  "HttpVersion": "http2and3",
+  "IsIPV6Enabled": true,
+  "Comment": "StrellerMinds Certificate Verification API CDN"
+}

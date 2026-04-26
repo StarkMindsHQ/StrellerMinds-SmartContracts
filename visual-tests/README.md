@@ -1,0 +1,34 @@
+# Visual Regression Testing
+
+This suite provides screenshot-based UI regression protection for repository-facing dashboard surfaces.
+
+## Coverage
+
+- Full-page baseline screenshot (`dashboard-shell.png`)
+- Component-level screenshot (`component-cards.png`)
+- Cross-browser execution on Chromium, Firefox, and WebKit
+- HTML diff report output via Playwright
+
+## Run Locally
+
+From repository root:
+
+```bash
+npm install
+npm run visual:test:update
+npm run visual:test
+```
+
+To inspect diffs:
+
+```bash
+npm run visual:test:report
+```
+
+## CI Integration
+
+The `CI` workflow runs `visual-regression` with:
+
+- A 10-minute timeout
+- Browser installation + screenshot assertions
+- Uploaded artifacts for screenshots, diffs, and HTML report
