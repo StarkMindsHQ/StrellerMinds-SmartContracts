@@ -18,8 +18,39 @@ import analyticsRouter from "./routes/analytics";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
+import slackRouter from "./routes/slack";
+import { createSlackNotifier } from "./notifications/slack";
 
 const app = express();
+
+// ── Slack notifier initialization ─────────────────────────────────────────────
+if (config.slack.webhookUrl) {
+  const webhooks: Record<string, { url: string; channel?: string; username?: string }> = {
+    default: {
+      url: config.slack.webhookUrl,
+      channel: config.slack.defaultChannel || undefined,
+      username: config.slack.username,
+    },
+  };
+  if (config.slack.alertsWebhookUrl) {
+    webhooks.alerts = {
+      url: config.slack.alertsWebhookUrl,
+      channel: config.slack.alertsChannel || undefined,
+      username: config.slack.username,
+    };
+  }
+  if (config.slack.certificatesWebhookUrl) {
+    webhooks.certificates = {
+      url: config.slack.certificatesWebhookUrl,
+      channel: config.slack.certificatesChannel || undefined,
+      username: config.slack.username,
+    };
+  }
+  createSlackNotifier(webhooks);
+  logger.info("Slack notifier initialized", { webhooks: Object.keys(webhooks) });
+} else {
+  logger.info("Slack notifications disabled (SLACK_WEBHOOK_URL not set)");
+}
 
 // ── CSP Nonce Middleware ──────────────────────────────────────────────────────
 const cspNonceMiddleware = (req: express.Request, _res: express.Response, next: express.NextFunction) => {
@@ -110,6 +141,7 @@ app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/slack", slackRouter);
 
 // ── CSP Violation Reporter ─────────────────────────────────────────────────────
 app.post("/api/v1/security/csp-report", express.json({ type: "application/csp-report" }), (req: express.Request, res: express.Response) => {
