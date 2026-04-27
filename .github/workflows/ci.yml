@@ -143,9 +143,6 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Generate visual baselines in CI
-        run: npm run visual:test:update
-
       - name: Run visual regression tests
         run: npm run visual:test
 
