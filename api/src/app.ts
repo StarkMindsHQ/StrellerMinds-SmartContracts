@@ -10,6 +10,10 @@ import { cdnMiddleware } from "./middleware/cdn";
 import { securityHeadersValidator } from "./middleware/securityHeaders";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
+import { preloadLocales } from "./i18n";
+
+// Pre-load all locale files into memory at startup
+preloadLocales();
 
 import authRouter from "./routes/auth";
 import certificatesRouter from "./routes/certificates";
@@ -51,8 +55,8 @@ app.use(
   cors({
     origin: config.cors.origins,
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"],
-    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID", "X-Language", "Accept-Language"],
+    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "Content-Language", "X-Text-Direction"],
   })
 );
 
@@ -63,6 +67,9 @@ app.use(express.json({ limit: "16kb" }));
 app.use(requestId);
 app.use(metricsMiddleware);
 app.use(cdnMiddleware);
+
+// ── i18n: language detection ──────────────────────────────────────────────────
+app.use(i18nMiddleware);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {

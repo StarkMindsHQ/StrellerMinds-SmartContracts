@@ -6,7 +6,7 @@ import { Router, Request, Response } from "express";
 import { contractClient } from "../soroban-client";
 import { authenticate } from "../middleware/auth";
 import { generalLimiter } from "../middleware/rateLimiter";
-import { sendSuccess, sendError } from "../utils/response";
+import { sendSuccess, sendLocalizedError } from "../utils/response";
 import { stellarAddressSchema } from "../utils/validate";
 import { logger } from "../logger";
 
@@ -19,14 +19,7 @@ router.get(
   async (req: Request, res: Response) => {
     const parsed = stellarAddressSchema.safeParse(req.params.address);
     if (!parsed.success) {
-      sendError(
-        res,
-        400,
-        "INVALID_ADDRESS",
-        "Invalid Stellar address",
-        undefined,
-        req.requestId
-      );
+      sendLocalizedError(req, res, 400, "INVALID_ADDRESS", "Invalid Stellar address");
       return;
     }
 
@@ -43,14 +36,7 @@ router.get(
         address: parsed.data,
         error: err,
       });
-      sendError(
-        res,
-        502,
-        "CONTRACT_ERROR",
-        "Failed to query the blockchain",
-        undefined,
-        req.requestId
-      );
+      sendLocalizedError(req, res, 502, "CONTRACT_ERROR", "Failed to query the blockchain");
     }
   }
 );
