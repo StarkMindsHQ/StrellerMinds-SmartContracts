@@ -449,6 +449,26 @@ fn test_update_progress_overwrites_existing() {
 }
 
 #[test]
+fn test_initialize_already_initialized() {
+    let (env, client, admin, _student) = setup_test_env();
+
+    env.mock_auths(&[MockAuth {
+        address: &admin,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "initialize",
+            args: (admin.clone(),).into_val(&env),
+            sub_invokes: &[],
+        },
+    }]);
+    client.initialize(&admin);
+
+    // Second call must fail with AlreadyInitialized
+    let result = client.try_initialize(&admin);
+    assert_eq!(result, Err(Ok(StudentProgressError::AlreadyInitialized)));
+}
+
+#[test]
 fn test_get_admin_not_initialized() {
     let (_env, client, _admin, _student) = setup_test_env();
 
