@@ -6,6 +6,8 @@
 
 This document covers the performance optimization strategy, profiling tooling, and test suite for StrellerMinds Smart Contracts. The primary performance concern in Soroban contracts is **instruction-budget consumption** and **storage I/O cost**.
 
+For certificate verification API query-backend optimization, see `docs/DATABASE_QUERY_OPTIMIZATION.md`.
+
 ---
 
 ## Implemented Optimizations
