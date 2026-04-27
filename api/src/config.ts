@@ -93,4 +93,21 @@ export const config = {
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
   },
+
+  slack: {
+    // Default incoming webhook URL (required to enable Slack notifications)
+    webhookUrl: process.env.SLACK_WEBHOOK_URL ?? "",
+    // Optional per-channel webhook overrides
+    alertsWebhookUrl: process.env.SLACK_ALERTS_WEBHOOK_URL ?? "",
+    certificatesWebhookUrl: process.env.SLACK_CERTIFICATES_WEBHOOK_URL ?? "",
+    // Default channel (e.g. "#notifications")
+    defaultChannel: process.env.SLACK_DEFAULT_CHANNEL ?? "",
+    // Channel routing overrides
+    alertsChannel: process.env.SLACK_ALERTS_CHANNEL ?? "",
+    certificatesChannel: process.env.SLACK_CERTIFICATES_CHANNEL ?? "",
+    // Bot display name
+    username: process.env.SLACK_USERNAME ?? "StrellerMinds",
+    // Shared secret for the webhook management API
+    signingSecret: process.env.SLACK_SIGNING_SECRET ?? "",
+  },
 } as const;
