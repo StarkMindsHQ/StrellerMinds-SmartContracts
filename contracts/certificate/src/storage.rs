@@ -1,4 +1,4 @@
-use soroban_sdk::{IntoVal, RawVal, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, IntoVal, Map, String, Val, Vec};
 
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateBackup, CertificateTemplate,
@@ -14,7 +14,7 @@ const MIN_PERSISTENT_TTL: u32 = 518_400; // ~30 days in ledgers (assuming 5s per
 /// TTL Extension: 90 days
 const EXTEND_TTL_TO: u32 = 1_555_200; // ~90 days
 
-fn extend_ttl_persistent<K: IntoVal<Env, RawVal>>(env: &Env, key: &K) {
+fn extend_ttl_persistent<K: IntoVal<Env, Val>>(env: &Env, key: &K) {
     env.storage().persistent().extend_ttl(key, MIN_PERSISTENT_TTL, EXTEND_TTL_TO);
 }
 
@@ -222,7 +222,7 @@ pub fn set_template(env: &Env, template_id: &String, template: &CertificateTempl
     // Add to template list if not already present
     let mut list: Vec<String> =
         env.storage().persistent().get(&CertDataKey::TemplateList).unwrap_or_else(|| Vec::new(env));
-    
+
     let mut exists = false;
     for id in list.iter() {
         if id == *template_id {
@@ -230,7 +230,7 @@ pub fn set_template(env: &Env, template_id: &String, template: &CertificateTempl
             break;
         }
     }
-    
+
     if !exists {
         list.push_back(template_id.clone());
         env.storage().persistent().set(&CertDataKey::TemplateList, &list);
@@ -286,6 +286,7 @@ pub fn get_analytics(env: &Env) -> CertificateAnalytics {
         active_certificates: 0,
         pending_requests: 0,
         avg_approval_time: 0,
+        compliance_violations_count: 0,
         last_updated: 0,
     })
 }

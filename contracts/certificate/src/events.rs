@@ -2,9 +2,9 @@ use shared::emit_certification_event;
 use shared::event_schema::{
     BatchCompletedEvent, CertificateReissuedEvent, CertificateSharedEvent,
     CertificateVerifiedEvent, CertificationEventData, CertificationIssuedEvent,
-    CertificationRevokedEvent, ComplianceCheckedEvent, MultisigApprovalGrantedEvent,
-    MultisigConfigUpdatedEvent, MultisigRequestApprovedEvent, MultisigRequestCreatedEvent,
-    MultisigRequestRejectedEvent, TemplateCreatedEvent,
+    CertificationRevokedEvent, ComplianceCheckedEvent, ComplianceViolationEvent,
+    MultisigApprovalGrantedEvent, MultisigConfigUpdatedEvent, MultisigRequestApprovedEvent,
+    MultisigRequestCreatedEvent, MultisigRequestRejectedEvent, TemplateCreatedEvent,
 };
 use soroban_sdk::{symbol_short, Address, BytesN, Env, String};
 
@@ -187,7 +187,7 @@ pub fn emit_compliance_violation(
     env: &Env,
     certificate_id: &BytesN<32>,
     standard: &str,
-    details: &str,
+    details: String,
 ) {
     emit_certification_event!(
         env,
@@ -196,7 +196,7 @@ pub fn emit_compliance_violation(
         CertificationEventData::ComplianceViolation(ComplianceViolationEvent {
             certificate_id: certificate_id.clone(),
             standard: String::from_str(env, standard),
-            violation_details: String::from_str(env, details),
+            violation_details: details,
         })
     );
 }

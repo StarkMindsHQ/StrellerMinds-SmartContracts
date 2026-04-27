@@ -1,13 +1,14 @@
 use shared::monitoring::ContractHealthStatus;
 use soroban_sdk::{
     testutils::{Address as _, Ledger as _},
-    Address, BytesN, Env, String, Vec,
+    Address, BytesN, Env, Map, String, Vec,
 };
 
 use crate::{
     types::{
-        CertificatePriority, CertificateStatus, ComplianceStandard, FieldType,
-        MintCertificateParams, MultiSigConfig, MultiSigRequestStatus, TemplateField,
+        CertDataKey, CertRateLimitConfig, CertificatePriority, CertificateStatus,
+        ComplianceStandard, FieldType, MintCertificateParams, MultiSigConfig,
+        MultiSigRequestStatus, TemplateField,
     },
     CertificateContract, CertificateContractClient,
 };
@@ -583,7 +584,8 @@ fn test_create_and_use_template() {
 
     let mut field_values: Map<String, String> = Map::new(&env);
     field_values.set(String::from_str(&env, "student_name"), String::from_str(&env, "John Doe"));
-    field_values.set(String::from_str(&env, "completion_date"), String::from_str(&env, "2026-02-25"));
+    field_values
+        .set(String::from_str(&env, "completion_date"), String::from_str(&env, "2026-02-25"));
 
     let cert_id = client.issue_with_template(&admin, &template_id, &params, &field_values);
     assert_eq!(cert_id, params.certificate_id);
@@ -645,7 +647,12 @@ fn test_automated_compliance_audit() {
     assert!(is_compliant);
 
     // Revoke and check again
-    client.revoke_certificate(&admin, &params.certificate_id, &String::from_str(&env, "Revoked"), &false);
+    client.revoke_certificate(
+        &admin,
+        &params.certificate_id,
+        &String::from_str(&env, "Revoked"),
+        &false,
+    );
     let is_compliant_after = client.automated_compliance_audit(&params.certificate_id);
     assert!(!is_compliant_after);
 }
@@ -1131,27 +1138,27 @@ fn test_health_check_before_init() {
 fn test_compliance_officer_and_manual_override() {
     let (env, client, admin) = setup_env();
     let officer = Address::generate(&env);
-    
+
     // Set officer
     client.set_compliance_officer(&admin, &officer);
-    
+
     // Issue certificate
     let student = Address::generate(&env);
     let params = make_cert_params(&env, "OVERRIDE_COURSE", &student);
     let mut list = Vec::new(&env);
     list.push_back(params.clone());
     client.batch_issue_certificates(&admin, &list);
-    
+
     // Manual override
     client.manual_compliance_override(
         &officer,
         &params.certificate_id,
         &String::from_str(&env, "Flagged for manual review"),
     );
-    
+
     let cert = client.get_certificate(&params.certificate_id).unwrap();
     assert_eq!(cert.status, CertificateStatus::NonCompliant);
-    
+
     let analytics = client.get_analytics();
     assert_eq!(analytics.compliance_violations_count, 1);
 }
@@ -1159,16 +1166,15 @@ fn test_compliance_officer_and_manual_override() {
 #[test]
 fn test_automated_compliance_audit_rate_limit() {
     let (env, client, admin) = setup_env();
-    
+
     // Issue certificate
     let student = Address::generate(&env);
     let params = make_cert_params(&env, "RL_COURSE", &student);
     let mut list = Vec::new(&env);
     list.push_back(params.clone());
     client.batch_issue_certificates(&admin, &list);
-    
+
     // Configure strict rate limit (3 calls per day)
-    client.set_admin(&admin, &admin); // Ensure admin can configure
     env.as_contract(&client.address, || {
         env.storage().instance().set(
             &CertDataKey::RateLimitCfg,
@@ -1177,10 +1183,10 @@ fn test_automated_compliance_audit_rate_limit() {
     });
 
     // Call 1, 2, 3: Succeed
-    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
-    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
-    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
-    
+    assert!(client.try_automated_compliance_audit(&params.certificate_id).is_ok());
+    assert!(client.try_automated_compliance_audit(&params.certificate_id).is_ok());
+    assert!(client.try_automated_compliance_audit(&params.certificate_id).is_ok());
+
     // Call 4: Fail
     let res = client.try_automated_compliance_audit(&params.certificate_id);
     assert!(res.is_err());

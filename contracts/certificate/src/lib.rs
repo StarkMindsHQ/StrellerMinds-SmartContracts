@@ -1133,15 +1133,7 @@ impl CertificateContract {
         }
 
         // Perform substitution in description
-        let mut description = params.description.clone();
-        for (name, value) in field_values.iter() {
-            // Substitution logic note: 
-            // While full string replacement is expensive on-chain, we store the values
-            // here to ensure the certificate remains fully audit-compliant and 
-            // substitution can be verified deterministically.
-            let _ = (name, value);
-        }
-
+        let description = params.description.clone();
         storage::set_template_values(&env, &params.certificate_id, &field_values);
 
         let anchor = generate_blockchain_anchor(&env, &params.certificate_id);
@@ -1183,7 +1175,13 @@ impl CertificateContract {
             a.active_certificates += 1;
         });
 
-        record_audit(&env, &params.certificate_id, AuditAction::Executed, &admin, "Issued with template");
+        record_audit(
+            &env,
+            &params.certificate_id,
+            AuditAction::Executed,
+            &admin,
+            "Issued with template",
+        );
 
         Ok(params.certificate_id)
     }
@@ -1198,6 +1196,13 @@ impl CertificateContract {
     ) -> Result<Certificate, CertificateError> {
         let template =
             storage::get_template(&env, &template_id).ok_or(CertificateError::TemplateNotFound)?;
+
+        // Validate required fields
+        for field in template.fields.iter() {
+            if field.is_required && !field_values.contains_key(field.field_name.clone()) {
+                return Err(CertificateError::MissingRequiredField);
+            }
+        }
 
         Ok(Certificate {
             certificate_id: BytesN::from_array(&env, &[0u8; 32]),
@@ -1397,28 +1402,24 @@ impl CertificateContract {
         // 1. Expiry Check
         if cert.expiry_date != 0 && env.ledger().timestamp() > cert.expiry_date {
             is_compliant = false;
-            violation_details = String::from_str(&env, "Certificate has expired; ");
+            violation_details = String::from_str(&env, "Expired");
         }
-
         // 2. Status Check
-        if cert.status != CertificateStatus::Active {
+        else if cert.status != CertificateStatus::Active {
             is_compliant = false;
-            let status_msg = match cert.status {
-                CertificateStatus::Revoked => "Revoked",
-                CertificateStatus::Suspended => "Suspended",
-                CertificateStatus::Expired => "Expired",
-                CertificateStatus::Reissued => "Reissued",
-                _ => "Inactive",
+            violation_details = match cert.status {
+                CertificateStatus::Revoked => String::from_str(&env, "Status: Revoked"),
+                CertificateStatus::Suspended => String::from_str(&env, "Status: Suspended"),
+                CertificateStatus::Expired => String::from_str(&env, "Status: Expired"),
+                CertificateStatus::Reissued => String::from_str(&env, "Status: Reissued"),
+                CertificateStatus::NonCompliant => String::from_str(&env, "Status: Non-Compliant"),
+                _ => String::from_str(&env, "Status: Inactive"),
             };
-            violation_details = String::from_str(&env, "Certificate status is ");
-            violation_details.append(&String::from_str(&env, status_msg));
-            violation_details.append(&String::from_str(&env, "; "));
         }
-
         // 3. Provenance Check
-        if cert.blockchain_anchor.is_none() {
+        else if cert.blockchain_anchor.is_none() {
             is_compliant = false;
-            violation_details = String::from_str(&env, "Blockchain anchor is missing; ");
+            violation_details = String::from_str(&env, "Missing Anchor");
         }
 
         if !is_compliant {
@@ -1440,7 +1441,7 @@ impl CertificateContract {
                 &env,
                 &certificate_id,
                 "Standard Automated Check",
-                &violation_details.to_string(),
+                violation_details,
             );
             record_audit(
                 &env,
@@ -1472,8 +1473,8 @@ impl CertificateContract {
         require_initialized(&env)?;
         require_compliance_officer(&env, &officer)?;
 
-        let mut cert =
-            storage::get_certificate(&env, &certificate_id).ok_or(CertificateError::CertificateNotFound)?;
+        let mut cert = storage::get_certificate(&env, &certificate_id)
+            .ok_or(CertificateError::CertificateNotFound)?;
         cert.status = CertificateStatus::NonCompliant;
         storage::set_certificate(&env, &certificate_id, &cert);
 
@@ -1485,7 +1486,7 @@ impl CertificateContract {
             &env,
             &certificate_id,
             "Manual Compliance Override",
-            &notes,
+            notes.clone(),
         );
 
         record_audit(
@@ -1512,6 +1513,7 @@ impl CertificateContract {
                     CertificateStatus::Expired => String::from_str(&env, "Expired"),
                     CertificateStatus::Suspended => String::from_str(&env, "Suspended"),
                     CertificateStatus::Reissued => String::from_str(&env, "Reissued"),
+                    CertificateStatus::NonCompliant => String::from_str(&env, "Non-Compliant"),
                 },
             );
             report.set(
