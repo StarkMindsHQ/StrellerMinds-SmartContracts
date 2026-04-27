@@ -92,6 +92,25 @@ app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/slack", slackRouter);
+
+// ── CSP Violation Reporter ─────────────────────────────────────────────────────
+app.post("/api/v1/security/csp-report", express.json({ type: "application/csp-report" }), (req: express.Request, res: express.Response) => {
+  const violation = req.body["csp-report"];
+  if (violation) {
+    logger.warn("CSP violation detected", {
+      documentUri: violation["document-uri"],
+      violatedDirective: violation["violated-directive"],
+      effectiveDirective: violation["effective-directive"],
+      originalPolicy: violation["original-policy"],
+      sourceFile: violation["source-file"],
+      lineNumber: violation["line-number"],
+      columnNumber: violation["column-number"],
+      statusCode: violation["status-code"],
+    });
+  }
+  res.status(204).send();
+});
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req: express.Request, res: express.Response) => {

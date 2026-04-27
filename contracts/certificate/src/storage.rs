@@ -1,8 +1,9 @@
 use soroban_sdk::{Address, BytesN, Env, Map, String, Vec};
 
 use crate::types::{
-    CertDataKey, Certificate, CertificateAnalytics, CertificateTemplate, ComplianceRecord,
-    MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig, RevocationRecord, ShareRecord,
+    CertDataKey, Certificate, CertificateAnalytics, CertificateBackup, CertificateTemplate,
+    ComplianceRecord, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
+    RecoveryRequest, RevocationRecord, ShareRecord,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -288,4 +289,61 @@ pub fn next_certificate_counter(env: &Env) -> u64 {
     let next = c + 1;
     env.storage().instance().set(&CertDataKey::CertificateCounter, &next);
     next
+}
+
+// ─────────────────────────────────────────────────────────────
+// Certificate Recovery
+// ─────────────────────────────────────────────────────────────
+pub fn set_certificate_backup(env: &Env, backup_id: &BytesN<32>, backup: &CertificateBackup) {
+    env.storage().persistent().set(&CertDataKey::CertificateBackup(backup_id.clone()), backup);
+}
+
+pub fn get_certificate_backup(env: &Env, backup_id: &BytesN<32>) -> Option<CertificateBackup> {
+    env.storage().persistent().get(&CertDataKey::CertificateBackup(backup_id.clone()))
+}
+
+pub fn add_student_backup(env: &Env, student: &Address, backup_id: &BytesN<32>) {
+    let mut backups: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&CertDataKey::StudentBackups(student.clone()))
+        .unwrap_or_else(|| Vec::new(env));
+    backups.push_back(backup_id.clone());
+    env.storage().persistent().set(&CertDataKey::StudentBackups(student.clone()), &backups);
+}
+
+pub fn get_student_backups(env: &Env, student: &Address) -> Vec<BytesN<32>> {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::StudentBackups(student.clone()))
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_recovery_request(env: &Env, request_id: &BytesN<32>, req: &RecoveryRequest) {
+    env.storage().persistent().set(&CertDataKey::RecoveryRequest(request_id.clone()), req);
+}
+
+pub fn get_recovery_request(env: &Env, request_id: &BytesN<32>) -> Option<RecoveryRequest> {
+    env.storage().persistent().get(&CertDataKey::RecoveryRequest(request_id.clone()))
+}
+
+pub fn add_pending_recovery_request(env: &Env, request_id: &BytesN<32>) {
+    let mut pending: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&CertDataKey::PendingRecoveryRequests)
+        .unwrap_or_else(|| Vec::new(env));
+    pending.push_back(request_id.clone());
+    env.storage().persistent().set(&CertDataKey::PendingRecoveryRequests, &pending);
+}
+
+pub fn get_pending_recovery_requests(env: &Env) -> Vec<BytesN<32>> {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::PendingRecoveryRequests)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_pending_recovery_requests(env: &Env, pending: &Vec<BytesN<32>>) {
+    env.storage().persistent().set(&CertDataKey::PendingRecoveryRequests, pending);
 }
