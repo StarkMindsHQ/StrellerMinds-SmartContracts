@@ -15,7 +15,8 @@ import {
 } from "@stellar/stellar-sdk";
 import { config } from "./config";
 import { logger } from "./logger";
-import { contractCallDuration } from "./metrics";
+import { contractCallDuration, cacheHits, cacheMisses } from "./metrics";
+import { cache } from "./cache";
 import type {
   Certificate,
   CertificateAnalytics,
@@ -115,14 +116,36 @@ export class CertificateContractClient {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
+  // ── Cache helpers ──────────────────────────────────────────────────────────
+
+  private async cachedGet<T>(key: string, keyType: string, ttl: number, fetch: () => Promise<T>): Promise<T> {
+    const cached = await cache.get<T>(key);
+    if (cached !== null) {
+      cacheHits.inc({ key_type: keyType });
+      return cached;
+    }
+    cacheMisses.inc({ key_type: keyType });
+    const result = await fetch();
+    await cache.set(key, result, ttl);
+    return result;
+  }
+
   /**
    * Verify a certificate by ID. Returns full verification result.
    */
   async verifyCertificate(certificateId: string): Promise<VerificationResult> {
+    return this.cachedGet(
+      `cert:verify:${certificateId}`,
+      "verify",
+      config.redis.ttl.certificate,
+      () => this.fetchVerification(certificateId),
+    );
+  }
+
+  private async fetchVerification(certificateId: string): Promise<VerificationResult> {
     const now = Math.floor(Date.now() / 1000);
     const certIdArg = this.hexToScVal(certificateId);
 
-    // Fetch certificate data
     let certificate: Certificate | null = null;
     let revocationRecord: RevocationRecord | null = null;
     let isValid = false;
@@ -147,7 +170,6 @@ export class CertificateContractClient {
 
       certificate = this.mapCertificate(raw);
 
-      // Check status
       if (certificate.status === "Active") {
         const expired =
           certificate.expiryDate > 0 && certificate.expiryDate < now;
@@ -161,7 +183,6 @@ export class CertificateContractClient {
       } else if (certificate.status === "Revoked") {
         isValid = false;
         message = "Certificate has been revoked";
-        // Fetch revocation record
         try {
           const revRaw = (await this.simulate("get_revocation_record", [
             certIdArg,
@@ -201,62 +222,73 @@ export class CertificateContractClient {
     }
   }
 
-  /**
-   * Get a certificate by ID.
-   */
   async getCertificate(certificateId: string): Promise<Certificate | null> {
-    const raw = (await this.simulate("get_certificate", [
-      this.hexToScVal(certificateId),
-    ])) as Record<string, unknown> | null;
-    return raw ? this.mapCertificate(raw) : null;
-  }
-
-  /**
-   * Get all certificate IDs for a student address.
-   */
-  async getStudentCertificates(studentAddress: string): Promise<string[]> {
-    const addressArg = nativeToScVal(
-      Address.fromString(studentAddress),
-      { type: "address" }
+    return this.cachedGet(
+      `cert:get:${certificateId}`,
+      "certificate",
+      config.redis.ttl.certificate,
+      async () => {
+        const raw = (await this.simulate("get_certificate", [
+          this.hexToScVal(certificateId),
+        ])) as Record<string, unknown> | null;
+        return raw ? this.mapCertificate(raw) : null;
+      },
     );
-    const raw = (await this.simulate("get_student_certificates", [
-      addressArg,
-    ])) as Uint8Array[];
-    return (raw ?? []).map((b) => Buffer.from(b).toString("hex"));
   }
 
-  /**
-   * Get aggregate analytics from the contract.
-   */
+  async getStudentCertificates(studentAddress: string): Promise<string[]> {
+    return this.cachedGet(
+      `student:certs:${studentAddress}`,
+      "student_certs",
+      config.redis.ttl.studentCerts,
+      async () => {
+        const addressArg = nativeToScVal(
+          Address.fromString(studentAddress),
+          { type: "address" }
+        );
+        const raw = (await this.simulate("get_student_certificates", [
+          addressArg,
+        ])) as Uint8Array[];
+        return (raw ?? []).map((b) => Buffer.from(b).toString("hex"));
+      },
+    );
+  }
+
   async getAnalytics(): Promise<CertificateAnalytics> {
-    const raw = (await this.simulate("get_analytics", [])) as Record<
-      string,
-      unknown
-    >;
-    return {
-      totalIssued: Number(raw.total_issued),
-      totalRevoked: Number(raw.total_revoked),
-      totalExpired: Number(raw.total_expired),
-      totalReissued: Number(raw.total_reissued),
-      totalShared: Number(raw.total_shared),
-      totalVerified: Number(raw.total_verified),
-      activeCertificates: Number(raw.active_certificates),
-      pendingRequests: Number(raw.pending_requests),
-      avgApprovalTime: Number(raw.avg_approval_time),
-      lastUpdated: Number(raw.last_updated),
-    };
+    return this.cachedGet(
+      "analytics:global",
+      "analytics",
+      config.redis.ttl.analytics,
+      async () => {
+        const raw = (await this.simulate("get_analytics", [])) as Record<string, unknown>;
+        return {
+          totalIssued: Number(raw.total_issued),
+          totalRevoked: Number(raw.total_revoked),
+          totalExpired: Number(raw.total_expired),
+          totalReissued: Number(raw.total_reissued),
+          totalShared: Number(raw.total_shared),
+          totalVerified: Number(raw.total_verified),
+          activeCertificates: Number(raw.active_certificates),
+          pendingRequests: Number(raw.pending_requests),
+          avgApprovalTime: Number(raw.avg_approval_time),
+          lastUpdated: Number(raw.last_updated),
+        };
+      },
+    );
   }
 
-  /**
-   * Get revocation record for a certificate.
-   */
-  async getRevocationRecord(
-    certificateId: string
-  ): Promise<RevocationRecord | null> {
-    const raw = (await this.simulate("get_revocation_record", [
-      this.hexToScVal(certificateId),
-    ])) as Record<string, unknown> | null;
-    return raw ? this.mapRevocation(raw) : null;
+  async getRevocationRecord(certificateId: string): Promise<RevocationRecord | null> {
+    return this.cachedGet(
+      `cert:revocation:${certificateId}`,
+      "revocation",
+      config.redis.ttl.revocation,
+      async () => {
+        const raw = (await this.simulate("get_revocation_record", [
+          this.hexToScVal(certificateId),
+        ])) as Record<string, unknown> | null;
+        return raw ? this.mapRevocation(raw) : null;
+      },
+    );
   }
 }
 

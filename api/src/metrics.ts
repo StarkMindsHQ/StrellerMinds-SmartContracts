@@ -85,4 +85,24 @@ export const assetServeTime = new client.Histogram({
   buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2],
 });
 
+// ── Redis cache metrics ──────────────────────────────────────────────────────
+
+export const cacheHits = new client.Counter({
+  name: "cert_api_cache_hits_total",
+  help: "Redis cache hits",
+  labelNames: ["key_type"],
+});
+
+export const cacheMisses = new client.Counter({
+  name: "cert_api_cache_misses_total",
+  help: "Redis cache misses",
+  labelNames: ["key_type"],
+});
+
+export const cacheErrors = new client.Counter({
+  name: "cert_api_cache_errors_total",
+  help: "Redis cache errors",
+  labelNames: ["operation"],
+});
+
 export const registry = client.register;

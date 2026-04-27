@@ -54,4 +54,15 @@ export const config = {
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
   },
+
+  redis: {
+    url: process.env.REDIS_URL ?? "redis://localhost:6379",
+    // TTLs in seconds
+    ttl: {
+      certificate: parseInt(process.env.REDIS_TTL_CERTIFICATE ?? "300", 10),   // 5 min
+      studentCerts: parseInt(process.env.REDIS_TTL_STUDENT_CERTS ?? "120", 10), // 2 min
+      analytics:    parseInt(process.env.REDIS_TTL_ANALYTICS ?? "60", 10),      // 1 min
+      revocation:   parseInt(process.env.REDIS_TTL_REVOCATION ?? "300", 10),    // 5 min
+    },
+  },
 } as const;
