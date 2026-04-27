@@ -18,6 +18,7 @@ import analyticsRouter from "./routes/analytics";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
+import certificateTemplatesRouter from "./certificate-templates/certificate-templates.route";
 import performanceRouter from "./routes/performance";
 import slackRouter from "./routes/slack";
 
@@ -94,6 +95,7 @@ app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/certificate-templates", certificateTemplatesRouter);
 app.use("/api/v1/performance", performanceRouter);
 app.use("/api/v1/slack", slackRouter);
 
