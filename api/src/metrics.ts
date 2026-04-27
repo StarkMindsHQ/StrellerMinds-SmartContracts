@@ -85,4 +85,24 @@ export const assetServeTime = new client.Histogram({
   buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2],
 });
 
+// ── Cache metrics ─────────────────────────────────────────────────────────────
+
+export const cacheHits = new client.Counter({
+  name: "cert_api_cache_hits_total",
+  help: "In-memory cache hits",
+  labelNames: ["cache"],
+});
+
+export const cacheMisses = new client.Counter({
+  name: "cert_api_cache_misses_total",
+  help: "In-memory cache misses",
+  labelNames: ["cache"],
+});
+
+export const cacheSize = new client.Gauge({
+  name: "cert_api_cache_size",
+  help: "Current number of entries in each in-memory cache",
+  labelNames: ["cache"],
+});
+
 export const registry = client.register;

@@ -1,5 +1,6 @@
 /**
- * GET /api/v1/analytics — aggregate certificate analytics (auth required)
+ * GET /api/v1/analytics       — aggregate certificate analytics (auth required)
+ * GET /api/v1/analytics/cache — cache hit/miss stats (auth required)
  */
 import { Router, Request, Response } from "express";
 import { contractClient } from "../soroban-client";
@@ -29,6 +30,15 @@ router.get(
         req.requestId
       );
     }
+  }
+);
+
+router.get(
+  "/cache",
+  generalLimiter,
+  authenticate,
+  (req: Request, res: Response) => {
+    sendSuccess(res, contractClient.cacheStats(), 200, req.requestId);
   }
 );
 

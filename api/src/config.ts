@@ -54,4 +54,15 @@ export const config = {
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
   },
+
+  cache: {
+    // How long analytics results are cached (ms). Analytics change infrequently.
+    analyticsTtlMs: parseInt(process.env.CACHE_ANALYTICS_TTL_MS ?? "300000", 10), // 5 min
+    // How long individual certificate lookups are cached (ms).
+    certificateTtlMs: parseInt(process.env.CACHE_CERTIFICATE_TTL_MS ?? "60000", 10), // 1 min
+    // Revocation records never change once set; cache aggressively.
+    revocationTtlMs: parseInt(process.env.CACHE_REVOCATION_TTL_MS ?? "300000", 10), // 5 min
+    // Student certificate ID lists.
+    studentTtlMs: parseInt(process.env.CACHE_STUDENT_TTL_MS ?? "60000", 10), // 1 min
+  },
 } as const;
