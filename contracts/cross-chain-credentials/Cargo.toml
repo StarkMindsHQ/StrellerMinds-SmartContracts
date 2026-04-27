@@ -8,11 +8,11 @@ license = "Apache-2.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "22.0.0"
+soroban-sdk = "25.3.1"
 shared = { workspace = true }
 
 [dev-dependencies]
-soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+soroban-sdk = { version = "25.3.1", features = ["testutils"] }
 
 [package.metadata.docs.rs]
 all-features = true
