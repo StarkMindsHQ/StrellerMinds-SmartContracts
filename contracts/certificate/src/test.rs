@@ -581,9 +581,9 @@ fn test_create_and_use_template() {
     let mut params = make_cert_params(&env, "TEMPLATE_COURSE", &student);
     params.certificate_id = BytesN::from_array(&env, &[50u8; 32]);
 
-    let mut field_values: Vec<String> = Vec::new(&env);
-    field_values.push_back(String::from_str(&env, "John Doe"));
-    field_values.push_back(String::from_str(&env, "2026-02-25"));
+    let mut field_values: Map<String, String> = Map::new(&env);
+    field_values.set(String::from_str(&env, "student_name"), String::from_str(&env, "John Doe"));
+    field_values.set(String::from_str(&env, "completion_date"), String::from_str(&env, "2026-02-25"));
 
     let cert_id = client.issue_with_template(&admin, &template_id, &params, &field_values);
     assert_eq!(cert_id, params.certificate_id);
@@ -624,11 +624,30 @@ fn test_template_missing_required_fields_fails() {
     params.certificate_id = BytesN::from_array(&env, &[60u8; 32]);
 
     // Only provide 1 value when 2 are required
-    let mut field_values: Vec<String> = Vec::new(&env);
-    field_values.push_back(String::from_str(&env, "Only Name"));
+    let mut field_values: Map<String, String> = Map::new(&env);
+    field_values.set(String::from_str(&env, "name"), String::from_str(&env, "Only Name"));
 
     let result = client.try_issue_with_template(&admin, &template_id, &params, &field_values);
     assert!(result.is_err());
+}
+
+#[test]
+fn test_automated_compliance_audit() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "AUDIT_TEST_COURSE", &student);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    // Initial audit should pass
+    let is_compliant = client.automated_compliance_audit(&params.certificate_id);
+    assert!(is_compliant);
+
+    // Revoke and check again
+    client.revoke_certificate(&admin, &params.certificate_id, &String::from_str(&env, "Revoked"), &false);
+    let is_compliant_after = client.automated_compliance_audit(&params.certificate_id);
+    assert!(!is_compliant_after);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1103,4 +1122,66 @@ fn test_health_check_before_init() {
     let report = client.health_check();
     assert_eq!(report.status, ContractHealthStatus::Unknown);
     assert!(!report.initialized);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 18. Advanced Compliance & Governance
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_compliance_officer_and_manual_override() {
+    let (env, client, admin) = setup_env();
+    let officer = Address::generate(&env);
+    
+    // Set officer
+    client.set_compliance_officer(&admin, &officer);
+    
+    // Issue certificate
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "OVERRIDE_COURSE", &student);
+    let mut list = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+    
+    // Manual override
+    client.manual_compliance_override(
+        &officer,
+        &params.certificate_id,
+        &String::from_str(&env, "Flagged for manual review"),
+    );
+    
+    let cert = client.get_certificate(&params.certificate_id).unwrap();
+    assert_eq!(cert.status, CertificateStatus::NonCompliant);
+    
+    let analytics = client.get_analytics();
+    assert_eq!(analytics.compliance_violations_count, 1);
+}
+
+#[test]
+fn test_automated_compliance_audit_rate_limit() {
+    let (env, client, admin) = setup_env();
+    
+    // Issue certificate
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "RL_COURSE", &student);
+    let mut list = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+    
+    // Configure strict rate limit (3 calls per day)
+    client.set_admin(&admin, &admin); // Ensure admin can configure
+    env.as_contract(&client.address, || {
+        env.storage().instance().set(
+            &CertDataKey::RateLimitCfg,
+            &CertRateLimitConfig { max_requests_per_day: 3, window_seconds: 86_400 },
+        );
+    });
+
+    // Call 1, 2, 3: Succeed
+    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
+    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
+    assert!(client.automated_compliance_audit(&params.certificate_id).is_ok());
+    
+    // Call 4: Fail
+    let res = client.try_automated_compliance_audit(&params.certificate_id);
+    assert!(res.is_err());
 }
