@@ -22,6 +22,7 @@ export const openApiSpec = {
     { name: "Analytics", description: "Aggregate platform analytics" },
     { name: "Rate Limiting", description: "Per-user rate limit status and tier info" },
     { name: "CDN", description: "Cache invalidation and CDN configuration" },
+    { name: "Performance", description: "Query optimization, cache, and backend pool diagnostics" },
     { name: "Health", description: "Service health and monitoring" },
   ],
   components: {
@@ -140,6 +141,113 @@ export const openApiSpec = {
           resetAt: { type: "integer", description: "Unix timestamp when window resets" },
           throttled: { type: "boolean" },
           windowRemainingMs: { type: "integer" },
+        },
+      },
+      QueryOptimizationReport: {
+        type: "object",
+        properties: {
+          timestamp: { type: "string", format: "date-time" },
+          targets: {
+            type: "object",
+            properties: {
+              avgQueryTimeMs: { type: "number" },
+              loadReductionPercent: { type: "number" },
+            },
+          },
+          summary: {
+            type: "object",
+            properties: {
+              averageQueryTimeMs: { type: "number" },
+              meetsAverageQueryTarget: { type: "boolean" },
+              estimatedLoadReductionPercent: { type: "number" },
+              meetsLoadReductionTarget: { type: "boolean" },
+              cacheHitRatio: { type: "number" },
+              cacheEntries: { type: "integer" },
+              totalRequests: { type: "integer" },
+              totalBackendCalls: { type: "integer" },
+              totalBackendRequestCalls: { type: "integer" },
+              totalBackgroundRefreshes: { type: "integer" },
+              slowQueries: { type: "integer" },
+            },
+          },
+          cache: {
+            type: "object",
+            properties: {
+              maxEntries: { type: "integer" },
+              activeEntries: { type: "integer" },
+              hitRatio: { type: "number" },
+            },
+          },
+          pool: {
+            type: "object",
+            properties: {
+              size: { type: "integer" },
+              available: { type: "integer" },
+              inFlightBackendQueries: { type: "integer" },
+              configuredRpcUrls: { type: "array", items: { type: "string" } },
+              roundRobinCursor: { type: "integer" },
+            },
+          },
+          slowQueries: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                query: { type: "string" },
+                slowCount: { type: "integer" },
+                lastDurationMs: { type: "number" },
+                averageDurationMs: { type: "number" },
+                p95DurationMs: { type: "number" },
+              },
+            },
+          },
+          topQueries: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                query: { type: "string" },
+                requests: { type: "integer" },
+                averageDurationMs: { type: "number" },
+                p95DurationMs: { type: "number" },
+                p99DurationMs: { type: "number" },
+                cacheHitRatio: { type: "number" },
+                estimatedLoadReductionPercent: { type: "number" },
+                backendCalls: { type: "integer" },
+                effectiveTtlMs: { type: "integer" },
+              },
+            },
+          },
+          optimization: {
+            type: "object",
+            properties: {
+              adaptiveCachingEnabled: { type: "boolean" },
+              knownSingletonPrewarmQueries: {
+                type: "array",
+                items: { type: "string" },
+              },
+              recommendations: {
+                type: "array",
+                items: { type: "string" },
+              },
+              indexOptimizationSpecs: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    query: { type: "string" },
+                    backend: { type: "string" },
+                    accessPattern: { type: "string" },
+                    recommendedLookupKey: { type: "string" },
+                    recommendedIndexSpec: { type: "string" },
+                    cacheCoverage: { type: "string" },
+                    directLookupCovered: { type: "boolean" },
+                    notes: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -443,6 +551,57 @@ export const openApiSpec = {
               },
             },
           },
+        },
+      },
+    },
+    "/performance/query-optimization": {
+      get: {
+        tags: ["Performance"],
+        summary: "Get query optimization diagnostics and recommendations",
+        responses: {
+          "200": {
+            description: "Current query optimization report",
+            content: {
+              "application/json": {
+                schema: {
+                  allOf: [
+                    { $ref: "#/components/schemas/ApiResponse" },
+                    {
+                      properties: {
+                        data: { $ref: "#/components/schemas/QueryOptimizationReport" },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/performance/query-cache/invalidate": {
+      post: {
+        tags: ["Performance"],
+        summary: "Invalidate query cache entries by query or key prefix",
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  query: { type: "string" },
+                  keyPrefix: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Query cache invalidated" },
+          "400": { description: "Invalid request body" },
+          "401": { description: "Unauthorized" },
         },
       },
     },
