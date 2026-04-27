@@ -29,6 +29,53 @@ cargo test
 
 That's it! Your contracts are built and tested. See the [Developer Onboarding Guide](docs/ONBOARDING.md) for new team members.
 
+## 📚 Developer Onboarding
+
+New team members should follow the comprehensive onboarding guide:
+
+### 📋 Onboarding Checklist
+
+| Phase | Duration | Tasks |
+|-------|----------|-------|
+| **Phase 1: Environment Setup** | 10 min | Clone, install prerequisites, run setup script |
+| **Phase 2: Build & Test** | 15 min | Build contracts, run tests, format code |
+| **Phase 3: Development Workflow** | 20 min | Create branch, make change, commit, PR |
+| **Phase 4: E2E Testing** (Optional) | 15 min | Start localnet, run E2E tests, stop localnet |
+
+### 🚀 Quick Start Commands
+
+```bash
+# Clone and setup
+git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git
+cd StrellerMinds-SmartContracts
+./scripts/setup.sh
+
+# Build and test
+make build
+make unit-test
+
+# Format and lint
+cargo fmt --all
+cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+```
+
+### 📖 Onboarding Guide Contents
+
+The [Developer Onboarding Guide](docs/ONBOARDING.md) includes:
+
+- ✅ Project overview and technology stack
+- ✅ Prerequisites and environment setup
+- ✅ Step-by-step setup instructions
+- ✅ Project structure and contract descriptions
+- ✅ Development workflow and git conventions
+- ✅ Testing guidelines (unit, property-based, E2E)
+- ✅ Deployment procedures
+- ✅ Code standards and naming conventions
+- ✅ **Best practices with code examples** (NEW)
+- ✅ **Verification checklist for assignment completion** (NEW)
+- ✅ Common issues and troubleshooting
+- ✅ Getting help and documentation map
+
 ## ✨ Features
 
 - Smart contract development using Soroban on Stellar
