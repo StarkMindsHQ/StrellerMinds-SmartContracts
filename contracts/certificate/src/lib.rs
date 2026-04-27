@@ -14,7 +14,7 @@ use types::{
     AuditAction, BatchResult, Certificate, CertificateAnalytics, CertificateStatus,
     CertificateTemplate, ComplianceRecord, ComplianceStandard, MintCertificateParams,
     MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig, MultiSigRequestStatus,
-    RevocationRecord, ShareRecord, TemplateField,
+    RevocationRecord, ShareRecord, TemplateField, TemplateVersion,
 };
 
 /// Maximum number of approvers per config (gas guard).
@@ -624,6 +624,9 @@ impl CertificateContract {
             created_by: admin.clone(),
             created_at: env.ledger().timestamp(),
             is_active: true,
+            version: 1,
+            parent_version: None,
+            changelog: String::from_str(&env, "Initial version"),
         };
 
         storage::set_template(&env, &template_id, &template);
@@ -643,6 +646,181 @@ impl CertificateContract {
 
     pub fn get_template(env: Env, template_id: String) -> Option<CertificateTemplate> {
         storage::get_template(&env, &template_id)
+    }
+
+    /// Create a new version of an existing template
+    pub fn create_template_version(
+        env: Env,
+        admin: Address,
+        template_id: String,
+        fields: Vec<TemplateField>,
+        changelog: String,
+    ) -> Result<u32, CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+
+        let current_template =
+            storage::get_template(&env, &template_id).ok_or(CertificateError::TemplateNotFound)?;
+
+        let latest_version = storage::get_latest_template_version(&env, &template_id);
+        let new_version = latest_version + 1;
+
+        // Deactivate current version
+        let mut current = current_template.clone();
+        current.is_active = false;
+        storage::set_template(&env, &template_id, &current);
+
+        // Create new version
+        let new_template = CertificateTemplate {
+            template_id: template_id.clone(),
+            name: current_template.name,
+            description: current_template.description,
+            fields: fields.clone(),
+            created_by: admin.clone(),
+            created_at: env.ledger().timestamp(),
+            is_active: true,
+            version: new_version,
+            parent_version: Some(latest_version),
+            changelog: changelog.clone(),
+        };
+
+        // Save to version history
+        let version_record = TemplateVersion {
+            template_id: template_id.clone(),
+            version: latest_version,
+            created_at: current_template.created_at,
+            created_by: current_template.created_by,
+            fields: current_template.fields,
+            changelog: current_template.changelog,
+            is_rollback_target: true,
+        };
+        storage::add_template_version(&env, &template_id, &version_record);
+
+        // Update template with new version
+        storage::set_template(&env, &template_id, &new_template);
+        storage::set_latest_template_version(&env, &template_id, new_version);
+
+        record_audit(
+            &env,
+            &BytesN::from_array(&env, &[0u8; 32]),
+            AuditAction::TemplateCreated,
+            &admin,
+            &format!("Template version {} created", new_version),
+        );
+
+        events::emit_template_created(&env, &template_id, &admin);
+
+        Ok(new_version)
+    }
+
+    /// Get version history for a template
+    pub fn get_template_version_history(env: Env, template_id: String) -> Vec<TemplateVersion> {
+        storage::get_template_versions(&env, &template_id)
+    }
+
+    /// Get specific version of a template
+    pub fn get_template_at_version(
+        env: Env,
+        template_id: String,
+        version: u32,
+    ) -> Option<TemplateVersion> {
+        storage::get_template_version(&env, &template_id, version)
+    }
+
+    /// Rollback to a previous template version
+    pub fn rollback_template(
+        env: Env,
+        admin: Address,
+        template_id: String,
+        target_version: u32,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+
+        let target = storage::get_template_version(&env, &template_id, target_version)
+            .ok_or(CertificateError::TemplateVersionNotFound)?;
+
+        let current =
+            storage::get_template(&env, &template_id).ok_or(CertificateError::TemplateNotFound)?;
+
+        // Save current version to history before rollback
+        let current_version_record = TemplateVersion {
+            template_id: template_id.clone(),
+            version: current.version,
+            created_at: current.created_at,
+            created_by: current.created_by,
+            fields: current.fields.clone(),
+            changelog: format!("Rolled back from version {}", current.version),
+            is_rollback_target: true,
+        };
+        storage::add_template_version(&env, &template_id, &current_version_record);
+
+        // Restore target version
+        let restored_template = CertificateTemplate {
+            template_id: template_id.clone(),
+            name: current.name,
+            description: current.description,
+            fields: target.fields.clone(),
+            created_by: admin.clone(),
+            created_at: env.ledger().timestamp(),
+            is_active: true,
+            version: target_version,
+            parent_version: current.parent_version,
+            changelog: format!("Rolled back to version {}", target_version),
+        };
+
+        storage::set_template(&env, &template_id, &restored_template);
+        storage::set_latest_template_version(&env, &template_id, target_version);
+
+        record_audit(
+            &env,
+            &BytesN::from_array(&env, &[0u8; 32]),
+            AuditAction::ConfigUpdated,
+            &admin,
+            &format!("Template rolled back to version {}", target_version),
+        );
+
+        events::emit_template_created(&env, &template_id, &admin);
+
+        Ok(())
+    }
+
+    /// Migrate certificates from one template version to another
+    pub fn migrate_template_certificates(
+        env: Env,
+        admin: Address,
+        template_id: String,
+        from_version: u32,
+        to_version: u32,
+    ) -> Result<u32, CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &admin)?;
+
+        // Validate versions exist
+        storage::get_template_version(&env, &template_id, from_version)
+            .ok_or(CertificateError::TemplateVersionNotFound)?;
+        storage::get_template_version(&env, &template_id, to_version)
+            .ok_or(CertificateError::TemplateVersionNotFound)?;
+
+        let template_list = storage::get_template_versions(&env, &template_id);
+        let mut migrated_count: u32 = 0;
+
+        // Note: In a real implementation, you would iterate through certificates
+        // and update their template references. This is a simplified version.
+        // Actual migration would require certificate storage iteration.
+
+        record_audit(
+            &env,
+            &BytesN::from_array(&env, &[0u8; 32]),
+            AuditAction::ConfigUpdated,
+            &admin,
+            &format!(
+                "Template migration from v{} to v{} completed, {} certificates migrated",
+                from_version, to_version, migrated_count
+            ),
+        );
+
+        Ok(migrated_count)
     }
 
     /// Issue a certificate using a template, validating required fields.

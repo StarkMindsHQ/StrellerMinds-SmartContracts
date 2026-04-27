@@ -30,6 +30,9 @@ pub enum CertificateError {
     TemplateAlreadyExists = 31,
     TemplateInactive = 32,
     MissingRequiredField = 33,
+    TemplateVersionNotFound = 34,
+    TemplateRollbackFailed = 35,
+    TemplateMigrationFailed = 36,
 
     // Configuration
     InvalidConfig = 40,

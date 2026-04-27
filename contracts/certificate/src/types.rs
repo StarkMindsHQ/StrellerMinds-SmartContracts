@@ -144,6 +144,9 @@ pub struct CertificateTemplate {
     pub created_by: Address,
     pub created_at: u64,
     pub is_active: bool,
+    pub version: u32,
+    pub parent_version: Option<u32>,
+    pub changelog: String,
 }
 
 #[contracttype]
@@ -276,6 +279,21 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Template Version History
+// ─────────────────────────────────────────────────────────────
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TemplateVersion {
+    pub template_id: String,
+    pub version: u32,
+    pub created_at: u64,
+    pub created_by: Address,
+    pub fields: Vec<TemplateField>,
+    pub changelog: String,
+    pub is_rollback_target: bool,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Storage Keys
 // ─────────────────────────────────────────────────────────────
 #[contracttype]
@@ -302,6 +320,8 @@ pub enum CertDataKey {
     // Templates
     Template(String),
     TemplateList,
+    TemplateVersionHistory(String),
+    LatestTemplateVersion(String),
 
     // Revocations
     RevocationRecord(BytesN<32>),
