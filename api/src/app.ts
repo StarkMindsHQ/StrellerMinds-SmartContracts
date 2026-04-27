@@ -1,99 +1,47 @@
 import express from "express";
-import helmet from "helmet";
-import cors from "cors";
-import swaggerUi from "swagger-ui-express";
-import { randomBytes } from "crypto";
-
-import { config } from "./config";
-import { requestId } from "./middleware/requestId";
-import { metricsMiddleware } from "./middleware/metricsMiddleware";
-import { cdnMiddleware } from "./middleware/cdn";
-import { openApiSpec } from "./openapi";
-import { logger } from "./logger";
-
-import authRouter from "./routes/auth";
-import certificatesRouter from "./routes/certificates";
-import studentsRouter from "./routes/students";
-import analyticsRouter from "./routes/analytics";
-import healthRouter from "./routes/health";
-import rateLimitRouter from "./routes/rateLimit";
-import cdnRouter from "./routes/cdn";
-import slackRouter from "./routes/slack";
-import { createSlackNotifier } from "./notifications/slack";
+  import helmet from "helmet";
+  import cors from "cors";
+  import swaggerUi from "swagger-ui-express";
+ 
+  import { config } from "./config";
+  import { requestId } from "./middleware/requestId";
+  import { metricsMiddleware } from "./middleware/metricsMiddleware";
+  import { cdnMiddleware } from "./middleware/cdn";
+  import { securityHeadersValidator } from "./middleware/securityHeaders";
+  import { openApiSpec } from "./openapi";
+  import { logger } from "./logger";
+ 
+  import authRouter from "./routes/auth";
+  import certificatesRouter from "./routes/certificates";
+  import studentsRouter from "./routes/students";
+  import analyticsRouter from "./routes/analytics";
+  import healthRouter from "./routes/health";
+  import rateLimitRouter from "./routes/rateLimit";
+  import cdnRouter from "./routes/cdn";
 
 const app = express();
 
-// ── Slack notifier initialization ─────────────────────────────────────────────
-if (config.slack.webhookUrl) {
-  const webhooks: Record<string, { url: string; channel?: string; username?: string }> = {
-    default: {
-      url: config.slack.webhookUrl,
-      channel: config.slack.defaultChannel || undefined,
-      username: config.slack.username,
-    },
-  };
-  if (config.slack.alertsWebhookUrl) {
-    webhooks.alerts = {
-      url: config.slack.alertsWebhookUrl,
-      channel: config.slack.alertsChannel || undefined,
-      username: config.slack.username,
-    };
-  }
-  if (config.slack.certificatesWebhookUrl) {
-    webhooks.certificates = {
-      url: config.slack.certificatesWebhookUrl,
-      channel: config.slack.certificatesChannel || undefined,
-      username: config.slack.username,
-    };
-  }
-  createSlackNotifier(webhooks);
-  logger.info("Slack notifier initialized", { webhooks: Object.keys(webhooks) });
-} else {
-  logger.info("Slack notifications disabled (SLACK_WEBHOOK_URL not set)");
-}
-
-// ── CSP Nonce Middleware ──────────────────────────────────────────────────────
-const cspNonceMiddleware = (req: express.Request, _res: express.Response, next: express.NextFunction) => {
-  const nonce = randomBytes(16).toString("hex");
-  (req as any).cspNonce = nonce;
-  next();
-};
-app.use(cspNonceMiddleware);
-
-// ── Security headers ──────────────────────────────────────────────────────────
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", (req: any) => `'nonce-${req.cspNonce}'`, "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", (req: any) => `'nonce-${req.cspNonce}'`, "https://cdn.jsdelivr.net"],
-        imgSrc: ["'self'", "data:", "https:"],
-        fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
-        connectSrc: ["'self'", "https://api.stellar.org"],
-        frameSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        childSrc: ["'self'"],
-        formAction: ["'self'"],
-        upgradeInsecureRequests: [],
-        reportUri: ["/api/v1/security/csp-report"],
+ // ── Security headers ──────────────────────────────────────────────────────────
+  app.use(
+    helmet({
+      hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
       },
-      blockAllMixedContent: true,
-    },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    dnsPrefetchControl: true,
-    frameguard: { action: "deny" },
-    hidePoweredBy: true,
-    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
-    ieNoOpen: true,
-    noSniff: true,
-    referrerPolicy: { policy: "strict-no-referrer" },
-    xssFilter: true,
-  })
-);
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"], // needed for Swagger UI
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:"],
+        },
+      },
+      frameguard: {
+        action: 'sameorigin',
+      },
+    })
+  );
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(
@@ -113,16 +61,19 @@ app.use(requestId);
 app.use(metricsMiddleware);
 app.use(cdnMiddleware);
 
-// ── Request logging ───────────────────────────────────────────────────────────
-app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
-  logger.debug("Incoming request", {
-    method: req.method,
-    path: req.path,
-    requestId: req.requestId,
-    ip: req.ip,
+ // ── Request logging ───────────────────────────────────────────────────────────
+  app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
+    logger.debug("Incoming request", {
+      method: req.method,
+      path: req.path,
+      requestId: req.requestId,
+      ip: req.ip,
+    });
+    next();
   });
-  next();
-});
+
+  // ── Security headers validator ────────────────────────────────────────────────
+  app.use(securityHeadersValidator);
 
 // ── API docs ──────────────────────────────────────────────────────────────────
 app.use(
