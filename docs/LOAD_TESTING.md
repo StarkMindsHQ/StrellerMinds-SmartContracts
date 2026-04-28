@@ -10,6 +10,7 @@ The load testing suite is designed to evaluate how the system behaves under stre
 
 -   **E2E Load Tests**: Located in `e2e-tests/tests/load_testing.rs`. These tests run against a live Soroban network (e.g., localnet).
 -   **Internal Benchmarks**: Located in `contracts/token/src/benchmarks.rs`. These are unit tests that measure execution efficiency within the `soroban-sdk` test environment.
+-   **CI/CD Integration**: Automated daily runs via GitHub Actions (`.github/workflows/load-testing.yml`) to track baseline metrics and alert on performance regressions.
 
 ## 🧪 Load Scenarios
 
@@ -17,7 +18,7 @@ The load testing suite is designed to evaluate how the system behaves under stre
 -   **Scenario**: Simulates multiple students recording learning sessions simultaneously.
 -   **Component**: `analytics` contract.
 -   **Goal**: Measure throughput (ops/sec) and ensure non-blocking transaction flow.
--   **Running**: `cargo test --test load_testing test_load_analytics_recording_stress -- --ignored`
+-   **Running**: `LOAD_TEST_REQUESTS=10000 cargo test --test load_testing test_load_analytics_recording_stress -- --ignored`
 
 ### 2. Leaderboard Generation Performance
 -   **Scenario**: Measures the time taken to generate leaderboards with a large set of student data.
@@ -41,8 +42,8 @@ The load testing suite is designed to evaluate how the system behaves under stre
 
 | Metric | Target |
 | :--- | :--- |
-| Recording Throughput | > 10 ops/sec (Localnet) |
-| Leaderboard Latency | < 500ms (100 users) |
+| Recording Throughput | > 50 ops/sec (Localnet for 10k users) |
+| Leaderboard Latency | < 2000ms (10,000 users) |
 | Diagnostics Overhead | < 15% CPU increase |
 | Recovery Time | < 5s after surge |
 

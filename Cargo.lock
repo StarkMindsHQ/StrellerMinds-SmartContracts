@@ -1103,6 +1103,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gdpr"
+version = "0.1.0"
+dependencies = [
+ "shared",
+ "soroban-sdk",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2835,6 +2843,14 @@ dependencies = [
  "tokio",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "streller-cli-enhanced"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "inquire",
 ]
 
 [[package]]

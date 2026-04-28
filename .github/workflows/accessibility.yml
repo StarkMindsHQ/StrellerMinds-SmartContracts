@@ -1,0 +1,67 @@
+name: Accessibility Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  accessibility:
+    name: WCAG AA Accessibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run accessibility tests
+        run: npm run a11y:test
+
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: |
+            visual-tests/accessibility-report/
+            visual-tests/accessibility-reports/
+
+      - name: Summarize violations in PR
+        if: failure()
+        run: |
+          echo "## ❌ Accessibility Violations Found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f visual-tests/accessibility-reports/wcag-aa-chromium.json ]; then
+            echo "### WCAG AA Report" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat visual-tests/accessibility-reports/wcag-aa-chromium.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download the full **accessibility-report** artifact for detailed remediation guidance." >> $GITHUB_STEP_SUMMARY
+
+      - name: Post success summary
+        if: success()
+        run: |
+          echo "## ✅ Accessibility Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All WCAG 2.1 AA checks passed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ WCAG AA compliance (axe-core)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Color contrast validation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Keyboard navigation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Screen reader attributes (ARIA, roles, labels)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Skip navigation link" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Landmark regions" >> $GITHUB_STEP_SUMMARY
