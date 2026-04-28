@@ -219,6 +219,9 @@ pub struct CertificateTemplate {
     pub created_at: u64,
     /// Whether the template is available for use.
     pub is_active: bool,
+    pub version: u32,
+    pub parent_version: Option<u32>,
+    pub changelog: String,
 }
 
 /// A single field definition within a certificate template.
@@ -451,6 +454,20 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Template Version History
+// ─────────────────────────────────────────────────────────────
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TemplateVersion {
+    pub template_id: String,
+    pub version: u32,
+    pub created_at: u64,
+    pub created_by: Address,
+    pub fields: Vec<TemplateField>,
+    pub changelog: String,
+    pub is_rollback_target: bool,
+}
+
 // Certificate Recovery
 // ─────────────────────────────────────────────────────────────
 /// Status of a certificate recovery request.
@@ -550,6 +567,8 @@ pub enum CertDataKey {
     Template(String),
     /// List of all registered template IDs.
     TemplateList,
+    TemplateVersionHistory(String),
+    LatestTemplateVersion(String),
 
     // Revocations
     /// Revocation record for a specific certificate.

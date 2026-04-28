@@ -16,7 +16,7 @@ use types::{
     CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
     ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
     MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
-    ShareRecord, TemplateField,
+    ShareRecord, TemplateField, TemplateVersion,
 };
 
 use shared::gdpr_types::GdprCertificateExport;
