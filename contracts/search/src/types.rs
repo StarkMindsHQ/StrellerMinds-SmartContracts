@@ -791,6 +791,20 @@ pub struct SemanticMetadata {
     pub entity_types: Vec<String>,
     pub complexity_score: u32, // 0-100
     pub last_updated: u64,
+    
+    // Additional metadata for filtering
+    pub category: String,
+    pub instructor_id: Address,
+    pub language: String,
+    pub price: i64,
+    pub rating: u32,
+    pub duration_hours: u32,
+    pub has_prerequisites: bool,
+    pub has_certificate: bool,
+    pub is_premium: bool,
+    pub is_featured: bool,
+    pub certificate_types: Vec<CertificateType>,
+    pub certificate_status: Vec<CertificateStatus>,
 }
 
 /// Processed query from NLP service
