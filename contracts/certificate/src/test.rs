@@ -3,6 +3,7 @@ use soroban_sdk::{
     testutils::{Address as _, Ledger as _},
     Address, BytesN, Env, String, Vec,
 };
+#![cfg(test)]
 
 use crate::{
     types::{
@@ -11,6 +12,8 @@ use crate::{
     },
     CertificateContract, CertificateContractClient,
 };
+use super::*;
+use soroban_sdk::{testutils::Address as _, Env};
 
 // ─────────────────────────────────────────────────────────────
 // Helper utilities
@@ -64,6 +67,7 @@ fn make_multisig_config(
 // ─────────────────────────────────────────────────────────────
 #[test]
 fn test_initialize() {
+fn test_dashboard_preferences_lifecycle() {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(CertificateContract, ());
@@ -72,6 +76,8 @@ fn test_initialize() {
 
     client.initialize(&admin);
 }
+    let contract_id = env.register(DashboardPreferencesContract, ());
+    let client = DashboardPreferencesContractClient::new(&env, &contract_id);
 
 #[test]
 fn test_double_initialize_fails() {
@@ -80,11 +86,15 @@ fn test_double_initialize_fails() {
     let contract_id = env.register(CertificateContract, ());
     let client = CertificateContractClient::new(&env, &contract_id);
     let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+    let layout_json = String::from_str(&env, r#"{"widgets":["progress","certificates"],"theme":"dark"}"#);
 
     client.initialize(&admin);
     let result = client.try_initialize(&admin);
     assert!(result.is_err());
 }
+    // 1. Test Saving Layout
+    client.save_layout(&user, &layout_json);
 
 // ─────────────────────────────────────────────────────────────
 // 2. Multi-Sig Configuration tests
@@ -95,13 +105,25 @@ fn test_configure_multisig() {
     let approvers: [Address; 3] =
         [Address::generate(&env), Address::generate(&env), Address::generate(&env)];
     let config = make_multisig_config(&env, "COURSE_001", &approvers, 2);
+    // 2. Test Retrieving Layout
+    let retrieved_layout = client.get_layout(&user).unwrap();
+    assert_eq!(retrieved_layout, layout_json);
 
     client.configure_multisig(&admin, &config);
+    // 3. Test Updating Layout
+    let updated_layout = String::from_str(&env, r#"{"widgets":["analytics"],"theme":"light"}"#);
+    client.save_layout(&user, &updated_layout);
+    let new_retrieved = client.get_layout(&user).unwrap();
+    assert_eq!(new_retrieved, updated_layout);
 
     let retrieved = client.get_multisig_config(&String::from_str(&env, "COURSE_001"));
     assert!(retrieved.is_some());
     let retrieved = retrieved.unwrap();
     assert_eq!(retrieved.required_approvals, 2);
+    // 4. Test Clearing Layout
+    client.clear_layout(&user);
+    let cleared_layout = client.get_layout(&user);
+    assert!(cleared_layout.is_none());
 }
 
 #[test]
