@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, IntoVal, Map, String, Val, Vec};
 
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateBackup, CertificateTemplate,
@@ -9,12 +9,29 @@ use crate::types::{
 // ─────────────────────────────────────────────────────────────
 // Admin / Initialisation
 // ─────────────────────────────────────────────────────────────
+/// Minimum TTL for persistent entries: 30 days
+const MIN_PERSISTENT_TTL: u32 = 518_400; // ~30 days in ledgers (assuming 5s per ledger)
+/// TTL Extension: 90 days
+const EXTEND_TTL_TO: u32 = 1_555_200; // ~90 days
+
+fn extend_ttl_persistent<K: IntoVal<Env, Val>>(env: &Env, key: &K) {
+    env.storage().persistent().extend_ttl(key, MIN_PERSISTENT_TTL, EXTEND_TTL_TO);
+}
+
 pub fn set_admin(env: &Env, admin: &Address) {
     env.storage().instance().set(&CertDataKey::Admin, admin);
 }
 
 pub fn get_admin(env: &Env) -> Address {
     env.storage().instance().get(&CertDataKey::Admin).unwrap()
+}
+
+pub fn set_compliance_officer(env: &Env, officer: &Address) {
+    env.storage().instance().set(&CertDataKey::ComplianceOfficer, officer);
+}
+
+pub fn get_compliance_officer(env: &Env) -> Option<Address> {
+    env.storage().instance().get(&CertDataKey::ComplianceOfficer)
 }
 
 pub fn is_initialized(env: &Env) -> bool {
@@ -29,25 +46,39 @@ pub fn set_initialized(env: &Env) {
 // Multi-Sig Configs
 // ─────────────────────────────────────────────────────────────
 pub fn set_multisig_config(env: &Env, course_id: &String, config: &MultiSigConfig) {
-    env.storage().persistent().set(&CertDataKey::MultiSigConfig(course_id.clone()), config);
+    let key = CertDataKey::MultiSigConfig(course_id.clone());
+    env.storage().persistent().set(&key, config);
+    extend_ttl_persistent(env, &key);
 }
 
 pub fn get_multisig_config(env: &Env, course_id: &String) -> Option<MultiSigConfig> {
-    env.storage().persistent().get(&CertDataKey::MultiSigConfig(course_id.clone()))
+    let key = CertDataKey::MultiSigConfig(course_id.clone());
+    if env.storage().persistent().has(&key) {
+        extend_ttl_persistent(env, &key);
+        return env.storage().persistent().get(&key);
+    }
+    None
 }
 
 // ─────────────────────────────────────────────────────────────
 // Multi-Sig Requests
 // ─────────────────────────────────────────────────────────────
 pub fn set_multisig_request(env: &Env, request_id: &BytesN<32>, req: &MultiSigCertificateRequest) {
-    env.storage().persistent().set(&CertDataKey::MultiSigRequest(request_id.clone()), req);
+    let key = CertDataKey::MultiSigRequest(request_id.clone());
+    env.storage().persistent().set(&key, req);
+    extend_ttl_persistent(env, &key);
 }
 
 pub fn get_multisig_request(
     env: &Env,
     request_id: &BytesN<32>,
 ) -> Option<MultiSigCertificateRequest> {
-    env.storage().persistent().get(&CertDataKey::MultiSigRequest(request_id.clone()))
+    let key = CertDataKey::MultiSigRequest(request_id.clone());
+    if env.storage().persistent().has(&key) {
+        extend_ttl_persistent(env, &key);
+        return env.storage().persistent().get(&key);
+    }
+    None
 }
 
 pub fn add_pending_request(env: &Env, request_id: &BytesN<32>) {
@@ -103,11 +134,18 @@ pub fn remove_approver_pending(env: &Env, approver: &Address, request_id: &Bytes
 // Certificates
 // ─────────────────────────────────────────────────────────────
 pub fn set_certificate(env: &Env, cert_id: &BytesN<32>, cert: &Certificate) {
-    env.storage().persistent().set(&CertDataKey::Certificate(cert_id.clone()), cert);
+    let key = CertDataKey::Certificate(cert_id.clone());
+    env.storage().persistent().set(&key, cert);
+    extend_ttl_persistent(env, &key);
 }
 
 pub fn get_certificate(env: &Env, cert_id: &BytesN<32>) -> Option<Certificate> {
-    env.storage().persistent().get(&CertDataKey::Certificate(cert_id.clone()))
+    let key = CertDataKey::Certificate(cert_id.clone());
+    if env.storage().persistent().has(&key) {
+        extend_ttl_persistent(env, &key);
+        return env.storage().persistent().get(&key);
+    }
+    None
 }
 
 pub fn add_student_certificate(env: &Env, student: &Address, cert_id: &BytesN<32>) {
@@ -177,17 +215,50 @@ pub fn add_student_certificates_batch(env: &Env, entries: &Vec<(Address, BytesN<
 // Templates
 // ─────────────────────────────────────────────────────────────
 pub fn set_template(env: &Env, template_id: &String, template: &CertificateTemplate) {
-    env.storage().persistent().set(&CertDataKey::Template(template_id.clone()), template);
+    let key = CertDataKey::Template(template_id.clone());
+    env.storage().persistent().set(&key, template);
+    extend_ttl_persistent(env, &key);
 
-    // Add to template list
+    // Add to template list if not already present
     let mut list: Vec<String> =
         env.storage().persistent().get(&CertDataKey::TemplateList).unwrap_or_else(|| Vec::new(env));
-    list.push_back(template_id.clone());
-    env.storage().persistent().set(&CertDataKey::TemplateList, &list);
+
+    let mut exists = false;
+    for id in list.iter() {
+        if id == *template_id {
+            exists = true;
+            break;
+        }
+    }
+
+    if !exists {
+        list.push_back(template_id.clone());
+        env.storage().persistent().set(&CertDataKey::TemplateList, &list);
+    }
 }
 
 pub fn get_template(env: &Env, template_id: &String) -> Option<CertificateTemplate> {
-    env.storage().persistent().get(&CertDataKey::Template(template_id.clone()))
+    let key = CertDataKey::Template(template_id.clone());
+    if env.storage().persistent().has(&key) {
+        extend_ttl_persistent(env, &key);
+        return env.storage().persistent().get(&key);
+    }
+    None
+}
+
+pub fn set_template_values(env: &Env, cert_id: &BytesN<32>, values: &Map<String, String>) {
+    let key = CertDataKey::TemplateValues(cert_id.clone());
+    env.storage().persistent().set(&key, values);
+    extend_ttl_persistent(env, &key);
+}
+
+pub fn get_template_values(env: &Env, cert_id: &BytesN<32>) -> Map<String, String> {
+    let key = CertDataKey::TemplateValues(cert_id.clone());
+    if env.storage().persistent().has(&key) {
+        extend_ttl_persistent(env, &key);
+        return env.storage().persistent().get(&key).unwrap();
+    }
+    Map::new(env)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -259,6 +330,7 @@ pub fn get_analytics(env: &Env) -> CertificateAnalytics {
         active_certificates: 0,
         pending_requests: 0,
         avg_approval_time: 0,
+        compliance_violations_count: 0,
         last_updated: 0,
     })
 }
@@ -316,6 +388,10 @@ pub fn get_audit_trail(env: &Env, request_id: &BytesN<32>) -> Vec<MultiSigAuditE
         .persistent()
         .get(&CertDataKey::AuditTrail(request_id.clone()))
         .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_audit_trail(env: &Env, request_id: &BytesN<32>, trail: &Vec<MultiSigAuditEntry>) {
+    env.storage().persistent().set(&CertDataKey::AuditTrail(request_id.clone()), trail);
 }
 
 // ─────────────────────────────────────────────────────────────
