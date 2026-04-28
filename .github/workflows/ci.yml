@@ -197,6 +197,37 @@ jobs:
             visual-tests/test-results
             visual-tests/tests/__screenshots__
 
+  accessibility:
+    name: Accessibility (WCAG AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run accessibility tests
+        run: npm run a11y:test
+
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: |
+            visual-tests/accessibility-report/
+            visual-tests/accessibility-reports/
+
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
@@ -211,7 +242,8 @@ jobs:
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.coverage.result }}" != "success" || \
                 "${{ needs.performance.result }}" != "success" || \
-                "${{ needs.visual-regression.result }}" != "success" ]]; then
+                "${{ needs.visual-regression.result }}" != "success" || \
+                "${{ needs.accessibility.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"
             echo "Format: ${{ needs.format.result }}"
             echo "Clippy: ${{ needs.clippy.result }}"
@@ -220,6 +252,7 @@ jobs:
             echo "Coverage: ${{ needs.coverage.result }}"
             echo "Performance: ${{ needs.performance.result }}"
             echo "Visual Regression: ${{ needs.visual-regression.result }}"
+            echo "Accessibility: ${{ needs.accessibility.result }}"
             exit 1
           fi
           echo "✅ All CI jobs passed successfully"
