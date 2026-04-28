@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "language": "中文",
+    "locale": "zh",
+    "direction": "ltr",
+    "dateFormat": "YYYY/MM/DD",
+    "timeFormat": "HH:mm",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "currency": "CNY"
+    }
+  },
+  "errors": {
+    "AUTH_REQUIRED": "需要授权标头",
+    "TOKEN_EXPIRED": "访问令牌已过期",
+    "TOKEN_INVALID": "访问令牌无效",
+    "INSUFFICIENT_SCOPE": "所需权限范围：{{scope}}",
+    "INVALID_CERTIFICATE_ID": "证书ID必须是64个字符的十六进制字符串",
+    "INVALID_ADDRESS": "无效的Stellar地址",
+    "CERTIFICATE_NOT_FOUND": "未找到证书",
+    "REVOCATION_NOT_FOUND": "未找到该证书的撤销记录",
+    "CONTRACT_ERROR": "查询区块链失败，请重试。",
+    "VALIDATION_ERROR": "请求体无效",
+    "INVALID_API_KEY": "API密钥无效",
+    "RATE_LIMIT_EXCEEDED": "请求过多，请稍后再试。",
+    "INTERNAL_ERROR": "发生内部服务器错误"
+  },
+  "health": {
+    "status_ok": "正常",
+    "status_ready": "就绪",
+    "status_not_ready": "未就绪",
+    "cannot_reach_contract": "无法访问Soroban合约"
+  },
+  "certificate": {
+    "verified": "证书验证成功",
+    "not_found": "未找到证书",
+    "revoked": "证书已被撤销",
+    "expired": "证书已过期"
+  },
+  "formats": {
+    "date_short": "{{year}}/{{month}}/{{day}}",
+    "date_long": "{{year}}年{{month}}月{{day}}日",
+    "number": "{{value}}",
+    "currency": "¥{{value}}"
+  }
+}
