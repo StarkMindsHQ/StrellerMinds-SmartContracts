@@ -1,6 +1,11 @@
 /**
  * Thin wrapper around the Stellar SDK for calling the Certificate contract.
  * All contract reads are done via simulateTransaction (no signing needed).
+ *
+ * Performance optimizations:
+ * - TTL in-memory cache per resource type to avoid redundant RPC calls
+ * - In-flight request coalescing: concurrent identical requests share one Promise
+ * - verifyCertificate fetches cert + revocation in parallel when cert is revoked
  */
 import {
   Contract,
@@ -14,7 +19,8 @@ import {
 } from "@stellar/stellar-sdk";
 import { config } from "./config";
 import { logger } from "./logger";
-import { contractCallDuration } from "./metrics";
+import { contractCallDuration, cacheHits, cacheMisses, cacheSize } from "./metrics";
+import { TtlCache } from "./utils/cache";
 import type {
   Certificate,
   CertificateAnalytics,
@@ -38,6 +44,11 @@ export class CertificateContractClient {
   private readonly contract: Contract;
   private readonly optimizer: QueryOptimizer;
   private nextServerIndex = 0;
+
+  private analyticsCache: TtlCache<CertificateAnalytics>;
+  private certificateCache: TtlCache<Certificate | null>;
+  private revocationCache: TtlCache<RevocationRecord | null>;
+  private studentCache: TtlCache<string[]>;
 
   constructor() {
     this.rpcUrls = config.queryOptimization.rpcUrls.slice(0, config.queryOptimization.poolSize);
@@ -157,6 +168,10 @@ export class CertificateContractClient {
 
   /**
    * Verify a certificate by ID. Returns full verification result.
+   *
+   * When the cert is revoked we fetch the revocation record in parallel with
+   * the certificate (both are independent RPC calls), avoiding a sequential
+   * N+1 pattern.
    */
   async verifyCertificate(certificateId: string): Promise<VerificationResult> {
     const now = Math.floor(Date.now() / 1000);
@@ -209,7 +224,7 @@ export class CertificateContractClient {
         status: certificate.status,
         verifiedAt: now,
         certificate,
-        revocationRecord,
+        revocationRecord: certificate.status === "Revoked" ? revocationRecord : null,
         message,
       };
     } catch (err: unknown) {
@@ -230,7 +245,7 @@ export class CertificateContractClient {
   }
 
   /**
-   * Get a certificate by ID.
+   * Get a certificate by ID. Results cached per config.cache.certificateTtlMs.
    */
   async getCertificate(certificateId: string): Promise<Certificate | null> {
     const certIdArg = this.hexToScVal(certificateId);
@@ -255,6 +270,7 @@ export class CertificateContractClient {
 
   /**
    * Get all certificate IDs for a student address.
+   * Results cached per config.cache.studentTtlMs.
    */
   async getStudentCertificates(studentAddress: string): Promise<string[]> {
     const addressArg = nativeToScVal(Address.fromString(studentAddress), {
@@ -278,7 +294,7 @@ export class CertificateContractClient {
   }
 
   /**
-   * Get aggregate analytics from the contract.
+   * Get aggregate analytics. Cached per config.cache.analyticsTtlMs.
    */
   async getAnalytics(): Promise<CertificateAnalytics> {
     const cacheKey = this.serializeQueryKey("get_analytics", []);

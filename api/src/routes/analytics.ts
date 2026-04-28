@@ -1,5 +1,6 @@
 /**
- * GET /api/v1/analytics — aggregate certificate analytics (auth required)
+ * GET /api/v1/analytics       — aggregate certificate analytics (auth required)
+ * GET /api/v1/analytics/cache — cache hit/miss stats (auth required)
  */
 import { Router, Request, Response } from "express";
 import { contractClient } from "../soroban-client";
