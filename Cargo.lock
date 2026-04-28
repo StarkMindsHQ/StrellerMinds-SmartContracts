@@ -2846,6 +2846,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "streller-cli-enhanced"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "inquire",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
