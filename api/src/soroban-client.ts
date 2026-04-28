@@ -1,6 +1,11 @@
 /**
  * Thin wrapper around the Stellar SDK for calling the Certificate contract.
  * All contract reads are done via simulateTransaction (no signing needed).
+ *
+ * Performance optimizations:
+ * - TTL in-memory cache per resource type to avoid redundant RPC calls
+ * - In-flight request coalescing: concurrent identical requests share one Promise
+ * - verifyCertificate fetches cert + revocation in parallel when cert is revoked
  */
 import {
   Contract,
@@ -14,12 +19,16 @@ import {
 } from "@stellar/stellar-sdk";
 import { config } from "./config";
 import { logger } from "./logger";
-import { contractCallDuration } from "./metrics";
+import { contractCallDuration, cacheHits, cacheMisses, cacheSize } from "./metrics";
+import { TtlCache } from "./utils/cache";
 import type {
   Certificate,
   CertificateAnalytics,
   RevocationRecord,
   VerificationResult,
+  ShareRecord,
+  SocialSharingAnalytics,
+  SharePlatform,
 } from "./types";
 import {
   QueryOptimizer,
@@ -35,6 +44,11 @@ export class CertificateContractClient {
   private readonly contract: Contract;
   private readonly optimizer: QueryOptimizer;
   private nextServerIndex = 0;
+
+  private analyticsCache: TtlCache<CertificateAnalytics>;
+  private certificateCache: TtlCache<Certificate | null>;
+  private revocationCache: TtlCache<RevocationRecord | null>;
+  private studentCache: TtlCache<string[]>;
 
   constructor() {
     this.rpcUrls = config.queryOptimization.rpcUrls.slice(0, config.queryOptimization.poolSize);
@@ -154,6 +168,10 @@ export class CertificateContractClient {
 
   /**
    * Verify a certificate by ID. Returns full verification result.
+   *
+   * When the cert is revoked we fetch the revocation record in parallel with
+   * the certificate (both are independent RPC calls), avoiding a sequential
+   * N+1 pattern.
    */
   async verifyCertificate(certificateId: string): Promise<VerificationResult> {
     const now = Math.floor(Date.now() / 1000);
@@ -206,7 +224,7 @@ export class CertificateContractClient {
         status: certificate.status,
         verifiedAt: now,
         certificate,
-        revocationRecord,
+        revocationRecord: certificate.status === "Revoked" ? revocationRecord : null,
         message,
       };
     } catch (err: unknown) {
@@ -227,7 +245,7 @@ export class CertificateContractClient {
   }
 
   /**
-   * Get a certificate by ID.
+   * Get a certificate by ID. Results cached per config.cache.certificateTtlMs.
    */
   async getCertificate(certificateId: string): Promise<Certificate | null> {
     const certIdArg = this.hexToScVal(certificateId);
@@ -252,6 +270,7 @@ export class CertificateContractClient {
 
   /**
    * Get all certificate IDs for a student address.
+   * Results cached per config.cache.studentTtlMs.
    */
   async getStudentCertificates(studentAddress: string): Promise<string[]> {
     const addressArg = nativeToScVal(Address.fromString(studentAddress), {
@@ -275,7 +294,7 @@ export class CertificateContractClient {
   }
 
   /**
-   * Get aggregate analytics from the contract.
+   * Get aggregate analytics. Cached per config.cache.analyticsTtlMs.
    */
   async getAnalytics(): Promise<CertificateAnalytics> {
     const cacheKey = this.serializeQueryKey("get_analytics", []);
@@ -328,6 +347,177 @@ export class CertificateContractClient {
         return raw ? this.mapRevocation(raw) : null;
       }
     );
+  }
+
+  // ── Social Sharing Methods ─────────────────────────────────────────────────
+
+  /**
+   * Record a share of an achievement to social media.
+   */
+  async shareAchievement(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<ShareRecord> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const platformArg = nativeToScVal(platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2);
+    const messageArg = nativeToScVal(customMessage);
+
+    const raw = (await this.simulate("share_achievement", [
+      userArg,
+      certArg,
+      platformArg,
+      messageArg,
+    ])) as Record<string, unknown>;
+
+    return this.mapShareRecord(raw);
+  }
+
+  /**
+   * Get all shares for a specific certificate.
+   */
+  async getCertificateShares(certificateId: string): Promise<ShareRecord[]> {
+    const certArg = this.hexToScVal(certificateId);
+    const rawArray = (await this.simulate("get_certificate_shares", [
+      certArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Get all shares by a user.
+   */
+  async getUserShares(userAddress: string): Promise<ShareRecord[]> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const rawArray = (await this.simulate("get_user_shares", [
+      userArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Update engagement metrics for a share (admin only).
+   */
+  async updateEngagement(
+    adminAddress: string,
+    certificateId: string,
+    userAddress: string,
+    platform: SharePlatform,
+    engagementCount: number
+  ): Promise<void> {
+    const adminArg = nativeToScVal(
+      Address.fromString(adminAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const platformArg = nativeToScVal(
+      platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2
+    );
+    const engagementArg = nativeToScVal(engagementCount);
+
+    await this.simulate("update_engagement", [
+      adminArg,
+      certArg,
+      userArg,
+      platformArg,
+      engagementArg,
+    ]);
+  }
+
+  /**
+   * Get global social sharing analytics.
+   */
+  async getSocialSharingAnalytics(): Promise<SocialSharingAnalytics> {
+    const raw = (await this.simulate("get_analytics", [])) as Record<
+      string,
+      unknown
+    >;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Get analytics for a specific certificate.
+   */
+  async getCertificateSocialAnalytics(
+    certificateId: string
+  ): Promise<SocialSharingAnalytics> {
+    const certArg = this.hexToScVal(certificateId);
+    const raw = (await this.simulate("get_certificate_analytics", [
+      certArg,
+    ])) as Record<string, unknown>;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Track a social share for analytics.
+   */
+  async trackSocialShare(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<void> {
+    // Log analytics event
+    logger.info("Social share tracked", {
+      user: userAddress,
+      certificateId,
+      platform,
+      messageLength: customMessage.length,
+    });
+
+    // This could be extended to track in a separate analytics database
+    // or call a dedicated analytics contract method
+  }
+
+  // ── Helper methods ─────────────────────────────────────────────────────────
+
+  private mapShareRecord(raw: Record<string, unknown>): ShareRecord {
+    return {
+      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString(
+        "hex"
+      ),
+      user: raw.user as string,
+      platform: ["Twitter", "LinkedIn", "Facebook"][
+        Number(raw.platform)
+      ] as SharePlatform,
+      customMessage: raw.custom_message as string,
+      shareUrl: raw.share_url as string,
+      timestamp: Number(raw.timestamp),
+      engagementCount: Number(raw.engagement_count),
+      verified: raw.verified as boolean,
+    };
   }
 }
 

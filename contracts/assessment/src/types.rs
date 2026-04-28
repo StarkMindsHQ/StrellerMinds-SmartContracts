@@ -201,6 +201,7 @@ pub enum DataKey {
     Question(u64),
     Submission(BytesN<32>),
     StudentAssessmentSubmissions(Address, u64), // (student, assessment_id)
+    StudentAllSubmissions(Address), // student -> Vec<BytesN<32>>
     Schedule(u64),
     Accommodation(Address),
     Adaptive(Address, u64),  // (student, assessment_id)

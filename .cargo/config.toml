@@ -1,4 +1,11 @@
 [alias]
-# This allows you to launch your tool by just typing 'cargo dev'
 dev = "run -p streller-cli"
-load-test = "run -p load-test-runner --"
+
+[target.x86_64-pc-windows-msvc]
+linker = "clang"
+
+[target.x86_64-pc-windows-gnu]
+linker = "clang"
+
+[build]
+target = "x86_64-pc-windows-gnu"

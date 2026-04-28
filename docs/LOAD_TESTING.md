@@ -14,7 +14,9 @@ This repository includes a contract load-testing suite for scalability and perfo
 
 ## Scenarios
 
-The current suite targets the `progress` contract because it exercises realistic write-heavy and read-heavy access patterns without requiring a running localnet.
+-   **E2E Load Tests**: Located in `e2e-tests/tests/load_testing.rs`. These tests run against a live Soroban network (e.g., localnet).
+-   **Internal Benchmarks**: Located in `contracts/token/src/benchmarks.rs`. These are unit tests that measure execution efficiency within the `soroban-sdk` test environment.
+-   **CI/CD Integration**: Automated daily runs via GitHub Actions (`.github/workflows/load-testing.yml`) to track baseline metrics and alert on performance regressions.
 
 1. `progress-write-hot-path`
    Runs repeated `record_progress` calls against a tight course set to stress hot writes.
@@ -23,7 +25,11 @@ The current suite targets the `progress` contract because it exercises realistic
 3. `progress-read-heavy`
    Seeds progress data, then benchmarks `get_progress` and `get_student_courses` under sustained reads.
 
-## Load model
+### 1. High Volume Analytics Recording
+-   **Scenario**: Simulates multiple students recording learning sessions simultaneously.
+-   **Component**: `analytics` contract.
+-   **Goal**: Measure throughput (ops/sec) and ensure non-blocking transaction flow.
+-   **Running**: `LOAD_TEST_REQUESTS=10000 cargo test --test load_testing test_load_analytics_recording_stress -- --ignored`
 
 The runner simulates:
 
@@ -34,7 +40,12 @@ By default, the multiplier is `10`, which gives the required 10x peak simulation
 
 ## Local usage
 
-Run with the repo wrapper:
+| Metric | Target |
+| :--- | :--- |
+| Recording Throughput | > 50 ops/sec (Localnet for 10k users) |
+| Leaderboard Latency | < 2000ms (10,000 users) |
+| Diagnostics Overhead | < 15% CPU increase |
+| Recovery Time | < 5s after surge |
 
 ```bash
 ./scripts/load_test.sh
