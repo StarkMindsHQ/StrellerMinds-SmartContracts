@@ -2,12 +2,16 @@
   "scripts": {
     "visual:test": "playwright test --config=visual-tests/playwright.config.ts",
     "visual:test:update": "playwright test --config=visual-tests/playwright.config.ts --update-snapshots",
-    "visual:test:report": "playwright show-report visual-tests/playwright-report"
+    "visual:test:report": "playwright show-report visual-tests/playwright-report",
+    "a11y:test": "playwright test --config=visual-tests/accessibility.config.ts",
+    "a11y:report": "playwright show-report visual-tests/accessibility-report"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.2",
     "@playwright/test": "^1.56.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.6.2",
+    "axe-core": "^4.11.3",
     "axios": "^1.12.2",
     "dotenv": "^17.2.3"
   }

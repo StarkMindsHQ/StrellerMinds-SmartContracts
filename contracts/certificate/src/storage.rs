@@ -3,7 +3,7 @@ use soroban_sdk::{Address, BytesN, Env, IntoVal, Map, String, Val, Vec};
 use crate::types::{
     CertDataKey, Certificate, CertificateAnalytics, CertificateBackup, CertificateTemplate,
     ComplianceRecord, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
-    RecoveryRequest, RevocationRecord, ShareRecord,
+    RecoveryRequest, RevocationRecord, ShareRecord, TemplateVersion,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -259,6 +259,50 @@ pub fn get_template_values(env: &Env, cert_id: &BytesN<32>) -> Map<String, Strin
         return env.storage().persistent().get(&key).unwrap();
     }
     Map::new(env)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Template Versioning
+// ─────────────────────────────────────────────────────────────
+pub fn add_template_version(env: &Env, template_id: &String, version: &TemplateVersion) {
+    let mut versions: Vec<TemplateVersion> = env
+        .storage()
+        .persistent()
+        .get(&CertDataKey::TemplateVersionHistory(template_id.clone()))
+        .unwrap_or_else(|| Vec::new(env));
+    versions.push_back(version.clone());
+    env.storage()
+        .persistent()
+        .set(&CertDataKey::TemplateVersionHistory(template_id.clone()), &versions);
+}
+
+pub fn get_template_versions(env: &Env, template_id: &String) -> Vec<TemplateVersion> {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::TemplateVersionHistory(template_id.clone()))
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn get_template_version(
+    env: &Env,
+    template_id: &String,
+    version: u32,
+) -> Option<TemplateVersion> {
+    let versions = get_template_versions(env, template_id);
+    versions.iter().find(|v| v.version == version)
+}
+
+pub fn set_latest_template_version(env: &Env, template_id: &String, version: u32) {
+    env.storage()
+        .persistent()
+        .set(&CertDataKey::LatestTemplateVersion(template_id.clone()), &version);
+}
+
+pub fn get_latest_template_version(env: &Env, template_id: &String) -> u32 {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::LatestTemplateVersion(template_id.clone()))
+        .unwrap_or(0)
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -50,6 +50,9 @@ pub enum CertificateError {
     TemplateInactive = 32,
     /// Not all required template fields were provided.
     MissingRequiredField = 33,
+    TemplateVersionNotFound = 34,
+    TemplateRollbackFailed = 35,
+    TemplateMigrationFailed = 36,
 
     // Configuration
     /// The provided configuration contains invalid values.
@@ -118,6 +121,9 @@ impl CertificateError {
             Self::TemplateAlreadyExists => "CERT-031",
             Self::TemplateInactive => "CERT-032",
             Self::MissingRequiredField => "CERT-033",
+            Self::TemplateVersionNotFound => "CERT-034",
+            Self::TemplateRollbackFailed => "CERT-035",
+            Self::TemplateMigrationFailed => "CERT-036",
             Self::InvalidConfig => "CERT-040",
             Self::ConfigNotFound => "CERT-041",
             Self::TooManyApprovers => "CERT-042",

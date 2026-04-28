@@ -1,11 +1,6 @@
 #![no_std]
 
-pub mod errors;
-pub mod events;
-pub mod storage;
-pub mod storage_optimizer;
-pub mod two_factor_integration;
-pub mod types;
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String};
 
 #[cfg(test)]
 mod test;
@@ -15,14 +10,16 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
     ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
     MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
-    ShareRecord, TemplateField,
+    ShareRecord, TemplateField, TemplateVersion,
 };
+
+use shared::gdpr_types::GdprCertificateExport;
 
 /// Maximum number of approvers per config (gas guard).
 const MAX_APPROVERS: u32 = 10;
@@ -103,22 +100,8 @@ fn update_analytics_field(env: &Env, updater: impl FnOnce(&mut CertificateAnalyt
     storage::set_analytics(env, &analytics);
 }
 
-fn record_audit(
-    env: &Env,
-    request_id: &BytesN<32>,
-    action: AuditAction,
-    actor: &Address,
-    details: &str,
-) {
-    let entry = MultiSigAuditEntry {
-        request_id: request_id.clone(),
-        action,
-        actor: actor.clone(),
-        timestamp: env.ledger().timestamp(),
-        details: String::from_str(env, details),
-    };
-    storage::add_audit_entry(env, request_id, &entry);
-}
+#[contract]
+pub struct DashboardPreferencesContract;
 
 /// Optimized audit record for initial certificate issuance (avoids storage read).
 fn record_audit_initial(
@@ -1996,3 +1979,6 @@ impl CertificateContract {
         report
     }
 }
+
+#[cfg(test)]
+mod test;

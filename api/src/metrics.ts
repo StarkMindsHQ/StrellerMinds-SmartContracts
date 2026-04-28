@@ -85,4 +85,52 @@ export const assetServeTime = new client.Histogram({
   buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2],
 });
 
+export const queryDuration = new client.Histogram({
+  name: "cert_api_query_duration_seconds",
+  help: "Duration of API query operations by source",
+  labelNames: ["query", "source", "status"],
+  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 1, 2.5],
+});
+
+export const queryCacheEvents = new client.Counter({
+  name: "cert_api_query_cache_events_total",
+  help: "Query cache lifecycle events by query type",
+  labelNames: ["query", "event"],
+});
+
+export const queryInFlightBackend = new client.Gauge({
+  name: "cert_api_query_in_flight_backend",
+  help: "Number of in-flight backend Soroban/indexer query operations",
+});
+
+export const queryPoolActiveSize = new client.Gauge({
+  name: "cert_api_query_pool_active_size",
+  help: "Configured active size of the query backend pool",
+});
+
+export const queryPoolAvailableSize = new client.Gauge({
+  name: "cert_api_query_pool_available_size",
+  help: "Approximate available capacity in the query backend pool",
+});
+
+export const queryCacheEntries = new client.Gauge({
+  name: "cert_api_query_cache_entries",
+  help: "Current number of cached query results",
+});
+
+export const queryEstimatedLoadReduction = new client.Gauge({
+  name: "cert_api_query_estimated_load_reduction_percent",
+  help: "Estimated backend load reduction percentage from caching and request coalescing",
+});
+
+export const queryAverageTimeMs = new client.Gauge({
+  name: "cert_api_query_average_time_ms",
+  help: "Average query time in milliseconds across observed requests",
+});
+
+export const queryCacheHitRatio = new client.Gauge({
+  name: "cert_api_query_cache_hit_ratio",
+  help: "Query cache hit ratio as a 0-1 value",
+});
+
 export const registry = client.register;

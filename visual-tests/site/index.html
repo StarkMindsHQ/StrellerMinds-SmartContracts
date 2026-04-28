@@ -69,6 +69,7 @@
         font-size: 12px;
         border: 1px solid var(--primary);
         color: var(--primary);
+        background: rgba(94, 234, 212, 0.08);
       }
 
       .hero {
@@ -130,39 +131,72 @@
     </style>
   </head>
   <body>
+    <!-- Skip navigation link for keyboard/screen reader users -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
     <div class="container">
-      <header class="nav">
-        <strong>StrellerMinds</strong>
-        <span class="badge">Testnet</span>
+      <header role="banner">
+        <nav class="nav" aria-label="Main navigation">
+          <strong id="site-title">StrellerMinds</strong>
+          <ul class="nav-links" role="list">
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#certificates">Certificates</a></li>
+            <li><a href="#analytics">Analytics</a></li>
+          </ul>
+          <span class="badge" aria-label="Network: Testnet">
+            <span class="status-dot" aria-hidden="true"></span>Testnet
+          </span>
+        </nav>
       </header>
 
-      <section class="hero">
-        <article class="panel">
-          <h1>Analytics Dashboard</h1>
-          <p class="label mt">Track verified learning progress and credential events.</p>
-          <div class="mt progress"><div></div></div>
-        </article>
-        <article class="panel">
-          <h2>Active Learners</h2>
-          <p>1,248</p>
-          <p class="label mt">+12.5% this month</p>
-        </article>
-      </section>
+      <main id="main-content" role="main" tabindex="-1">
+        <section class="hero" aria-labelledby="dashboard-heading">
+          <article class="panel" aria-labelledby="analytics-title">
+            <h1 id="analytics-title">Analytics Dashboard</h1>
+            <p class="label mt">Track verified learning progress and credential events.</p>
+            <div
+              class="mt progress"
+              role="progressbar"
+              aria-valuenow="72"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Overall progress: 72%"
+            >
+              <div aria-hidden="true"></div>
+            </div>
+            <a href="#view-report" class="btn" aria-label="View full analytics report">
+              View Report
+            </a>
+          </article>
 
-      <section class="cards">
-        <article class="panel">
-          <h2>Completion</h2>
-          <p>87%</p>
-        </article>
-        <article class="panel">
-          <h2>Certificates</h2>
-          <p>3,212</p>
-        </article>
-        <article class="panel">
-          <h2>Engagement</h2>
-          <p>92%</p>
-        </article>
-      </section>
+          <article class="panel" aria-labelledby="learners-heading">
+            <h2 id="learners-heading">Active Learners</h2>
+            <p aria-label="1,248 active learners">1,248</p>
+            <p class="label mt" aria-live="polite">+12.5% this month</p>
+          </article>
+        </section>
+
+        <section class="cards" aria-label="Key metrics">
+          <article class="panel" aria-labelledby="completion-heading">
+            <h2 id="completion-heading">Completion</h2>
+            <p aria-label="87% completion rate">87%</p>
+          </article>
+          <article class="panel" aria-labelledby="certificates-heading">
+            <h2 id="certificates-heading">Certificates</h2>
+            <p aria-label="3,212 certificates issued">3,212</p>
+          </article>
+          <article class="panel" aria-labelledby="engagement-heading">
+            <h2 id="engagement-heading">Engagement</h2>
+            <p aria-label="92% engagement rate">92%</p>
+          </article>
+        </section>
+      </main>
+
+      <footer role="contentinfo" style="margin-top:32px; padding:16px 0; border-top:1px solid #21305f;">
+        <p class="label" style="text-align:center;">
+          &copy; 2024 StrellerMinds &mdash; Powered by Stellar blockchain
+        </p>
+      </footer>
     </div>
   </body>
 </html>

@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Map, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Certificate Priority Levels
@@ -221,6 +221,9 @@ pub struct CertificateTemplate {
     pub created_at: u64,
     /// Whether the template is available for use.
     pub is_active: bool,
+    pub version: u32,
+    pub parent_version: Option<u32>,
+    pub changelog: String,
 }
 
 /// A single field definition within a certificate template.
@@ -287,6 +290,33 @@ pub struct BatchResult {
     pub failed: u32,
     /// Identifiers of certificates that were successfully issued.
     pub certificate_ids: Vec<BytesN<32>>,
+}
+
+// ─────────────────────────────────────────────────────────────
+// Batch Operation Progress Tracking
+// ─────────────────────────────────────────────────────────────
+/// Types of batch operations that can be tracked.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BatchOperationType {
+    Issue,
+    Revoke,
+    Verify,
+}
+
+/// Progress tracking record for long-running or chunked batch operations.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatchProgress {
+    pub job_id: BytesN<32>,
+    pub operation_type: BatchOperationType,
+    pub total_items: u32,
+    pub processed_items: u32,
+    pub successful_items: u32,
+    pub failed_items: u32,
+    pub is_completed: bool,
+    pub started_at: u64,
+    pub updated_at: u64,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -430,6 +460,20 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Template Version History
+// ─────────────────────────────────────────────────────────────
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TemplateVersion {
+    pub template_id: String,
+    pub version: u32,
+    pub created_at: u64,
+    pub created_by: Address,
+    pub fields: Vec<TemplateField>,
+    pub changelog: String,
+    pub is_rollback_target: bool,
+}
+
 // Certificate Recovery
 // ─────────────────────────────────────────────────────────────
 /// Status of a certificate recovery request.
@@ -529,6 +573,8 @@ pub enum CertDataKey {
     Template(String),
     /// List of all registered template IDs.
     TemplateList,
+    TemplateVersionHistory(String),
+    LatestTemplateVersion(String),
 
     // Revocations
     /// Revocation record for a specific certificate.
