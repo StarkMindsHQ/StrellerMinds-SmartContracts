@@ -612,6 +612,9 @@ pub enum CertDataKey {
 
     /// Progress tracking for batch operations keyed by Job ID.
     BatchJobProgress(BytesN<32>),
+
+    /// Global list of all issued certificate IDs (used for expiry cleanup).
+    AllCertificates,
 }
 
 /// Configurable rate limits for certificate operations.
