@@ -12,136 +12,121 @@
         --muted: #98a7c6;
         --primary: #5eead4;
         --secondary: #8b5cf6;
+        --border: #21305f;
+        --nav-bg: rgba(13, 18, 38, 0.85);
+        --progress-bg: #1d2b53;
       }
-      * { box-sizing: border-box; }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --panel: #f8fafc;
+          --text: #0f172a;
+          --muted: #64748b;
+          --primary: #0d9488;
+          --secondary: #7c3aed;
+          --border: #e2e8f0;
+          --nav-bg: rgba(248, 250, 252, 0.85);
+          --progress-bg: #e2e8f0;
+        }
+      }
+
       body {
         margin: 0;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        background: var(--bg);
         background: radial-gradient(circle at 20% 20%, #10234f 0%, var(--bg) 45%);
         color: var(--text);
+        min-height: 100vh;
       }
-      /* Skip link */
-      .skip-link {
-        position: absolute;
-        top: -40px;
-        left: 0;
-        background: var(--primary);
-        color: #050816;
-        padding: 8px 16px;
-        font-weight: 700;
-        text-decoration: none;
-        border-radius: 0 0 8px 0;
-        z-index: 100;
-        transition: top 0.2s;
+
+      @media (prefers-color-scheme: light) {
+        body {
+          background: var(--bg);
+        }
       }
-      .skip-link:focus { top: 0; }
+
       .container {
         max-width: 1080px;
         margin: 0 auto;
         padding: 24px;
       }
+
       .nav {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 14px 16px;
-        border: 1px solid #21305f;
+        border: 1px solid var(--border);
         border-radius: 12px;
-        background: rgba(13, 18, 38, 0.85);
+        background: var(--nav-bg);
         backdrop-filter: blur(8px);
       }
+
       .badge {
         border-radius: 999px;
         padding: 4px 10px;
         font-size: 12px;
-        border: 1px solid #2dd4bf66;
+        border: 1px solid var(--primary);
         color: var(--primary);
         background: rgba(94, 234, 212, 0.08);
       }
+
       .hero {
         margin-top: 24px;
         display: grid;
         grid-template-columns: 1.2fr 1fr;
         gap: 20px;
       }
+
       .panel {
-        background: rgba(13, 18, 38, 0.88);
-        border: 1px solid #21305f;
+        background: var(--panel);
+        border: 1px solid var(--border);
         border-radius: 14px;
         padding: 18px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       }
+
       .progress {
         height: 8px;
-        background: #1d2b53;
+        background: var(--progress-bg);
         border-radius: 999px;
         overflow: hidden;
       }
+
       .progress > div {
         width: 72%;
         height: 100%;
         background: linear-gradient(90deg, var(--primary), var(--secondary));
       }
+
       .cards {
         margin-top: 20px;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
       }
+
       .label {
         color: var(--muted);
         font-size: 13px;
       }
-      h1, h2, p { margin: 0; }
-      h1 { font-size: 32px; }
-      h2 { font-size: 20px; margin-bottom: 10px; }
-      .mt { margin-top: 10px; }
 
-      /* Keyboard-focusable button */
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 14px;
-        padding: 8px 18px;
-        background: var(--primary);
-        color: #050816;
-        font-weight: 700;
-        font-size: 14px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        text-decoration: none;
+      h1, h2, p {
+        margin: 0;
       }
-      .btn:focus-visible {
-        outline: 3px solid #fff;
-        outline-offset: 3px;
-      }
-      .btn:hover { opacity: 0.9; }
 
-      /* Nav links */
-      .nav-links { display: flex; gap: 12px; list-style: none; margin: 0; padding: 0; }
-      .nav-links a {
-        color: var(--text);
-        text-decoration: none;
-        font-size: 14px;
-        padding: 4px 8px;
-        border-radius: 6px;
+      h1 {
+        font-size: 32px;
       }
-      .nav-links a:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: 2px;
-      }
-      .nav-links a:hover { color: var(--primary); }
 
-      /* Status indicator */
-      .status-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #22c55e;
-        margin-right: 6px;
-        vertical-align: middle;
+      h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      .mt {
+        margin-top: 10px;
       }
     </style>
   </head>

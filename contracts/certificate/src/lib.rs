@@ -15,7 +15,7 @@ use shared::logger::{LogLevel, Logger};
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
 use shared::{log_error, log_info, log_warn};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
     CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
@@ -23,6 +23,8 @@ use types::{
     MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
     ShareRecord, TemplateField,
 };
+
+use shared::gdpr_types::GdprCertificateExport;
 
 /// Maximum number of approvers per config (gas guard).
 const MAX_APPROVERS: u32 = 10;
