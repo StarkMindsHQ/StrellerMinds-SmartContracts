@@ -94,6 +94,40 @@ export const config = {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
   },
 
+  redis: {
+    url: process.env.REDIS_URL ?? "redis://localhost:6379",
+    ttl: {
+      certificate: integerEnv("REDIS_TTL_CERTIFICATE", 3600, 60), // 1 hour
+      profile: integerEnv("REDIS_TTL_PROFILE", 1800, 60), // 30 minutes
+      achievement: integerEnv("REDIS_TTL_ACHIEVEMENT", 3600, 60), // 1 hour
+      statistics: integerEnv("REDIS_TTL_STATISTICS", 900, 60), // 15 minutes
+      cohort: integerEnv("REDIS_TTL_COHORT", 1800, 60), // 30 minutes
+      leaderboard: integerEnv("REDIS_TTL_LEADERBOARD", 300, 60), // 5 minutes
+    },
+  },
+
+  database: {
+    host: process.env.DATABASE_HOST ?? "localhost",
+    port: integerEnv("DATABASE_PORT", 5432, 1),
+    name: process.env.DATABASE_NAME ?? "strellerminds",
+    user: process.env.DATABASE_USER ?? "postgres",
+    password: process.env.DATABASE_PASSWORD ?? "",
+    pool: {
+      min: integerEnv("DATABASE_POOL_MIN", 5, 1),
+      max: integerEnv("DATABASE_POOL_MAX", 50, 10),
+      idleTimeoutMillis: integerEnv("DATABASE_POOL_IDLE_TIMEOUT", 30000, 1000),
+      connectionTimeoutMillis: integerEnv("DATABASE_POOL_CONNECT_TIMEOUT", 10000, 1000),
+      maxUses: integerEnv("DATABASE_POOL_MAX_USES", 10000, 100),
+      leakDetectionThreshold: integerEnv("DATABASE_POOL_LEAK_THRESHOLD", 60000, 10000),
+    },
+  },
+
+  export: {
+    maxRecordsPerExport: integerEnv("EXPORT_MAX_RECORDS", 100000, 1000),
+    streamingThreshold: integerEnv("EXPORT_STREAMING_THRESHOLD", 10000, 1000),
+    defaultPageSize: integerEnv("EXPORT_DEFAULT_PAGE_SIZE", 1000, 100),
+  },
+
   slack: {
     // Default incoming webhook URL (required to enable Slack notifications)
     webhookUrl: process.env.SLACK_WEBHOOK_URL ?? "",

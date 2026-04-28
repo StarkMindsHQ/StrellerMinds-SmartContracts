@@ -2,6 +2,7 @@
 extern crate alloc;
 
 pub mod access_control;
+pub mod bulk_user_import;
 pub mod config;
 pub mod error_codes;
 pub mod error_handling;

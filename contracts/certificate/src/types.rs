@@ -615,10 +615,12 @@ pub enum CertDataKey {
     RecoveryRequest(BytesN<32>),
     /// List of pending recovery request IDs.
     PendingRecoveryRequests,
-    /// Address of the compliance officer.
-    ComplianceOfficer,
-    /// On-chain store for template substitution field values.
-    TemplateValues(BytesN<32>),
+
+    /// Progress tracking for batch operations keyed by Job ID.
+    BatchJobProgress(BytesN<32>),
+
+    /// Global list of all issued certificate IDs (used for expiry cleanup).
+    AllCertificates,
 }
 
 /// Configurable rate limits for certificate operations.

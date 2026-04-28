@@ -9,6 +9,7 @@ import { metricsMiddleware } from "./middleware/metricsMiddleware";
 import { analyticsConsent } from "./middleware/analyticsConsent";
 import { cdnMiddleware } from "./middleware/cdn";
 import { securityHeadersValidator } from "./middleware/securityHeaders";
+import { i18nMiddleware } from "./middleware/i18n";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
 import { preloadLocales } from "./i18n";
@@ -20,6 +21,7 @@ import authRouter from "./routes/auth";
 import certificatesRouter from "./routes/certificates";
 import studentsRouter from "./routes/students";
 import analyticsRouter from "./routes/analytics";
+import consentRouter from "./routes/consent";
 import socialSharingRouter from "./routes/social-sharing";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
@@ -27,6 +29,8 @@ import cdnRouter from "./routes/cdn";
 import certificateTemplatesRouter from "./certificate-templates/certificate-templates.route";
 import performanceRouter from "./routes/performance";
 import slackRouter from "./routes/slack";
+import exportRouter from "./routes/export";
+import cohortsRouter from "./routes/cohorts";
 
 const app = express();
 
@@ -108,6 +112,8 @@ app.use("/api/v1/cdn", cdnRouter);
 app.use("/api/v1/certificate-templates", certificateTemplatesRouter);
 app.use("/api/v1/performance", performanceRouter);
 app.use("/api/v1/slack", slackRouter);
+app.use("/api/v1/export", exportRouter);
+app.use("/api/v1/cohorts", cohortsRouter);
 
 // ── CSP Violation Reporter ─────────────────────────────────────────────────────
 app.post(
