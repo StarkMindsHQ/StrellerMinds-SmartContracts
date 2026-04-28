@@ -194,6 +194,25 @@ Run unit tests to ensure everything is functioning as expected:
 cargo test
 ```
 
+#### Load Testing
+
+Run the bounded contract load-testing suite locally:
+
+```bash
+./scripts/load_test.sh
+```
+
+Or with Make / Cargo:
+
+```bash
+make load-test
+cargo load-test -- --report target/load-test-report.json --summary target/load-test-summary.md
+```
+
+The suite uses a default `STRELLER_LOAD_MULTIPLIER=10` to simulate 10x peak load, writes JSON and Markdown reports to `target/`, and has a CI-safe mode available via `./scripts/load_test.sh --ci`.
+
+See [docs/LOAD_TESTING.md](docs/LOAD_TESTING.md) for the configurable load variables and report format.
+
 #### Property-Based Tests
 
 We use `proptest` to verify contract invariants with random inputs:
