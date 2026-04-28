@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Map, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Certificate Priority Levels
@@ -288,6 +288,33 @@ pub struct BatchResult {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Batch Operation Progress Tracking
+// ─────────────────────────────────────────────────────────────
+/// Types of batch operations that can be tracked.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BatchOperationType {
+    Issue,
+    Revoke,
+    Verify,
+}
+
+/// Progress tracking record for long-running or chunked batch operations.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatchProgress {
+    pub job_id: BytesN<32>,
+    pub operation_type: BatchOperationType,
+    pub total_items: u32,
+    pub processed_items: u32,
+    pub successful_items: u32,
+    pub failed_items: u32,
+    pub is_completed: bool,
+    pub started_at: u64,
+    pub updated_at: u64,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Certificate Analytics
 // ─────────────────────────────────────────────────────────────
 /// Aggregate analytics counters for the certificate contract.
@@ -563,6 +590,9 @@ pub enum CertDataKey {
     RecoveryRequest(BytesN<32>),
     /// List of pending recovery request IDs.
     PendingRecoveryRequests,
+
+    /// Progress tracking for batch operations keyed by Job ID.
+    BatchJobProgress(BytesN<32>),
 }
 
 /// Configurable rate limits for certificate operations.

@@ -1,0 +1,9 @@
+[package]
+name = "streller-cli-enhanced"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+console = "0.15"
+inquire = "0.7"

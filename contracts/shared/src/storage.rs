@@ -80,12 +80,16 @@ impl AccessControlStorage {
 
     /// Stores role history for a user
     pub fn add_role_history(env: &Env, user: &Address, role: &Role) {
+        const MAX_HISTORY: u32 = 100;
         let key = DataKey::RoleHistory(user.clone());
         let mut history: Vec<Role> = if env.storage().instance().has(&key) {
             env.storage().instance().get(&key).unwrap()
         } else {
             Vec::new(env)
         };
+        if history.len() >= MAX_HISTORY {
+            history.pop_front();
+        }
         history.push_back(role.clone());
         env.storage().instance().set(&key, &history);
     }
@@ -102,12 +106,16 @@ impl AccessControlStorage {
 
     /// Stores role grants for a user
     pub fn add_role_grant(env: &Env, user: &Address, role: &Role) {
+        const MAX_GRANTS: u32 = 100;
         let key = DataKey::RoleGrants(user.clone());
         let mut grants: Vec<Role> = if env.storage().instance().has(&key) {
             env.storage().instance().get(&key).unwrap()
         } else {
             Vec::new(env)
         };
+        if grants.len() >= MAX_GRANTS {
+            grants.pop_front();
+        }
         grants.push_back(role.clone());
         env.storage().instance().set(&key, &grants);
     }
@@ -124,12 +132,16 @@ impl AccessControlStorage {
 
     /// Stores role revocations for a user
     pub fn add_role_revocation(env: &Env, user: &Address, role: &Role) {
+        const MAX_REVOCATIONS: u32 = 100;
         let key = DataKey::RoleRevocations(user.clone());
         let mut revocations: Vec<Role> = if env.storage().instance().has(&key) {
             env.storage().instance().get(&key).unwrap()
         } else {
             Vec::new(env)
         };
+        if revocations.len() >= MAX_REVOCATIONS {
+            revocations.pop_front();
+        }
         revocations.push_back(role.clone());
         env.storage().instance().set(&key, &revocations);
     }
