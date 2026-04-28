@@ -391,3 +391,32 @@ pub fn get_pending_recovery_requests(env: &Env) -> Vec<BytesN<32>> {
 pub fn set_pending_recovery_requests(env: &Env, pending: &Vec<BytesN<32>>) {
     env.storage().persistent().set(&CertDataKey::PendingRecoveryRequests, pending);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Global Certificate Index (for expiry cleanup)
+// ─────────────────────────────────────────────────────────────
+pub fn add_to_all_certificates(env: &Env, cert_id: &BytesN<32>) {
+    let mut all: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&CertDataKey::AllCertificates)
+        .unwrap_or_else(|| Vec::new(env));
+    all.push_back(cert_id.clone());
+    env.storage().persistent().set(&CertDataKey::AllCertificates, &all);
+}
+
+pub fn get_all_certificates(env: &Env) -> Vec<BytesN<32>> {
+    env.storage()
+        .persistent()
+        .get(&CertDataKey::AllCertificates)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+pub fn set_all_certificates(env: &Env, ids: &Vec<BytesN<32>>) {
+    env.storage().persistent().set(&CertDataKey::AllCertificates, ids);
+}
+
+/// Remove the persistent storage entry for a certificate, freeing ledger memory.
+pub fn remove_certificate(env: &Env, cert_id: &BytesN<32>) {
+    env.storage().persistent().remove(&CertDataKey::Certificate(cert_id.clone()));
+}
