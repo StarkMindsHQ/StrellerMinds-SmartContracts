@@ -26,13 +26,24 @@ import type {
   CertificateAnalytics,
   RevocationRecord,
   VerificationResult,
+  ShareRecord,
+  SocialSharingAnalytics,
+  SharePlatform,
 } from "./types";
+import {
+  QueryOptimizer,
+  type QueryOptimizationReport,
+} from "./utils/queryOptimizer";
 
 const DUMMY_SOURCE = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+const SHORT_NULL_CACHE_TTL_MS = 5_000;
 
 export class CertificateContractClient {
-  private server: SorobanRpc.Server;
-  private contract: Contract;
+  private readonly servers: SorobanRpc.Server[];
+  private readonly rpcUrls: string[];
+  private readonly contract: Contract;
+  private readonly optimizer: QueryOptimizer;
+  private nextServerIndex = 0;
 
   private analyticsCache: TtlCache<CertificateAnalytics>;
   private certificateCache: TtlCache<Certificate | null>;
@@ -40,39 +51,28 @@ export class CertificateContractClient {
   private studentCache: TtlCache<string[]>;
 
   constructor() {
-    this.server = new SorobanRpc.Server(config.stellar.rpcUrl, {
-      allowHttp: config.nodeEnv !== "production",
-    });
+    this.rpcUrls = config.queryOptimization.rpcUrls.slice(0, config.queryOptimization.poolSize);
+    this.servers = this.rpcUrls.map(
+      (rpcUrl) =>
+        new SorobanRpc.Server(rpcUrl, {
+          allowHttp: config.nodeEnv !== "production",
+        })
+    );
     this.contract = new Contract(config.stellar.contractId);
-
-    this.analyticsCache = new TtlCache(config.cache.analyticsTtlMs);
-    this.certificateCache = new TtlCache(config.cache.certificateTtlMs);
-    this.revocationCache = new TtlCache(config.cache.revocationTtlMs);
-    this.studentCache = new TtlCache(config.cache.studentTtlMs);
-
-    // Periodically publish cache sizes to Prometheus
-    setInterval(() => this.publishCacheMetrics(), 15_000).unref();
-  }
-
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private publishCacheMetrics(): void {
-    cacheSize.set({ cache: "analytics" }, this.analyticsCache.stats().size);
-    cacheSize.set({ cache: "certificate" }, this.certificateCache.stats().size);
-    cacheSize.set({ cache: "revocation" }, this.revocationCache.stats().size);
-    cacheSize.set({ cache: "student" }, this.studentCache.stats().size);
-  }
-
-  private trackCacheResult(cacheName: string, hit: boolean): void {
-    if (hit) {
-      cacheHits.inc({ cache: cacheName });
-    } else {
-      cacheMisses.inc({ cache: cacheName });
-    }
+    this.optimizer = new QueryOptimizer({
+      defaultTtlMs: config.queryOptimization.cacheDefaultTtlMs,
+      maxEntries: config.queryOptimization.cacheMaxEntries,
+      slowThresholdMs: config.queryOptimization.slowThresholdMs,
+      targetAvgMs: config.queryOptimization.targetAvgMs,
+      targetLoadReductionPercent: config.queryOptimization.targetLoadReductionPercent,
+      poolSize: this.servers.length,
+    });
   }
 
   private async simulate(method: string, args: xdr.ScVal[]): Promise<unknown> {
     const end = contractCallDuration.startTimer({ method, success: "false" });
+    const server = this.getNextServer();
+
     try {
       const account = new Account(DUMMY_SOURCE, "0");
       const tx = new TransactionBuilder(account, {
@@ -83,7 +83,7 @@ export class CertificateContractClient {
         .setTimeout(30)
         .build();
 
-      const result = await this.server.simulateTransaction(tx);
+      const result = await server.simulateTransaction(tx);
 
       if (SorobanRpc.Api.isSimulationError(result)) {
         throw new Error(`Contract simulation error: ${result.error}`);
@@ -101,6 +101,21 @@ export class CertificateContractClient {
     }
   }
 
+  private getNextServer(): SorobanRpc.Server {
+    const server = this.servers[this.nextServerIndex % this.servers.length];
+    this.nextServerIndex = (this.nextServerIndex + 1) % this.servers.length;
+    return server;
+  }
+
+  private buildCacheKey(method: string, args: xdr.ScVal[]): string {
+    const serializedArgs = args.map((arg) => arg.toXDR("base64")).join(":");
+    return `${method}:${serializedArgs}`;
+  }
+
+  private serializeQueryKey(queryName: string, args: xdr.ScVal[]): string {
+    return this.buildCacheKey(queryName, args);
+  }
+
   private hexToScVal(hex: string): xdr.ScVal {
     const bytes = Buffer.from(hex.replace(/^0x/, ""), "hex");
     if (bytes.length !== 32) {
@@ -111,9 +126,7 @@ export class CertificateContractClient {
 
   private mapCertificate(raw: Record<string, unknown>): Certificate {
     return {
-      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString(
-        "hex"
-      ),
+      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString("hex"),
       courseId: raw.course_id as string,
       student: raw.student as string,
       title: raw.title as string,
@@ -132,13 +145,9 @@ export class CertificateContractClient {
     };
   }
 
-  private mapRevocation(
-    raw: Record<string, unknown>
-  ): RevocationRecord {
+  private mapRevocation(raw: Record<string, unknown>): RevocationRecord {
     return {
-      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString(
-        "hex"
-      ),
+      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString("hex"),
       revokedBy: raw.revoked_by as string,
       revokedAt: Number(raw.revoked_at),
       reason: raw.reason as string,
@@ -146,7 +155,16 @@ export class CertificateContractClient {
     };
   }
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  getQueryOptimizationReport(): QueryOptimizationReport {
+    return this.optimizer.getReport({
+      configuredRpcUrls: this.rpcUrls,
+      roundRobinCursor: this.nextServerIndex,
+    });
+  }
+
+  invalidateQueryCache(filters?: { queryName?: string; keyPrefix?: string }): { invalidated: number } {
+    return this.optimizer.invalidate(filters);
+  }
 
   /**
    * Verify a certificate by ID. Returns full verification result.
@@ -157,16 +175,14 @@ export class CertificateContractClient {
    */
   async verifyCertificate(certificateId: string): Promise<VerificationResult> {
     const now = Math.floor(Date.now() / 1000);
-    const certIdArg = this.hexToScVal(certificateId);
+
+    let certificate: Certificate | null = null;
+    let revocationRecord: RevocationRecord | null = null;
+    let isValid = false;
+    let message = "";
 
     try {
-      // Fire cert + revocation fetches in parallel.
-      // getCertificate uses its own cache; getRevocationRecord uses its own.
-      // Both are coalesced, so concurrent identical calls share one RPC.
-      const [certificate, revocationRecord] = await Promise.all([
-        this.getCertificate(certificateId),
-        this.getRevocationRecord(certificateId).catch(() => null),
-      ]);
+      certificate = await this.getCertificate(certificateId);
 
       if (!certificate) {
         return {
@@ -180,12 +196,8 @@ export class CertificateContractClient {
         };
       }
 
-      let isValid = false;
-      let message = "";
-
       if (certificate.status === "Active") {
-        const expired =
-          certificate.expiryDate > 0 && certificate.expiryDate < now;
+        const expired = certificate.expiryDate > 0 && certificate.expiryDate < now;
         if (expired) {
           isValid = false;
           message = "Certificate has expired";
@@ -196,6 +208,11 @@ export class CertificateContractClient {
       } else if (certificate.status === "Revoked") {
         isValid = false;
         message = "Certificate has been revoked";
+        try {
+          revocationRecord = await this.getRevocationRecord(certificateId);
+        } catch {
+          // non-fatal
+        }
       } else {
         isValid = false;
         message = `Certificate status: ${certificate.status}`;
@@ -231,18 +248,24 @@ export class CertificateContractClient {
    * Get a certificate by ID. Results cached per config.cache.certificateTtlMs.
    */
   async getCertificate(certificateId: string): Promise<Certificate | null> {
-    const key = `cert:${certificateId}`;
-    const beforeHits = this.certificateCache.hits;
+    const certIdArg = this.hexToScVal(certificateId);
+    const cacheKey = this.serializeQueryKey("get_certificate", [certIdArg]);
 
-    const result = await this.certificateCache.getOrFetch(key, async () => {
-      const raw = (await this.simulate("get_certificate", [
-        this.hexToScVal(certificateId),
-      ])) as Record<string, unknown> | null;
-      return raw ? this.mapCertificate(raw) : null;
-    });
-
-    this.trackCacheResult("certificate", this.certificateCache.hits > beforeHits);
-    return result;
+    return this.optimizer.execute(
+      {
+        queryName: "get_certificate",
+        cacheKey,
+        cacheTtlMs: config.queryOptimization.cacheCertificateTtlMs,
+        cacheNull: true,
+        nullCacheTtlMs: SHORT_NULL_CACHE_TTL_MS,
+      },
+      async () => {
+        const raw = (await this.simulate("get_certificate", [
+          certIdArg,
+        ])) as Record<string, unknown> | null;
+        return raw ? this.mapCertificate(raw) : null;
+      }
+    );
   }
 
   /**
@@ -250,96 +273,252 @@ export class CertificateContractClient {
    * Results cached per config.cache.studentTtlMs.
    */
   async getStudentCertificates(studentAddress: string): Promise<string[]> {
-    const key = `student:${studentAddress}`;
-    const beforeHits = this.studentCache.hits;
-
-    const result = await this.studentCache.getOrFetch(key, async () => {
-      const addressArg = nativeToScVal(
-        Address.fromString(studentAddress),
-        { type: "address" }
-      );
-      const raw = (await this.simulate("get_student_certificates", [
-        addressArg,
-      ])) as Uint8Array[];
-      return (raw ?? []).map((b) => Buffer.from(b).toString("hex"));
+    const addressArg = nativeToScVal(Address.fromString(studentAddress), {
+      type: "address",
     });
+    const cacheKey = this.serializeQueryKey("get_student_certificates", [addressArg]);
 
-    this.trackCacheResult("student", this.studentCache.hits > beforeHits);
-    return result;
+    return this.optimizer.execute(
+      {
+        queryName: "get_student_certificates",
+        cacheKey,
+        cacheTtlMs: config.queryOptimization.cacheStudentCertsTtlMs,
+      },
+      async () => {
+        const raw = (await this.simulate("get_student_certificates", [
+          addressArg,
+        ])) as Uint8Array[];
+        return (raw ?? []).map((bytes) => Buffer.from(bytes).toString("hex"));
+      }
+    );
   }
 
   /**
    * Get aggregate analytics. Cached per config.cache.analyticsTtlMs.
    */
   async getAnalytics(): Promise<CertificateAnalytics> {
-    const key = "analytics:global";
-    const beforeHits = this.analyticsCache.hits;
+    const cacheKey = this.serializeQueryKey("get_analytics", []);
 
-    const result = await this.analyticsCache.getOrFetch(key, async () => {
-      const raw = (await this.simulate("get_analytics", [])) as Record<
-        string,
-        unknown
-      >;
-      return {
-        totalIssued: Number(raw.total_issued),
-        totalRevoked: Number(raw.total_revoked),
-        totalExpired: Number(raw.total_expired),
-        totalReissued: Number(raw.total_reissued),
-        totalShared: Number(raw.total_shared),
-        totalVerified: Number(raw.total_verified),
-        activeCertificates: Number(raw.active_certificates),
-        pendingRequests: Number(raw.pending_requests),
-        avgApprovalTime: Number(raw.avg_approval_time),
-        lastUpdated: Number(raw.last_updated),
-      };
-    });
-
-    this.trackCacheResult("analytics", this.analyticsCache.hits > beforeHits);
-    return result;
+    return this.optimizer.execute(
+      {
+        queryName: "get_analytics",
+        cacheKey,
+        cacheTtlMs: config.queryOptimization.cacheAnalyticsTtlMs,
+        singleton: true,
+        canPrewarm: true,
+      },
+      async () => {
+        const raw = (await this.simulate("get_analytics", [])) as Record<string, unknown>;
+        return {
+          totalIssued: Number(raw.total_issued),
+          totalRevoked: Number(raw.total_revoked),
+          totalExpired: Number(raw.total_expired),
+          totalReissued: Number(raw.total_reissued),
+          totalShared: Number(raw.total_shared),
+          totalVerified: Number(raw.total_verified),
+          activeCertificates: Number(raw.active_certificates),
+          pendingRequests: Number(raw.pending_requests),
+          avgApprovalTime: Number(raw.avg_approval_time),
+          lastUpdated: Number(raw.last_updated),
+        };
+      }
+    );
   }
 
   /**
    * Get revocation record for a certificate.
-   * Cached per config.cache.revocationTtlMs (revocations are immutable once set).
    */
-  async getRevocationRecord(
-    certificateId: string
-  ): Promise<RevocationRecord | null> {
-    const key = `revocation:${certificateId}`;
-    const beforeHits = this.revocationCache.hits;
+  async getRevocationRecord(certificateId: string): Promise<RevocationRecord | null> {
+    const certIdArg = this.hexToScVal(certificateId);
+    const cacheKey = this.serializeQueryKey("get_revocation_record", [certIdArg]);
 
-    const result = await this.revocationCache.getOrFetch(key, async () => {
-      const raw = (await this.simulate("get_revocation_record", [
-        this.hexToScVal(certificateId),
-      ])) as Record<string, unknown> | null;
-      return raw ? this.mapRevocation(raw) : null;
+    return this.optimizer.execute(
+      {
+        queryName: "get_revocation_record",
+        cacheKey,
+        cacheTtlMs: config.queryOptimization.cacheRevocationTtlMs,
+        cacheNull: true,
+        nullCacheTtlMs: SHORT_NULL_CACHE_TTL_MS,
+      },
+      async () => {
+        const raw = (await this.simulate("get_revocation_record", [
+          certIdArg,
+        ])) as Record<string, unknown> | null;
+        return raw ? this.mapRevocation(raw) : null;
+      }
+    );
+  }
+
+  // ── Social Sharing Methods ─────────────────────────────────────────────────
+
+  /**
+   * Record a share of an achievement to social media.
+   */
+  async shareAchievement(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<ShareRecord> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const platformArg = nativeToScVal(platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2);
+    const messageArg = nativeToScVal(customMessage);
+
+    const raw = (await this.simulate("share_achievement", [
+      userArg,
+      certArg,
+      platformArg,
+      messageArg,
+    ])) as Record<string, unknown>;
+
+    return this.mapShareRecord(raw);
+  }
+
+  /**
+   * Get all shares for a specific certificate.
+   */
+  async getCertificateShares(certificateId: string): Promise<ShareRecord[]> {
+    const certArg = this.hexToScVal(certificateId);
+    const rawArray = (await this.simulate("get_certificate_shares", [
+      certArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Get all shares by a user.
+   */
+  async getUserShares(userAddress: string): Promise<ShareRecord[]> {
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const rawArray = (await this.simulate("get_user_shares", [
+      userArg,
+    ])) as Record<string, unknown>[];
+
+    return (rawArray ?? []).map((raw) => this.mapShareRecord(raw));
+  }
+
+  /**
+   * Update engagement metrics for a share (admin only).
+   */
+  async updateEngagement(
+    adminAddress: string,
+    certificateId: string,
+    userAddress: string,
+    platform: SharePlatform,
+    engagementCount: number
+  ): Promise<void> {
+    const adminArg = nativeToScVal(
+      Address.fromString(adminAddress),
+      { type: "address" }
+    );
+    const certArg = this.hexToScVal(certificateId);
+    const userArg = nativeToScVal(
+      Address.fromString(userAddress),
+      { type: "address" }
+    );
+    const platformArg = nativeToScVal(
+      platform === "Twitter" ? 0 : platform === "LinkedIn" ? 1 : 2
+    );
+    const engagementArg = nativeToScVal(engagementCount);
+
+    await this.simulate("update_engagement", [
+      adminArg,
+      certArg,
+      userArg,
+      platformArg,
+      engagementArg,
+    ]);
+  }
+
+  /**
+   * Get global social sharing analytics.
+   */
+  async getSocialSharingAnalytics(): Promise<SocialSharingAnalytics> {
+    const raw = (await this.simulate("get_analytics", [])) as Record<
+      string,
+      unknown
+    >;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Get analytics for a specific certificate.
+   */
+  async getCertificateSocialAnalytics(
+    certificateId: string
+  ): Promise<SocialSharingAnalytics> {
+    const certArg = this.hexToScVal(certificateId);
+    const raw = (await this.simulate("get_certificate_analytics", [
+      certArg,
+    ])) as Record<string, unknown>;
+    return {
+      totalShares: Number(raw.total_shares),
+      twitterShares: Number(raw.twitter_shares),
+      linkedinShares: Number(raw.linkedin_shares),
+      facebookShares: Number(raw.facebook_shares),
+      totalEngagement: Number(raw.total_engagement),
+      averageEngagement: Number(raw.average_engagement),
+      uniqueSharers: Number(raw.unique_sharers),
+      lastUpdated: Number(raw.last_updated),
+    };
+  }
+
+  /**
+   * Track a social share for analytics.
+   */
+  async trackSocialShare(
+    userAddress: string,
+    certificateId: string,
+    platform: SharePlatform,
+    customMessage: string
+  ): Promise<void> {
+    // Log analytics event
+    logger.info("Social share tracked", {
+      user: userAddress,
+      certificateId,
+      platform,
+      messageLength: customMessage.length,
     });
 
-    this.trackCacheResult("revocation", this.revocationCache.hits > beforeHits);
-    return result;
+    // This could be extended to track in a separate analytics database
+    // or call a dedicated analytics contract method
   }
 
-  /**
-   * Invalidate all caches for a specific certificate (call after issue/revoke).
-   */
-  invalidateCertificate(certificateId: string): void {
-    this.certificateCache.delete(`cert:${certificateId}`);
-    this.revocationCache.delete(`revocation:${certificateId}`);
-    this.analyticsCache.delete("analytics:global");
-  }
+  // ── Helper methods ─────────────────────────────────────────────────────────
 
-  /**
-   * Returns a snapshot of cache hit/miss stats for all caches.
-   */
-  cacheStats() {
+  private mapShareRecord(raw: Record<string, unknown>): ShareRecord {
     return {
-      analytics: this.analyticsCache.stats(),
-      certificate: this.certificateCache.stats(),
-      revocation: this.revocationCache.stats(),
-      student: this.studentCache.stats(),
+      certificateId: Buffer.from(raw.certificate_id as Uint8Array).toString(
+        "hex"
+      ),
+      user: raw.user as string,
+      platform: ["Twitter", "LinkedIn", "Facebook"][
+        Number(raw.platform)
+      ] as SharePlatform,
+      customMessage: raw.custom_message as string,
+      shareUrl: raw.share_url as string,
+      timestamp: Number(raw.timestamp),
+      engagementCount: Number(raw.engagement_count),
+      verified: raw.verified as boolean,
     };
   }
 }
 
-// Singleton
 export const contractClient = new CertificateContractClient();

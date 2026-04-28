@@ -1,100 +1,93 @@
 #[cfg(test)]
 mod tests {
-    use crate::incentives::IncentiveManager;
-    use crate::types::{IncentiveDataKey, StreakData, TokenomicsConfig};
+    use crate::{gas_optimized, Token};
     use proptest::prelude::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env, String};
+    use soroban_sdk::{testutils::Address as _, Address, Env, Vec};
 
-    #[allow(dead_code)]
-    fn setup_env() -> (Env, Address) {
-        let env = Env::default();
-        let admin = Address::generate(&env);
-        (env, admin)
+    fn run_in_token_contract<F>(env: &Env, run: F)
+    where
+        F: FnOnce(),
+    {
+        let contract_id = env.register(Token, ());
+        env.as_contract(&contract_id, run);
     }
 
     proptest! {
         #[test]
-    #[ignore]
-    fn test_reward_calculation(
-            completion_percentage in 0..100u32,
-            streak_days in 0..100u32,
+        fn transfer_conserves_total_balance(
+            amount in 0u64..5_000,
+            initial_from in 5_000u64..10_000,
+            initial_to in 0u64..5_000,
         ) {
             let env = Env::default();
             env.mock_all_auths();
             let admin = Address::generate(&env);
-            let user = Address::generate(&env);
-
-            // Initialize
-            IncentiveManager::initialize(&env, &admin).unwrap();
-
-            // Setup streak
-            let streak_data = StreakData {
-                user: user.clone(),
-                current_streak: streak_days,
-                max_streak: streak_days,
-                last_activity_date: env.ledger().timestamp(),
-                streak_rewards_earned: 0,
-            };
-            env.storage().persistent().set(&IncentiveDataKey::UserStats(user.clone()), &streak_data);
-
-            let course_id = String::from_str(&env, "course1");
-            let reward = IncentiveManager::reward_course_completion(&env, &user, &course_id, completion_percentage).unwrap();
-
-            // Manual calculation logic from incentives.rs
-            let config = TokenomicsConfig::default(); // Simplified as we just initialized with default
-            let mut expected = config.base_course_reward;
-            if completion_percentage >= 90 {
-                expected = expected * 150 / 100;
-            } else if completion_percentage >= 80 {
-                expected = expected * 125 / 100;
-            }
-
-            let _bonus = (streak_days + 1) * config.streak_bonus_rate / 10000; // +1 because update_user_streak is called inside reward_course_completion
-            // Wait, streak_multiplier is calculated BEFORE update_user_streak in reward_course_completion
-            // Let's re-verify incentives.rs:
-            // 78: let streak_multiplier = Self::get_streak_multiplier(env, user);
-            // 98: Self::update_user_streak(env, user)?;
-
-            let bonus_calc = streak_days * config.streak_bonus_rate / 10000;
-            let streak_multiplier = (100 + bonus_calc).min(config.max_streak_multiplier);
-
-            expected = expected * streak_multiplier as i128 / 100;
-
-            // Event multiplier is 100 by default
-            assert_eq!(reward, expected, "Reward mismatch for percentage {} and streak {}", completion_percentage, streak_days);
-        }
-
-        #[test]
-    #[ignore]
-    fn test_transfer_conservation(
-            amount in 0..5000u64,
-            initial_from in 5000..10000u64,
-            initial_to in 0..5000u64,
-        ) {
-            let env = Env::default();
-            env.mock_all_auths();
-            let admin = Address::generate(&env);
+            let second_admin = Address::generate(&env);
             let from = Address::generate(&env);
             let to = Address::generate(&env);
 
-            // Mint initial balances
-            crate::gas_optimized::mint_optimized(&env, &admin, &from, initial_from);
-            crate::gas_optimized::mint_optimized(&env, &admin, &to, initial_to);
+            run_in_token_contract(&env, || {
+                gas_optimized::mint_optimized(&env, &admin, &from, initial_from);
+                gas_optimized::mint_optimized(&env, &second_admin, &to, initial_to);
 
-            let bal_from_before = crate::gas_optimized::balance_of(&env, &from);
-            let bal_to_before = crate::gas_optimized::balance_of(&env, &to);
-            let total_before = bal_from_before + bal_to_before;
+                let from_before = gas_optimized::balance_of(&env, &from);
+                let to_before = gas_optimized::balance_of(&env, &to);
+                let total_before = from_before + to_before;
 
-            // Transfer
-            crate::gas_optimized::transfer_optimized(&env, &from, &to, amount);
+                gas_optimized::transfer_optimized(&env, &from, &to, amount);
 
-            let bal_from_after = crate::gas_optimized::balance_of(&env, &from);
-            let bal_to_after = crate::gas_optimized::balance_of(&env, &to);
-            let total_after = bal_from_after + bal_to_after;
+                let from_after = gas_optimized::balance_of(&env, &from);
+                let to_after = gas_optimized::balance_of(&env, &to);
 
-            assert_eq!(total_before, total_after, "Total balance not conserved");
-            assert_eq!(bal_from_before - amount, bal_from_after, "Sender balance not decreased correctly");
-            assert_eq!(bal_to_before + amount, bal_to_after, "Recipient balance not increased correctly");
+                assert_eq!(from_after, from_before - amount);
+                assert_eq!(to_after, to_before + amount);
+                assert_eq!(from_after + to_after, total_before);
+            });
+        }
+
+        #[test]
+        fn batch_transfer_conserves_total_balance(
+            first in 0u64..1_000,
+            second in 0u64..1_000,
+            third in 0u64..1_000,
+            initial_sender in 3_000u64..10_000,
+        ) {
+            let env = Env::default();
+            env.mock_all_auths();
+            let admin = Address::generate(&env);
+            let sender = Address::generate(&env);
+            let recipient_one = Address::generate(&env);
+            let recipient_two = Address::generate(&env);
+            let recipient_three = Address::generate(&env);
+
+            run_in_token_contract(&env, || {
+                gas_optimized::mint_optimized(&env, &admin, &sender, initial_sender);
+
+                let mut recipients = Vec::new(&env);
+                recipients.push_back((recipient_one.clone(), first));
+                recipients.push_back((recipient_two.clone(), second));
+                recipients.push_back((recipient_three.clone(), third));
+
+                let total_transfer = first + second + third;
+                let total_before = gas_optimized::balance_of(&env, &sender)
+                    + gas_optimized::balance_of(&env, &recipient_one)
+                    + gas_optimized::balance_of(&env, &recipient_two)
+                    + gas_optimized::balance_of(&env, &recipient_three);
+
+                let result = gas_optimized::batch_transfer(&env, &sender, &recipients);
+
+                assert_eq!(result.processed + result.skipped, 3);
+                assert_eq!(gas_optimized::balance_of(&env, &sender), initial_sender - total_transfer);
+                assert_eq!(gas_optimized::balance_of(&env, &recipient_one), first);
+                assert_eq!(gas_optimized::balance_of(&env, &recipient_two), second);
+                assert_eq!(gas_optimized::balance_of(&env, &recipient_three), third);
+
+                let total_after = gas_optimized::balance_of(&env, &sender)
+                    + gas_optimized::balance_of(&env, &recipient_one)
+                    + gas_optimized::balance_of(&env, &recipient_two)
+                    + gas_optimized::balance_of(&env, &recipient_three);
+                assert_eq!(total_after, total_before);
+            });
         }
     }
 }

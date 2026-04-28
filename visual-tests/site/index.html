@@ -12,117 +12,191 @@
         --muted: #98a7c6;
         --primary: #5eead4;
         --secondary: #8b5cf6;
+        --border: #21305f;
+        --nav-bg: rgba(13, 18, 38, 0.85);
+        --progress-bg: #1d2b53;
       }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --panel: #f8fafc;
+          --text: #0f172a;
+          --muted: #64748b;
+          --primary: #0d9488;
+          --secondary: #7c3aed;
+          --border: #e2e8f0;
+          --nav-bg: rgba(248, 250, 252, 0.85);
+          --progress-bg: #e2e8f0;
+        }
+      }
+
       body {
         margin: 0;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        background: var(--bg);
         background: radial-gradient(circle at 20% 20%, #10234f 0%, var(--bg) 45%);
         color: var(--text);
+        min-height: 100vh;
       }
+
+      @media (prefers-color-scheme: light) {
+        body {
+          background: var(--bg);
+        }
+      }
+
       .container {
         max-width: 1080px;
         margin: 0 auto;
         padding: 24px;
       }
+
       .nav {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 14px 16px;
-        border: 1px solid #21305f;
+        border: 1px solid var(--border);
         border-radius: 12px;
-        background: rgba(13, 18, 38, 0.85);
+        background: var(--nav-bg);
         backdrop-filter: blur(8px);
       }
+
       .badge {
         border-radius: 999px;
         padding: 4px 10px;
         font-size: 12px;
-        border: 1px solid #2dd4bf66;
+        border: 1px solid var(--primary);
         color: var(--primary);
+        background: rgba(94, 234, 212, 0.08);
       }
+
       .hero {
         margin-top: 24px;
         display: grid;
         grid-template-columns: 1.2fr 1fr;
         gap: 20px;
       }
+
       .panel {
-        background: rgba(13, 18, 38, 0.88);
-        border: 1px solid #21305f;
+        background: var(--panel);
+        border: 1px solid var(--border);
         border-radius: 14px;
         padding: 18px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       }
+
       .progress {
         height: 8px;
-        background: #1d2b53;
+        background: var(--progress-bg);
         border-radius: 999px;
         overflow: hidden;
       }
+
       .progress > div {
         width: 72%;
         height: 100%;
         background: linear-gradient(90deg, var(--primary), var(--secondary));
       }
+
       .cards {
         margin-top: 20px;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
       }
+
       .label {
         color: var(--muted);
         font-size: 13px;
       }
+
       h1, h2, p {
         margin: 0;
       }
+
       h1 {
         font-size: 32px;
       }
+
       h2 {
         font-size: 20px;
         margin-bottom: 10px;
       }
+
       .mt {
         margin-top: 10px;
       }
     </style>
   </head>
   <body>
+    <!-- Skip navigation link for keyboard/screen reader users -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
     <div class="container">
-      <header class="nav">
-        <strong>StrellerMinds</strong>
-        <span class="badge">Testnet</span>
+      <header role="banner">
+        <nav class="nav" aria-label="Main navigation">
+          <strong id="site-title">StrellerMinds</strong>
+          <ul class="nav-links" role="list">
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#certificates">Certificates</a></li>
+            <li><a href="#analytics">Analytics</a></li>
+          </ul>
+          <span class="badge" aria-label="Network: Testnet">
+            <span class="status-dot" aria-hidden="true"></span>Testnet
+          </span>
+        </nav>
       </header>
 
-      <section class="hero">
-        <article class="panel">
-          <h1>Analytics Dashboard</h1>
-          <p class="label mt">Track verified learning progress and credential events.</p>
-          <div class="mt progress"><div></div></div>
-        </article>
-        <article class="panel">
-          <h2>Active Learners</h2>
-          <p>1,248</p>
-          <p class="label mt">+12.5% this month</p>
-        </article>
-      </section>
+      <main id="main-content" role="main" tabindex="-1">
+        <section class="hero" aria-labelledby="dashboard-heading">
+          <article class="panel" aria-labelledby="analytics-title">
+            <h1 id="analytics-title">Analytics Dashboard</h1>
+            <p class="label mt">Track verified learning progress and credential events.</p>
+            <div
+              class="mt progress"
+              role="progressbar"
+              aria-valuenow="72"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Overall progress: 72%"
+            >
+              <div aria-hidden="true"></div>
+            </div>
+            <a href="#view-report" class="btn" aria-label="View full analytics report">
+              View Report
+            </a>
+          </article>
 
-      <section class="cards">
-        <article class="panel">
-          <h2>Completion</h2>
-          <p>87%</p>
-        </article>
-        <article class="panel">
-          <h2>Certificates</h2>
-          <p>3,212</p>
-        </article>
-        <article class="panel">
-          <h2>Engagement</h2>
-          <p>92%</p>
-        </article>
-      </section>
+          <article class="panel" aria-labelledby="learners-heading">
+            <h2 id="learners-heading">Active Learners</h2>
+            <p aria-label="1,248 active learners">1,248</p>
+            <p class="label mt" aria-live="polite">+12.5% this month</p>
+          </article>
+        </section>
+
+        <section class="cards" aria-label="Key metrics">
+          <article class="panel" aria-labelledby="completion-heading">
+            <h2 id="completion-heading">Completion</h2>
+            <p aria-label="87% completion rate">87%</p>
+          </article>
+          <article class="panel" aria-labelledby="certificates-heading">
+            <h2 id="certificates-heading">Certificates</h2>
+            <p aria-label="3,212 certificates issued">3,212</p>
+          </article>
+          <article class="panel" aria-labelledby="engagement-heading">
+            <h2 id="engagement-heading">Engagement</h2>
+            <p aria-label="92% engagement rate">92%</p>
+          </article>
+        </section>
+      </main>
+
+      <footer role="contentinfo" style="margin-top:32px; padding:16px 0; border-top:1px solid #21305f;">
+        <p class="label" style="text-align:center;">
+          &copy; 2024 StrellerMinds &mdash; Powered by Stellar blockchain
+        </p>
+      </footer>
     </div>
   </body>
 </html>

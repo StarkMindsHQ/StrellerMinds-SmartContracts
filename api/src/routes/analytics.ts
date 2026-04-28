@@ -6,8 +6,10 @@ import { Router, Request, Response } from "express";
 import { contractClient } from "../soroban-client";
 import { authenticate } from "../middleware/auth";
 import { generalLimiter } from "../middleware/rateLimiter";
-import { sendSuccess, sendError } from "../utils/response";
+import { sendSuccess, sendLocalizedError } from "../utils/response";
 import { logger } from "../logger";
+import { trackAnalyticsQueried, anonymizeClientId } from "../analytics";
+
 
 const router = Router();
 
@@ -18,27 +20,18 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const analytics = await contractClient.getAnalytics();
+
+      // ── GA4: analytics_queried ──────────────────────────────────────────────
+      trackAnalyticsQueried(
+        anonymizeClientId(req.auth?.sub ?? "anonymous"),
+        req.analyticsOptOut
+      );
+
       sendSuccess(res, analytics, 200, req.requestId);
     } catch (err) {
       logger.error("Get analytics failed", { error: err });
-      sendError(
-        res,
-        502,
-        "CONTRACT_ERROR",
-        "Failed to query the blockchain",
-        undefined,
-        req.requestId
-      );
+      sendLocalizedError(req, res, 502, "CONTRACT_ERROR", "Failed to query the blockchain");
     }
-  }
-);
-
-router.get(
-  "/cache",
-  generalLimiter,
-  authenticate,
-  (req: Request, res: Response) => {
-    sendSuccess(res, contractClient.cacheStats(), 200, req.requestId);
   }
 );
 
