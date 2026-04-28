@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
+import { analyticsConsent } from "./middleware/analyticsConsent";
 import { cdnMiddleware } from "./middleware/cdn";
 import { securityHeadersValidator } from "./middleware/securityHeaders";
 import { openApiSpec } from "./openapi";
@@ -101,6 +102,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/certificates", certificatesRouter);
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
+app.use("/api/v1/analytics", consentRouter); // consent sub-routes
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
 app.use("/api/v1/certificate-templates", certificateTemplatesRouter);
