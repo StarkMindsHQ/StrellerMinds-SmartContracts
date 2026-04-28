@@ -15,7 +15,7 @@ categories = ["cryptography::cryptocurrencies", "web-programming"]
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-soroban-sdk = { workspace = true }
+soroban-sdk = { workspace = true, features = ["alloc"] }
 shared = { path = "../shared" }
 
 [dev-dependencies]

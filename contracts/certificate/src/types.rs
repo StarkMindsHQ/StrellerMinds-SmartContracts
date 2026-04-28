@@ -162,6 +162,8 @@ pub enum CertificateStatus {
     Suspended,
     /// Certificate was revoked and then reissued as a new version.
     Reissued,
+    /// Certificate has been flagged as non-compliant by an auditor.
+    NonCompliant,
 }
 
 /// An on-chain record of an issued certificate.
@@ -342,6 +344,8 @@ pub struct CertificateAnalytics {
     pub pending_requests: u32,
     /// Rolling average time (seconds) from request creation to execution.
     pub avg_approval_time: u64,
+    /// Total number of compliance violations detected.
+    pub compliance_violations_count: u32,
     /// Unix timestamp (seconds) when these analytics were last updated.
     pub last_updated: u64,
 }
@@ -431,6 +435,8 @@ pub enum AuditAction {
     ComplianceChecked,
     /// A new certificate template was created.
     TemplateCreated,
+    /// An existing certificate template was updated.
+    TemplateUpdated,
     /// The multi-sig configuration for a course was updated.
     ConfigUpdated,
     /// The certificate passed its expiry date.
