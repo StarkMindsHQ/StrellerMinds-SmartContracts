@@ -218,12 +218,7 @@ pub fn get_template_version(
     version: u32,
 ) -> Option<TemplateVersion> {
     let versions = get_template_versions(env, template_id);
-    for v in versions.iter() {
-        if v.version == version {
-            return Some(v);
-        }
-    }
-    None
+    versions.iter().find(|v| v.version == version)
 }
 
 pub fn set_latest_template_version(env: &Env, template_id: &String, version: u32) {

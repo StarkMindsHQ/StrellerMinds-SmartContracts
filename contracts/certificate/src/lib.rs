@@ -1097,8 +1097,7 @@ impl CertificateContract {
         storage::get_template_version(&env, &template_id, to_version)
             .ok_or(CertificateError::TemplateVersionNotFound)?;
 
-        let template_list = storage::get_template_versions(&env, &template_id);
-        let mut migrated_count: u32 = 0;
+        let migrated_count: u32 = 0;
 
         // Note: In a real implementation, you would iterate through certificates
         // and update their template references. This is a simplified version.
