@@ -124,6 +124,47 @@ jobs:
           name: perf-report
           path: target/perf_report.json
 
+  load-testing:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    env:
+      STRELLER_PEAK_LOAD: 5
+      STRELLER_LOAD_MULTIPLIER: 10
+      STRELLER_STUDENT_POOL: 20
+      STRELLER_COURSE_COUNT: 4
+      STRELLER_READ_MULTIPLIER: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-load-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-load-
+            ${{ runner.os }}-cargo-
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Run bounded load test suite
+        run: ./scripts/load_test.sh --ci --report target/load-test-report.json --summary target/load-test-summary.md
+
+      - name: Upload load test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report
+          path: |
+            target/load-test-report.json
+            target/load-test-summary.md
+
   visual-regression:
     name: Visual Regression
     runs-on: ubuntu-latest
@@ -162,7 +203,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [format, clippy, build, test, performance, visual-regression]
+    needs: [format, clippy, build, test, performance, load-testing, visual-regression]
     if: always()
     steps:
       - name: Check all jobs
@@ -172,6 +213,7 @@ jobs:
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.performance.result }}" != "success" || \
+                "${{ needs.load-testing.result }}" != "success" || \
                 "${{ needs.visual-regression.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"
             echo "Format: ${{ needs.format.result }}"
@@ -179,6 +221,7 @@ jobs:
             echo "Build: ${{ needs.build.result }}"
             echo "Test: ${{ needs.test.result }}"
             echo "Performance: ${{ needs.performance.result }}"
+            echo "Load Testing: ${{ needs.load-testing.result }}"
             echo "Visual Regression: ${{ needs.visual-regression.result }}"
             exit 1
           fi

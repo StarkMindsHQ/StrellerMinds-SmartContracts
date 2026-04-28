@@ -2,7 +2,7 @@
 # 
 # This Makefile provides convenient commands for development and testing
 
-.PHONY: help build test unit-test e2e-test localnet-start localnet-stop localnet-status clean deploy-testnet deploy-mainnet fmt lint lint-style pre-commit-install pre-commit-run coverage coverage-html coverage-lcov coverage-open security-scan security-scan-full perf-profile perf-baseline ci-security ci-coverage ci-perf test-coverage-comprehensive test-coverage-unit test-coverage-integration test-coverage-property test-coverage-edge-cases test-coverage-errors test-coverage-performance test-coverage-report coverage-threshold coverage-badge coverage-dashboard
+.PHONY: help build test unit-test e2e-test localnet-start localnet-stop localnet-status clean deploy-testnet deploy-mainnet fmt lint lint-style pre-commit-install pre-commit-run coverage coverage-html coverage-lcov coverage-open security-scan security-scan-full perf-profile perf-baseline load-test load-test-ci ci-security ci-coverage ci-perf test-coverage-comprehensive test-coverage-unit test-coverage-integration test-coverage-property test-coverage-edge-cases test-coverage-errors test-coverage-performance test-coverage-report coverage-threshold coverage-badge coverage-dashboard
 
 # Colors for output
 GREEN=\033[0;32m
@@ -57,6 +57,8 @@ help:
 	@echo "  $(RED)security-scan-full$(NC)  - Full security scan including semgrep"
 	@echo "  $(RED)perf-profile$(NC)        - Performance profile all contracts"
 	@echo "  $(RED)perf-baseline$(NC)       - Save performance baseline"
+	@echo "  $(RED)load-test$(NC)           - Run configurable contract load tests and write reports"
+	@echo "  $(RED)load-test-ci$(NC)        - Run bounded load tests with CI-safe defaults"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make e2e-test              # Full E2E test cycle"
@@ -266,6 +268,18 @@ perf-compare:
 	@echo "$(RED)[PERF]$(NC) Comparing performance against baseline..."
 	chmod +x ./scripts/perf_profile.sh
 	./scripts/perf_profile.sh --compare target/perf_baseline.json
+
+# Run the contract load-test suite with local defaults.
+load-test:
+	@echo "$(RED)[LOAD]$(NC) Running load test suite..."
+	chmod +x ./scripts/load_test.sh
+	./scripts/load_test.sh
+
+# Run the load-test suite with CI-safe bounded defaults.
+load-test-ci:
+	@echo "$(RED)[LOAD]$(NC) Running CI-safe load test suite..."
+	chmod +x ./scripts/load_test.sh
+	./scripts/load_test.sh --ci
 
 # ─────────────────────────────────────────────────────────────
 # CI convenience targets

@@ -1,3 +1,4 @@
 [alias]
 # This allows you to launch your tool by just typing 'cargo dev'
 dev = "run -p streller-cli"
+load-test = "run -p load-test-runner --"
