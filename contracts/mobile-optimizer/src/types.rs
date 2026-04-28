@@ -2101,3 +2101,97 @@ pub struct CollaborationProfile {
 // ============================================================================
 
 pub use crate::errors::MobileOptimizerError;
+
+// ============================================================================
+// PWA Push Notifications & Install-to-Home-Screen Types (Issue #440)
+// ============================================================================
+
+/// A push notification payload stored on-chain for delivery tracking.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PushNotification {
+    /// Unique notification identifier.
+    pub notification_id: String,
+    /// Recipient user address.
+    pub recipient: Address,
+    /// Notification title.
+    pub title: String,
+    /// Notification body text.
+    pub body: String,
+    /// Optional deep-link URL opened when the notification is tapped.
+    pub action_url: Option<String>,
+    /// Category tag for grouping / filtering.
+    pub category: NotificationCategory,
+    /// Unix timestamp when the notification was created.
+    pub created_at: u64,
+    /// Unix timestamp after which the notification should not be shown.
+    pub expires_at: Option<u64>,
+    /// Whether the notification has been delivered.
+    pub delivered: bool,
+    /// Whether the user has read / dismissed the notification.
+    pub read: bool,
+}
+
+/// Category of a push notification.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NotificationCategory {
+    /// Course-related update (new content, deadline reminder).
+    CourseUpdate,
+    /// Achievement or badge earned.
+    Achievement,
+    /// Certificate issued.
+    CertificateIssued,
+    /// Reminder to continue a learning streak.
+    StreakReminder,
+    /// System-level announcement.
+    SystemAnnouncement,
+    /// Custom / application-defined category.
+    Custom,
+}
+
+/// Record of a user's response to the PWA install prompt.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InstallPromptRecord {
+    /// User who was shown the prompt.
+    pub user: Address,
+    /// Unix timestamp when the prompt was shown.
+    pub shown_at: u64,
+    /// Outcome of the prompt interaction.
+    pub outcome: InstallPromptOutcome,
+    /// Platform / browser where the prompt was shown.
+    pub platform: String,
+}
+
+/// Possible outcomes of an install-to-home-screen prompt.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum InstallPromptOutcome {
+    /// User accepted and installed the PWA.
+    Accepted,
+    /// User dismissed the prompt without installing.
+    Dismissed,
+    /// Prompt was shown but the user has not yet responded.
+    Pending,
+}
+
+/// Aggregated PWA install and engagement metrics.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PwaMetrics {
+    /// Total number of install prompts shown.
+    pub prompts_shown: u32,
+    /// Number of prompts that resulted in an install.
+    pub installs_accepted: u32,
+    /// Number of prompts that were dismissed.
+    pub installs_dismissed: u32,
+    /// Total push notifications sent.
+    pub notifications_sent: u32,
+    /// Total push notifications delivered.
+    pub notifications_delivered: u32,
+    /// Total push notifications read by the user.
+    pub notifications_read: u32,
+    /// Number of users with an active push subscription.
+    pub active_push_subscribers: u32,
+}
