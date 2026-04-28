@@ -51,4 +51,6 @@ pub enum AnalyticsError {
     InvalidInsightData = 22,
     /// No insight record was found with the given ID.
     InsightNotFound = 23,
+    /// Timestamp is not a valid UTC Unix epoch second (Issue #442: DST fix).
+    InvalidTimestamp = 24,
 }

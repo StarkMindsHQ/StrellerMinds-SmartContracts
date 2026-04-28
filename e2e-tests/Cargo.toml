@@ -24,6 +24,8 @@ token = { path = "../contracts/token" }
 certificate = { path = "../contracts/certificate" }
 assessment = { path = "../contracts/assessment" }
 community = { path = "../contracts/community" }
+progress = { path = "../contracts/progress" }
+social-sharing = { path = "../contracts/social-sharing" }
 
 # Random number generation for test data
 rand = "0.8"
@@ -51,3 +53,7 @@ path = "tests/scalability.rs"
 [[test]]
 name = "contract_validation"
 path = "tests/contract_validation.rs"
+
+[[test]]
+name = "user_journey"
+path = "tests/user_journey.rs"
