@@ -1,6 +1,9 @@
 import app from "./app";
 import { config } from "./config";
 import { logger } from "./logger";
+import { cache } from "./cache";
+
+cache.connect();
 
 const server = app.listen(config.port, () => {
   logger.info("Certificate Verification API started", {
@@ -12,9 +15,10 @@ const server = app.listen(config.port, () => {
 });
 
 // Graceful shutdown
-function shutdown(signal: string) {
+async function shutdown(signal: string) {
   logger.info(`Received ${signal}, shutting down gracefully`);
-  server.close(() => {
+  server.close(async () => {
+    await cache.disconnect();
     logger.info("Server closed");
     process.exit(0);
   });

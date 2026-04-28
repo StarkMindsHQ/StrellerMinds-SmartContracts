@@ -52,7 +52,8 @@
     "dotenv": "^16.4.5",
     "zod": "^3.22.4",
     "etag": "^1.8.1",
-    "fresh": "^0.5.2"
+    "fresh": "^0.5.2",
+    "ioredis": "^5.3.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

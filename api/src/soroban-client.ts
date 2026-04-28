@@ -166,6 +166,20 @@ export class CertificateContractClient {
     return this.optimizer.invalidate(filters);
   }
 
+  // ── Cache helpers ──────────────────────────────────────────────────────────
+
+  private async cachedGet<T>(key: string, keyType: string, ttl: number, fetch: () => Promise<T>): Promise<T> {
+    const cached = await cache.get<T>(key);
+    if (cached !== null) {
+      cacheHits.inc({ key_type: keyType });
+      return cached;
+    }
+    cacheMisses.inc({ key_type: keyType });
+    const result = await fetch();
+    await cache.set(key, result, ttl);
+    return result;
+  }
+
   /**
    * Verify a certificate by ID. Returns full verification result.
    *
@@ -174,6 +188,15 @@ export class CertificateContractClient {
    * N+1 pattern.
    */
   async verifyCertificate(certificateId: string): Promise<VerificationResult> {
+    return this.cachedGet(
+      `cert:verify:${certificateId}`,
+      "verify",
+      config.redis.ttl.certificate,
+      () => this.fetchVerification(certificateId),
+    );
+  }
+
+  private async fetchVerification(certificateId: string): Promise<VerificationResult> {
     const now = Math.floor(Date.now() / 1000);
 
     let certificate: Certificate | null = null;
