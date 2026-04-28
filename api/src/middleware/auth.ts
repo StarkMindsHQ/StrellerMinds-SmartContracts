@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
-import { sendError } from "../utils/response";
+import { sendLocalizedError } from "../utils/response";
 import type { JwtPayload } from "../types";
 
 declare global {
@@ -23,7 +23,7 @@ export function authenticate(
 ): void {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    sendError(res, 401, "AUTH_REQUIRED", "Authorization header is required");
+    sendLocalizedError(req, res, 401, "AUTH_REQUIRED", "Authorization header is required");
     return;
   }
 
@@ -34,9 +34,9 @@ export function authenticate(
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
-      sendError(res, 401, "TOKEN_EXPIRED", "Access token has expired");
+      sendLocalizedError(req, res, 401, "TOKEN_EXPIRED", "Access token has expired");
     } else {
-      sendError(res, 401, "TOKEN_INVALID", "Access token is invalid");
+      sendLocalizedError(req, res, 401, "TOKEN_INVALID", "Access token is invalid");
     }
   }
 }
@@ -47,12 +47,7 @@ export function authenticate(
 export function requireScope(scope: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.auth?.scope?.includes(scope)) {
-      sendError(
-        res,
-        403,
-        "INSUFFICIENT_SCOPE",
-        `Required scope: ${scope}`
-      );
+      sendLocalizedError(req, res, 403, "INSUFFICIENT_SCOPE", `Required scope: ${scope}`, undefined, { scope });
       return;
     }
     next();

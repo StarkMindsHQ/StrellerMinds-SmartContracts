@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "language": "English",
+    "locale": "en",
+    "direction": "ltr",
+    "dateFormat": "MM/DD/YYYY",
+    "timeFormat": "h:mm A",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "currency": "USD"
+    }
+  },
+  "errors": {
+    "AUTH_REQUIRED": "Authorization header is required",
+    "TOKEN_EXPIRED": "Access token has expired",
+    "TOKEN_INVALID": "Access token is invalid",
+    "INSUFFICIENT_SCOPE": "Required scope: {{scope}}",
+    "INVALID_CERTIFICATE_ID": "Certificate ID must be a 64-character hex string",
+    "INVALID_ADDRESS": "Invalid Stellar address",
+    "CERTIFICATE_NOT_FOUND": "Certificate not found",
+    "REVOCATION_NOT_FOUND": "No revocation record found for this certificate",
+    "CONTRACT_ERROR": "Failed to query the blockchain. Please try again.",
+    "VALIDATION_ERROR": "Invalid request body",
+    "INVALID_API_KEY": "Invalid API key",
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later.",
+    "INTERNAL_ERROR": "An internal server error occurred"
+  },
+  "health": {
+    "status_ok": "ok",
+    "status_ready": "ready",
+    "status_not_ready": "not_ready",
+    "cannot_reach_contract": "Cannot reach Soroban contract"
+  },
+  "certificate": {
+    "verified": "Certificate verified successfully",
+    "not_found": "Certificate not found",
+    "revoked": "Certificate has been revoked",
+    "expired": "Certificate has expired"
+  },
+  "formats": {
+    "date_short": "{{month}}/{{day}}/{{year}}",
+    "date_long": "{{monthName}} {{day}}, {{year}}",
+    "number": "{{value}}",
+    "currency": "${{value}}"
+  }
+}
