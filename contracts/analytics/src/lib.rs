@@ -29,8 +29,23 @@ use shared::event_schema::{
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_analytics_event};
 use soroban_sdk::{
-    contract, contractimpl, symbol_short, Address, BytesN, Env, String, Symbol, Vec,
+    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, String, Symbol, Vec,
 };
+
+#[contracttype]
+#[derive(Clone)]
+pub struct AnalyticsExport {
+    pub total_sessions: u32,
+    pub total_time_spent: u64,
+    pub average_session_time: u64,
+    pub completed_modules: u32,
+    pub total_modules: u32,
+    pub completion_percentage: u32,
+    pub average_score: u32,
+    pub has_average_score: bool,
+    pub streak_days: u32,
+    pub performance_trend: PerformanceTrend,
+}
 
 #[contract]
 pub struct Analytics;
@@ -1163,6 +1178,7 @@ impl Analytics {
         Ok(())
     }
 
+<<<<<<< HEAD
     // ─────────────────────────────────────────────────────────
     // Learning Path Recommendations (Issue #370)
     // ─────────────────────────────────────────────────────────
@@ -1422,6 +1438,11 @@ impl Analytics {
 
         AnalyticsStorage::set_ml_insight(&env, &insight);
         Ok(insight)
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> Vec<Achievement> {
+        require_initialized(&env).ok();
+        AnalyticsStorage::get_student_achievements(&env, &user)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {
