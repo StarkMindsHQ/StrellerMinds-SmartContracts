@@ -1000,7 +1000,7 @@ impl CertificateContract {
             &BytesN::from_array(&env, &[0u8; 32]),
             AuditAction::TemplateCreated,
             &admin,
-            &format!("Template version {} created", new_version),
+            "Template version created",
         );
 
         events::emit_template_created(&env, &template_id, &admin);
@@ -1045,7 +1045,7 @@ impl CertificateContract {
             created_at: current.created_at,
             created_by: current.created_by,
             fields: current.fields.clone(),
-            changelog: format!("Rolled back from version {}", current.version),
+            changelog: String::from_str(&env, "Rolled back from previous version"),
             is_rollback_target: true,
         };
         storage::add_template_version(&env, &template_id, &current_version_record);
@@ -1061,7 +1061,7 @@ impl CertificateContract {
             is_active: true,
             version: target_version,
             parent_version: current.parent_version,
-            changelog: format!("Rolled back to version {}", target_version),
+            changelog: String::from_str(&env, "Rolled back to target version"),
         };
 
         storage::set_template(&env, &template_id, &restored_template);
@@ -1072,7 +1072,7 @@ impl CertificateContract {
             &BytesN::from_array(&env, &[0u8; 32]),
             AuditAction::ConfigUpdated,
             &admin,
-            &format!("Template rolled back to version {}", target_version),
+            "Template rolled back to previous version",
         );
 
         events::emit_template_created(&env, &template_id, &admin);
@@ -1109,10 +1109,7 @@ impl CertificateContract {
             &BytesN::from_array(&env, &[0u8; 32]),
             AuditAction::ConfigUpdated,
             &admin,
-            &format!(
-                "Template migration from v{} to v{} completed, {} certificates migrated",
-                from_version, to_version, migrated_count
-            ),
+            "Template migration completed",
         );
 
         Ok(migrated_count)
