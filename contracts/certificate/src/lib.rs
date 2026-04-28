@@ -18,9 +18,10 @@ use shared::{log_error, log_info, log_warn};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec};
 use types::{
     AuditAction, BatchResult, CertDataKey, CertRateLimitConfig, Certificate, CertificateAnalytics,
-    CertificateStatus, CertificateTemplate, ComplianceRecord, ComplianceStandard,
-    MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest, MultiSigConfig,
-    MultiSigRequestStatus, RevocationRecord, ShareRecord, TemplateField,
+    CertificateBackup, CertificateStatus, CertificateTemplate, ComplianceRecord,
+    ComplianceStandard, MintCertificateParams, MultiSigAuditEntry, MultiSigCertificateRequest,
+    MultiSigConfig, MultiSigRequestStatus, RecoveryRequest, RecoveryStatus, RevocationRecord,
+    ShareRecord, TemplateField,
 };
 
 use shared::gdpr_types::GdprCertificateExport;
@@ -1431,31 +1432,180 @@ impl CertificateContract {
         Ok(cleaned)
     }
 
-    pub fn export_user_data(env: Env, user: Address) -> Vec<GdprCertificateExport> {
-        require_initialized(&env).ok();
-        let cert_ids = storage::get_student_certificates(&env, &user);
-        let mut exports: Vec<GdprCertificateExport> = Vec::new(&env);
+    pub fn create_backup(
+        env: Env,
+        caller: Address,
+        certificate_id: BytesN<32>,
+        data_hash: BytesN<32>,
+        backup_duration_days: u32,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
 
-        for i in 0..cert_ids.len() {
-            if let Some(cert_id) = cert_ids.get(i) {
-                if let Some(cert) = storage::get_certificate(&env, &cert_id) {
-                    let cid1 = cert.certificate_id.clone();
-                    let cid2 = cert.certificate_id.clone();
-                    let cid3 = cert.certificate_id.clone();
-                    exports.push_back(GdprCertificateExport {
-                        certificate_id: cert.certificate_id,
-                        course_id: cid1,
-                        title: cid2,
-                        issued_at: cert.issued_at,
-                        expiry_date: cert.expiry_date,
-                        status: cid3,
-                        issuer: cert.issuer,
-                    });
-                }
+        if let Some(cert) = storage::get_certificate(&env, &certificate_id) {
+            if cert.student != caller {
+                return Err(CertificateError::Unauthorized);
             }
-        }
 
-        exports
+            let now = env.ledger().timestamp();
+            let backup_id = generate_request_id(&env);
+            let expires_at = now + (backup_duration_days as u64 * 86_400);
+
+            let backup = CertificateBackup {
+                backup_id: backup_id.clone(),
+                certificate_id,
+                student: caller.clone(),
+                data_hash,
+                created_at: now,
+                expires_at,
+                status: RecoveryStatus::Approved,
+            };
+
+            storage::set_certificate_backup(&env, &backup_id, &backup);
+            storage::add_student_backup(&env, &caller, &backup_id);
+
+            log_info!(&env, symbol_short!("recov"), symbol_short!("backp"));
+            Ok(backup_id)
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn request_recovery(
+        env: Env,
+        caller: Address,
+        certificate_id: BytesN<32>,
+        backup_id: BytesN<32>,
+        verification_data: soroban_sdk::Bytes,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
+
+        if let Some(backup) = storage::get_certificate_backup(&env, &backup_id) {
+            if backup.student != caller {
+                return Err(CertificateError::Unauthorized);
+            }
+
+            if backup.certificate_id != certificate_id {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            let now = env.ledger().timestamp();
+            if now > backup.expires_at {
+                return Err(CertificateError::CertificateNotFound); // Backup expired
+            }
+
+            let request_id = generate_request_id(&env);
+            let recovery_request = RecoveryRequest {
+                request_id: request_id.clone(),
+                certificate_id,
+                requester: caller.clone(),
+                backup_id,
+                status: RecoveryStatus::Pending,
+                created_at: now,
+                expires_at: now + 604_800, // 7 days
+                verification_data,
+            };
+
+            storage::set_recovery_request(&env, &request_id, &recovery_request);
+            storage::add_pending_recovery_request(&env, &request_id);
+
+            log_info!(&env, symbol_short!("recov"), symbol_short!("reque"));
+            Ok(request_id)
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn approve_recovery(
+        env: Env,
+        caller: Address,
+        request_id: BytesN<32>,
+    ) -> Result<(), CertificateError> {
+        require_initialized(&env)?;
+        require_admin(&env, &caller)?;
+
+        if let Some(mut recovery_req) = storage::get_recovery_request(&env, &request_id) {
+            let now = env.ledger().timestamp();
+            if now > recovery_req.expires_at {
+                recovery_req.status = RecoveryStatus::Rejected;
+                storage::set_recovery_request(&env, &request_id, &recovery_req);
+                return Err(CertificateError::InvalidInput); // Recovery request expired
+            }
+
+            recovery_req.status = RecoveryStatus::Approved;
+            storage::set_recovery_request(&env, &request_id, &recovery_req);
+
+            log_info!(&env, symbol_short!("recov"), symbol_short!("appr"));
+            Ok(())
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn execute_recovery(
+        env: Env,
+        caller: Address,
+        request_id: BytesN<32>,
+    ) -> Result<BytesN<32>, CertificateError> {
+        require_initialized(&env)?;
+        caller.require_auth();
+
+        if let Some(mut recovery_req) = storage::get_recovery_request(&env, &request_id) {
+            if recovery_req.requester != caller {
+                return Err(CertificateError::Unauthorized);
+            }
+
+            if recovery_req.status != RecoveryStatus::Approved {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            let now = env.ledger().timestamp();
+            if now > recovery_req.expires_at {
+                return Err(CertificateError::InvalidInput);
+            }
+
+            if let Some(old_cert) = storage::get_certificate(&env, &recovery_req.certificate_id) {
+                let new_cert_id = generate_request_id(&env);
+                let new_cert = Certificate {
+                    certificate_id: new_cert_id.clone(),
+                    course_id: old_cert.course_id,
+                    student: old_cert.student,
+                    title: old_cert.title,
+                    description: old_cert.description,
+                    metadata_uri: old_cert.metadata_uri,
+                    issued_at: now,
+                    expiry_date: old_cert.expiry_date,
+                    status: CertificateStatus::Active,
+                    issuer: storage::get_admin(&env),
+                    version: old_cert.version + 1,
+                    blockchain_anchor: Some(generate_blockchain_anchor(&env, &new_cert_id)),
+                    template_id: old_cert.template_id,
+                    share_count: 0,
+                };
+
+                storage::set_certificate(&env, &new_cert_id, &new_cert);
+                storage::add_student_certificate(&env, &caller, &new_cert_id);
+
+                recovery_req.status = RecoveryStatus::Recovered;
+                storage::set_recovery_request(&env, &request_id, &recovery_req);
+
+                log_info!(&env, symbol_short!("recov"), symbol_short!("exec"));
+                Ok(new_cert_id)
+            } else {
+                Err(CertificateError::CertificateNotFound)
+            }
+        } else {
+            Err(CertificateError::CertificateNotFound)
+        }
+    }
+
+    pub fn get_certificate_backups(env: Env, student: Address) -> Vec<BytesN<32>> {
+        storage::get_student_backups(&env, &student)
+    }
+
+    pub fn get_recovery_request(env: Env, request_id: BytesN<32>) -> Option<RecoveryRequest> {
+        storage::get_recovery_request(&env, &request_id)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

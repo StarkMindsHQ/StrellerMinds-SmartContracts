@@ -9,7 +9,7 @@ import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { config } from "../config";
-import { sendSuccess, sendError } from "../utils/response";
+import { sendSuccess, sendLocalizedError } from "../utils/response";
 import { generalLimiter } from "../middleware/rateLimiter";
 
 const router = Router();
@@ -25,14 +25,7 @@ const DEMO_API_KEY = process.env.DEMO_API_KEY ?? "demo-api-key-change-in-prod";
 router.post("/token", generalLimiter, (req: Request, res: Response) => {
   const parsed = tokenRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    sendError(
-      res,
-      400,
-      "VALIDATION_ERROR",
-      "Invalid request body",
-      parsed.error.flatten(),
-      req.requestId
-    );
+    sendLocalizedError(req, res, 400, "VALIDATION_ERROR", "Invalid request body", parsed.error.flatten());
     return;
   }
 
@@ -47,7 +40,7 @@ router.post("/token", generalLimiter, (req: Request, res: Response) => {
     require("crypto").timingSafeEqual(expected, provided);
 
   if (!valid) {
-    sendError(res, 401, "INVALID_API_KEY", "Invalid API key", undefined, req.requestId);
+    sendLocalizedError(req, res, 401, "INVALID_API_KEY", "Invalid API key");
     return;
   }
 
