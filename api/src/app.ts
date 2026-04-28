@@ -19,6 +19,7 @@ import authRouter from "./routes/auth";
 import certificatesRouter from "./routes/certificates";
 import studentsRouter from "./routes/students";
 import analyticsRouter from "./routes/analytics";
+import socialSharingRouter from "./routes/social-sharing";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
