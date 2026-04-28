@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "visual:test": "playwright test --config=visual-tests/playwright.config.ts",
+    "visual:test:update": "playwright test --config=visual-tests/playwright.config.ts --update-snapshots",
+    "visual:test:report": "playwright show-report visual-tests/playwright-report"
+  },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.6.2",
     "axios": "^1.12.2",

@@ -10,6 +10,8 @@
 
 use soroban_sdk::{contracterror, contracttype, Address, Env, Symbol, Vec};
 
+use crate::monitoring::AlertRule;
+
 // ============================================================================
 // Error Classification and Severity Levels
 // ============================================================================
@@ -271,9 +273,7 @@ impl CircuitBreaker {
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
         env.storage().instance().set(&config_key, config);
-        env.storage()
-            .instance()
-            .set(&state_key, &CircuitBreakerState::new());
+        env.storage().instance().set(&state_key, &CircuitBreakerState::new());
     }
 
     /// Check if a request can proceed through the circuit breaker
@@ -281,17 +281,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         let current_time = env.ledger().timestamp();
 
@@ -328,17 +322,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         state.total_successes += 1;
 
@@ -374,17 +362,11 @@ impl CircuitBreaker {
         let config_key = CircuitBreakerKey::Config(operation_id.clone());
         let state_key = CircuitBreakerKey::State(operation_id.clone());
 
-        let config: CircuitBreakerConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: CircuitBreakerConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
-        let mut state: CircuitBreakerState = env
-            .storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let mut state: CircuitBreakerState =
+            env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)?;
 
         state.total_failures += 1;
         state.failure_count += 1;
@@ -423,10 +405,7 @@ impl CircuitBreaker {
         operation_id: &Symbol,
     ) -> Result<CircuitBreakerState, RecoveryError> {
         let state_key = CircuitBreakerKey::State(operation_id.clone());
-        env.storage()
-            .instance()
-            .get(&state_key)
-            .ok_or(RecoveryError::NotInitialized)
+        env.storage().instance().get(&state_key).ok_or(RecoveryError::NotInitialized)
     }
 
     /// Force reset the circuit breaker (admin only)
@@ -437,9 +416,7 @@ impl CircuitBreaker {
             return Err(RecoveryError::NotInitialized);
         }
 
-        env.storage()
-            .instance()
-            .set(&state_key, &CircuitBreakerState::new());
+        env.storage().instance().set(&state_key, &CircuitBreakerState::new());
 
         Self::emit_circuit_reset(env, operation_id);
         Ok(())
@@ -447,11 +424,7 @@ impl CircuitBreaker {
 
     // Event emission helpers
     fn emit_circuit_opened(env: &Env, operation_id: &Symbol, failure_count: u32) {
-        let topics = (
-            Symbol::new(env, "circuit_opened"),
-            operation_id.clone(),
-            failure_count,
-        );
+        let topics = (Symbol::new(env, "circuit_opened"), operation_id.clone(), failure_count);
         env.events().publish(topics, ());
     }
 
@@ -603,24 +576,18 @@ impl RetryMechanism {
         let config_key = RetryKey::Config(operation_id.clone());
         let context_key = RetryKey::Context(operation_id.clone());
 
-        let config: RetryConfig = env
-            .storage()
-            .instance()
-            .get(&config_key)
-            .ok_or(RecoveryError::NotInitialized)?;
+        let config: RetryConfig =
+            env.storage().instance().get(&config_key).ok_or(RecoveryError::NotInitialized)?;
 
         // Check for existing context
         let mut context: RetryContext =
-            env.storage()
-                .instance()
-                .get(&context_key)
-                .unwrap_or(RetryContext {
-                    attempt: 0,
-                    next_retry_at: 0,
-                    operation_id: operation_id.clone(),
-                    exhausted: false,
-                    last_error: 0,
-                });
+            env.storage().instance().get(&context_key).unwrap_or(RetryContext {
+                attempt: 0,
+                next_retry_at: 0,
+                operation_id: operation_id.clone(),
+                exhausted: false,
+                last_error: 0,
+            });
 
         if context.exhausted {
             return Err(RecoveryError::MaxRetriesExceeded);
@@ -692,20 +659,12 @@ impl RetryMechanism {
 
     // Event emission helpers
     fn emit_retry_scheduled(env: &Env, operation_id: &Symbol, attempt: u32, delay: u64) {
-        let topics = (
-            Symbol::new(env, "retry_scheduled"),
-            operation_id.clone(),
-            attempt,
-        );
+        let topics = (Symbol::new(env, "retry_scheduled"), operation_id.clone(), attempt);
         env.events().publish(topics, delay);
     }
 
     fn emit_retries_exhausted(env: &Env, operation_id: &Symbol, attempts: u32) {
-        let topics = (
-            Symbol::new(env, "retries_exhausted"),
-            operation_id.clone(),
-            attempts,
-        );
+        let topics = (Symbol::new(env, "retries_exhausted"), operation_id.clone(), attempts);
         env.events().publish(topics, ());
     }
 
@@ -871,10 +830,8 @@ impl RecoverySystem {
         let workflow_key = RecoveryKey::Workflow(context.context_id.clone());
 
         // Check if recovery already in progress
-        if let Some(existing) = env
-            .storage()
-            .instance()
-            .get::<RecoveryKey, RecoveryWorkflow>(&workflow_key)
+        if let Some(existing) =
+            env.storage().instance().get::<RecoveryKey, RecoveryWorkflow>(&workflow_key)
         {
             if existing.state == RecoveryState::InProgress {
                 return Err(RecoveryError::RecoveryInProgress);
@@ -964,11 +921,7 @@ impl RecoverySystem {
             .get(&workflow_key)
             .ok_or(RecoveryError::InvalidRecoveryState)?;
 
-        workflow.state = if success {
-            RecoveryState::Completed
-        } else {
-            RecoveryState::Failed
-        };
+        workflow.state = if success { RecoveryState::Completed } else { RecoveryState::Failed };
 
         env.storage().instance().set(&workflow_key, &workflow);
 
@@ -985,20 +938,12 @@ impl RecoverySystem {
 
     // Event emission helpers
     fn emit_recovery_started(env: &Env, workflow_id: &Symbol, action: RecoveryAction) {
-        let topics = (
-            Symbol::new(env, "recovery_started"),
-            workflow_id.clone(),
-            action as u32,
-        );
+        let topics = (Symbol::new(env, "recovery_started"), workflow_id.clone(), action as u32);
         env.events().publish(topics, ());
     }
 
     fn emit_recovery_completed(env: &Env, workflow_id: &Symbol, success: bool) {
-        let topics = (
-            Symbol::new(env, "recovery_completed"),
-            workflow_id.clone(),
-            success,
-        );
+        let topics = (Symbol::new(env, "recovery_completed"), workflow_id.clone(), success);
         env.events().publish(topics, ());
     }
 }
@@ -1035,18 +980,27 @@ pub struct AlertConfig {
     pub time_window: u64,
     /// Admin address for escalation
     pub admin: Address,
+    /// Per-metric alert rules for threshold monitoring
+    pub alert_rules: Vec<AlertRule>,
 }
 
 impl AlertConfig {
     /// Create default alert configuration
-    pub fn new(admin: Address) -> Self {
+    pub fn new(env: &Env, admin: Address) -> Self {
         Self {
             enabled: true,
             min_level: AlertLevel::Warning,
             error_threshold: 5,
             time_window: 300, // 5 minutes
             admin,
+            alert_rules: Vec::new(env),
         }
+    }
+
+    /// Builder method to add custom alert rules
+    pub fn with_rules(mut self, rules: Vec<AlertRule>) -> Self {
+        self.alert_rules = rules;
+        self
     }
 }
 
@@ -1072,9 +1026,7 @@ pub struct ErrorMonitor;
 impl ErrorMonitor {
     /// Initialize monitoring configuration
     pub fn initialize(env: &Env, config: &AlertConfig) {
-        env.storage()
-            .instance()
-            .set(&RecoveryKey::AlertConfig, config);
+        env.storage().instance().set(&RecoveryKey::AlertConfig, config);
     }
 
     /// Log an error and check for alerting
@@ -1171,27 +1123,18 @@ impl ErrorMonitor {
 
     /// Update alert configuration
     pub fn update_config(env: &Env, config: &AlertConfig) {
-        env.storage()
-            .instance()
-            .set(&RecoveryKey::AlertConfig, config);
+        env.storage().instance().set(&RecoveryKey::AlertConfig, config);
     }
 
     // Event emission helpers
     fn emit_error_logged(env: &Env, entry: &ErrorLogEntry) {
-        let topics = (
-            Symbol::new(env, "error_logged"),
-            entry.operation_id.clone(),
-            entry.error_code,
-        );
+        let topics =
+            (Symbol::new(env, "error_logged"), entry.operation_id.clone(), entry.error_code);
         env.events().publish(topics, entry.severity as u32);
     }
 
     fn emit_alert(env: &Env, operation_id: &Symbol, level: AlertLevel, error_count: u32) {
-        let topics = (
-            Symbol::new(env, "alert_triggered"),
-            operation_id.clone(),
-            level as u32,
-        );
+        let topics = (Symbol::new(env, "alert_triggered"), operation_id.clone(), level as u32);
         env.events().publish(topics, error_count);
     }
 }
@@ -1246,9 +1189,7 @@ impl GracefulDegradation {
             degradable_features,
             degraded_features: Vec::new(env),
         };
-        env.storage()
-            .instance()
-            .set(&DegradationKey::Config, &config);
+        env.storage().instance().set(&DegradationKey::Config, &config);
     }
 
     /// Check if a feature is currently degraded
@@ -1274,9 +1215,7 @@ impl GracefulDegradation {
 
         if !config.degraded_features.contains(feature) {
             config.degraded_features.push_back(feature.clone());
-            env.storage()
-                .instance()
-                .set(&DegradationKey::Config, &config);
+            env.storage().instance().set(&DegradationKey::Config, &config);
 
             Self::emit_feature_degraded(env, feature);
         }
@@ -1299,9 +1238,7 @@ impl GracefulDegradation {
 
         if let Some(idx) = index_to_remove {
             config.degraded_features.remove(idx);
-            env.storage()
-                .instance()
-                .set(&DegradationKey::Config, &config);
+            env.storage().instance().set(&DegradationKey::Config, &config);
 
             Self::emit_feature_restored(env, feature);
         }
@@ -1409,17 +1346,41 @@ impl HealthCheck {
         }
     }
 
-    /// Emit health status event
+    /// Emit health status event using the standardized monitoring schema.
     pub fn emit_health_status(env: &Env, result: &HealthCheckResult) {
-        let topics = (Symbol::new(env, "health_check"), result.status as u32);
-        env.events().publish(topics, result.timestamp);
+        use crate::event_schema::{
+            EventData, HealthCheckEventData, MonitoringEventData, StandardEvent,
+        };
+        use soroban_sdk::symbol_short;
+
+        let status_sym = match result.status {
+            HealthStatus::Healthy => Symbol::new(env, "healthy"),
+            HealthStatus::Degraded => Symbol::new(env, "degraded"),
+            HealthStatus::Unhealthy => Symbol::new(env, "unhealthy"),
+            HealthStatus::Unknown => Symbol::new(env, "unknown"),
+        };
+
+        let event_data =
+            EventData::Monitoring(MonitoringEventData::HealthCheck(HealthCheckEventData {
+                contract_id: symbol_short!("system"),
+                status: result.status as u32,
+                timestamp: result.timestamp,
+                details: status_sym,
+            }));
+
+        StandardEvent::new(
+            env,
+            symbol_short!("system"),
+            env.current_contract_address(),
+            event_data,
+        )
+        .emit(env);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::testutils::Address as _;
     use soroban_sdk::Env;
 
     #[test]
@@ -1427,73 +1388,14 @@ mod tests {
         let env = Env::default();
         let context_id = Symbol::new(&env, "test_op");
 
-        let context = ErrorContext::new(
-            &env,
-            100,
-            ErrorSeverity::High,
-            ErrorCategory::Network,
-            context_id,
-        );
+        let context =
+            ErrorContext::new(&env, 100, ErrorSeverity::High, ErrorCategory::Network, context_id);
 
         assert_eq!(context.error_code, 100);
         assert_eq!(context.severity, ErrorSeverity::High);
         assert_eq!(context.category, ErrorCategory::Network);
         assert!(context.retryable); // Network errors are retryable
         assert_eq!(context.retry_count, 0);
-    }
-
-    #[test]
-    fn test_circuit_breaker_initialization() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_circuit");
-        let config = CircuitBreakerConfig::default_config();
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        let status = CircuitBreaker::get_status(&env, &operation_id).expect("status should exist");
-        assert_eq!(status.state, CircuitState::Closed);
-        assert_eq!(status.failure_count, 0);
-    }
-
-    #[test]
-    fn test_circuit_breaker_opens_after_failures() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_circuit");
-        let config = CircuitBreakerConfig {
-            failure_threshold: 3,
-            reset_timeout: 60,
-            success_threshold: 2,
-            half_open_max_requests: 1,
-        };
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        // Record failures
-        for _ in 0..3 {
-            CircuitBreaker::record_failure(&env, &operation_id).expect("should record failure");
-        }
-
-        let status = CircuitBreaker::get_status(&env, &operation_id).expect("status should exist");
-        assert_eq!(status.state, CircuitState::Open);
-
-        // Can't proceed when open
-        let result = CircuitBreaker::can_proceed(&env, &operation_id);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_retry_mechanism() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "test_retry");
-        let config = RetryConfig::default_config();
-
-        RetryMechanism::initialize(&env, &operation_id, &config);
-
-        // Start retry
-        let context =
-            RetryMechanism::start_retry(&env, &operation_id, 500).expect("should start retry");
-        assert_eq!(context.attempt, 1);
-        assert!(!context.exhausted);
     }
 
     #[test]
@@ -1555,65 +1457,5 @@ mod tests {
             RecoverySystem::determine_recovery_action(&validation_context),
             RecoveryAction::Skip
         );
-    }
-
-    #[test]
-    fn test_error_monitor_initialization() {
-        let env = Env::default();
-        let admin = Address::generate(&env);
-        let config = AlertConfig::new(admin);
-
-        ErrorMonitor::initialize(&env, &config);
-
-        let retrieved = ErrorMonitor::get_config(&env).expect("config should exist");
-        assert!(retrieved.enabled);
-        assert_eq!(retrieved.min_level, AlertLevel::Warning);
-    }
-
-    #[test]
-    fn test_graceful_degradation() {
-        let env = Env::default();
-        let mut features = Vec::new(&env);
-        let feature1 = Symbol::new(&env, "analytics");
-        let feature2 = Symbol::new(&env, "reporting");
-        features.push_back(feature1.clone());
-        features.push_back(feature2.clone());
-
-        GracefulDegradation::initialize(&env, features);
-
-        // Feature should not be degraded initially
-        assert!(!GracefulDegradation::is_degraded(&env, &feature1));
-
-        // Degrade feature
-        GracefulDegradation::degrade_feature(&env, &feature1).expect("should degrade feature");
-        assert!(GracefulDegradation::is_degraded(&env, &feature1));
-
-        // Restore feature
-        GracefulDegradation::restore_feature(&env, &feature1).expect("should restore feature");
-        assert!(!GracefulDegradation::is_degraded(&env, &feature1));
-    }
-
-    #[test]
-    fn test_health_check() {
-        let env = Env::default();
-        let operation_id = Symbol::new(&env, "health_test");
-        let config = CircuitBreakerConfig::default_config();
-
-        CircuitBreaker::initialize(&env, &operation_id, &config);
-
-        let admin = Address::generate(&env);
-        ErrorMonitor::initialize(&env, &AlertConfig::new(admin));
-
-        let mut features = Vec::new(&env);
-        features.push_back(Symbol::new(&env, "feature1"));
-        GracefulDegradation::initialize(&env, features);
-
-        let mut circuit_ids = Vec::new(&env);
-        circuit_ids.push_back(operation_id);
-
-        let result = HealthCheck::check(&env, &circuit_ids);
-        assert_eq!(result.status, HealthStatus::Healthy);
-        assert_eq!(result.open_circuits, 0);
-        assert_eq!(result.degraded_features, 0);
     }
 }

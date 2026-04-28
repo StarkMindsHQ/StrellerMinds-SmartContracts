@@ -2,6 +2,7 @@
 name = "cross-chain-credentials"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 
 [lib]
 crate-type = ["cdylib"]
@@ -12,3 +13,6 @@ shared = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+
+[package.metadata.docs.rs]
+all-features = true

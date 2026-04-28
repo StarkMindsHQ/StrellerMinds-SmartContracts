@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use crate::{
     errors::DiagnosticsError, events::DiagnosticsEvents, storage::DiagnosticsStorage, types::*,
 };
@@ -23,9 +24,7 @@ impl RegressionTester {
         let mut total_test_score: u32 = 0;
 
         // Execute each test scenario
-        for i in 0..test_configuration.test_scenarios.len() {
-            let scenario = test_configuration.test_scenarios.get(i).unwrap();
-
+        for scenario in &test_configuration.test_scenarios {
             match Self::execute_test_scenario(env, contract_address, &scenario) {
                 Ok(result) => {
                     total_test_score += result.performance_score;
@@ -397,10 +396,8 @@ impl RegressionTester {
         let mut total_regressions = 0u32;
 
         // Analyze regression severity
-        for i in 0..test_results.len() {
-            let result = test_results.get(i).unwrap();
-            for j in 0..result.regressions_detected.len() {
-                let regression = result.regressions_detected.get(j).unwrap();
+        for result in &test_results {
+            for regression in &result.regressions_detected {
                 total_regressions += 1;
 
                 match regression.severity {
@@ -764,10 +761,8 @@ impl RegressionTester {
         if regressions.is_empty() {
             current_time + 86400 // 24 hours for normal schedule
         } else {
-            let critical_regressions = regressions.iter().any(|r| match r.severity {
-                RiskLevel::Critical => true,
-                _ => false,
-            });
+            let critical_regressions =
+                regressions.iter().any(|r| matches!(r.severity, RiskLevel::Critical));
 
             if critical_regressions {
                 current_time + 3600 // 1 hour for critical issues
@@ -1360,8 +1355,8 @@ impl RegressionTester {
             return 0.0;
         }
 
-        let recent_score = results.get(results.len() - 1).unwrap().overall_performance_score;
-        let older_score = results.get(0).unwrap().overall_performance_score;
+        let recent_score = results.last().map(|r| r.overall_performance_score).unwrap_or(0);
+        let older_score = results.first().map(|r| r.overall_performance_score).unwrap_or(0);
 
         if older_score > 0 {
             ((recent_score as f64 - older_score as f64) / older_score as f64) * 100.0

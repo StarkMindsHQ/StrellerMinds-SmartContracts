@@ -1,9 +1,9 @@
 use crate::types::{
-    CircuitBreakerState, IncidentReport, SecurityConfig, SecurityDataKey, SecurityMetrics,
-    SecurityRecommendation, SecurityThreat, SecurityTrainingStatus, ThreatIntelligence,
-    UserRiskScore,
+    CircuitBreakerState, IncidentReport, RateLimitState, RbacRole, RoleAssignment, RoleDelegation,
+    SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation, SecurityThreat,
+    SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence, UserRiskScore,
 };
-use soroban_sdk::{Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{Address, Env, Symbol, Vec};
 
 /// Storage utilities for the Security Monitor contract
 pub struct SecurityStorage;
@@ -37,26 +37,26 @@ impl SecurityStorage {
         Self::add_contract_threat(env, &threat.contract, &threat.threat_id);
     }
 
-    pub fn get_threat(env: &Env, threat_id: &BytesN<32>) -> Option<SecurityThreat> {
+    pub fn get_threat(env: &Env, threat_id: &ThreatId) -> Option<SecurityThreat> {
         let key = SecurityDataKey::Threat(threat_id.clone());
         env.storage().persistent().get(&key)
     }
 
-    pub fn has_threat(env: &Env, threat_id: &BytesN<32>) -> bool {
+    pub fn has_threat(env: &Env, threat_id: &ThreatId) -> bool {
         let key = SecurityDataKey::Threat(threat_id.clone());
         env.storage().persistent().has(&key)
     }
 
-    pub fn add_contract_threat(env: &Env, contract: &Symbol, threat_id: &BytesN<32>) {
+    pub fn add_contract_threat(env: &Env, contract: &Symbol, threat_id: &ThreatId) {
         let key = SecurityDataKey::ContractThreats(contract.clone());
-        let mut threats: Vec<BytesN<32>> =
+        let mut threats: ThreatIdList =
             env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         threats.push_back(threat_id.clone());
         env.storage().persistent().set(&key, &threats);
     }
 
-    pub fn get_contract_threats(env: &Env, contract: &Symbol) -> Vec<BytesN<32>> {
+    pub fn get_contract_threats(env: &Env, contract: &Symbol) -> ThreatIdList {
         let key = SecurityDataKey::ContractThreats(contract.clone());
         env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
@@ -116,6 +116,25 @@ impl SecurityStorage {
         Self::set_actor_event_count(env, actor, window_id, current + 1);
     }
 
+    pub fn set_rate_limit_state(
+        env: &Env,
+        actor: &Address,
+        contract: &Symbol,
+        state: &RateLimitState,
+    ) {
+        let key = SecurityDataKey::ActorRateLimit(actor.clone(), contract.clone());
+        env.storage().temporary().set(&key, state);
+    }
+
+    pub fn get_rate_limit_state(
+        env: &Env,
+        actor: &Address,
+        contract: &Symbol,
+    ) -> Option<RateLimitState> {
+        let key = SecurityDataKey::ActorRateLimit(actor.clone(), contract.clone());
+        env.storage().temporary().get(&key)
+    }
+
     // ===== Contract Event Baseline =====
 
     pub fn set_contract_baseline(env: &Env, contract: &Symbol, baseline: u32) {
@@ -144,7 +163,7 @@ impl SecurityStorage {
 
     pub fn get_recommendation(
         env: &Env,
-        recommendation_id: &BytesN<32>,
+        recommendation_id: &ThreatId,
     ) -> Option<SecurityRecommendation> {
         let key = SecurityDataKey::Recommendation(recommendation_id.clone());
         env.storage().persistent().get(&key)
@@ -152,18 +171,18 @@ impl SecurityStorage {
 
     pub fn add_threat_recommendation(
         env: &Env,
-        threat_id: &BytesN<32>,
-        recommendation_id: &BytesN<32>,
+        threat_id: &ThreatId,
+        recommendation_id: &ThreatId,
     ) {
         let key = SecurityDataKey::ThreatRecommendations(threat_id.clone());
-        let mut recommendations: Vec<BytesN<32>> =
+        let mut recommendations: ThreatIdList =
             env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
 
         recommendations.push_back(recommendation_id.clone());
         env.storage().persistent().set(&key, &recommendations);
     }
 
-    pub fn get_threat_recommendations(env: &Env, threat_id: &BytesN<32>) -> Vec<BytesN<32>> {
+    pub fn get_threat_recommendations(env: &Env, threat_id: &ThreatId) -> ThreatIdList {
         let key = SecurityDataKey::ThreatRecommendations(threat_id.clone());
         env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
@@ -208,7 +227,7 @@ impl SecurityStorage {
         env.storage().persistent().set(&key, report);
     }
 
-    pub fn get_incident_report(env: &Env, incident_id: &BytesN<32>) -> Option<IncidentReport> {
+    pub fn get_incident_report(env: &Env, incident_id: &ThreatId) -> Option<IncidentReport> {
         let key = SecurityDataKey::IncidentReport(incident_id.clone());
         env.storage().persistent().get(&key)
     }
@@ -225,5 +244,83 @@ impl SecurityStorage {
     pub fn is_oracle_authorized(env: &Env, oracle: &Address) -> bool {
         let key = SecurityDataKey::Oracle(oracle.clone());
         env.storage().persistent().get(&key).unwrap_or(false)
+    }
+
+    // ===== RBAC Storage =====
+
+    pub fn set_rbac_role(env: &Env, role: &RbacRole) {
+        let key = SecurityDataKey::RbacRole(role.role_id.clone());
+        env.storage().persistent().set(&key, role);
+    }
+
+    pub fn get_rbac_role(env: &Env, role_id: &Symbol) -> Option<RbacRole> {
+        let key = SecurityDataKey::RbacRole(role_id.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn has_rbac_role(env: &Env, role_id: &Symbol) -> bool {
+        let key = SecurityDataKey::RbacRole(role_id.clone());
+        env.storage().persistent().has(&key)
+    }
+
+    pub fn set_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+        assignment: &RoleAssignment,
+    ) {
+        let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
+        env.storage().persistent().set(&key, assignment);
+
+        let user_key = SecurityDataKey::RbacUserRoles(user.clone());
+        let mut roles: Vec<Symbol> =
+            env.storage().persistent().get(&user_key).unwrap_or(Vec::new(env));
+        let mut already_tracked = false;
+        for i in 0..roles.len() {
+            if roles.get(i).unwrap() == *role_id {
+                already_tracked = true;
+                break;
+            }
+        }
+        if !already_tracked {
+            roles.push_back(role_id.clone());
+            env.storage().persistent().set(&user_key, &roles);
+        }
+    }
+
+    pub fn get_role_assignment(
+        env: &Env,
+        user: &Address,
+        role_id: &Symbol,
+    ) -> Option<RoleAssignment> {
+        let key = SecurityDataKey::RbacAssignment(user.clone(), role_id.clone());
+        env.storage().persistent().get(&key)
+    }
+
+    pub fn get_user_roles(env: &Env, user: &Address) -> Vec<Symbol> {
+        let key = SecurityDataKey::RbacUserRoles(user.clone());
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
+    }
+
+    pub fn add_role_delegation(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+        delegation: &RoleDelegation,
+    ) {
+        let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
+        let mut delegations: Vec<RoleDelegation> =
+            env.storage().persistent().get(&key).unwrap_or(Vec::new(env));
+        delegations.push_back(delegation.clone());
+        env.storage().persistent().set(&key, &delegations);
+    }
+
+    pub fn get_role_delegations(
+        env: &Env,
+        delegator: &Address,
+        role_id: &Symbol,
+    ) -> Vec<RoleDelegation> {
+        let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
+        env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
     }
 }

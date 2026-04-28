@@ -2,20 +2,29 @@ name: Security Audit
 
 on:
   pull_request:
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
   push:
     branches: [main]
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+  schedule:
+    - cron: "0 6 * * *"
 
 jobs:
   security:
+    name: cargo-audit
     runs-on: ubuntu-latest
-    if: false  # Disabled due to Soroban SDK dependency vulnerabilities
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
       - name: Run cargo audit
-        run: |
-          cargo install cargo-audit
-          cargo audit
+        run: cargo audit

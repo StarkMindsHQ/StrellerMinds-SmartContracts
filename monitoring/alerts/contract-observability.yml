@@ -1,0 +1,78 @@
+groups:
+  - name: strellerminds-contracts
+    interval: 30s
+    rules:
+      - alert: ContractFailureRateHigh
+        expr: |
+          sum(rate(strellerminds_contract_failures_total[5m])) by (contract)
+          /
+          clamp_min(sum(rate(strellerminds_contract_calls_total[5m])) by (contract), 1)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: contracts
+        annotations:
+          summary: Contract failure rate is above 5%
+          description: Investigate recent execution errors, RPC health, and deployment drift.
+      - alert: ContractLatencyHigh
+        expr: max(strellerminds_contract_latency_ms) by (contract) > 750
+        for: 15m
+        labels:
+          severity: warning
+          service: contracts
+        annotations:
+          summary: Contract latency exceeded threshold
+          description: Recent contract execution latency is above the acceptable steady-state budget.
+      - alert: InfraBacklogGrowing
+        expr: max(strellerminds_infra_backlog) by (pipeline) > 100
+        for: 10m
+        labels:
+          severity: critical
+          service: infra
+        annotations:
+          summary: Off-chain backlog is growing
+          description: Indexers or event processors are accumulating pending work faster than they drain it.
+      - alert: LedgerLagDetected
+        expr: max(strellerminds_ledger_lag_seconds) > 120
+        for: 5m
+        labels:
+          severity: critical
+          service: infra
+        annotations:
+          summary: Ledger lag exceeded 120 seconds
+          description: RPC, ingestion, or exporter components may be behind the current ledger.
+      - alert: ApiQueryLatencyHigh
+        expr: avg_over_time(cert_api_query_average_time_ms[15m]) > 100
+        for: 15m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: API query latency is above the 100ms target
+          description: Average certificate verification API query latency has remained above target. Review cache misses, backend RPC health, and slow-query report output.
+      - alert: QueryLoadReductionLow
+        expr: |
+          avg_over_time(cert_api_query_estimated_load_reduction_percent[15m]) < 40
+          and
+          increase(cert_api_query_duration_seconds_count[15m]) > 50
+        for: 15m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: Query cache/load reduction is below target after warm-up
+          description: Estimated backend load reduction has stayed below 40% after sufficient query volume. Inspect cache key reuse, TTL sizing, and invalidation churn.
+      - alert: QueryPoolSaturationHigh
+        expr: |
+          max_over_time(cert_api_query_in_flight_backend[10m])
+          /
+          clamp_min(max_over_time(cert_api_query_pool_active_size[10m]), 1)
+          > 0.9
+        for: 10m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: Query backend pool is saturated
+          description: In-flight Soroban/indexer query load is using more than 90% of pool capacity for a sustained period.

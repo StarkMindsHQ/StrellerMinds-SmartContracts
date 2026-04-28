@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Token Contract
+  description: Token mint, transfer, and balance operations for StrellerMinds
+  version: 1.0.0
+servers:
+  - url: https://soroban.stellarminds.io
+    description: Stellar Testnet
+paths:
+  /initialize:
+    post:
+      operationId: initialize
+      summary: Initialize the token contract
+      description: Sets the admin address and rate limit configuration. Must be called once before any other function.
+      parameters:
+        - name: admin
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Address that will have administrative control
+      responses:
+        '200':
+          description: Successfully initialized
+        '400':
+          description: Already initialized
+  /mint:
+    post:
+      operationId: mint
+      summary: Mint new tokens
+      description: Creates new tokens and credits them to the recipient address. Rate limited to 50 mints per day per user.
+      parameters:
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Recipient address
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+          description: Number of tokens to mint
+      responses:
+        '200':
+          description: Successfully minted
+        '429':
+          description: Rate limit exceeded
+  /transfer:
+    post:
+      operationId: transfer
+      summary: Transfer tokens
+      description: Transfers tokens from one address to another. Requires authorization from the sender. Rate limited to 100 transfers per day per user.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sender address (must authorize)
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Recipient address
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: uint64
+          description: Number of tokens to transfer
+      responses:
+        '200':
+          description: Successfully transferred
+        '400':
+          description: Invalid amount
+        '429':
+          description: Rate limit exceeded
+  /balance:
+    get:
+      operationId: balance
+      summary: Get token balance
+      description: Returns the token balance of the given account. Note: This is a stub implementation that always returns 0.
+      parameters:
+        - name: account
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Address to query
+      responses:
+        '200':
+          description: Balance retrieved
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: uint64
+  /health_check:
+    get:
+      operationId: health_check
+      summary: Get contract health status
+      responses:
+        '200':
+          description: Health report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthReport'
+components:
+  schemas:
+    HealthReport:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        contract:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: integer
+          format: uint64

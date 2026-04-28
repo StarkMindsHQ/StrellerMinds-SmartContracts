@@ -1,0 +1,52 @@
+{
+  "_comment": "Cloudflare Cache Rules for StrellerMinds Certificate API (alternative to CloudFront).",
+  "rules": [
+    {
+      "description": "Static assets — immutable, 1 year",
+      "expression": "(http.request.uri.path matches \"^/api/docs/.*\\.(js|css|woff2|png|svg|ico)$\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "override_origin", "default": 31536000 },
+        "browser_ttl": { "mode": "override_origin", "default": 31536000 },
+        "serve_stale": { "disable_stale_while_updating": false }
+      }
+    },
+    {
+      "description": "Certificate verify — 30s CDN TTL",
+      "expression": "(http.request.uri.path matches \"^/api/v1/certificates/.+/verify$\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "override_origin", "default": 30 },
+        "browser_ttl": { "mode": "bypass" },
+        "cache_key": {
+          "custom_key": {
+            "query_string": { "include": [] },
+            "header": { "include": ["authorization"] }
+          }
+        }
+      }
+    },
+    {
+      "description": "API docs — 1 hour CDN TTL",
+      "expression": "(http.request.uri.path eq \"/api/docs\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "override_origin", "default": 3600 },
+        "browser_ttl": { "mode": "override_origin", "default": 3600 }
+      }
+    },
+    {
+      "description": "Health and metrics — bypass cache",
+      "expression": "(http.request.uri.path matches \"^/health\")",
+      "action": "bypass_cache"
+    },
+    {
+      "description": "Auth and write endpoints — bypass cache",
+      "expression": "(http.request.method ne \"GET\" and http.request.method ne \"HEAD\")",
+      "action": "bypass_cache"
+    }
+  ]
+}

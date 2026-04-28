@@ -204,12 +204,10 @@ impl LeaderboardManager {
 
     fn assign_ranks(env: &Env, board: &mut Vec<LeaderboardEntry>, category: &LeaderboardCategory) {
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             e.category = category.clone();
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }
@@ -252,11 +250,9 @@ impl LeaderboardManager {
 
     fn assign_guild_ranks(env: &Env, board: &mut Vec<GuildLeaderboardEntry>) {
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }
@@ -300,12 +296,10 @@ impl LeaderboardManager {
     fn assign_season_ranks(env: &Env, board: &mut Vec<SeasonLeaderboardEntry>) {
         let total = board.len();
         let mut ranked = Vec::new(env);
-        let mut rank: u32 = 1;
-        for mut e in board.iter() {
+        for (rank, mut e) in (1_u32..).zip(board.iter()) {
             e.rank = rank;
             e.reward_tier = Self::season_reward_tier(rank, total);
             ranked.push_back(e);
-            rank += 1;
         }
         *board = ranked;
     }

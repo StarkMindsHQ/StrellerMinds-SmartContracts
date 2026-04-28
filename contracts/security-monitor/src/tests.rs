@@ -8,8 +8,6 @@
 //! - Incident reporting
 //! - Input boundary / adversarial edge cases
 
-#![cfg(test)]
-
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
     Address, BytesN, Env, String, Symbol, Vec,
@@ -592,4 +590,246 @@ fn test_scan_for_threats_always_returns_vec() {
     let contract_sym = Symbol::new(&client.env, "scanme");
     // Should never panic – just return an empty or populated Vec
     let _ = client.scan_for_threats(&contract_sym, &3600u64);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. Rate-limiting tests
+// ─────────────────────────────────────────────────────────────
+
+#[test]
+fn test_check_rate_limit_allows_calls_within_window() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 2;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+}
+
+#[test]
+fn test_check_rate_limit_exceeds_after_threshold() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit2");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(client.check_rate_limit(&actor, &contract_sym));
+
+    let threats = client.get_contract_threats(&contract_sym);
+    assert_eq!(threats.len(), 1, "a rate-limit threat should be persisted");
+}
+
+#[test]
+fn test_check_rate_limit_resets_after_window() {
+    let env = Env::default();
+    env.mock_all_auths();
+    env.ledger().set_timestamp(100);
+
+    let contract_id = env.register(SecurityMonitor, ());
+    let client = SecurityMonitorClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    client.initialize(&admin, &SecurityConfig::default_config());
+
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "ratelimit3");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 10;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+    assert!(client.check_rate_limit(&actor, &contract_sym));
+
+    env.ledger().set_timestamp(111);
+    assert!(!client.check_rate_limit(&actor, &contract_sym));
+}
+
+#[test]
+fn test_request_anomaly_analysis_enforces_rate_limit() {
+    let (env, contract_id, client, _admin) = setup();
+    let actor = Address::generate(&env);
+    let contract_sym = Symbol::new(&env, "oracleflow");
+
+    env.as_contract(&contract_id, || {
+        let mut config = SecurityStorage::get_config(&env).unwrap();
+        config.rate_limit_per_window = 1;
+        config.rate_limit_window = 60;
+        SecurityStorage::set_config(&env, &config);
+    });
+
+    let _ = client.request_anomaly_analysis(&actor, &contract_sym);
+    let second = client.try_request_anomaly_analysis(&actor, &contract_sym);
+    assert!(second.is_err(), "second request in the same window should be rejected");
+}
+
+// ─────────────────────────────────────────────────────────────
+// RBAC Enhancement Tests
+// ─────────────────────────────────────────────────────────────
+
+#[test]
+fn test_create_and_get_role() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let role_id = Symbol::new(&env, "INSTRUCTOR");
+    let description = String::from_str(&env, "Course instructor role");
+
+    client.create_role(&admin, &role_id, &None, &description);
+
+    let role = client.get_role(&role_id).unwrap();
+    assert_eq!(role.role_id, role_id);
+    assert!(role.is_active);
+    assert!(role.parent_role.is_none());
+}
+
+#[test]
+fn test_role_hierarchy_parent_child() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let parent_id = Symbol::new(&env, "EDUCATOR");
+    let child_id = Symbol::new(&env, "SENIOR_ED");
+
+    client.create_role(&admin, &parent_id, &None, &String::from_str(&env, "Base educator"));
+    client.create_role(
+        &admin,
+        &child_id,
+        &Some(parent_id.clone()),
+        &String::from_str(&env, "Senior educator inherits EDUCATOR"),
+    );
+
+    let child_role = client.get_role(&child_id).unwrap();
+    assert_eq!(child_role.parent_role, Some(parent_id));
+}
+
+#[test]
+fn test_assign_and_check_role() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let user = Address::generate(&env);
+    let role_id = Symbol::new(&env, "REVIEWER");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Reviewer role"));
+    client.assign_role(&admin, &user, &role_id, &None);
+
+    assert!(client.has_role(&user, &role_id));
+}
+
+#[test]
+fn test_revoke_role() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let user = Address::generate(&env);
+    let role_id = Symbol::new(&env, "AUDITOR");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Auditor role"));
+    client.assign_role(&admin, &user, &role_id, &None);
+    assert!(client.has_role(&user, &role_id));
+
+    client.revoke_role(&admin, &user, &role_id);
+    assert!(!client.has_role(&user, &role_id));
+}
+
+#[test]
+fn test_deactivate_and_activate_role() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let role_id = Symbol::new(&env, "MODERATOR");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Moderator"));
+
+    client.deactivate_role(&admin, &role_id);
+    let role = client.get_role(&role_id).unwrap();
+    assert!(!role.is_active);
+
+    client.activate_role(&admin, &role_id);
+    let role = client.get_role(&role_id).unwrap();
+    assert!(role.is_active);
+}
+
+#[test]
+fn test_assign_inactive_role_fails() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let user = Address::generate(&env);
+    let role_id = Symbol::new(&env, "SUSPENDED");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Suspended role"));
+    client.deactivate_role(&admin, &role_id);
+
+    let result = client.try_assign_role(&admin, &user, &role_id, &None);
+    assert!(result.is_err(), "cannot assign an inactive role");
+}
+
+#[test]
+fn test_temporary_role_expires() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let user = Address::generate(&env);
+    let role_id = Symbol::new(&env, "TEMP_ACCESS");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Temporary role"));
+
+    let expiry = env.ledger().timestamp() + 3600;
+    client.assign_role(&admin, &user, &role_id, &Some(expiry));
+    assert!(client.has_role(&user, &role_id));
+
+    env.ledger().with_mut(|li| li.timestamp += 7200);
+    assert!(!client.has_role(&user, &role_id), "role should appear expired after expiry");
+}
+
+#[test]
+fn test_delegate_role() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let delegator = Address::generate(&env);
+    let delegate = Address::generate(&env);
+    let role_id = Symbol::new(&env, "DELEGATE_R");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Delegatable role"));
+    client.assign_role(&admin, &delegator, &role_id, &None);
+
+    client.delegate_role(&delegator, &delegate, &role_id, &None);
+}
+
+#[test]
+fn test_cleanup_expired_roles() {
+    let (env, _contract_id, client, admin) = setup();
+
+    let user = Address::generate(&env);
+    let role_id = Symbol::new(&env, "EXP_ROLE");
+    client.create_role(&admin, &role_id, &None, &String::from_str(&env, "Expiring role"));
+
+    let expiry = env.ledger().timestamp() + 100;
+    client.assign_role(&admin, &user, &role_id, &Some(expiry));
+
+    env.ledger().with_mut(|li| li.timestamp += 200);
+
+    let cleaned = client.cleanup_expired_roles(&admin, &user);
+    assert_eq!(cleaned, 1);
+    assert!(!client.has_role(&user, &role_id));
+}
+
+#[test]
+fn test_non_admin_cannot_create_role() {
+    let (env, _contract_id, client, _admin) = setup();
+
+    let attacker = Address::generate(&env);
+    let role_id = Symbol::new(&env, "HACKED");
+    let result = client.try_create_role(
+        &attacker,
+        &role_id,
+        &None,
+        &String::from_str(&env, "Unauthorized role"),
+    );
+    assert!(result.is_err(), "non-admin must not create roles");
 }

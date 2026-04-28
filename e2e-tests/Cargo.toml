@@ -2,6 +2,7 @@
 name = "e2e-tests"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 
 [dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
@@ -20,6 +21,9 @@ tokio-test = "0.4"
 shared = { path = "../contracts/shared" }
 analytics = { path = "../contracts/analytics" } 
 token = { path = "../contracts/token" }
+certificate = { path = "../contracts/certificate" }
+assessment = { path = "../contracts/assessment" }
+community = { path = "../contracts/community" }
 
 # Random number generation for test data
 rand = "0.8"
@@ -27,6 +31,10 @@ rand = "0.8"
 # Optional: For more advanced testing scenarios
 futures = "0.3"
 uuid = { version = "1.0", features = ["v4"] }
+
+# OpenAPI validation
+schemars = "1.2"
+serde_yaml = "0.9"
 
 [[test]]
 name = "integration"
@@ -39,3 +47,7 @@ path = "tests/analytics_integration.rs"
 [[test]]
 name = "scalability"
 path = "tests/scalability.rs"
+
+[[test]]
+name = "contract_validation"
+path = "tests/contract_validation.rs"

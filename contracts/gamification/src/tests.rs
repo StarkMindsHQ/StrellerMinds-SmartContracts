@@ -5,7 +5,7 @@ use crate::types::{
     ActivityType, Challenge, ChallengeDifficulty, ChallengeType, LeaderboardCategory,
     RecognitionType, Season,
 };
-use crate::{Gamification, GamificationClient};
+use crate::{Gamification, GamificationClient, GamificationError};
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────
 
@@ -505,8 +505,8 @@ fn test_cannot_join_two_guilds() {
 
     let g1 = client.create_guild(
         &creator,
-        &String::from_str(&env, "G1"),
-        &String::from_str(&env, "First guild"),
+        &String::from_str(&env, "Guild One"),
+        &String::from_str(&env, "The first test guild for validation"),
         &10u32,
         &true,
     );
@@ -514,8 +514,8 @@ fn test_cannot_join_two_guilds() {
     let other_creator = Address::generate(&env);
     let g2 = client.create_guild(
         &other_creator,
-        &String::from_str(&env, "G2"),
-        &String::from_str(&env, "Second guild"),
+        &String::from_str(&env, "Guild Two"),
+        &String::from_str(&env, "The second test guild for validation"),
         &10u32,
         &true,
     );
@@ -769,15 +769,15 @@ fn test_guild_leaderboard_updates() {
 
     let g1 = client.create_guild(
         &c1,
-        &String::from_str(&env, "Alpha"),
-        &String::from_str(&env, "desc"),
+        &String::from_str(&env, "Alpha Guild"),
+        &String::from_str(&env, "The alpha guild for leaderboard test"),
         &10u32,
         &true,
     );
     let _g2 = client.create_guild(
         &c2,
-        &String::from_str(&env, "Beta"),
-        &String::from_str(&env, "desc"),
+        &String::from_str(&env, "Beta Guild"),
+        &String::from_str(&env, "The beta guild for leaderboard test"),
         &10u32,
         &true,
     );
@@ -791,4 +791,155 @@ fn test_guild_leaderboard_updates() {
     let board = client.get_guild_leaderboard();
     assert!(board.len() >= 2);
     assert_eq!(board.get(0).unwrap().guild_id, g1, "guild 1 should lead");
+}
+
+// ─── Input Validation Tests ──────────────────────────────────────────────────
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_guild_short_name() {
+    let (env, client, _admin) = setup_env();
+    let creator = Address::generate(&env);
+
+    client.create_guild(
+        &creator,
+        &String::from_str(&env, "AB"),
+        &String::from_str(&env, "Valid guild description here"),
+        &10u32,
+        &true,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_create_guild_short_description() {
+    let (env, client, _admin) = setup_env();
+    let creator = Address::generate(&env);
+
+    client.create_guild(
+        &creator,
+        &String::from_str(&env, "Valid Name"),
+        &String::from_str(&env, "Short"),
+        &10u32,
+        &true,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_endorse_empty_skill() {
+    let (env, client, _admin) = setup_env();
+    let endorser = Address::generate(&env);
+    let endorsee = Address::generate(&env);
+
+    client.endorse_peer(&endorser, &endorsee, &String::from_str(&env, "AB"));
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_recognize_short_message() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    client.recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "AB"),
+    );
+}
+
+// ─── Rate Limiting Tests ──────────────────────────────────────────────────────
+
+#[test]
+fn test_recognize_peer_rate_limit() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    // 10 recognitions should succeed (daily limit)
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great help!"),
+        );
+    }
+
+    // 11th should fail
+    let result = client.try_recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "One too many"),
+    );
+    assert!(result.is_err(), "11th recognition in same day should be rate limited");
+}
+
+#[test]
+fn test_recognize_peer_rate_limit_resets() {
+    let (env, client, _admin) = setup_env();
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000);
+
+    for _ in 0..10 {
+        client.recognize_peer(
+            &from,
+            &to,
+            &RecognitionType::HelpfulAnswer,
+            &String::from_str(&env, "Great!"),
+        );
+    }
+
+    // Advance to next day
+    env.ledger().with_mut(|l| l.timestamp = 1_000_000 + 86_400);
+
+    // Should succeed again
+    client.recognize_peer(
+        &from,
+        &to,
+        &RecognitionType::HelpfulAnswer,
+        &String::from_str(&env, "Next day!"),
+    );
+}
+
+// ─── Error Scenario Tests ─────────────────────────────────────────────────────
+
+#[test]
+fn test_initialize_already_initialized_returns_error() {
+    let (_env, client, admin) = setup_env();
+    // already initialized by setup_env(); second call should fail
+    let result = client.try_initialize(&admin);
+    assert_eq!(result, Err(Ok(GamificationError::AlreadyInitialized)));
+}
+
+#[test]
+fn test_join_nonexistent_challenge_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_challenge(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_join_nonexistent_guild_returns_error() {
+    let (env, client, _admin) = setup_env();
+    let user = Address::generate(&env);
+    let result = client.try_join_guild(&user, &9999u64);
+    assert_eq!(result, Err(Ok(GamificationError::NotFound)));
+}
+
+#[test]
+fn test_gamification_error_derives_are_correct() {
+    // Verify Copy, Ord, PartialOrd
+    let e = GamificationError::Unauthorized;
+    let e2 = e; // Copy
+    assert_eq!(e, e2);
+    assert!(GamificationError::AlreadyInitialized < GamificationError::Unauthorized);
 }

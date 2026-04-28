@@ -1,4 +1,8 @@
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String, Vec};
+use shared::monitoring::ContractHealthStatus;
+use soroban_sdk::{
+    testutils::{Address as _, Ledger as _},
+    Address, BytesN, Env, String, Vec,
+};
 
 use crate::{
     types::{
@@ -361,10 +365,46 @@ fn test_batch_issue_certificates() {
     assert_eq!(result.failed, 0);
     assert_eq!(result.certificate_ids.len(), 3);
 
+    // Verify student certificates
+    let _student_certs = client.get_student_certificates(&params_list.first().unwrap().student);
+    // Note: since students were randomly generated each iteration, we need to check the last one
+    let last_student = params_list.last().unwrap().student.clone();
+    let last_certs = client.get_student_certificates(&last_student);
+    assert_eq!(last_certs.len(), 1, "Student should have 1 certificate");
+
     // Verify analytics
     let analytics = client.get_analytics();
     assert_eq!(analytics.total_issued, 3);
     assert_eq!(analytics.active_certificates, 3);
+}
+
+#[test]
+fn test_batch_issue_certificates_duplicate() {
+    let (env, client, admin) = setup_env();
+
+    let mut params_list: Vec<MintCertificateParams> = Vec::new(&env);
+    let student = Address::generate(&env);
+
+    // Add same certificate twice
+    let mut cert_id_bytes = [0u8; 32];
+    cert_id_bytes[0] = 10;
+    let params = MintCertificateParams {
+        certificate_id: BytesN::from_array(&env, &cert_id_bytes),
+        course_id: String::from_str(&env, "BATCH_COURSE"),
+        student: student.clone(),
+        title: String::from_str(&env, "Batch Cert"),
+        description: String::from_str(&env, "Batch issued"),
+        metadata_uri: String::from_str(&env, "https://example.com/batch"),
+        expiry_date: env.ledger().timestamp() + 31_536_000,
+    };
+
+    params_list.push_back(params.clone());
+    params_list.push_back(params.clone());
+
+    let result = client.batch_issue_certificates(&admin, &params_list);
+    assert_eq!(result.total, 2);
+    assert_eq!(result.succeeded, 1, "Duplicate should be ignored");
+    assert_eq!(result.failed, 1, "Duplicate should fail");
 }
 
 #[test]
@@ -617,6 +657,31 @@ fn test_verify_compliance() {
     assert!(record.is_compliant);
 }
 
+#[test]
+fn test_verify_compliance_iso9001() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let mut params = make_cert_params(&env, "ISO9001_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[91u8; 32]);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    let verifier = Address::generate(&env);
+    let is_compliant = client.verify_compliance(
+        &verifier,
+        &params.certificate_id,
+        &ComplianceStandard::Iso9001,
+        &String::from_str(&env, "Meets ISO 9001 quality management requirements"),
+    );
+    assert!(is_compliant, "ISO 9001 compliance check must return true for active certificate");
+
+    let record = client.get_compliance_record(&params.certificate_id).unwrap();
+    assert!(record.is_compliant);
+    assert_eq!(record.standard, ComplianceStandard::Iso9001);
+}
+
 // ─────────────────────────────────────────────────────────────
 // 10. Certificate Sharing & Social Verification
 // ─────────────────────────────────────────────────────────────
@@ -711,6 +776,39 @@ fn test_verify_revoked_cert_not_authentic() {
 
     let is_authentic = client.verify_authenticity(&params.certificate_id);
     assert!(!is_authentic);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Reproduce Issue #378: Revoked certificate still passing verification
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_reproduce_issue_378() {
+    let (env, client, admin) = setup_env();
+
+    let student = Address::generate(&env);
+    let params = make_cert_params(&env, "REPRO_378", &student);
+    let mut list: Vec<MintCertificateParams> = Vec::new(&env);
+    list.push_back(params.clone());
+    client.batch_issue_certificates(&admin, &list);
+
+    // Verify it is active first
+    assert!(client.verify_certificate(&params.certificate_id));
+
+    // Revoke the certificate
+    client.revoke_certificate(
+        &admin,
+        &params.certificate_id,
+        &String::from_str(&env, "Test Revocation"),
+        &false,
+    );
+
+    // Verify certificate SHOULD BE false
+    let is_valid = client.verify_certificate(&params.certificate_id);
+    assert!(!is_valid, "Revoked certificate should not be valid");
+
+    // Verify authenticity SHOULD BE false
+    let is_authentic = client.verify_authenticity(&params.certificate_id);
+    assert!(!is_authentic, "Revoked certificate should not be authentic");
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -829,9 +927,13 @@ fn test_student_certificates() {
     for i in 0u8..3 {
         let mut cert_id_bytes = [0u8; 32];
         cert_id_bytes[0] = 150 + i;
+        let mut course_id_bytes = [0u8; 32];
+        course_id_bytes[0] = 65 + i;
+        let course_id =
+            String::from_str(&env, core::str::from_utf8(&course_id_bytes[0..1]).unwrap());
         let params = MintCertificateParams {
             certificate_id: BytesN::from_array(&env, &cert_id_bytes),
-            course_id: String::from_str(&env, "STUDENT_COURSE"),
+            course_id,
             student: student.clone(),
             title: String::from_str(&env, "Student Cert"),
             description: String::from_str(&env, "For student query testing"),
@@ -845,6 +947,128 @@ fn test_student_certificates() {
 
     let certs = client.get_student_certificates(&student);
     assert_eq!(certs.len(), 3);
+
+    // Revoke one
+    client.revoke_certificate(
+        &admin,
+        &certs.get(0).unwrap(),
+        &String::from_str(&env, "Revoked"),
+        &false,
+    );
+
+    // Should now have 2 active
+    let active_certs = client.get_student_certificates(&student);
+    assert_eq!(active_certs.len(), 2);
+
+    // Should still have 3 total
+    let all_certs = client.get_all_student_certificates(&student);
+    assert_eq!(all_certs.len(), 3);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 15b. Multi-sig Timeout Enforcement (Issue #366)
+// ─────────────────────────────────────────────────────────────
+
+/// Verifies that `cleanup_expired_requests` correctly transitions pending requests
+/// to `Expired` once their `expires_at` deadline has passed and updates analytics.
+#[test]
+fn test_cleanup_expired_requests() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver1 = Address::generate(&env);
+    let approver2 = Address::generate(&env);
+
+    // Use minimum timeout so we can advance the ledger past it easily.
+    let min_timeout: u64 = 3_600; // 1 hour (MIN_TIMEOUT in lib.rs)
+    let mut config =
+        make_multisig_config(&env, "EXPIRE_COURSE", &[approver1.clone(), approver2.clone()], 2);
+    config.timeout_duration = min_timeout;
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "EXPIRE_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[42u8; 32]);
+
+    let requester = Address::generate(&env);
+    let request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Expiry test"));
+
+    // Confirm request is pending
+    let req = client.get_multisig_request(&request_id).unwrap();
+    assert_eq!(req.status, MultiSigRequestStatus::Pending);
+
+    // Advance the ledger timestamp past the timeout
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
+
+    // Cleanup should expire the request and return count = 1
+    let expired_count = client.cleanup_expired_requests();
+    assert_eq!(expired_count, 1);
+
+    // Request status must now be Expired
+    let req_after = client.get_multisig_request(&request_id).unwrap();
+    assert_eq!(req_after.status, MultiSigRequestStatus::Expired);
+}
+
+/// Verifies that a request that has not yet reached its deadline is NOT cleaned up.
+#[test]
+fn test_cleanup_skips_active_requests() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver = Address::generate(&env);
+
+    let config = make_multisig_config(&env, "ACTIVE_COURSE", core::slice::from_ref(&approver), 1);
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "ACTIVE_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[43u8; 32]);
+
+    let requester = Address::generate(&env);
+    let _request_id =
+        client.create_multisig_request(&requester, &params, &String::from_str(&env, "Active test"));
+
+    // Do NOT advance ledger — request is still within its deadline
+    let expired_count = client.cleanup_expired_requests();
+    assert_eq!(expired_count, 0);
+}
+
+/// Verifies that `process_multisig_approval` returns `MultiSigRequestExpired` when
+/// an approver tries to act on a request whose deadline has passed.
+#[test]
+fn test_approval_on_expired_request_fails() {
+    let (env, client, admin) = setup_env();
+    let student = Address::generate(&env);
+    let approver = Address::generate(&env);
+
+    let min_timeout: u64 = 3_600;
+    let mut config =
+        make_multisig_config(&env, "EXP_APPR_COURSE", core::slice::from_ref(&approver), 1);
+    config.timeout_duration = min_timeout;
+    client.configure_multisig(&admin, &config);
+
+    let mut params = make_cert_params(&env, "EXP_APPR_COURSE", &student);
+    params.certificate_id = BytesN::from_array(&env, &[44u8; 32]);
+
+    let requester = Address::generate(&env);
+    let request_id = client.create_multisig_request(
+        &requester,
+        &params,
+        &String::from_str(&env, "Expired approval test"),
+    );
+
+    // Advance past timeout
+    env.ledger().with_mut(|li| {
+        li.timestamp += min_timeout + 1;
+    });
+
+    let result = client.try_process_multisig_approval(
+        &approver,
+        &request_id,
+        &true,
+        &String::from_str(&env, "Too late"),
+        &None,
+    );
+    assert!(result.is_err(), "Approval on expired request must fail");
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -856,4 +1080,27 @@ fn test_certificate_priority_levels() {
     assert_eq!(CertificatePriority::Premium.required_approvals(), 2);
     assert_eq!(CertificatePriority::Enterprise.required_approvals(), 3);
     assert_eq!(CertificatePriority::Institutional.required_approvals(), 5);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 17. Health Check
+// ─────────────────────────────────────────────────────────────
+#[test]
+fn test_health_check_returns_healthy() {
+    let (_env, client, _admin) = setup_env();
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Healthy);
+    assert!(report.initialized);
+}
+
+#[test]
+fn test_health_check_before_init() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(CertificateContract, ());
+    let client = CertificateContractClient::new(&env, &contract_id);
+
+    let report = client.health_check();
+    assert_eq!(report.status, ContractHealthStatus::Unknown);
+    assert!(!report.initialized);
 }

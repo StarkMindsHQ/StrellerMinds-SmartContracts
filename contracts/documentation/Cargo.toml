@@ -2,12 +2,17 @@
 name = "documentation"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 soroban-sdk = "22.0.0"
+shared = { path = "../shared" }
 
 [dev-dependencies]
 soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+
+[package.metadata.docs.rs]
+all-features = true

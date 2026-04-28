@@ -1,0 +1,163 @@
+{
+  "title": "StrellerMinds Contract Observability",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "30s",
+  "tags": ["soroban", "smart-contracts", "monitoring", "api"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Contract Calls",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_contract_calls_total[5m])) by (contract)",
+          "legendFormat": "{{contract}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Failure Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_contract_failures_total[5m])) by (contract)",
+          "legendFormat": "{{contract}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Latest Contract Latency",
+      "targets": [
+        {
+          "expr": "max(strellerminds_contract_latency_ms) by (contract)",
+          "legendFormat": "{{contract}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Infrastructure Backlog",
+      "targets": [
+        {
+          "expr": "max(strellerminds_infra_backlog) by (pipeline)",
+          "legendFormat": "{{pipeline}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Ledger Lag",
+      "targets": [
+        {
+          "expr": "max(strellerminds_ledger_lag_seconds)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "RPC Error Budget Burn",
+      "targets": [
+        {
+          "expr": "sum(rate(strellerminds_rpc_failures_total[30m])) / clamp_min(sum(rate(strellerminds_rpc_calls_total[30m])), 1)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "API Average Query Latency vs 100ms Target",
+      "targets": [
+        {
+          "expr": "cert_api_query_average_time_ms",
+          "legendFormat": "avg query time",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(100)",
+          "legendFormat": "target",
+          "refId": "B"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Cache Hit Ratio and Load Reduction",
+      "targets": [
+        {
+          "expr": "cert_api_query_cache_hit_ratio * 100",
+          "legendFormat": "cache hit ratio %",
+          "refId": "A"
+        },
+        {
+          "expr": "cert_api_query_estimated_load_reduction_percent",
+          "legendFormat": "load reduction %",
+          "refId": "B"
+        },
+        {
+          "expr": "vector(40)",
+          "legendFormat": "target",
+          "refId": "C"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Backend Query Volume by Source",
+      "targets": [
+        {
+          "expr": "sum(rate(cert_api_query_duration_seconds_count[5m])) by (source)",
+          "legendFormat": "{{source}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Query Pool Utilization and Cache Entries",
+      "targets": [
+        {
+          "expr": "(cert_api_query_in_flight_backend / clamp_min(cert_api_query_pool_active_size, 1)) * 100",
+          "legendFormat": "pool utilization %",
+          "refId": "A"
+        },
+        {
+          "expr": "cert_api_query_cache_entries",
+          "legendFormat": "cache entries",
+          "refId": "B"
+        },
+        {
+          "expr": "cert_api_query_pool_available_size",
+          "legendFormat": "pool available",
+          "refId": "C"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 }
+    }
+  ]
+}
