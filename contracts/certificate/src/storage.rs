@@ -200,7 +200,9 @@ pub fn add_template_version(env: &Env, template_id: &String, version: &TemplateV
         .get(&CertDataKey::TemplateVersionHistory(template_id.clone()))
         .unwrap_or_else(|| Vec::new(env));
     versions.push_back(version.clone());
-    env.storage().persistent().set(&CertDataKey::TemplateVersionHistory(template_id.clone()), &versions);
+    env.storage()
+        .persistent()
+        .set(&CertDataKey::TemplateVersionHistory(template_id.clone()), &versions);
 }
 
 pub fn get_template_versions(env: &Env, template_id: &String) -> Vec<TemplateVersion> {
@@ -225,7 +227,9 @@ pub fn get_template_version(
 }
 
 pub fn set_latest_template_version(env: &Env, template_id: &String, version: u32) {
-    env.storage().persistent().set(&CertDataKey::LatestTemplateVersion(template_id.clone()), &version);
+    env.storage()
+        .persistent()
+        .set(&CertDataKey::LatestTemplateVersion(template_id.clone()), &version);
 }
 
 pub fn get_latest_template_version(env: &Env, template_id: &String) -> u32 {
