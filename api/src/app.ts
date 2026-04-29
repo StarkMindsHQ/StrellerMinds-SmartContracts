@@ -31,6 +31,7 @@ import performanceRouter from "./routes/performance";
 import slackRouter from "./routes/slack";
 import exportRouter from "./routes/export";
 import cohortsRouter from "./routes/cohorts";
+import employerVerificationRouter from "./routes/employer-verification";
 
 const app = express();
 
@@ -114,6 +115,7 @@ app.use("/api/v1/performance", performanceRouter);
 app.use("/api/v1/slack", slackRouter);
 app.use("/api/v1/export", exportRouter);
 app.use("/api/v1/cohorts", cohortsRouter);
+app.use("/api/v1/employer", employerVerificationRouter);
 
 // ── CSP Violation Reporter ─────────────────────────────────────────────────────
 app.post(
