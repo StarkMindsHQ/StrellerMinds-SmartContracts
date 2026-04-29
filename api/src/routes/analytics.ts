@@ -71,3 +71,25 @@ router.post(
     }
   }
 );
+
+// Serve computed suggestions (read-only, public)
+router.get(
+  "/suggestions",
+  generalLimiter,
+  async (_req: Request, res: Response) => {
+    try {
+      const file = path.join(process.cwd(), "api", "data", "suggestions.json");
+      if (!fs.existsSync(file)) {
+        return res.status(204).json({ success: true, data: {} });
+      }
+
+      const raw = fs.readFileSync(file, "utf8");
+      const suggestions = JSON.parse(raw);
+
+      res.status(200).json({ success: true, data: suggestions });
+    } catch (err) {
+      logger.error("Failed to read suggestions file", { error: err });
+      res.status(500).json({ success: false, error: { code: "SUGGESTIONS_ERROR", message: "Failed to load suggestions" } });
+    }
+  }
+);
