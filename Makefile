@@ -21,7 +21,8 @@ help:
 	@echo ""
 	@echo "Available commands:"
 	@echo ""
-	@echo "  $(GREEN)build$(NC)               - Build all smart contracts"
+	@echo "  $(GREEN)build$(NC)               - Build all smart contracts (Fast mode)"
+	@echo "  $(GREEN)build-prod$(NC)          - Build all smart contracts (Production mode)"
 	@echo "  $(GREEN)test$(NC)                - Run all tests (unit + E2E)"
 	@echo "  $(GREEN)unit-test$(NC)           - Run unit tests only"
 	@echo "  $(GREEN)e2e-test$(NC)            - Run E2E tests (starts localnet)"
@@ -69,10 +70,15 @@ help:
 	@echo "  make localnet-start && make unit-test"
 	@echo ""
 
-# Build contracts
+# Build contracts (Fast/Dev)
 build:
-	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts..."
+	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts (Fast mode)..."
 	./scripts/build.sh
+
+# Build contracts (Production)
+build-prod:
+	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts (Production mode)..."
+	./scripts/build.sh --production
 
 # Run all tests
 test: unit-test e2e-test

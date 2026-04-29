@@ -375,6 +375,10 @@ impl Analytics {
         require_initialized(&env)?;
         session.student.require_auth();
 
+        // Issue #414: validate that start_time is a plausible UTC epoch second so
+        // that achievement earned_date and streak calculations are timezone-safe.
+        validate_utc_timestamp(session.start_time).map_err(|_| AnalyticsError::InvalidTimestamp)?;
+
         if AnalyticsStorage::has_session(&env, &session.session_id) {
             return Err(AnalyticsError::SessionAlreadyExists);
         }

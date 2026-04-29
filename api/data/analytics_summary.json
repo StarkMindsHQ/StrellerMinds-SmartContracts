@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-04-29T00:05:53.371Z",
+  "stats": {
+    "popular": [
+      {
+        "query": "rust tutorial",
+        "count": 2
+      },
+      {
+        "query": "blockchain basics",
+        "count": 1
+      },
+      {
+        "query": "smart contracts",
+        "count": 1
+      }
+    ],
+    "zeroTop": [
+      {
+        "query": "blockchain basics",
+        "count": 1
+      }
+    ],
+    "lowCtr": [],
+    "suggestions": {
+      "rust tutorial": [
+        "course_123"
+      ],
+      "smart contracts": [
+        "course_999"
+      ]
+    },
+    "ab": {
+      "suggest_v1": {
+        "control": {
+          "searches": 1,
+          "clicks": 0,
+          "ctr": 0
+        },
+        "treatment": {
+          "searches": 1,
+          "clicks": 1,
+          "ctr": 1
+        }
+      }
+    }
+  }
+}
