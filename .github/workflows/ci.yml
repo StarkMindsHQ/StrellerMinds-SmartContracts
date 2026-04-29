@@ -145,6 +145,8 @@ jobs:
   security-tests:
     name: Security Tests
     runs-on: ubuntu-latest
+    env:
+      DEMO_API_KEY: emp_demo_key_enterprise
     services:
       redis:
         image: redis:7-alpine

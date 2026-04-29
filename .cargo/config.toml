@@ -8,4 +8,6 @@ linker = "clang"
 linker = "clang"
 
 [build]
-target = "x86_64-pc-windows-gnu"
+# Use the Linux host target by default so CI (Linux runners) can build/tests.
+# Change this if you intentionally need a Windows cross-target here.
+target = "x86_64-unknown-linux-gnu"
