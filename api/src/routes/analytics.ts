@@ -93,3 +93,25 @@ router.get(
     }
   }
 );
+
+// Serve computed analytics summary (popular queries, zero-results, A/B metrics)
+router.get(
+  "/summary",
+  generalLimiter,
+  async (_req: Request, res: Response) => {
+    try {
+      const file = path.join(process.cwd(), "api", "data", "analytics_summary.json");
+      if (!fs.existsSync(file)) {
+        return res.status(204).json({ success: true, data: {} });
+      }
+
+      const raw = fs.readFileSync(file, "utf8");
+      const summary = JSON.parse(raw);
+
+      res.status(200).json({ success: true, data: summary });
+    } catch (err) {
+      logger.error("Failed to read analytics summary file", { error: err });
+      res.status(500).json({ success: false, error: { code: "SUMMARY_ERROR", message: "Failed to load analytics summary" } });
+    }
+  }
+);
