@@ -78,8 +78,35 @@ export const PreviewTemplateSchema = z.object({
     .catchall(z.string().optional()),
 });
 
+export const AttachmentSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(1),
+  contentType: z.enum(["text", "image"]).default("text"),
+});
+
+export const GeneratePdfSchema = z.object({
+  data: z
+    .object({
+      recipientName: z.string().optional(),
+      courseName: z.string().optional(),
+      completionDate: z.string().optional(),
+      instructorName: z.string().optional(),
+    })
+    .catchall(z.string().optional())
+    .default({}),
+  attachments: z.array(AttachmentSchema).optional().default([]),
+  /**
+   * Number of attachment pages rendered per event-loop tick.
+   * Increase for faster generation on powerful servers; decrease to keep
+   * the server more responsive under concurrent load.
+   * Default: 10.  Max: 50.
+   */
+  chunkSize: z.coerce.number().min(1).max(50).optional().default(10),
+});
+
 export type CreateTemplateDto = z.infer<typeof CreateTemplateSchema>;
 export type UpdateTemplateDto = z.infer<typeof UpdateTemplateSchema>;
 export type QueryTemplatesDto = z.infer<typeof QueryTemplatesSchema>;
 export type GenerateQrCodeDto = z.infer<typeof GenerateQrCodeSchema>;
 export type PreviewTemplateDto = z.infer<typeof PreviewTemplateSchema>;
+export type GeneratePdfDto = z.infer<typeof GeneratePdfSchema>;
