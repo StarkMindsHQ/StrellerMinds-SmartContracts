@@ -52,6 +52,14 @@ export const config = {
       enterprise: { rpm: integerEnv("RATE_LIMIT_ENT_RPM", 600, 1), burst: integerEnv("RATE_LIMIT_ENT_BURST", 100, 1) },
       internal:   { rpm: integerEnv("RATE_LIMIT_INTERNAL_RPM", 6000, 1), burst: integerEnv("RATE_LIMIT_INTERNAL_BURST", 500, 1) },
     },
+    // GraphQL-specific limits
+    graphql: {
+      maxComplexity: integerEnv("GRAPHQL_MAX_COMPLEXITY", 100, 1),
+      maxDepth: integerEnv("GRAPHQL_MAX_DEPTH", 7, 1),
+      maxFieldOccurrences: integerEnv("GRAPHQL_MAX_FIELD_OCCURRENCES", 10, 1),
+      requestsPerMinute: integerEnv("GRAPHQL_RATE_LIMIT_RPM", 60, 1),
+      burstLimit: integerEnv("GRAPHQL_RATE_LIMIT_BURST", 15, 1),
+    },
   },
 
   cdn: {
