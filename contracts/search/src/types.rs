@@ -774,6 +774,8 @@ pub enum DataKey {
     UserInteractions(Address),
     /// Oracle authorized addresses
     AuthorizedOracles(Address), // Oracle address
+    /// Catalog of content IDs with stored analysis
+    ContentCatalog,
 }
 
 // ============================================================================

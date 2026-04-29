@@ -1,3 +1,4 @@
+use crate::content_analyzer::ContentAnalyzer;
 use crate::types::*;
 use soroban_sdk::{Address, Env, Map, String, Vec};
 
@@ -8,17 +9,18 @@ pub struct RecommendationEngine;
 impl RecommendationEngine {
     /// Generate personalized recommendations for a user
     pub fn generate_recommendations(env: &Env, user: Address, limit: u32) -> Vec<Recommendation> {
-        let recommendations = Vec::new(env);
+        let mut recommendations = Vec::new(env);
+        let current_time = env.ledger().timestamp();
 
-        // Check for cached recommendations first
+        // Check for cached oracle recommendations first. Oracle scores can use
+        // heavier ML models, while the on-chain fallback below keeps the
+        // feature useful and auditable when no fresh oracle output exists.
         if let Some(cached) = Self::get_cached_recommendations(env, &user) {
-            // Return cached if not expired
-            let current_time = env.ledger().timestamp();
             let mut valid_recs = Vec::new(env);
 
             for i in 0..cached.len() {
                 if let Some(rec) = cached.get(i) {
-                    if rec.expires_at > current_time {
+                    if rec.expires_at > current_time && rec.confidence >= 15 {
                         valid_recs.push_back(rec);
                         if valid_recs.len() >= limit {
                             break;
@@ -32,7 +34,37 @@ impl RecommendationEngine {
             }
         }
 
-        // No valid cache, return empty (oracle will compute)
+        let Some(profile) = Self::get_user_profile(env, user.clone()) else {
+            return Self::get_beginner_recommendations(env, limit);
+        };
+
+        let catalog = ContentAnalyzer::get_content_catalog(env);
+        for i in 0..catalog.len() {
+            if let Some(content_id) = catalog.get(i) {
+                if profile.completed_courses.contains(&content_id) {
+                    continue;
+                }
+
+                if let Some(analysis) = ContentAnalyzer::get_analysis(env, content_id.clone()) {
+                    let score = Self::calculate_content_score(&profile, &analysis);
+                    let confidence = Self::calculate_confidence(&profile, &analysis);
+                    let reason = Self::recommendation_reason(env, &profile, &analysis);
+
+                    let rec = Recommendation {
+                        content_id: content_id.clone(),
+                        content_type: String::from_str(env, "course"),
+                        score,
+                        reason,
+                        confidence,
+                        computed_at: current_time,
+                        expires_at: current_time + 86_400,
+                    };
+
+                    Self::insert_ranked(env, &mut recommendations, rec, limit);
+                }
+            }
+        }
+
         recommendations
     }
 
@@ -66,6 +98,8 @@ impl RecommendationEngine {
             profile.completed_courses.push_back(course_id.clone());
         }
 
+        Self::apply_learning_signal(env, &mut profile, &course_id, completed);
+
         // Update timestamp
         profile.last_updated = env.ledger().timestamp();
 
@@ -85,48 +119,213 @@ impl RecommendationEngine {
 
     /// Calculate recommendation score for content (on-chain heuristic)
     pub fn calculate_recommendation_score(env: &Env, user: &Address, content_id: &String) -> u32 {
-        let mut score = 500u32; // Base score
-
-        // Get user profile
         if let Some(profile) = Self::get_user_profile(env, user.clone()) {
-            // Boost if related to completed courses
-            let completion_boost = Self::calculate_completion_boost(&profile, content_id);
-            score += completion_boost;
-
-            // Boost based on skill gaps
-            let skill_gap_boost = Self::calculate_skill_gap_boost(&profile, content_id);
-            score += skill_gap_boost;
-
-            // Category preference boost
-            let category_boost = Self::calculate_category_boost(&profile, content_id);
-            score += category_boost;
+            if let Some(analysis) = ContentAnalyzer::get_analysis(env, content_id.clone()) {
+                return Self::calculate_content_score(&profile, &analysis);
+            }
         }
 
-        score.min(1000) // Cap at 1000
+        500
     }
 
-    /// Calculate boost based on completed courses
-    fn calculate_completion_boost(profile: &UserProfile, _content_id: &String) -> u32 {
-        // Check if this is a natural progression
-        // Simple heuristic: return fixed boost if user has completions
-        if !profile.completed_courses.is_empty() {
-            100
+    fn calculate_content_score(profile: &UserProfile, analysis: &ContentAnalysis) -> u32 {
+        let skill_gap_score = Self::calculate_skill_gap_boost(profile, &analysis.identified_skills);
+        let category_score = Self::calculate_category_boost(profile, &analysis.extracted_topics);
+        let difficulty_score = Self::calculate_difficulty_fit(profile, analysis.difficulty_score);
+        let quality_score = analysis.quality_score.saturating_mul(2);
+
+        ((skill_gap_score * 35)
+            + (category_score * 20)
+            + (difficulty_score * 25)
+            + (quality_score * 20))
+            / 100
+    }
+
+    fn calculate_confidence(profile: &UserProfile, analysis: &ContentAnalysis) -> u32 {
+        let history_depth = (profile.completed_courses.len() * 8).min(35);
+        let skill_depth = (profile.skill_levels.len() * 5).min(25);
+        let content_depth = if analysis.identified_skills.is_empty() { 15 } else { 30 };
+
+        (30 + history_depth + skill_depth + content_depth).min(100)
+    }
+
+    fn recommendation_reason(
+        env: &Env,
+        profile: &UserProfile,
+        analysis: &ContentAnalysis,
+    ) -> String {
+        let gap_score = Self::calculate_skill_gap_boost(profile, &analysis.identified_skills);
+        let difficulty_score = Self::calculate_difficulty_fit(profile, analysis.difficulty_score);
+
+        if gap_score >= 700 {
+            String::from_str(env, "fills-skill-gap")
+        } else if difficulty_score >= 750 {
+            String::from_str(env, "matches-current-level")
+        } else if analysis.quality_score >= 85 {
+            String::from_str(env, "high-quality-course")
         } else {
-            50 // Beginner boost
+            String::from_str(env, "personalized-fit")
         }
     }
 
     /// Calculate boost based on skill gaps
-    fn calculate_skill_gap_boost(_profile: &UserProfile, _content_id: &String) -> u32 {
-        // Analyze which skills user needs
-        // Return boost if content fills gap
-        150 // Simplified for now
+    fn calculate_skill_gap_boost(profile: &UserProfile, skills: &Vec<Skill>) -> u32 {
+        if skills.is_empty() {
+            return 450;
+        }
+
+        let mut total = 0u32;
+        let mut weight = 0u32;
+
+        for i in 0..skills.len() {
+            if let Some(skill) = skills.get(i) {
+                let current_level =
+                    profile.skill_levels.get(skill.skill_name.clone()).unwrap_or(0);
+                let gap = skill.required_level.saturating_sub(current_level);
+                let progress_room = 100u32.saturating_sub(current_level);
+                let importance = skill.importance.max(1);
+                total += (gap + progress_room / 2).min(100) * importance;
+                weight += importance;
+            }
+        }
+
+        if weight == 0 {
+            450
+        } else {
+            total
+                .checked_mul(10)
+                .and_then(|value| value.checked_div(weight))
+                .unwrap_or(450)
+                .min(1000)
+        }
     }
 
     /// Calculate boost based on category preferences
-    fn calculate_category_boost(_profile: &UserProfile, _content_id: &String) -> u32 {
-        // Check interaction history with categories
-        100 // Simplified for now
+    fn calculate_category_boost(profile: &UserProfile, topics: &Vec<Topic>) -> u32 {
+        if topics.is_empty() {
+            return 500;
+        }
+
+        let mut best = 0u32;
+        for i in 0..topics.len() {
+            if let Some(topic) = topics.get(i) {
+                let interactions =
+                    profile.interaction_counts.get(topic.category.clone()).unwrap_or(0);
+                let score =
+                    (500 + interactions.saturating_mul(75) + topic.relevance_score / 4).min(1000);
+                if score > best {
+                    best = score;
+                }
+            }
+        }
+
+        best
+    }
+
+    fn calculate_difficulty_fit(profile: &UserProfile, difficulty_score: u32) -> u32 {
+        let mut total_level = 0u32;
+        let mut skill_count = 0u32;
+
+        let keys = profile.skill_levels.keys();
+        for i in 0..keys.len() {
+            if let Some(skill) = keys.get(i) {
+                total_level += profile.skill_levels.get(skill).unwrap_or(0);
+                skill_count += 1;
+            }
+        }
+
+        let avg_level = if skill_count > 0 {
+            total_level.checked_div(skill_count).unwrap_or(50)
+        } else if profile.completed_courses.is_empty() {
+            25
+        } else {
+            50
+        };
+
+        let target = (avg_level + 15).min(100);
+        let diff = target.abs_diff(difficulty_score.min(100));
+        1000u32.saturating_sub(diff.saturating_mul(12)).max(100)
+    }
+
+    fn apply_learning_signal(
+        env: &Env,
+        profile: &mut UserProfile,
+        course_id: &String,
+        completed: bool,
+    ) {
+        if let Some(analysis) = ContentAnalyzer::get_analysis(env, course_id.clone()) {
+            let skill_delta = if completed { 18 } else { 6 };
+            for i in 0..analysis.identified_skills.len() {
+                if let Some(skill) = analysis.identified_skills.get(i) {
+                    let current = profile.skill_levels.get(skill.skill_name.clone()).unwrap_or(0);
+                    let gain = (skill_delta * skill.importance.max(1))
+                        .checked_div(100)
+                        .unwrap_or(1)
+                        .max(1);
+                    let next = (current + gain).min(100).max(skill.required_level.min(100) / 2);
+                    profile.skill_levels.set(skill.skill_name, next);
+                }
+            }
+
+            for i in 0..analysis.extracted_topics.len() {
+                if let Some(topic) = analysis.extracted_topics.get(i) {
+                    let current =
+                        profile.interaction_counts.get(topic.category.clone()).unwrap_or(0);
+                    profile.interaction_counts.set(topic.category, current + 1);
+                }
+            }
+        }
+    }
+
+    fn get_beginner_recommendations(env: &Env, limit: u32) -> Vec<Recommendation> {
+        let mut recommendations = Vec::new(env);
+        let now = env.ledger().timestamp();
+        let catalog = ContentAnalyzer::get_content_catalog(env);
+
+        for i in 0..catalog.len() {
+            if let Some(content_id) = catalog.get(i) {
+                if let Some(analysis) = ContentAnalyzer::get_analysis(env, content_id.clone()) {
+                    let difficulty_fit =
+                        1000u32.saturating_sub(analysis.difficulty_score.saturating_mul(8));
+                    let score = ((difficulty_fit * 50) + (analysis.quality_score * 20 * 50)) / 100;
+                    let rec = Recommendation {
+                        content_id,
+                        content_type: String::from_str(env, "course"),
+                        score: score.min(1000),
+                        reason: String::from_str(env, "beginner-friendly"),
+                        confidence: 45,
+                        computed_at: now,
+                        expires_at: now + 86_400,
+                    };
+                    Self::insert_ranked(env, &mut recommendations, rec, limit);
+                }
+            }
+        }
+
+        recommendations
+    }
+
+    fn insert_ranked(
+        _env: &Env,
+        recommendations: &mut Vec<Recommendation>,
+        rec: Recommendation,
+        limit: u32,
+    ) {
+        let mut insert_at = recommendations.len();
+
+        for i in 0..recommendations.len() {
+            if let Some(existing) = recommendations.get(i) {
+                if rec.score > existing.score {
+                    insert_at = i;
+                    break;
+                }
+            }
+        }
+
+        recommendations.insert(insert_at, rec);
+        if recommendations.len() > limit {
+            recommendations.remove(limit);
+        }
     }
 
     /// Find users with similar learning patterns (for collaborative filtering)
@@ -137,26 +336,17 @@ impl RecommendationEngine {
     }
 
     /// Predict course completion likelihood
-    pub fn predict_completion_likelihood(env: &Env, user: Address, _course_id: String) -> u32 {
-        // Get user profile
+    pub fn predict_completion_likelihood(env: &Env, user: Address, course_id: String) -> u32 {
         if let Some(profile) = Self::get_user_profile(env, user) {
-            // Calculate likelihood based on profile
-            let base_likelihood = 50u32; // 50%
+            let history_score = if profile.completed_courses.is_empty() { 45 } else { 70 };
 
-            // Boost if user has high completion rate
-            let completion_rate = if !profile.completed_courses.is_empty() {
-                // Would calculate actual rate
-                70
+            if let Some(analysis) = ContentAnalyzer::get_analysis(env, course_id) {
+                let fit = Self::calculate_difficulty_fit(&profile, analysis.difficulty_score) / 10;
+                let confidence = Self::calculate_confidence(&profile, &analysis);
+                ((history_score + fit + confidence) / 3).min(100)
             } else {
-                40
-            };
-
-            // Adjust based on course difficulty vs user skill level
-            let difficulty_match = 60; // Simplified
-
-            // Combine factors
-            let likelihood = (base_likelihood + completion_rate + difficulty_match) / 3;
-            likelihood.min(100)
+                history_score
+            }
         } else {
             50 // Default 50% for new users
         }
