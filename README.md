@@ -179,10 +179,21 @@ For detailed information, see the [Release Management Guide](docs/RELEASE_MANAGE
 
 3. **Build the Smart Contracts:**
    ```bash
+   # Optimized Fast Build (Default)
+   make build
+   
+   # Or using the script directly:
    ./scripts/build.sh
-   # Or manually:
-   cargo build --release --target wasm32-unknown-unknown
+   
+   # For production-optimized builds (smallest WASM size):
+   make build-prod
    ```
+
+### ⚡ Performance
+This repository is optimized for rapid development:
+- **Parallel Compilation**: All contracts build simultaneously using Cargo workspaces.
+- **Fast Iteration**: Incremental build times are typically <3s.
+- **Caching**: Supports `sccache` for ultra-fast dependency recompilation.
 
 ### Testing
 

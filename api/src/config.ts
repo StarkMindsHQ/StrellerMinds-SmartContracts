@@ -33,7 +33,9 @@ export const config = {
     networkPassphrase:
       process.env.STELLAR_NETWORK_PASSPHRASE ??
       "Test SDF Network ; September 2015",
-    contractId: process.env.CERTIFICATE_CONTRACT_ID ?? "",
+    contractId:
+      process.env.CERTIFICATE_CONTRACT_ID ??
+      "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
   },
 
   jwt: {
@@ -51,6 +53,14 @@ export const config = {
       pro:        { rpm: integerEnv("RATE_LIMIT_PRO_RPM", 120, 1), burst: integerEnv("RATE_LIMIT_PRO_BURST", 30, 1) },
       enterprise: { rpm: integerEnv("RATE_LIMIT_ENT_RPM", 600, 1), burst: integerEnv("RATE_LIMIT_ENT_BURST", 100, 1) },
       internal:   { rpm: integerEnv("RATE_LIMIT_INTERNAL_RPM", 6000, 1), burst: integerEnv("RATE_LIMIT_INTERNAL_BURST", 500, 1) },
+    },
+    // GraphQL-specific limits
+    graphql: {
+      maxComplexity: integerEnv("GRAPHQL_MAX_COMPLEXITY", 100, 1),
+      maxDepth: integerEnv("GRAPHQL_MAX_DEPTH", 7, 1),
+      maxFieldOccurrences: integerEnv("GRAPHQL_MAX_FIELD_OCCURRENCES", 10, 1),
+      requestsPerMinute: integerEnv("GRAPHQL_RATE_LIMIT_RPM", 60, 1),
+      burstLimit: integerEnv("GRAPHQL_RATE_LIMIT_BURST", 15, 1),
     },
   },
 
@@ -95,6 +105,7 @@ export const config = {
   },
 
   redis: {
+    enabled: (process.env.REDIS_ENABLED ?? "true") !== "false",
     url: process.env.REDIS_URL ?? "redis://localhost:6379",
     ttl: {
       certificate: integerEnv("REDIS_TTL_CERTIFICATE", 3600, 60), // 1 hour
@@ -104,6 +115,13 @@ export const config = {
       cohort: integerEnv("REDIS_TTL_COHORT", 1800, 60), // 30 minutes
       leaderboard: integerEnv("REDIS_TTL_LEADERBOARD", 300, 60), // 5 minutes
     },
+  },
+
+  analytics: {
+    enabled: (process.env.GA4_ENABLED ?? "false") === "true",
+    ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? "",
+    ga4ApiSecret: process.env.GA4_API_SECRET ?? "",
+    debug: (process.env.GA4_DEBUG ?? "false") === "true",
   },
 
   database: {

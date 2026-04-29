@@ -21,7 +21,8 @@ help:
 	@echo ""
 	@echo "Available commands:"
 	@echo ""
-	@echo "  $(GREEN)build$(NC)               - Build all smart contracts"
+	@echo "  $(GREEN)build$(NC)               - Build all smart contracts (Fast mode)"
+	@echo "  $(GREEN)build-prod$(NC)          - Build all smart contracts (Production mode)"
 	@echo "  $(GREEN)test$(NC)                - Run all tests (unit + E2E)"
 	@echo "  $(GREEN)unit-test$(NC)           - Run unit tests only"
 	@echo "  $(GREEN)e2e-test$(NC)            - Run E2E tests (starts localnet)"
@@ -59,6 +60,7 @@ help:
 	@echo "  $(RED)perf-baseline$(NC)       - Save performance baseline"
 	@echo "  $(RED)load-test$(NC)           - Run configurable contract load tests and write reports"
 	@echo "  $(RED)load-test-ci$(NC)        - Run bounded load tests with CI-safe defaults"
+	@echo "  $(RED)compliance-report$(NC)  - Generate automated compliance report"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make e2e-test              # Full E2E test cycle"
@@ -68,10 +70,15 @@ help:
 	@echo "  make localnet-start && make unit-test"
 	@echo ""
 
-# Build contracts
+# Build contracts (Fast/Dev)
 build:
-	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts..."
+	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts (Fast mode)..."
 	./scripts/build.sh
+
+# Build contracts (Production)
+build-prod:
+	@echo "$(GREEN)[BUILD]$(NC) Building smart contracts (Production mode)..."
+	./scripts/build.sh --production
 
 # Run all tests
 test: unit-test e2e-test
@@ -436,3 +443,13 @@ coverage-dashboard: test-coverage-comprehensive
 	chmod +x ./scripts/coverage-dashboard.sh
 	./scripts/coverage-dashboard.sh
 	@echo "$(GREEN)[COVERAGE]$(NC) Dashboard generated: target/coverage-dashboard/index.html"
+
+# ─────────────────────────────────────────────────────────────
+# Compliance Reporting
+# ─────────────────────────────────────────────────────────────
+
+# Generate automated compliance report
+compliance-report:
+	@echo "$(RED)[COMPLIANCE]$(NC) Generating compliance report..."
+	chmod +x ./scripts/generate_compliance_report.sh
+	./scripts/generate_compliance_report.sh
