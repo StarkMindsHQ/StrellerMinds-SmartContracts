@@ -2195,3 +2195,33 @@ pub struct PwaMetrics {
     /// Number of users with an active push subscription.
     pub active_push_subscribers: u32,
 }
+
+// ============================================================================
+// Memory Optimization & Pagination Types (Issue #421)
+// ============================================================================
+
+/// Parameters for requesting data in chunks to prevent memory exhaustion.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PaginationParams {
+    /// The cursor from which to start fetching (usually an ID or timestamp).
+    pub cursor: Option<String>,
+    /// Maximum number of items to return in this chunk.
+    pub limit: u32,
+    /// Whether to return results in descending order.
+    pub descending: bool,
+}
+
+/// A paginated wrapper for large datasets.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PaginatedResult<T> {
+    /// The chunk of items for the current page.
+    pub items: Vec<T>,
+    /// Cursor to use for fetching the next page.
+    pub next_cursor: Option<String>,
+    /// Total number of items across all pages (if available).
+    pub total_count: u64,
+    /// Estimated bytes consumed by this chunk in memory.
+    pub chunk_size_bytes: u64,
+}
