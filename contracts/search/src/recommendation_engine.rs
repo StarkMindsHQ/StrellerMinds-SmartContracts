@@ -212,7 +212,7 @@ impl RecommendationEngine {
                 let interactions =
                     profile.interaction_counts.get(topic.category.clone()).unwrap_or(0);
                 let score =
-                    (500 + interactions.saturating_mul(75) + topic.relevance_score / 4).min(1000);
+                    (350 + interactions.saturating_mul(200) + topic.relevance_score / 4).min(1000);
                 if score > best {
                     best = score;
                 }

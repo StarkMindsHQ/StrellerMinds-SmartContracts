@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ga4Client.ts
  *

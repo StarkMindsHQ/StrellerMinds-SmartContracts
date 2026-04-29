@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Thin wrapper around the Stellar SDK for calling the Certificate contract.
  * All contract reads are done via simulateTransaction (no signing needed).

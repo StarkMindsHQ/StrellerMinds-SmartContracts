@@ -13,4 +13,6 @@ ignore = [
     "RUSTSEC-2025-0134",
     # time: DoS via stack exhaustion — transitive dep via serde_with, pinned by soroban-sdk 22.0.0
     "RUSTSEC-2026-0009",
+    # libcrux-poly1305: CVSS 4.0 parsing issue in advisory tooling; tracked upstream
+    "RUSTSEC-2026-0073",
 ]
