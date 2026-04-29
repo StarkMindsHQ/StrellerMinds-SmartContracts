@@ -59,6 +59,7 @@ help:
 	@echo "  $(RED)perf-baseline$(NC)       - Save performance baseline"
 	@echo "  $(RED)load-test$(NC)           - Run configurable contract load tests and write reports"
 	@echo "  $(RED)load-test-ci$(NC)        - Run bounded load tests with CI-safe defaults"
+	@echo "  $(RED)compliance-report$(NC)  - Generate automated compliance report"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make e2e-test              # Full E2E test cycle"
@@ -436,3 +437,13 @@ coverage-dashboard: test-coverage-comprehensive
 	chmod +x ./scripts/coverage-dashboard.sh
 	./scripts/coverage-dashboard.sh
 	@echo "$(GREEN)[COVERAGE]$(NC) Dashboard generated: target/coverage-dashboard/index.html"
+
+# ─────────────────────────────────────────────────────────────
+# Compliance Reporting
+# ─────────────────────────────────────────────────────────────
+
+# Generate automated compliance report
+compliance-report:
+	@echo "$(RED)[COMPLIANCE]$(NC) Generating compliance report..."
+	chmod +x ./scripts/generate_compliance_report.sh
+	./scripts/generate_compliance_report.sh
