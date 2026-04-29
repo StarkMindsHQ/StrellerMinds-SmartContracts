@@ -33,7 +33,9 @@ export const config = {
     networkPassphrase:
       process.env.STELLAR_NETWORK_PASSPHRASE ??
       "Test SDF Network ; September 2015",
-    contractId: process.env.CERTIFICATE_CONTRACT_ID ?? "",
+    contractId:
+      process.env.CERTIFICATE_CONTRACT_ID ??
+      "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
   },
 
   jwt: {
@@ -103,6 +105,7 @@ export const config = {
   },
 
   redis: {
+    enabled: (process.env.REDIS_ENABLED ?? "true") !== "false",
     url: process.env.REDIS_URL ?? "redis://localhost:6379",
     ttl: {
       certificate: integerEnv("REDIS_TTL_CERTIFICATE", 3600, 60), // 1 hour
@@ -112,6 +115,13 @@ export const config = {
       cohort: integerEnv("REDIS_TTL_COHORT", 1800, 60), // 30 minutes
       leaderboard: integerEnv("REDIS_TTL_LEADERBOARD", 300, 60), // 5 minutes
     },
+  },
+
+  analytics: {
+    enabled: (process.env.GA4_ENABLED ?? "false") === "true",
+    ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? "",
+    ga4ApiSecret: process.env.GA4_API_SECRET ?? "",
+    debug: (process.env.GA4_DEBUG ?? "false") === "true",
   },
 
   database: {

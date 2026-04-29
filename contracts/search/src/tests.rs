@@ -1,5 +1,5 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, Env};
+use soroban_sdk::{testutils::Address as _, Address, Env, Map};
 
 fn create_test_env() -> (Env, Address, Address) {
     let env = Env::default();
@@ -9,6 +9,39 @@ fn create_test_env() -> (Env, Address, Address) {
     let contract_id = env.register(AdvancedSearchContract, ());
 
     (env, admin, contract_id)
+}
+
+fn course_analysis(
+    env: &Env,
+    content_id: &str,
+    category: &str,
+    skill_name: &str,
+    difficulty: u32,
+) -> ContentAnalysis {
+    ContentAnalysis {
+        content_id: String::from_str(env, content_id),
+        auto_generated_tags: Vec::from_array(env, [String::from_str(env, skill_name)]),
+        extracted_topics: Vec::from_array(env, [Topic {
+            name: String::from_str(env, skill_name),
+            relevance_score: 900,
+            category: String::from_str(env, category),
+        }]),
+        identified_skills: Vec::from_array(env, [Skill {
+            skill_name: String::from_str(env, skill_name),
+            required_level: difficulty,
+            importance: 90,
+        }]),
+        difficulty_score: difficulty,
+        quality_score: 90,
+        readability_score: 85,
+        estimated_duration: 120,
+        prerequisite_skills: Vec::new(env),
+        learning_outcomes: Vec::from_array(
+            env,
+            [String::from_str(env, "Build production skills")],
+        ),
+        analysis_timestamp: env.ledger().timestamp(),
+    }
 }
 
 #[test]
@@ -154,4 +187,83 @@ fn test_semantic_search_with_filters() {
     filters.is_featured = MaybeBool::Some(false);
     let results2 = client.semantic_search(&query, &None, &filters);
     assert_eq!(results2.len(), 0);
+}
+
+#[test]
+fn test_recommendations_use_learning_history_and_skill_gaps() {
+    let (env, admin, contract_id) = create_test_env();
+    let client = AdvancedSearchContractClient::new(&env, &contract_id);
+    client.initialize(&admin);
+
+    let oracle = Address::generate(&env);
+    client.authorize_oracle(&admin, &oracle);
+
+    let completed_course = String::from_str(&env, "rust_foundations");
+    let next_course = String::from_str(&env, "rust_smart_contracts");
+    let unrelated_course = String::from_str(&env, "design_basics");
+
+    client.store_content_analysis(
+        &oracle,
+        &completed_course,
+        &course_analysis(&env, "rust_foundations", "blockchain", "rust", 25),
+    );
+    client.store_content_analysis(
+        &oracle,
+        &next_course,
+        &course_analysis(&env, "rust_smart_contracts", "blockchain", "soroban", 45),
+    );
+    client.store_content_analysis(
+        &oracle,
+        &unrelated_course,
+        &course_analysis(&env, "design_basics", "design", "figma", 25),
+    );
+
+    let user = Address::generate(&env);
+    client.update_user_profile(&user, &completed_course, &true);
+
+    let recommendations = client.get_recommendations(&user, &3);
+
+    assert_eq!(recommendations.len(), 2);
+    assert_eq!(recommendations.get(0).unwrap().content_id, next_course);
+    assert!(recommendations.get(0).unwrap().score >= recommendations.get(1).unwrap().score);
+    assert_ne!(recommendations.get(0).unwrap().reason, String::from_str(&env, ""));
+}
+
+#[test]
+fn test_success_rate_responds_to_course_fit() {
+    let (env, admin, contract_id) = create_test_env();
+    let client = AdvancedSearchContractClient::new(&env, &contract_id);
+    client.initialize(&admin);
+
+    let oracle = Address::generate(&env);
+    client.authorize_oracle(&admin, &oracle);
+
+    let foundation = String::from_str(&env, "foundation");
+    let matched = String::from_str(&env, "matched");
+    let advanced = String::from_str(&env, "advanced");
+
+    client.store_content_analysis(
+        &oracle,
+        &foundation,
+        &course_analysis(&env, "foundation", "blockchain", "rust", 20),
+    );
+    client.store_content_analysis(
+        &oracle,
+        &matched,
+        &course_analysis(&env, "matched", "blockchain", "soroban", 40),
+    );
+    client.store_content_analysis(
+        &oracle,
+        &advanced,
+        &course_analysis(&env, "advanced", "blockchain", "zk", 95),
+    );
+
+    let user = Address::generate(&env);
+    client.update_user_profile(&user, &foundation, &true);
+
+    let matched_rate = client.predict_success_rate(&user, &matched);
+    let advanced_rate = client.predict_success_rate(&user, &advanced);
+
+    assert!(matched_rate > advanced_rate);
+    assert!(matched_rate <= 100);
 }
