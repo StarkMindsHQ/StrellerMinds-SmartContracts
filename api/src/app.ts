@@ -10,6 +10,7 @@ import { analyticsConsent } from "./middleware/analyticsConsent";
 import { cdnMiddleware } from "./middleware/cdn";
 import { securityHeadersValidator } from "./middleware/securityHeaders";
 import { i18nMiddleware } from "./middleware/i18n";
+import { validateCsrfToken, generateCsrfToken } from "./middleware/csrf";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
 import { preloadLocales } from "./i18n";
@@ -76,6 +77,16 @@ app.use(cdnMiddleware);
 
 // ── i18n: language detection ──────────────────────────────────────────────────
 app.use(i18nMiddleware);
+
+// ── CSRF Protection ───────────────────────────────────────────────────────────
+// Generate CSRF token for all requests
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  generateCsrfToken(req, res);
+  next();
+});
+
+// Validate CSRF token on state-changing requests
+app.use(validateCsrfToken);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
