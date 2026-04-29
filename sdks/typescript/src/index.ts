@@ -28,3 +28,4 @@ export class AnalyticsClient {
 }
 
 export * from './types';
+export * from './analyticsClient';

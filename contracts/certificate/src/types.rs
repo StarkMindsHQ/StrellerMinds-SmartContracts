@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Map, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Certificate Priority Levels
@@ -162,6 +162,8 @@ pub enum CertificateStatus {
     Suspended,
     /// Certificate was revoked and then reissued as a new version.
     Reissued,
+    /// Certificate has been flagged as non-compliant by an auditor.
+    NonCompliant,
 }
 
 /// An on-chain record of an issued certificate.
@@ -219,6 +221,9 @@ pub struct CertificateTemplate {
     pub created_at: u64,
     /// Whether the template is available for use.
     pub is_active: bool,
+    pub version: u32,
+    pub parent_version: Option<u32>,
+    pub changelog: String,
 }
 
 /// A single field definition within a certificate template.
@@ -288,6 +293,33 @@ pub struct BatchResult {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Batch Operation Progress Tracking
+// ─────────────────────────────────────────────────────────────
+/// Types of batch operations that can be tracked.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BatchOperationType {
+    Issue,
+    Revoke,
+    Verify,
+}
+
+/// Progress tracking record for long-running or chunked batch operations.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BatchProgress {
+    pub job_id: BytesN<32>,
+    pub operation_type: BatchOperationType,
+    pub total_items: u32,
+    pub processed_items: u32,
+    pub successful_items: u32,
+    pub failed_items: u32,
+    pub is_completed: bool,
+    pub started_at: u64,
+    pub updated_at: u64,
+}
+
+// ─────────────────────────────────────────────────────────────
 // Certificate Analytics
 // ─────────────────────────────────────────────────────────────
 /// Aggregate analytics counters for the certificate contract.
@@ -312,6 +344,8 @@ pub struct CertificateAnalytics {
     pub pending_requests: u32,
     /// Rolling average time (seconds) from request creation to execution.
     pub avg_approval_time: u64,
+    /// Total number of compliance violations detected.
+    pub compliance_violations_count: u32,
     /// Unix timestamp (seconds) when these analytics were last updated.
     pub last_updated: u64,
 }
@@ -401,6 +435,8 @@ pub enum AuditAction {
     ComplianceChecked,
     /// A new certificate template was created.
     TemplateCreated,
+    /// An existing certificate template was updated.
+    TemplateUpdated,
     /// The multi-sig configuration for a course was updated.
     ConfigUpdated,
     /// The certificate passed its expiry date.
@@ -421,6 +457,79 @@ pub struct MultiSigAuditEntry {
     pub timestamp: u64,
     /// Human-readable details about the action.
     pub details: String,
+}
+
+// ─────────────────────────────────────────────────────────────
+// Template Version History
+// ─────────────────────────────────────────────────────────────
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TemplateVersion {
+    pub template_id: String,
+    pub version: u32,
+    pub created_at: u64,
+    pub created_by: Address,
+    pub fields: Vec<TemplateField>,
+    pub changelog: String,
+    pub is_rollback_target: bool,
+}
+
+// Certificate Recovery
+// ─────────────────────────────────────────────────────────────
+/// Status of a certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum RecoveryStatus {
+    /// Recovery request is pending verification.
+    Pending,
+    /// Recovery request has been approved.
+    Approved,
+    /// Recovery request was rejected.
+    Rejected,
+    /// Recovery process completed successfully.
+    Recovered,
+}
+
+/// Backup record for certificate recovery purposes.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CertificateBackup {
+    /// Unique identifier for this backup.
+    pub backup_id: BytesN<32>,
+    /// ID of the certificate being backed up.
+    pub certificate_id: BytesN<32>,
+    /// Student's address.
+    pub student: Address,
+    /// Encrypted backup data hash for verification.
+    pub data_hash: BytesN<32>,
+    /// Unix timestamp (seconds) when backup was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which backup expires.
+    pub expires_at: u64,
+    /// Current status of the backup.
+    pub status: RecoveryStatus,
+}
+
+/// Certificate recovery request.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RecoveryRequest {
+    /// Unique identifier for recovery request.
+    pub request_id: BytesN<32>,
+    /// ID of certificate to recover.
+    pub certificate_id: BytesN<32>,
+    /// Student requesting recovery.
+    pub requester: Address,
+    /// Backup ID being used for recovery.
+    pub backup_id: BytesN<32>,
+    /// Current status of recovery request.
+    pub status: RecoveryStatus,
+    /// Unix timestamp (seconds) when request was created.
+    pub created_at: u64,
+    /// Unix timestamp (seconds) after which request expires.
+    pub expires_at: u64,
+    /// Verification data provided by requester.
+    pub verification_data: Bytes,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -464,6 +573,8 @@ pub enum CertDataKey {
     Template(String),
     /// List of all registered template IDs.
     TemplateList,
+    TemplateVersionHistory(String),
+    LatestTemplateVersion(String),
 
     // Revocations
     /// Revocation record for a specific certificate.
@@ -494,6 +605,22 @@ pub enum CertDataKey {
     // Rate Limiting
     RateLimit(Address, u64), // (user, operation_id) -> RateLimitState
     RateLimitCfg,            // CertRateLimitConfig
+
+    // Certificate Recovery
+    /// Backup record for a certificate.
+    CertificateBackup(BytesN<32>),
+    /// List of backup IDs for a student.
+    StudentBackups(Address),
+    /// Recovery request keyed by request ID.
+    RecoveryRequest(BytesN<32>),
+    /// List of pending recovery request IDs.
+    PendingRecoveryRequests,
+
+    /// Progress tracking for batch operations keyed by Job ID.
+    BatchJobProgress(BytesN<32>),
+
+    /// Global list of all issued certificate IDs (used for expiry cleanup).
+    AllCertificates,
 }
 
 /// Configurable rate limits for certificate operations.

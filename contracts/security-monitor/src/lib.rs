@@ -17,8 +17,8 @@ use crate::events::SecurityEvents;
 use crate::storage::SecurityStorage;
 use crate::threat_detector::ThreatDetector;
 use crate::types::{
-    IncidentReport, MitigationAction, RateLimitState, RbacRole, RoleAssignment, RoleDelegation,
-    SecurityConfig, SecurityThreat, SecurityTrainingStatus, ThreatId, ThreatIdList,
+    CspPolicy, IncidentReport, MitigationAction, RateLimitState, RbacRole, RoleAssignment,
+    RoleDelegation, SecurityConfig, SecurityThreat, SecurityTrainingStatus, ThreatId, ThreatIdList,
     ThreatIntelligence, ThreatLevel, ThreatType, UserRiskScore,
 };
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, String, Symbol, Vec};
@@ -828,4 +828,41 @@ impl SecurityMonitor {
     }
 
     // --- Note: Some methods from the `SecurityMonitorTrait` are omitted here for brevity or were already missing in the dummy implementation in `lib.rs`, such as apply_mitigation, check_circuit_breaker, etc. We'll stick to implementing the new advanced AI features and updating the basic dummy ones that were there. ---
+
+    // ─────────────────────────────────────────────────────────────
+    // Content Security Policy (CSP) — fixes #437
+    // ─────────────────────────────────────────────────────────────
+
+    /// Store a Content Security Policy configuration on-chain.
+    ///
+    /// Requires admin authorization. The policy is stored in instance storage so
+    /// it is available to all callers without a per-key lookup.
+    ///
+    /// # Arguments
+    /// * `admin`  - Address of the contract admin.
+    /// * `policy` - The CSP configuration to persist.
+    ///
+    /// # Errors
+    /// Returns contract error `1` (unauthorized) if `admin` is not the stored admin,
+    /// or contract error `2` (not initialized) if the contract has not been initialized.
+    pub fn set_csp_policy(
+        env: Env,
+        admin: Address,
+        policy: CspPolicy,
+    ) -> Result<(), Error> {
+        admin.require_auth();
+        let expected = SecurityStorage::get_admin(&env).ok_or(Self::not_initialized_error())?;
+        if admin != expected {
+            return Err(Error::from_contract_error(1));
+        }
+        SecurityStorage::set_csp_policy(&env, &policy);
+        Ok(())
+    }
+
+    /// Retrieve the currently stored Content Security Policy configuration.
+    ///
+    /// Returns `None` if no policy has been set yet.
+    pub fn get_csp_policy(env: Env) -> Option<CspPolicy> {
+        SecurityStorage::get_csp_policy(&env)
+    }
 }

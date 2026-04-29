@@ -2,27 +2,51 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
+import cookieParser from "cookie-parser";
 
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
+import { analyticsConsent } from "./middleware/analyticsConsent";
 import { cdnMiddleware } from "./middleware/cdn";
+import { securityHeadersValidator } from "./middleware/securityHeaders";
+import { i18nMiddleware } from "./middleware/i18n";
+import { sessionMiddleware } from "./middleware/session";
+import { csrfProtection } from "./middleware/csrf";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
+import { preloadLocales } from "./i18n";
+
+// Pre-load all locale files into memory at startup
+preloadLocales();
 
 import authRouter from "./routes/auth";
 import certificatesRouter from "./routes/certificates";
 import studentsRouter from "./routes/students";
 import analyticsRouter from "./routes/analytics";
+import consentRouter from "./routes/consent";
+import socialSharingRouter from "./routes/social-sharing";
 import healthRouter from "./routes/health";
 import rateLimitRouter from "./routes/rateLimit";
 import cdnRouter from "./routes/cdn";
+import certificateTemplatesRouter from "./certificate-templates/certificate-templates.route";
+import performanceRouter from "./routes/performance";
+import slackRouter from "./routes/slack";
+import exportRouter from "./routes/export";
+import cohortsRouter from "./routes/cohorts";
+import graphqlRouter from "./routes/graphql";
+import employerVerificationRouter from "./routes/employer-verification";
 
 const app = express();
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(
   helmet({
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -30,6 +54,9 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:"],
       },
+    },
+    frameguard: {
+      action: "sameorigin",
     },
   })
 );
@@ -39,18 +66,22 @@ app.use(
   cors({
     origin: config.cors.origins,
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"],
-    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID", "X-Language", "Accept-Language"],
+    exposedHeaders: ["X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "Content-Language", "X-Text-Direction"],
   })
 );
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
+app.use(cookieParser());
 
 // ── Request ID + metrics ──────────────────────────────────────────────────────
 app.use(requestId);
 app.use(metricsMiddleware);
 app.use(cdnMiddleware);
+
+// ── i18n: language detection ──────────────────────────────────────────────────
+app.use(i18nMiddleware);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
@@ -62,6 +93,12 @@ app.use((req: express.Request, _res: express.Response, next: express.NextFunctio
   });
   next();
 });
+
+// ── Security headers validator ────────────────────────────────────────────────
+app.use(securityHeadersValidator);
+
+// ── Session middleware ───────────────────────────────────────────────────────
+app.use(sessionMiddleware);
 
 // ── API docs ──────────────────────────────────────────────────────────────────
 app.use(
@@ -75,11 +112,43 @@ app.use(
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/health", healthRouter);
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/certificates", certificatesRouter);
-app.use("/api/v1/students", studentsRouter);
+
+// Apply CSRF protection to state-changing routes
+app.use("/api/v1/certificates", csrfProtection, certificatesRouter);
+app.use("/api/v1/students", csrfProtection, studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
+app.use("/api/v1/analytics", consentRouter); // consent sub-routes
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
+app.use("/api/v1/certificate-templates", csrfProtection, certificateTemplatesRouter);
+app.use("/api/v1/performance", performanceRouter);
+app.use("/api/v1/slack", csrfProtection, slackRouter);
+app.use("/api/v1/export", csrfProtection, exportRouter);
+app.use("/api/v1/cohorts", csrfProtection, cohortsRouter);
+app.use("/api/v1/graphql", graphqlRouter);
+app.use("/api/v1/employer", csrfProtection, employerVerificationRouter);
+
+// ── CSP Violation Reporter ─────────────────────────────────────────────────────
+app.post(
+  "/api/v1/security/csp-report",
+  express.json({ type: "application/csp-report" }),
+  (req: express.Request, res: express.Response) => {
+    const violation = req.body["csp-report"];
+    if (violation) {
+      logger.warn("CSP violation detected", {
+        documentUri: violation["document-uri"],
+        violatedDirective: violation["violated-directive"],
+        effectiveDirective: violation["effective-directive"],
+        originalPolicy: violation["original-policy"],
+        sourceFile: violation["source-file"],
+        lineNumber: violation["line-number"],
+        columnNumber: violation["column-number"],
+        statusCode: violation["status-code"],
+      });
+    }
+    res.status(204).send();
+  }
+);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req: express.Request, res: express.Response) => {
@@ -87,7 +156,11 @@ app.use((_req: express.Request, res: express.Response) => {
     success: false,
     data: null,
     error: { code: "NOT_FOUND", message: "Endpoint not found" },
-    meta: { requestId: "unknown", timestamp: new Date().toISOString(), version: "1.0.0" },
+    meta: {
+      requestId: "unknown",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+    },
   });
 });
 
@@ -104,7 +177,11 @@ app.use(
       success: false,
       data: null,
       error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
-      meta: { requestId: "unknown", timestamp: new Date().toISOString(), version: "1.0.0" },
+      meta: {
+        requestId: "unknown",
+        timestamp: new Date().toISOString(),
+        version: "1.0.0",
+      },
     });
   }
 );

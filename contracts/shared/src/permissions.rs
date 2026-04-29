@@ -102,6 +102,18 @@ impl RolePermissions {
         permissions
     }
 
+    /// Get default permissions for a ComplianceAdmin role
+    pub fn compliance_admin_permissions(env: &Env) -> Vec<Permission> {
+        let mut permissions = Vec::new(env);
+        permissions.push_back(Permission::GenerateComplianceReport);
+        permissions.push_back(Permission::ViewAudit);
+        permissions.push_back(Permission::ViewSystemStats);
+        permissions.push_back(Permission::ViewAllUsers);
+        permissions.push_back(Permission::ViewAllCourses);
+        permissions.push_back(Permission::ViewAllCertificates);
+        permissions
+    }
+
     /// Get permissions for a specific role level
     pub fn get_permissions_for_level(env: &Env, level: &RoleLevel) -> Vec<Permission> {
         match level {
@@ -110,6 +122,7 @@ impl RolePermissions {
             RoleLevel::Instructor => Self::instructor_permissions(env),
             RoleLevel::Admin => Self::admin_permissions(env),
             RoleLevel::SuperAdmin => Self::super_admin_permissions(env),
+            RoleLevel::ComplianceAdmin => Self::compliance_admin_permissions(env),
         }
     }
 

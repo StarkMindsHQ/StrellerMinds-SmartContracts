@@ -225,6 +225,8 @@ pub enum SecurityDataKey {
     RbacUserRoles(Address),           // user -> Vec<Symbol>
     RbacAssignment(Address, Symbol),  // (user, role_id) -> RoleAssignment
     RbacDelegations(Address, Symbol), // (delegator, role_id) -> Vec<RoleDelegation>
+    /// Active Content Security Policy configuration.
+    CspPolicy,
 }
 
 /// A role definition in the RBAC hierarchy.
@@ -327,4 +329,38 @@ pub struct SecurityTrainingStatus {
     pub completed_modules: Vec<Symbol>,
     pub last_training_date: u64,
     pub score: u32, // Passed quiz score, etc.
+}
+
+// ─────────────────────────────────────────────────────────────
+// Content Security Policy (CSP) — fixes #437
+// ─────────────────────────────────────────────────────────────
+
+/// A stored Content Security Policy configuration.
+///
+/// Each field corresponds to a standard CSP directive value stored as a
+/// serialised string (e.g. `"'self' https://cdn.example.com"`).  An empty
+/// string means the directive is not set.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct CspPolicy {
+    /// `default-src` directive.
+    pub default_src: String,
+    /// `script-src` directive.
+    pub script_src: String,
+    /// `style-src` directive.
+    pub style_src: String,
+    /// `img-src` directive (image whitelist).
+    pub img_src: String,
+    /// `font-src` directive (font whitelist).
+    pub font_src: String,
+    /// `connect-src` directive.
+    pub connect_src: String,
+    /// `frame-ancestors` directive.
+    pub frame_ancestors: String,
+    /// Whether to use `Content-Security-Policy-Report-Only` mode.
+    pub report_only: bool,
+    /// Unix timestamp when this policy was last updated.
+    pub updated_at: u64,
+    /// Address of the admin who last updated the policy.
+    pub updated_by: Address,
 }

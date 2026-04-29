@@ -7,17 +7,35 @@ function required(key: string): string {
   return val;
 }
 
+function integerEnv(key: string, defaultValue: number, minimum = 0): number {
+  const raw = process.env[key];
+  const parsed = raw ? parseInt(raw, 10) : defaultValue;
+  if (Number.isNaN(parsed)) {
+    return Math.max(defaultValue, minimum);
+  }
+  return Math.max(parsed, minimum);
+}
+
+const defaultRpcUrl =
+  process.env.STELLAR_RPC_URL ?? "https://soroban-testnet.stellar.org";
+const queryPoolSize = integerEnv("QUERY_POOL_SIZE", 4, 1);
+const queryRpcUrls = (process.env.STELLAR_RPC_URLS ?? defaultRpcUrl)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+
 export const config = {
-  port: parseInt(process.env.PORT ?? "3000", 10),
+  port: integerEnv("PORT", 3000, 1),
   nodeEnv: process.env.NODE_ENV ?? "development",
 
   stellar: {
-    rpcUrl:
-      process.env.STELLAR_RPC_URL ?? "https://soroban-testnet.stellar.org",
+    rpcUrl: defaultRpcUrl,
     networkPassphrase:
       process.env.STELLAR_NETWORK_PASSPHRASE ??
       "Test SDF Network ; September 2015",
-    contractId: process.env.CERTIFICATE_CONTRACT_ID ?? "",
+    contractId:
+      process.env.CERTIFICATE_CONTRACT_ID ??
+      "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
   },
 
   jwt: {
@@ -26,15 +44,23 @@ export const config = {
   },
 
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10),
-    verifyMax: parseInt(process.env.RATE_LIMIT_VERIFY_MAX ?? "100", 10),
+    windowMs: integerEnv("RATE_LIMIT_WINDOW_MS", 60000, 1),
+    maxRequests: integerEnv("RATE_LIMIT_MAX_REQUESTS", 60, 1),
+    verifyMax: integerEnv("RATE_LIMIT_VERIFY_MAX", 100, 1),
     // Per-user tier limits (requests per minute)
     tiers: {
-      free:       { rpm: parseInt(process.env.RATE_LIMIT_FREE_RPM       ?? "30",   10), burst: parseInt(process.env.RATE_LIMIT_FREE_BURST       ?? "10",  10) },
-      pro:        { rpm: parseInt(process.env.RATE_LIMIT_PRO_RPM        ?? "120",  10), burst: parseInt(process.env.RATE_LIMIT_PRO_BURST        ?? "30",  10) },
-      enterprise: { rpm: parseInt(process.env.RATE_LIMIT_ENT_RPM        ?? "600",  10), burst: parseInt(process.env.RATE_LIMIT_ENT_BURST        ?? "100", 10) },
-      internal:   { rpm: parseInt(process.env.RATE_LIMIT_INTERNAL_RPM   ?? "6000", 10), burst: parseInt(process.env.RATE_LIMIT_INTERNAL_BURST   ?? "500", 10) },
+      free:       { rpm: integerEnv("RATE_LIMIT_FREE_RPM", 30, 1), burst: integerEnv("RATE_LIMIT_FREE_BURST", 10, 1) },
+      pro:        { rpm: integerEnv("RATE_LIMIT_PRO_RPM", 120, 1), burst: integerEnv("RATE_LIMIT_PRO_BURST", 30, 1) },
+      enterprise: { rpm: integerEnv("RATE_LIMIT_ENT_RPM", 600, 1), burst: integerEnv("RATE_LIMIT_ENT_BURST", 100, 1) },
+      internal:   { rpm: integerEnv("RATE_LIMIT_INTERNAL_RPM", 6000, 1), burst: integerEnv("RATE_LIMIT_INTERNAL_BURST", 500, 1) },
+    },
+    // GraphQL-specific limits
+    graphql: {
+      maxComplexity: integerEnv("GRAPHQL_MAX_COMPLEXITY", 100, 1),
+      maxDepth: integerEnv("GRAPHQL_MAX_DEPTH", 7, 1),
+      maxFieldOccurrences: integerEnv("GRAPHQL_MAX_FIELD_OCCURRENCES", 10, 1),
+      requestsPerMinute: integerEnv("GRAPHQL_RATE_LIMIT_RPM", 60, 1),
+      burstLimit: integerEnv("GRAPHQL_RATE_LIMIT_BURST", 15, 1),
     },
   },
 
@@ -42,16 +68,98 @@ export const config = {
     // Public CDN origin (e.g. CloudFront distribution URL)
     origin: process.env.CDN_ORIGIN ?? "",
     // Cache-Control max-age for static assets (seconds)
-    maxAge: parseInt(process.env.CDN_MAX_AGE ?? "31536000", 10),       // 1 year
-    sMaxAge: parseInt(process.env.CDN_S_MAX_AGE ?? "86400", 10),       // 1 day CDN TTL
-    staleWhileRevalidate: parseInt(process.env.CDN_SWR ?? "3600", 10), // 1 hour
+    maxAge: integerEnv("CDN_MAX_AGE", 31536000, 0),       // 1 year
+    sMaxAge: integerEnv("CDN_S_MAX_AGE", 86400, 0),       // 1 day CDN TTL
+    staleWhileRevalidate: integerEnv("CDN_SWR", 3600, 0), // 1 hour
     // Shared secret for cache invalidation webhook
     invalidationSecret: process.env.CDN_INVALIDATION_SECRET ?? "change-me",
     // CloudFront distribution ID (for AWS SDK invalidation calls)
     cloudfrontDistributionId: process.env.CLOUDFRONT_DISTRIBUTION_ID ?? "",
   },
 
+  queryOptimization: {
+    rpcUrls:
+      queryRpcUrls.length >= queryPoolSize
+        ? queryRpcUrls
+        : Array.from({ length: queryPoolSize }, (_, index) => {
+            return queryRpcUrls[index % queryRpcUrls.length] ?? defaultRpcUrl;
+          }),
+    poolSize: queryPoolSize,
+    cacheMaxEntries: integerEnv("QUERY_CACHE_MAX_ENTRIES", 1000, 1),
+    cacheDefaultTtlMs: integerEnv("QUERY_CACHE_DEFAULT_TTL_MS", 60000, 1),
+    cacheAnalyticsTtlMs: integerEnv("QUERY_CACHE_ANALYTICS_TTL_MS", 15000, 1),
+    cacheStudentCertsTtlMs: integerEnv("QUERY_CACHE_STUDENT_CERTS_TTL_MS", 30000, 1),
+    cacheCertificateTtlMs: integerEnv("QUERY_CACHE_CERTIFICATE_TTL_MS", 60000, 1),
+    cacheRevocationTtlMs: integerEnv("QUERY_CACHE_REVOCATION_TTL_MS", 300000, 1),
+    slowThresholdMs: integerEnv("QUERY_SLOW_THRESHOLD_MS", 100, 1),
+    targetAvgMs: integerEnv("QUERY_TARGET_AVG_MS", 100, 1),
+    targetLoadReductionPercent: integerEnv(
+      "QUERY_TARGET_LOAD_REDUCTION_PERCENT",
+      40,
+      0
+    ),
+  },
+
   cors: {
     origins: (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(","),
+  },
+
+  redis: {
+    enabled: (process.env.REDIS_ENABLED ?? "true") !== "false",
+    url: process.env.REDIS_URL ?? "redis://localhost:6379",
+    ttl: {
+      certificate: integerEnv("REDIS_TTL_CERTIFICATE", 3600, 60), // 1 hour
+      profile: integerEnv("REDIS_TTL_PROFILE", 1800, 60), // 30 minutes
+      achievement: integerEnv("REDIS_TTL_ACHIEVEMENT", 3600, 60), // 1 hour
+      statistics: integerEnv("REDIS_TTL_STATISTICS", 900, 60), // 15 minutes
+      cohort: integerEnv("REDIS_TTL_COHORT", 1800, 60), // 30 minutes
+      leaderboard: integerEnv("REDIS_TTL_LEADERBOARD", 300, 60), // 5 minutes
+    },
+  },
+
+  analytics: {
+    enabled: (process.env.GA4_ENABLED ?? "false") === "true",
+    ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? "",
+    ga4ApiSecret: process.env.GA4_API_SECRET ?? "",
+    debug: (process.env.GA4_DEBUG ?? "false") === "true",
+  },
+
+  database: {
+    host: process.env.DATABASE_HOST ?? "localhost",
+    port: integerEnv("DATABASE_PORT", 5432, 1),
+    name: process.env.DATABASE_NAME ?? "strellerminds",
+    user: process.env.DATABASE_USER ?? "postgres",
+    password: process.env.DATABASE_PASSWORD ?? "",
+    pool: {
+      min: integerEnv("DATABASE_POOL_MIN", 5, 1),
+      max: integerEnv("DATABASE_POOL_MAX", 50, 10),
+      idleTimeoutMillis: integerEnv("DATABASE_POOL_IDLE_TIMEOUT", 30000, 1000),
+      connectionTimeoutMillis: integerEnv("DATABASE_POOL_CONNECT_TIMEOUT", 10000, 1000),
+      maxUses: integerEnv("DATABASE_POOL_MAX_USES", 10000, 100),
+      leakDetectionThreshold: integerEnv("DATABASE_POOL_LEAK_THRESHOLD", 60000, 10000),
+    },
+  },
+
+  export: {
+    maxRecordsPerExport: integerEnv("EXPORT_MAX_RECORDS", 100000, 1000),
+    streamingThreshold: integerEnv("EXPORT_STREAMING_THRESHOLD", 10000, 1000),
+    defaultPageSize: integerEnv("EXPORT_DEFAULT_PAGE_SIZE", 1000, 100),
+  },
+
+  slack: {
+    // Default incoming webhook URL (required to enable Slack notifications)
+    webhookUrl: process.env.SLACK_WEBHOOK_URL ?? "",
+    // Optional per-channel webhook overrides
+    alertsWebhookUrl: process.env.SLACK_ALERTS_WEBHOOK_URL ?? "",
+    certificatesWebhookUrl: process.env.SLACK_CERTIFICATES_WEBHOOK_URL ?? "",
+    // Default channel (e.g. "#notifications")
+    defaultChannel: process.env.SLACK_DEFAULT_CHANNEL ?? "",
+    // Channel routing overrides
+    alertsChannel: process.env.SLACK_ALERTS_CHANNEL ?? "",
+    certificatesChannel: process.env.SLACK_CERTIFICATES_CHANNEL ?? "",
+    // Bot display name
+    username: process.env.SLACK_USERNAME ?? "StrellerMinds",
+    // Shared secret for the webhook management API
+    signingSecret: process.env.SLACK_SIGNING_SECRET ?? "",
   },
 } as const;

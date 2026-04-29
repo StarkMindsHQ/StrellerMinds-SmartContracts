@@ -1,3 +1,13 @@
 [alias]
-# This allows you to launch your tool by just typing 'cargo dev'
 dev = "run -p streller-cli"
+
+[target.x86_64-pc-windows-msvc]
+linker = "clang"
+
+[target.x86_64-pc-windows-gnu]
+linker = "clang"
+
+[build]
+# Use the Linux host target by default so CI (Linux runners) can build/tests.
+# Change this if you intentionally need a Windows cross-target here.
+target = "x86_64-unknown-linux-gnu"

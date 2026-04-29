@@ -17,8 +17,20 @@ mod test;
 use shared::monitoring::{ContractHealthReport, Monitor};
 use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{
-    contract, contractimpl, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec,
+    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Map, String, Symbol, Vec,
 };
+
+#[contracttype]
+#[derive(Clone)]
+pub struct AssessmentExport {
+    pub assessment_id: u64,
+    pub attempt: u32,
+    pub score: u32,
+    pub has_score: bool,
+    pub max_score: u32,
+    pub passed: bool,
+    pub submitted_at: u64,
+}
 
 const RL_OP_START_SUBMISSION: u64 = 1;
 const RL_OP_SUBMIT_ANSWERS: u64 = 2;
@@ -140,6 +152,26 @@ fn put_submission(env: &Env, submission: &Submission) {
     env.storage()
         .persistent()
         .set(&DataKey::Submission(submission.submission_id.clone()), submission);
+
+    let mut all_ids = env
+        .storage()
+        .persistent()
+        .get::<_, Vec<BytesN<32>>>(&DataKey::StudentAllSubmissions(submission.student.clone()))
+        .unwrap_or_else(|| Vec::new(env));
+
+    let mut found = false;
+    for i in 0..all_ids.len() {
+        if all_ids.get(i).unwrap() == submission.submission_id {
+            found = true;
+            break;
+        }
+    }
+    if !found {
+        all_ids.push_back(submission.submission_id.clone());
+    }
+    env.storage()
+        .persistent()
+        .set(&DataKey::StudentAllSubmissions(submission.student.clone()), &all_ids);
 }
 
 fn get_or_init_adaptive_state(env: &Env, student: &Address, assessment_id: u64) -> AdaptiveState {
@@ -982,6 +1014,40 @@ impl Assessment {
         }
 
         result
+    }
+
+    fn get_student_all_submissions(env: &Env, student: &Address) -> Vec<BytesN<32>> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::StudentAllSubmissions(student.clone()))
+            .unwrap_or_else(|| Vec::new(env))
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> Vec<AssessmentExport> {
+        let submission_ids = Self::get_student_all_submissions(&env, &user);
+        let mut exports: Vec<AssessmentExport> = Vec::new(&env);
+
+        for i in 0..submission_ids.len() {
+            if let Some(submission_id) = submission_ids.get(i) {
+                if let Some(submission) = env
+                    .storage()
+                    .persistent()
+                    .get::<_, Submission>(&DataKey::Submission(submission_id))
+                {
+                    exports.push_back(AssessmentExport {
+                        assessment_id: submission.assessment_id,
+                        attempt: submission.attempt,
+                        score: submission.score,
+                        has_score: true,
+                        max_score: submission.max_score,
+                        passed: submission.passed,
+                        submitted_at: submission.submitted_at,
+                    });
+                }
+            }
+        }
+
+        exports
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

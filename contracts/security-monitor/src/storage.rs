@@ -1,7 +1,8 @@
 use crate::types::{
-    CircuitBreakerState, IncidentReport, RateLimitState, RbacRole, RoleAssignment, RoleDelegation,
-    SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation, SecurityThreat,
-    SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence, UserRiskScore,
+    CircuitBreakerState, CspPolicy, IncidentReport, RateLimitState, RbacRole, RoleAssignment,
+    RoleDelegation, SecurityConfig, SecurityDataKey, SecurityMetrics, SecurityRecommendation,
+    SecurityThreat, SecurityTrainingStatus, ThreatId, ThreatIdList, ThreatIntelligence,
+    UserRiskScore,
 };
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
@@ -322,5 +323,15 @@ impl SecurityStorage {
     ) -> Vec<RoleDelegation> {
         let key = SecurityDataKey::RbacDelegations(delegator.clone(), role_id.clone());
         env.storage().persistent().get(&key).unwrap_or(Vec::new(env))
+    }
+
+    // ===== Content Security Policy (fixes #437) =====
+
+    pub fn set_csp_policy(env: &Env, policy: &CspPolicy) {
+        env.storage().instance().set(&SecurityDataKey::CspPolicy, policy);
+    }
+
+    pub fn get_csp_policy(env: &Env) -> Option<CspPolicy> {
+        env.storage().instance().get(&SecurityDataKey::CspPolicy)
     }
 }

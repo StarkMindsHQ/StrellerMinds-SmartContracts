@@ -29,6 +29,53 @@ cargo test
 
 That's it! Your contracts are built and tested. See the [Developer Onboarding Guide](docs/ONBOARDING.md) for new team members.
 
+## 📚 Developer Onboarding
+
+New team members should follow the comprehensive onboarding guide:
+
+### 📋 Onboarding Checklist
+
+| Phase | Duration | Tasks |
+|-------|----------|-------|
+| **Phase 1: Environment Setup** | 10 min | Clone, install prerequisites, run setup script |
+| **Phase 2: Build & Test** | 15 min | Build contracts, run tests, format code |
+| **Phase 3: Development Workflow** | 20 min | Create branch, make change, commit, PR |
+| **Phase 4: E2E Testing** (Optional) | 15 min | Start localnet, run E2E tests, stop localnet |
+
+### 🚀 Quick Start Commands
+
+```bash
+# Clone and setup
+git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git
+cd StrellerMinds-SmartContracts
+./scripts/setup.sh
+
+# Build and test
+make build
+make unit-test
+
+# Format and lint
+cargo fmt --all
+cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+```
+
+### 📖 Onboarding Guide Contents
+
+The [Developer Onboarding Guide](docs/ONBOARDING.md) includes:
+
+- ✅ Project overview and technology stack
+- ✅ Prerequisites and environment setup
+- ✅ Step-by-step setup instructions
+- ✅ Project structure and contract descriptions
+- ✅ Development workflow and git conventions
+- ✅ Testing guidelines (unit, property-based, E2E)
+- ✅ Deployment procedures
+- ✅ Code standards and naming conventions
+- ✅ **Best practices with code examples** (NEW)
+- ✅ **Verification checklist for assignment completion** (NEW)
+- ✅ Common issues and troubleshooting
+- ✅ Getting help and documentation map
+
 ## ✨ Features
 
 - Smart contract development using Soroban on Stellar
@@ -132,10 +179,21 @@ For detailed information, see the [Release Management Guide](docs/RELEASE_MANAGE
 
 3. **Build the Smart Contracts:**
    ```bash
+   # Optimized Fast Build (Default)
+   make build
+   
+   # Or using the script directly:
    ./scripts/build.sh
-   # Or manually:
-   cargo build --release --target wasm32-unknown-unknown
+   
+   # For production-optimized builds (smallest WASM size):
+   make build-prod
    ```
+
+### ⚡ Performance
+This repository is optimized for rapid development:
+- **Parallel Compilation**: All contracts build simultaneously using Cargo workspaces.
+- **Fast Iteration**: Incremental build times are typically <3s.
+- **Caching**: Supports `sccache` for ultra-fast dependency recompilation.
 
 ### Testing
 
@@ -146,6 +204,25 @@ Run unit tests to ensure everything is functioning as expected:
 ```bash
 cargo test
 ```
+
+#### Load Testing
+
+Run the bounded contract load-testing suite locally:
+
+```bash
+./scripts/load_test.sh
+```
+
+Or with Make / Cargo:
+
+```bash
+make load-test
+cargo load-test -- --report target/load-test-report.json --summary target/load-test-summary.md
+```
+
+The suite uses a default `STRELLER_LOAD_MULTIPLIER=10` to simulate 10x peak load, writes JSON and Markdown reports to `target/`, and has a CI-safe mode available via `./scripts/load_test.sh --ci`.
+
+See [docs/LOAD_TESTING.md](docs/LOAD_TESTING.md) for the configurable load variables and report format.
 
 #### Property-Based Tests
 
