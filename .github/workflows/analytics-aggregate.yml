@@ -1,0 +1,24 @@
+name: Analytics aggregate
+
+on:
+  push:
+    branches:
+      - feature/search-analytics-tracking
+  schedule:
+    - cron: '0 2 * * *' # nightly at 02:00 UTC
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Run aggregator
+        run: |
+          node scripts/analytics/aggregate_search_events.js
+      - name: Smoke test suggestions
+        run: |
+          node scripts/analytics/smoke_test_suggestions.js
