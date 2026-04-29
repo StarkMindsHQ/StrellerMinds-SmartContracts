@@ -1,0 +1,42 @@
+name: Monthly Compliance Report
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # first day of month, midnight UTC
+  workflow_dispatch:      # manual trigger
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Install Soroban CLI
+        run: cargo install --locked soroban-cli --version 21.5.0
+        
+      - name: Install Pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+        
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Adjust as needed
+          
+      - name: Run Compliance Report
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET || 'streminderminds-compliance-reports' }}
+        run: make compliance-report
+        
+      - name: Upload Report Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-report-${{ github.sha }}
+          path: target/compliance/

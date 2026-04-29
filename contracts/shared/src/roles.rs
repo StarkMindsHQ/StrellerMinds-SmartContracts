@@ -9,6 +9,7 @@ pub enum RoleLevel {
     Instructor = 3,
     Admin = 4,
     SuperAdmin = 5,
+    ComplianceAdmin = 6,
 }
 
 impl RoleLevel {
@@ -19,6 +20,7 @@ impl RoleLevel {
             3 => Some(RoleLevel::Instructor),
             4 => Some(RoleLevel::Admin),
             5 => Some(RoleLevel::SuperAdmin),
+            6 => Some(RoleLevel::ComplianceAdmin),
             _ => None,
         }
     }
@@ -30,14 +32,27 @@ impl RoleLevel {
             RoleLevel::Instructor => 3,
             RoleLevel::Admin => 4,
             RoleLevel::SuperAdmin => 5,
+            RoleLevel::ComplianceAdmin => 6,
         }
     }
 
     pub fn can_grant(&self, target_role: &RoleLevel) -> bool {
+        if *self == RoleLevel::SuperAdmin {
+            return true;
+        }
+        if *self == RoleLevel::Admin && *target_role == RoleLevel::ComplianceAdmin {
+            return true;
+        }
         self.to_u32() > target_role.to_u32()
     }
 
     pub fn can_revoke(&self, target_role: &RoleLevel) -> bool {
+        if *self == RoleLevel::SuperAdmin {
+            return true;
+        }
+        if *self == RoleLevel::Admin && *target_role == RoleLevel::ComplianceAdmin {
+            return true;
+        }
         self.to_u32() >= target_role.to_u32()
     }
 
@@ -48,6 +63,8 @@ impl RoleLevel {
                 | (RoleLevel::Admin, _)
                 | (RoleLevel::Instructor, Permission::ViewAudit)
                 | (RoleLevel::Moderator, Permission::ViewAudit)
+                | (RoleLevel::ComplianceAdmin, Permission::GenerateComplianceReport)
+                | (RoleLevel::ComplianceAdmin, Permission::ViewAudit)
         )
     }
 }
@@ -165,6 +182,9 @@ pub enum Permission {
     ViewSystemStats,
     ViewAudit,
 
+    // Compliance
+    GenerateComplianceReport,
+
     // Dynamic permission
     Custom(soroban_sdk::Symbol),
 }
@@ -201,6 +221,7 @@ impl Permission {
             Permission::ViewAllUsers => "ViewAllUsers",
             Permission::ViewSystemStats => "ViewSystemStats",
             Permission::ViewAudit => "ViewAudit",
+            Permission::GenerateComplianceReport => "GenerateComplianceReport",
             Permission::Custom(_) => "Custom",
         }
     }
