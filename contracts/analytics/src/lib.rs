@@ -1415,38 +1415,43 @@ impl Analytics {
         course_id: Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_completion_rates(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
 
-        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
-            .ok_or(AnalyticsError::StudentNotFound)?;
+    /// Predicts time to completion for a student in a course.
+    pub fn predict_time_to_completion(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_time_to_completion(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
 
-        // Heuristic probability: weight completion%, avg score and streak
-        let completion_weight = analytics.completion_percentage as u64;
-        let score_weight = analytics.average_score.unwrap_or(0) as u64;
-        let streak_weight = (analytics.streak_days.min(30) as u64).saturating_mul(2);
+    /// Predicts the dropout risk for a student in a course.
+    pub fn predict_dropout_risk(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_dropout_risk(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
 
-        let probability = ((completion_weight * 40 + score_weight * 40 + streak_weight * 20) / 100)
-            .min(100) as u32;
-
-        let data_str = if probability >= 75 {
-            String::from_str(&env, "HIGH: on track to complete")
-        } else if probability >= 50 {
-            String::from_str(&env, "MEDIUM: at risk, intervention recommended")
-        } else {
-            String::from_str(&env, "LOW: high dropout risk, immediate support needed")
-        };
-
-        let insight = MLInsight {
-            insight_id: AnalyticsEngine::generate_insight_id(&env),
-            student: analytics.student.clone(),
-            course_id: analytics.course_id.clone(),
-            insight_type: InsightType::CompletionPrediction,
-            data: data_str,
-            confidence: probability,
-            timestamp: env.ledger().timestamp(),
-            model_version: 1,
-            metadata: Vec::new(&env),
-        };
-
+    /// Predicts the skill progression for a student in a course.
+    pub fn predict_skill_progression(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_skill_progression(&env, &student, &course_id)?;
         AnalyticsStorage::set_ml_insight(&env, &insight);
         Ok(insight)
     }
