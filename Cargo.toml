@@ -30,8 +30,14 @@ debug = 0
 strip = "symbols"
 debug-assertions = false
 panic = "abort"
-codegen-units = 1
+codegen-units = 16
 lto = true
+incremental = true
+
+[profile.production]
+inherits = "release"
+codegen-units = 1
+incremental = false
 
 [profile.release-with-logs]
 inherits = "release"
