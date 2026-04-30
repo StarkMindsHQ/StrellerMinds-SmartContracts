@@ -82,13 +82,39 @@ pub fn get_multisig_request(
 }
 
 pub fn add_pending_request(env: &Env, request_id: &BytesN<32>) {
-    let mut pending: Vec<BytesN<32>> = env
-        .storage()
-        .persistent()
-        .get(&CertDataKey::PendingRequests)
-        .unwrap_or_else(|| Vec::new(env));
+    let mut pending = get_pending_requests(env);
     pending.push_back(request_id.clone());
-    env.storage().persistent().set(&CertDataKey::PendingRequests, &pending);
+    set_pending_requests(env, &pending);
+
+    // Increment analytics
+    let mut analytics = get_analytics(env);
+    analytics.pending_requests += 1;
+    set_analytics(env, &analytics);
+}
+
+pub fn remove_pending_request(env: &Env, request_id: &BytesN<32>) {
+    let pending = get_pending_requests(env);
+    let mut new_pending = Vec::new(env);
+    let mut found = false;
+
+    for id in pending.iter() {
+        if id == *request_id {
+            found = true;
+            continue;
+        }
+        new_pending.push_back(id);
+    }
+
+    if found {
+        set_pending_requests(env, &new_pending);
+
+        // Decrement analytics
+        let mut analytics = get_analytics(env);
+        if analytics.pending_requests > 0 {
+            analytics.pending_requests -= 1;
+        }
+        set_analytics(env, &analytics);
+    }
 }
 
 pub fn get_pending_requests(env: &Env) -> Vec<BytesN<32>> {

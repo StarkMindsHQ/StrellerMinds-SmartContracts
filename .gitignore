@@ -25,6 +25,7 @@ Cargo.lock
 # TypeScript
 **/node_modules/
 **/dist/
+**/.jest-cache/
 npm-debug.log
 yarn-error.log
 

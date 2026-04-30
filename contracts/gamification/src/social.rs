@@ -4,6 +4,7 @@ use crate::errors::Error;
 use crate::events::GamificationEvents;
 use crate::storage::GamificationStorage;
 use crate::types::{GamificationKey, PeerEndorsement, PeerRecognition, RecognitionType};
+use shared::timestamp_utils::utc_day_index;
 use shared::validation::{CoreValidator, ValidationConfig};
 
 pub struct SocialManager;
@@ -32,9 +33,9 @@ impl SocialManager {
 
         let config = GamificationStorage::get_config(env);
 
-        // Rate-limit: max N endorsements given per day (day = 86400s bucket)
+        // Rate-limit: max N endorsements given per UTC day
         let now = env.ledger().timestamp();
-        let day_bucket = now / 86_400;
+        let day_bucket = utc_day_index(now);
         let rate_key = GamificationKey::EndorserDailyCount(endorser.clone(), day_bucket);
         let given_today: u32 = env.storage().persistent().get(&rate_key).unwrap_or(0u32);
         if given_today >= config.max_endorsements_per_day {

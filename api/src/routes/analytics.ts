@@ -9,6 +9,8 @@ import { generalLimiter } from "../middleware/rateLimiter";
 import { sendSuccess, sendLocalizedError } from "../utils/response";
 import { logger } from "../logger";
 import { trackAnalyticsQueried, anonymizeClientId } from "../analytics";
+import fs from "fs";
+import path from "path";
 
 
 const router = Router();
@@ -36,3 +38,80 @@ router.get(
 );
 
 export default router;
+
+// Lightweight event ingestion endpoint for search analytics
+router.post(
+  "/events",
+  generalLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const event = req.body;
+
+      // Basic validation: require `type` and `query`
+      if (!event || !event.type || !event.query) {
+        return res.status(400).json({ success: false, error: { code: "INVALID_PAYLOAD", message: "Missing required fields" } });
+      }
+
+      const outDir = path.join(process.cwd(), "api", "data");
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+      const file = path.join(outDir, "search_events.jsonl");
+      const record = Object.assign({}, event, { received_at: new Date().toISOString() });
+
+      fs.appendFile(file, JSON.stringify(record) + "\n", (err) => {
+        if (err) {
+          logger.error("Failed to write analytics event", { error: err });
+        }
+      });
+
+      res.status(202).json({ success: true, data: null });
+    } catch (err) {
+      logger.error("Ingest analytics event failed", { error: err });
+      res.status(500).json({ success: false, error: { code: "INGEST_ERROR", message: "Failed to ingest event" } });
+    }
+  }
+);
+
+// Serve computed suggestions (read-only, public)
+router.get(
+  "/suggestions",
+  generalLimiter,
+  async (_req: Request, res: Response) => {
+    try {
+      const file = path.join(process.cwd(), "api", "data", "suggestions.json");
+      if (!fs.existsSync(file)) {
+        return res.status(204).json({ success: true, data: {} });
+      }
+
+      const raw = fs.readFileSync(file, "utf8");
+      const suggestions = JSON.parse(raw);
+
+      res.status(200).json({ success: true, data: suggestions });
+    } catch (err) {
+      logger.error("Failed to read suggestions file", { error: err });
+      res.status(500).json({ success: false, error: { code: "SUGGESTIONS_ERROR", message: "Failed to load suggestions" } });
+    }
+  }
+);
+
+// Serve computed analytics summary (popular queries, zero-results, A/B metrics)
+router.get(
+  "/summary",
+  generalLimiter,
+  async (_req: Request, res: Response) => {
+    try {
+      const file = path.join(process.cwd(), "api", "data", "analytics_summary.json");
+      if (!fs.existsSync(file)) {
+        return res.status(204).json({ success: true, data: {} });
+      }
+
+      const raw = fs.readFileSync(file, "utf8");
+      const summary = JSON.parse(raw);
+
+      res.status(200).json({ success: true, data: summary });
+    } catch (err) {
+      logger.error("Failed to read analytics summary file", { error: err });
+      res.status(500).json({ success: false, error: { code: "SUMMARY_ERROR", message: "Failed to load analytics summary" } });
+    }
+  }
+);

@@ -32,6 +32,7 @@ The Search contract (`AdvancedSearchContract`) is the intelligent content discov
 | `get_recommendations(user, limit)` | Returns personalized content recommendations for `user` | Yes — `user` |
 | `store_recommendations(oracle, user, recommendations)` | Stores ML-generated recommendations from an authorized oracle | Yes — oracle |
 | `update_user_profile(user, completed_course, completed)` | Updates `user`'s profile with a completed (or uncompleted) course | Yes — `user` |
+| `predict_success_rate(user, course_id)` | Predicts the user's course completion likelihood on a 0-100 scale | Yes — `user` |
 | `store_content_analysis(oracle, content_id, analysis)` | Stores content analysis data from an authorized oracle | Yes — oracle |
 | `get_content_analysis(content_id)` | Returns the stored content analysis for `content_id` | No |
 | `find_by_tag(tag)` | Returns content IDs associated with `tag` | No |
@@ -84,11 +85,14 @@ search.record_click(student_address, "learn rust", "course-rust-101", 0)
 
 # Student requests personalized recommendations
 recs = search.get_recommendations(student_address, 5)
+success_rate = search.predict_success_rate(student_address, "course-soroban-201")
 
 # Student works through their learning path
 step = search.get_next_step(student_address)
 search.complete_path_step(student_address, step.id, 95)
 ```
+
+When no fresh oracle recommendation cache exists, `get_recommendations` falls back to an on-chain scoring model. The fallback builds a candidate catalog from stored content analysis, skips completed courses, scores skill gaps, category affinity, course quality, and difficulty fit, and returns ranked course recommendations with reason codes. User profile updates learn from completed-course content analysis so recommendation accuracy can improve as the learner completes more courses.
 
 ## Errors
 

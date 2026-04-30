@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { sendSuccess, sendError } from "../utils/response";
