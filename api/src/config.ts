@@ -162,4 +162,14 @@ export const config = {
     // Shared secret for the webhook management API
     signingSecret: process.env.SLACK_SIGNING_SECRET ?? "",
   },
+
+  ws: {
+    path: process.env.WS_PATH ?? "/ws/notifications",
+    heartbeatIntervalMs: integerEnv("WS_HEARTBEAT_INTERVAL_MS", 30_000, 5_000),
+    heartbeatTimeoutMs: integerEnv("WS_HEARTBEAT_TIMEOUT_MS", 60_000, 10_000),
+    maxConnectionsPerUser: integerEnv("WS_MAX_CONNECTIONS_PER_USER", 5, 1),
+    ackTimeoutMs: integerEnv("WS_ACK_TIMEOUT_MS", 10_000, 1_000),
+    maxRetries: integerEnv("WS_MAX_RETRIES", 3, 0),
+    maxQueueSize: integerEnv("WS_MAX_QUEUE_SIZE", 200, 10),
+  },
 } as const;

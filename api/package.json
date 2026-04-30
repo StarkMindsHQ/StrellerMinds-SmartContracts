@@ -21,7 +21,6 @@
     "@types/qrcode": "^1.5.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "pdfkit": "0.15.0",
     "dotenv": "^16.4.5",
     "etag": "^1.8.1",
     "express": "^4.18.2",
@@ -38,7 +37,9 @@
     "qrcode": "^1.5.4",
     "rate-limiter-flexible": "^5.0.3",
     "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1",
     "winston": "^3.11.0",
+    "ws": "^8.17.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -49,8 +50,8 @@
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.0",
-    "@types/pg": "^8.10.9",
     "@types/pdfkit": "0.13.4",
+    "@types/pg": "^8.10.9",
     "@types/swagger-ui-express": "^4.1.6",
     "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.33.0",
