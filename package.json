@@ -2,13 +2,12 @@
   "scripts": {
     "visual:test": "playwright test --config=visual-tests/playwright.config.ts",
     "visual:test:update": "playwright test --config=visual-tests/playwright.config.ts --update-snapshots",
-    "visual:test:report": "playwright show-report visual-tests/playwright-report"
+    "visual:test:report": "playwright show-report visual-tests/playwright-report",
     "test:contracts": "jest --config jest.contract.config.js",
     "test:consumer": "jest --config jest.contract.config.js --testPathPattern=consumer",
     "test:provider": "jest --config jest.contract.config.js --testPathPattern=provider",
     "pact:publish": "ts-node src/scripts/publish-pacts.ts",
-    "docs:generate": "ts-node src/scripts/generate-docs.ts"
-    "visual:test:report": "playwright show-report visual-tests/playwright-report",
+    "docs:generate": "ts-node src/scripts/generate-docs.ts",
     "a11y:test": "playwright test --config=visual-tests/accessibility.config.ts",
     "a11y:report": "playwright show-report visual-tests/accessibility-report"
   },
@@ -19,7 +18,7 @@
     "@types/node": "^24.6.2",
     "axe-core": "^4.11.3",
     "axios": "^1.12.2",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
     "@pact-foundation/pact": "^12.0.0",
     "@pact-foundation/pact-node": "^10.17.7",
     "jest": "^29.5.0",
@@ -27,7 +26,4 @@
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   }
-}
-
-
-  
+  }
