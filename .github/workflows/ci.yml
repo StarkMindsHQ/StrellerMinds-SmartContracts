@@ -219,10 +219,10 @@ jobs:
           echo "✅ Security test passed: accessToken not exposed in response"
         fi
 
-    - name: Test HttpOnly cookie security
+    - name: Wait for rate limit reset`n      run: sleep 60`n`n    - name: Test HttpOnly cookie security
       run: |
         cd api
-        # Test that session cookie is HttpOnly
+        sleep 30`n        # Test that session cookie is HttpOnly
         COOKIE_RESPONSE=$(curl -s -i -X POST http://localhost:3000/api/v1/auth/token \
           -H "Content-Type: application/json" \
           -d '{"apiKey":"emp_demo_key_enterprise"}')

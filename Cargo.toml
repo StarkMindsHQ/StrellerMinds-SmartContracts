@@ -2,7 +2,7 @@
 members = ["contracts/*", "e2e-tests", "utils/streller-cli", "utils/streller-cli-enhanced"]
 # Exclude contract crates that currently fail to compile with the pinned soroban-sdk
 # so CI can run the rest of the workspace tests. Remove these once contracts are updated.
-exclude = ["contracts/social-sharing", "contracts/shared"]
+exclude = ["contracts/social-sharing"]
 resolver = "2"
 
 [workspace.dependencies]
