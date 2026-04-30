@@ -83,6 +83,16 @@ app.use(cdnMiddleware);
 // ── i18n: language detection ──────────────────────────────────────────────────
 app.use(i18nMiddleware);
 
+// ── CSRF Protection ───────────────────────────────────────────────────────────
+// Generate CSRF token for all requests
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  generateCsrfToken(req, res);
+  next();
+});
+
+// Validate CSRF token on state-changing requests
+app.use(validateCsrfToken);
+
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
   logger.debug("Incoming request", {
