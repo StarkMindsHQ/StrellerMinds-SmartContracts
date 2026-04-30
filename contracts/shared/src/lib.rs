@@ -46,3 +46,5 @@ mod logger_tests;
 pub mod monitoring_tests;
 #[cfg(test)]
 pub mod performance_tests;
+#[cfg(test)]
+mod compliance_tests;

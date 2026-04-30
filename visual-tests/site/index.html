@@ -22,9 +22,9 @@
           --bg: #ffffff;
           --panel: #f8fafc;
           --text: #0f172a;
-          --muted: #64748b;
+          --muted: #475569; /* Increased contrast from #64748b */
           --primary: #0d9488;
-          --secondary: #7c3aed;
+          --secondary: #6d28d9; /* Increased contrast from #7c3aed */
           --border: #e2e8f0;
           --nav-bg: rgba(248, 250, 252, 0.85);
           --progress-bg: #e2e8f0;
@@ -127,6 +127,48 @@
 
       .mt {
         margin-top: 10px;
+      }
+
+      /* Accessibility Focus Styles */
+      :focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Skip Link Styles */
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: 0;
+        background: var(--primary);
+        color: #050816;
+        padding: 8px 16px;
+        z-index: 100;
+        text-decoration: none;
+        font-weight: 600;
+        border-radius: 0 0 8px 0;
+      }
+
+      .skip-link:focus {
+        top: 0;
+      }
+
+      /* Button Styles */
+      .btn {
+        display: inline-block;
+        margin-top: 16px;
+        padding: 8px 16px;
+        background: var(--primary);
+        color: #050816;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+      }
+
+      @media (prefers-color-scheme: light) {
+        .btn {
+          color: #ffffff;
+        }
       }
     </style>
   </head>

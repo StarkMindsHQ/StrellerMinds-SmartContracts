@@ -206,6 +206,8 @@ xcodebuild -workspace StrellerMinds.xcworkspace \
 - **UI Tests**: Critical user journeys
 - **Performance Tests**: Load and stress testing
 
+See [Mobile App Testing Guide](TESTING_GUIDE.md) for the full testing strategy, platform examples, CI commands, accessibility checks, and release validation checklist.
+
 ### Running Tests
 
 #### iOS

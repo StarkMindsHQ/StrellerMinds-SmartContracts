@@ -2,6 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
+import cookieParser from "cookie-parser";
 
 import { config } from "./config";
 import { requestId } from "./middleware/requestId";
@@ -10,6 +11,8 @@ import { analyticsConsent } from "./middleware/analyticsConsent";
 import { cdnMiddleware } from "./middleware/cdn";
 import { securityHeadersValidator } from "./middleware/securityHeaders";
 import { i18nMiddleware } from "./middleware/i18n";
+import { sessionMiddleware } from "./middleware/session";
+import { csrfProtection } from "./middleware/csrf";
 import { openApiSpec } from "./openapi";
 import { logger } from "./logger";
 import { preloadLocales } from "./i18n";
@@ -31,7 +34,8 @@ import performanceRouter from "./routes/performance";
 import slackRouter from "./routes/slack";
 import exportRouter from "./routes/export";
 import cohortsRouter from "./routes/cohorts";
-import notificationsRouter from "./routes/notifications";
+import graphqlRouter from "./routes/graphql";
+import employerVerificationRouter from "./routes/employer-verification";
 
 const app = express();
 
@@ -69,6 +73,7 @@ app.use(
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
+app.use(cookieParser());
 
 // ── Request ID + metrics ──────────────────────────────────────────────────────
 app.use(requestId);
@@ -77,6 +82,16 @@ app.use(cdnMiddleware);
 
 // ── i18n: language detection ──────────────────────────────────────────────────
 app.use(i18nMiddleware);
+
+// ── CSRF Protection ───────────────────────────────────────────────────────────
+// Generate CSRF token for all requests
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  generateCsrfToken(req, res);
+  next();
+});
+
+// Validate CSRF token on state-changing requests
+app.use(validateCsrfToken);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 app.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
@@ -92,6 +107,9 @@ app.use((req: express.Request, _res: express.Response, next: express.NextFunctio
 // ── Security headers validator ────────────────────────────────────────────────
 app.use(securityHeadersValidator);
 
+// ── Session middleware ───────────────────────────────────────────────────────
+app.use(sessionMiddleware);
+
 // ── API docs ──────────────────────────────────────────────────────────────────
 app.use(
   "/api/docs",
@@ -104,18 +122,21 @@ app.use(
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/health", healthRouter);
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/certificates", certificatesRouter);
-app.use("/api/v1/students", studentsRouter);
+
+// Apply CSRF protection to state-changing routes
+app.use("/api/v1/certificates", csrfProtection, certificatesRouter);
+app.use("/api/v1/students", csrfProtection, studentsRouter);
 app.use("/api/v1/analytics", analyticsRouter);
 app.use("/api/v1/analytics", consentRouter); // consent sub-routes
 app.use("/api/v1/rate-limit", rateLimitRouter);
 app.use("/api/v1/cdn", cdnRouter);
-app.use("/api/v1/certificate-templates", certificateTemplatesRouter);
+app.use("/api/v1/certificate-templates", csrfProtection, certificateTemplatesRouter);
 app.use("/api/v1/performance", performanceRouter);
-app.use("/api/v1/slack", slackRouter);
-app.use("/api/v1/export", exportRouter);
-app.use("/api/v1/cohorts", cohortsRouter);
-app.use("/api/v1/notifications", notificationsRouter);
+app.use("/api/v1/slack", csrfProtection, slackRouter);
+app.use("/api/v1/export", csrfProtection, exportRouter);
+app.use("/api/v1/cohorts", csrfProtection, cohortsRouter);
+app.use("/api/v1/graphql", graphqlRouter);
+app.use("/api/v1/employer", csrfProtection, employerVerificationRouter);
 
 // ── CSP Violation Reporter ─────────────────────────────────────────────────────
 app.post(

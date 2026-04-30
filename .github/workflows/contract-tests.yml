@@ -1,0 +1,158 @@
+name: Contract Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'test/contracts/**'
+      - '.github/workflows/contract-tests.yml'
+  pull_request:
+    branches: [main]
+  repository_dispatch:
+    types: [pact-changed]
+
+env:
+  NODE_VERSION: '20'
+  PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+  PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+
+jobs:
+  consumer-contracts:
+    name: Consumer Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: Run consumer contract tests
+        run: npm run test:consumer
+        env:
+          CONSUMER_VERSION: ${{ github.sha }}
+          GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Upload pact files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pact-files
+          path: pact/contracts/
+          retention-days: 30
+      - name: Publish pacts to Pact Broker
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: npm run pact:publish
+        env:
+          CONSUMER_VERSION: ${{ github.sha }}
+          GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Can I Deploy? (Consumer)
+        if: github.event_name != 'pull_request'
+        run: |
+          npx pact-broker can-i-deploy \
+            --pacticipant ApiGateway \
+            --version ${{ github.sha }} \
+            --to-environment production \
+            --broker-base-url ${{ env.PACT_BROKER_URL }} \
+            --broker-token ${{ env.PACT_BROKER_TOKEN }}
+
+  provider-verification:
+    name: Provider Verification
+    runs-on: ubuntu-latest
+    needs: consumer-contracts
+    if: always() && (needs.consumer-contracts.result == 'success' || github.event_name == 'repository_dispatch')
+    services:
+      user-service:
+        image: strellerminds/user-service:latest
+        ports:
+          - 3001:3001
+        env:
+          NODE_ENV: test
+        options: >-
+          --health-cmd "curl -f http://localhost:3001/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      auth-service:
+        image: strellerminds/auth-service:latest
+        ports:
+          - 3002:3002
+        env:
+          NODE_ENV: test
+        options: >-
+          --health-cmd "curl -f http://localhost:3002/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: sleep 10
+      - name: Verify UserService
+        run: npm run test:provider -- --testPathPattern=user-service
+        env:
+          CI: true
+          USER_SERVICE_URL: http://localhost:3001
+          PROVIDER_VERSION: ${{ github.sha }}
+          GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Verify AuthService
+        run: npm run test:provider -- --testPathPattern=auth-service
+        env:
+          CI: true
+          AUTH_SERVICE_URL: http://localhost:3002
+          PROVIDER_VERSION: ${{ github.sha }}
+          GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      - name: Can I Deploy? (Provider)
+        if: github.event_name != 'pull_request'
+        run: |
+          npx pact-broker can-i-deploy \
+            --pacticipant UserService \
+            --version ${{ github.sha }} \
+            --to-environment production \
+            --broker-base-url ${{ env.PACT_BROKER_URL }} \
+            --broker-token ${{ env.PACT_BROKER_TOKEN }}
+
+  generate-docs:
+    name: Generate Contract Documentation
+    runs-on: ubuntu-latest
+    needs: [consumer-contracts, provider-verification]
+    if: github.ref == 'refs/heads/main' && success()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: pact-files
+          path: pact/contracts/
+      - run: npm run docs:generate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contract-docs
+          path: docs/contracts/
+          retention-days: 90
+      - name: Deploy docs to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/contracts
+          destination_dir: contract-docs
