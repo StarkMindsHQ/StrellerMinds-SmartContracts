@@ -10,7 +10,10 @@ import {
   QueryTemplatesSchema,
   GenerateQrCodeSchema,
   PreviewTemplateSchema,
+  GeneratePdfSchema,
 } from "./dto/certificate-template.dto";
+import { streamCertificatePdf } from "../services/pdfService";
+import { logger } from "../logger";
 
 const router = Router();
 
@@ -137,6 +140,30 @@ router.post("/:id/preview", async (req: Request, res: Response) => {
   if (!parsed.success) return sendError(res, 400, "VALIDATION_ERROR", "Invalid request body", parsed.error.flatten(), req.requestId);
 
   const { sampleData, format } = parsed.data;
+
+  if (format === "pdf") {
+    // Stream the PDF directly — avoids buffering and the 30 s timeout
+    const filename = `${template.name.replace(/[^a-z0-9]/gi, "_")}_preview.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader("Transfer-Encoding", "chunked");
+
+    try {
+      await streamCertificatePdf(res, {
+        template,
+        data: sampleData as Record<string, string>,
+      });
+    } catch (err) {
+      logger.error("PDF preview generation failed", { templateId: template.id, err });
+      if (!res.headersSent) {
+        sendError(res, 500, "PDF_GENERATION_FAILED", "Failed to generate PDF preview", undefined, req.requestId);
+      } else {
+        res.destroy();
+      }
+    }
+    return;
+  }
+
   const resolvedLayout = JSON.parse(
     JSON.stringify(template.layout).replace(/\{\{(\w+)\}\}/g, (_, key) => sampleData[key] ?? `[${key}]`)
   );
@@ -148,6 +175,79 @@ router.post("/:id/preview", async (req: Request, res: Response) => {
   ).toString("base64")}`;
 
   return sendSuccess(res, { previewUrl, format }, 200, req.requestId);
+});
+
+// ── POST /certificate-templates/:id/pdf ──────────────────────────────────────
+// Dedicated PDF generation endpoint that supports attachments (extra pages).
+// Uses streaming so documents with >50 pages never hit the 30 s HTTP timeout.
+//
+// Request body (all fields optional):
+//   data        – template variable values, e.g. { recipientName: "Alice" }
+//   attachments – array of { title, content, contentType } extra pages
+//   chunkSize   – attachment pages per event-loop tick (default 10, max 50)
+router.post("/:id/pdf", async (req: Request, res: Response) => {
+  const template = templateStore.findById(req.params.id);
+  if (!template) {
+    return sendError(res, 404, "NOT_FOUND", `Template ${req.params.id} not found`, undefined, req.requestId);
+  }
+
+  const parsed = GeneratePdfSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return sendError(res, 400, "VALIDATION_ERROR", "Invalid request body", parsed.error.flatten(), req.requestId);
+  }
+
+  const { data, attachments, chunkSize } = parsed.data;
+  const totalPages = 1 + attachments.length;
+
+  logger.info("PDF generation started", {
+    templateId: template.id,
+    templateName: template.name,
+    totalPages,
+    chunkSize,
+    requestId: req.requestId,
+  });
+
+  const filename = `${template.name.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Transfer-Encoding", "chunked");
+  // Tell nginx/CloudFront not to buffer — bytes reach the client immediately
+  res.setHeader("X-Accel-Buffering", "no");
+
+  const startMs = Date.now();
+
+  try {
+    await streamCertificatePdf(res, {
+      template,
+      data: data as Record<string, string>,
+      attachments,
+      chunkSize,
+    });
+
+    templateStore.incrementUsage(req.params.id);
+
+    logger.info("PDF generation completed", {
+      templateId: template.id,
+      totalPages,
+      durationMs: Date.now() - startMs,
+      requestId: req.requestId,
+    });
+  } catch (err) {
+    logger.error("PDF generation failed", {
+      templateId: template.id,
+      totalPages,
+      durationMs: Date.now() - startMs,
+      err,
+      requestId: req.requestId,
+    });
+
+    if (!res.headersSent) {
+      sendError(res, 500, "PDF_GENERATION_FAILED", "Failed to generate PDF", undefined, req.requestId);
+    } else {
+      // Bytes already flowing — destroy the socket so the client gets an error
+      res.destroy(err instanceof Error ? err : new Error(String(err)));
+    }
+  }
 });
 
 export default router;
