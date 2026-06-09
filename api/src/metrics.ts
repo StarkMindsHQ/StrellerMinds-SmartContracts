@@ -24,6 +24,39 @@ export const verificationTotal = new client.Counter({
   labelNames: ["result"], // 'valid' | 'invalid' | 'not_found' | 'error'
 });
 
+// ── Employer verification metrics ────────────────────────────────────────────────
+
+export const employerVerificationTotal = new client.Counter({
+  name: "cert_api_employer_verifications_total",
+  help: "Total employer certificate verification attempts",
+  labelNames: ["result", "level", "employer"], // 'valid' | 'invalid' | 'not_found' | 'error', 'basic' | 'enhanced' | 'comprehensive'
+});
+
+export const batchVerificationTotal = new client.Counter({
+  name: "cert_api_batch_verifications_total",
+  help: "Total employer batch verification attempts",
+  labelNames: ["result", "employer"], // 'success' | 'partial' | 'failure'
+});
+
+export const verificationDuration = new client.Histogram({
+  name: "cert_api_verification_duration_seconds",
+  help: "Duration of certificate verification operations",
+  labelNames: ["type", "level"], // 'single' | 'batch', 'basic' | 'enhanced' | 'comprehensive'
+  buckets: [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30],
+});
+
+export const employerAuthenticationTotal = new client.Counter({
+  name: "cert_api_employer_authentications_total",
+  help: "Total employer authentication attempts",
+  labelNames: ["result", "method"], // 'success' | 'failure', 'jwt' | 'api_key' | 'oauth'
+});
+
+export const employerRateLimitHits = new client.Counter({
+  name: "cert_api_employer_rate_limit_hits_total",
+  help: "Total employer rate limit hits",
+  labelNames: ["tier", "operation", "employer"], // 'basic' | 'premium' | 'enterprise', 'verify' | 'batch' | 'read'
+});
+
 export const contractCallDuration = new client.Histogram({
   name: "cert_api_contract_call_duration_seconds",
   help: "Duration of Soroban contract calls",
@@ -83,6 +116,54 @@ export const assetServeTime = new client.Histogram({
   help: "Time to serve static assets",
   labelNames: ["asset_type"],
   buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2],
+});
+
+export const queryDuration = new client.Histogram({
+  name: "cert_api_query_duration_seconds",
+  help: "Duration of API query operations by source",
+  labelNames: ["query", "source", "status"],
+  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 1, 2.5],
+});
+
+export const queryCacheEvents = new client.Counter({
+  name: "cert_api_query_cache_events_total",
+  help: "Query cache lifecycle events by query type",
+  labelNames: ["query", "event"],
+});
+
+export const queryInFlightBackend = new client.Gauge({
+  name: "cert_api_query_in_flight_backend",
+  help: "Number of in-flight backend Soroban/indexer query operations",
+});
+
+export const queryPoolActiveSize = new client.Gauge({
+  name: "cert_api_query_pool_active_size",
+  help: "Configured active size of the query backend pool",
+});
+
+export const queryPoolAvailableSize = new client.Gauge({
+  name: "cert_api_query_pool_available_size",
+  help: "Approximate available capacity in the query backend pool",
+});
+
+export const queryCacheEntries = new client.Gauge({
+  name: "cert_api_query_cache_entries",
+  help: "Current number of cached query results",
+});
+
+export const queryEstimatedLoadReduction = new client.Gauge({
+  name: "cert_api_query_estimated_load_reduction_percent",
+  help: "Estimated backend load reduction percentage from caching and request coalescing",
+});
+
+export const queryAverageTimeMs = new client.Gauge({
+  name: "cert_api_query_average_time_ms",
+  help: "Average query time in milliseconds across observed requests",
+});
+
+export const queryCacheHitRatio = new client.Gauge({
+  name: "cert_api_query_cache_hit_ratio",
+  help: "Query cache hit ratio as a 0-1 value",
 });
 
 export const registry = client.register;

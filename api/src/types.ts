@@ -55,6 +55,48 @@ export interface CertificateAnalytics {
   lastUpdated: number;
 }
 
+// ── Social Sharing types ─────────────────────────────────────────────────────
+
+export type SharePlatform = "Twitter" | "LinkedIn" | "Facebook";
+
+export interface ShareRecord {
+  certificateId: string;
+  user: string; // Stellar address
+  platform: SharePlatform;
+  customMessage: string;
+  shareUrl: string;
+  timestamp: number;
+  engagementCount: number;
+  verified: boolean;
+}
+
+export interface SocialSharingAnalytics {
+  totalShares: number;
+  twitterShares: number;
+  linkedinShares: number;
+  facebookShares: number;
+  totalEngagement: number;
+  averageEngagement: number;
+  uniqueSharers: number;
+  lastUpdated: number;
+}
+
+export interface ShareRequest {
+  certificateId: string;
+  platform: SharePlatform;
+  customMessage?: string;
+}
+
+export interface ShareResponse {
+  success: boolean;
+  shareRecord: ShareRecord;
+  engagement: {
+    platform: SharePlatform;
+    shareUrl: string;
+    engagementTarget: number; // target engagement for 20% user engagement goal
+  };
+}
+
 // ── API response envelope ────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
@@ -105,4 +147,100 @@ export interface UserRateLimitStatus {
   resetAt: number;
   /** Whether the user is currently throttled */
   throttled: boolean;
+}
+
+// ── Student Cohort Management types ──────────────────────────────────────────
+
+export interface Cohort {
+  id: string;
+  name: string;
+  description: string;
+  course: string;
+  instructor: string;
+  startDate: number; // unix timestamp
+  endDate: number; // unix timestamp
+  maxStudents: number;
+  currentStudents: number;
+  status: 'active' | 'completed' | 'archived' | 'draft';
+  createdAt: number;
+  updatedAt: number;
+  metadata?: Record<string, any>;
+}
+
+export interface CohortMember {
+  cohortId: string;
+  studentAddress: string;
+  studentName?: string;
+  enrolledAt: number;
+  status: 'active' | 'completed' | 'withdrawn';
+  progress: number; // percentage 0-100
+  certificatesEarned: number;
+  lastActivity: number;
+}
+
+export interface CohortLeaderboardEntry {
+  rank: number;
+  studentAddress: string;
+  studentName?: string;
+  points: number;
+  certificatesCompleted: number;
+  assignmentsCompleted: number;
+  participationScore: number;
+  badges: string[];
+}
+
+export interface CohortMessage {
+  id: string;
+  cohortId: string;
+  senderAddress: string;
+  senderName?: string;
+  content: string;
+  timestamp: number;
+  type: 'announcement' | 'discussion' | 'question' | 'resource';
+  attachments?: string[];
+  replyTo?: string; // message ID for threaded discussions
+  reactions?: Record<string, number>; // emoji: count
+}
+
+export interface CreateCohortRequest {
+  name: string;
+  description: string;
+  course: string;
+  instructor: string;
+  startDate: number;
+  endDate: number;
+  maxStudents: number;
+  metadata?: Record<string, any>;
+}
+
+export interface UpdateCohortRequest {
+  name?: string;
+  description?: string;
+  course?: string;
+  instructor?: string;
+  startDate?: number;
+  endDate?: number;
+  maxStudents?: number;
+  status?: 'active' | 'completed' | 'archived' | 'draft';
+  metadata?: Record<string, any>;
+}
+
+export interface AddStudentsRequest {
+  studentAddresses: string[];
+}
+
+export interface CohortStats {
+  totalCohorts: number;
+  activeCohorts: number;
+  totalStudents: number;
+  averageProgress: number;
+  completionRate: number;
+  engagementRate: number;
+}
+
+export interface CohortAnalytics {
+  cohort: Cohort;
+  stats: CohortStats;
+  leaderboard: CohortLeaderboardEntry[];
+  recentActivity: CohortMessage[];
 }

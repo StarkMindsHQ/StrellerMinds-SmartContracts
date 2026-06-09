@@ -1122,6 +1122,43 @@ pub enum NotificationPriorityLevel {
     CriticalOnly,
 }
 
+/// How often the user wants to receive digest summaries.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DigestFrequency {
+    /// No digest; individual notifications only.
+    None,
+    /// One digest per day.
+    Daily,
+    /// One digest per week.
+    Weekly,
+    /// One digest per month.
+    Monthly,
+}
+
+/// User-controlled notification preferences covering channel toggles,
+/// delivery frequency, and digest settings.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UserNotificationPreferences {
+    /// Address of the user these preferences belong to.
+    pub user: Address,
+    /// Whether email notifications are enabled.
+    pub email_enabled: bool,
+    /// Whether push notifications are enabled.
+    pub push_enabled: bool,
+    /// Maximum notifications delivered per day (0 = unlimited).
+    pub max_daily: u32,
+    /// Hour (0–23) at which the quiet period starts.
+    pub quiet_hours_start: u32,
+    /// Hour (0–23) at which the quiet period ends.
+    pub quiet_hours_end: u32,
+    /// How often digest summaries are sent.
+    pub digest_frequency: DigestFrequency,
+    /// Unix timestamp when these preferences were last updated.
+    pub updated_at: u64,
+}
+
 /// Record of a notification that was dispatched to a user.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1810,6 +1847,8 @@ pub enum DataKey {
     BatteryConfig(Address),
     /// Notification history for a user.
     NotifHistory(Address),
+    /// User-controlled notification preferences.
+    NotifPreferences(Address),
     /// Authentication events for a user.
     AuthEvents(Address),
     /// Security alerts for a user.
@@ -2101,3 +2140,127 @@ pub struct CollaborationProfile {
 // ============================================================================
 
 pub use crate::errors::MobileOptimizerError;
+
+// ============================================================================
+// PWA Push Notifications & Install-to-Home-Screen Types (Issue #440)
+// ============================================================================
+
+/// A push notification payload stored on-chain for delivery tracking.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PushNotification {
+    /// Unique notification identifier.
+    pub notification_id: String,
+    /// Recipient user address.
+    pub recipient: Address,
+    /// Notification title.
+    pub title: String,
+    /// Notification body text.
+    pub body: String,
+    /// Optional deep-link URL opened when the notification is tapped.
+    pub action_url: Option<String>,
+    /// Category tag for grouping / filtering.
+    pub category: NotificationCategory,
+    /// Unix timestamp when the notification was created.
+    pub created_at: u64,
+    /// Unix timestamp after which the notification should not be shown.
+    pub expires_at: Option<u64>,
+    /// Whether the notification has been delivered.
+    pub delivered: bool,
+    /// Whether the user has read / dismissed the notification.
+    pub read: bool,
+}
+
+/// Category of a push notification.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NotificationCategory {
+    /// Course-related update (new content, deadline reminder).
+    CourseUpdate,
+    /// Achievement or badge earned.
+    Achievement,
+    /// Certificate issued.
+    CertificateIssued,
+    /// Reminder to continue a learning streak.
+    StreakReminder,
+    /// System-level announcement.
+    SystemAnnouncement,
+    /// Custom / application-defined category.
+    Custom,
+}
+
+/// Record of a user's response to the PWA install prompt.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InstallPromptRecord {
+    /// User who was shown the prompt.
+    pub user: Address,
+    /// Unix timestamp when the prompt was shown.
+    pub shown_at: u64,
+    /// Outcome of the prompt interaction.
+    pub outcome: InstallPromptOutcome,
+    /// Platform / browser where the prompt was shown.
+    pub platform: String,
+}
+
+/// Possible outcomes of an install-to-home-screen prompt.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum InstallPromptOutcome {
+    /// User accepted and installed the PWA.
+    Accepted,
+    /// User dismissed the prompt without installing.
+    Dismissed,
+    /// Prompt was shown but the user has not yet responded.
+    Pending,
+}
+
+/// Aggregated PWA install and engagement metrics.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PwaMetrics {
+    /// Total number of install prompts shown.
+    pub prompts_shown: u32,
+    /// Number of prompts that resulted in an install.
+    pub installs_accepted: u32,
+    /// Number of prompts that were dismissed.
+    pub installs_dismissed: u32,
+    /// Total push notifications sent.
+    pub notifications_sent: u32,
+    /// Total push notifications delivered.
+    pub notifications_delivered: u32,
+    /// Total push notifications read by the user.
+    pub notifications_read: u32,
+    /// Number of users with an active push subscription.
+    pub active_push_subscribers: u32,
+}
+
+// ============================================================================
+// Memory Optimization & Pagination Types (Issue #421)
+// ============================================================================
+
+/// Parameters for requesting data in chunks to prevent memory exhaustion.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PaginationParams {
+    /// The cursor from which to start fetching (usually an ID or timestamp).
+    pub cursor: Option<String>,
+    /// Maximum number of items to return in this chunk.
+    pub limit: u32,
+    /// Whether to return results in descending order.
+    pub descending: bool,
+}
+
+/// A paginated wrapper for large datasets.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PaginatedResult<T> {
+    /// The chunk of items for the current page.
+    pub items: Vec<T>,
+    /// Cursor to use for fetching the next page.
+    pub next_cursor: Option<String>,
+    /// Total number of items across all pages (if available).
+    pub total_count: u64,
+    /// Estimated bytes consumed by this chunk in memory.
+    pub chunk_size_bytes: u64,
+}

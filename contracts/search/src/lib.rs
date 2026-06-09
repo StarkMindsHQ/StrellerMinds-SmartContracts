@@ -139,6 +139,18 @@ impl AdvancedSearchContract {
         Ok(())
     }
 
+    /// Predict a user's likelihood of completing a course (0-100).
+    pub fn predict_success_rate(
+        env: Env,
+        user: Address,
+        course_id: String,
+    ) -> Result<u32, Error> {
+        Self::require_initialized(&env)?;
+        user.require_auth();
+
+        Ok(RecommendationEngine::predict_completion_likelihood(&env, user, course_id))
+    }
+
     // ==================== Content Analysis Functions ====================
 
     /// Store content analysis from oracle

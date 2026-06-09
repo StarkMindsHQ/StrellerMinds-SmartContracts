@@ -12,6 +12,8 @@ impl ContentAnalyzer {
         let key = DataKey::ContentAnalysis(content_id.clone());
         env.storage().persistent().set(&key, &analysis);
 
+        Self::index_content_catalog(env, &content_id);
+
         // Index by tags for searchability
         Self::index_by_tags(env, &content_id, &analysis.auto_generated_tags);
 
@@ -29,6 +31,22 @@ impl ContentAnalyzer {
     pub fn get_analysis(env: &Env, content_id: String) -> Option<ContentAnalysis> {
         let key = DataKey::ContentAnalysis(content_id);
         env.storage().persistent().get(&key)
+    }
+
+    /// Get every content ID that has stored analysis metadata.
+    pub fn get_content_catalog(env: &Env) -> Vec<String> {
+        env.storage()
+            .persistent()
+            .get::<DataKey, Vec<String>>(&DataKey::ContentCatalog)
+            .unwrap_or_else(|| Vec::new(env))
+    }
+
+    fn index_content_catalog(env: &Env, content_id: &String) {
+        let mut catalog = Self::get_content_catalog(env);
+        if !catalog.contains(content_id) {
+            catalog.push_back(content_id.clone());
+            env.storage().persistent().set(&DataKey::ContentCatalog, &catalog);
+        }
     }
 
     /// Index content by tags for tag-based search

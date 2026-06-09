@@ -7,6 +7,7 @@ use crate::{
         LearningSession, OptionalSessionType, ProgressReport, ReportPeriod,
     },
 };
+use shared::timestamp_utils::{utc_day_start, SECS_PER_DAY};
 use soroban_sdk::{Address, Env, Symbol, Vec};
 
 /// Report generation and time-based analytics
@@ -69,7 +70,7 @@ impl ReportGenerator {
         }
 
         // Calculate average daily time
-        let report_days = ((end_date - start_date) / 86400) + 1; // +1 to include both start and end days
+        let report_days = ((end_date - start_date) / SECS_PER_DAY) + 1; // +1 to include both start and end days
         let average_daily_time = total_time.checked_div(report_days).unwrap_or(0);
 
         // Calculate consistency score
@@ -124,8 +125,8 @@ impl ReportGenerator {
         course_id: &Symbol,
         date: u64,
     ) -> Result<AggregatedMetrics, AnalyticsError> {
-        let day_start = (date / 86400) * 86400; // Start of day
-        let day_end = day_start + 86400; // End of day
+        let day_start = utc_day_start(date);
+        let day_end = day_start + SECS_PER_DAY;
 
         let students = AnalyticsStorage::get_course_students(env, course_id);
         let mut active_students = 0u32;
@@ -345,13 +346,13 @@ impl ReportGenerator {
             return 0;
         }
 
-        let total_days = ((end_date - start_date) / 86400) + 1;
+        let total_days = ((end_date - start_date) / SECS_PER_DAY) + 1;
         let mut active_days: Vec<u64> = Vec::new(env);
 
-        // Count unique active days
+        // Count unique active UTC days
         for i in 0..sessions.len() {
             let session = sessions.get(i).unwrap();
-            let day = session.start_time / 86400;
+            let day = session.start_time / SECS_PER_DAY;
 
             let mut day_exists = false;
             for j in 0..active_days.len() {

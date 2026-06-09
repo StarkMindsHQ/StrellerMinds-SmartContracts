@@ -1,0 +1,19 @@
+[package]
+name = "social-sharing"
+version = "0.1.0"
+edition = "2021"
+description = "Social sharing for achievements and credentials: Twitter, LinkedIn, Facebook, custom messages, and analytics tracking"
+license = "Apache-2.0"
+repository = "https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+
+[features]
+testutils = ["soroban-sdk/testutils"]

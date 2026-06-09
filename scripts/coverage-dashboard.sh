@@ -308,54 +308,128 @@ generate_html_dashboard() {
     
     cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>StrellerMinds Test Coverage Dashboard</title>
     <style>
+        :root {
+            --page-bg: #f5f7fb;
+            --panel-bg: #ffffff;
+            --section-bg: #f9fafc;
+            --text-primary: #273142;
+            --text-muted: #667085;
+            --border: #d8dee8;
+            --table-header-bg: #2563eb;
+            --table-header-text: #ffffff;
+            --progress-track: #e7edf5;
+            --recommendation-bg: #fff7d8;
+            --recommendation-border: #f5d66b;
+            --recommendation-heading: #6b4e00;
+            --shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+            color-scheme: light;
+        }
+        :root[data-theme="dark"] {
+            --page-bg: #101820;
+            --panel-bg: #17212b;
+            --section-bg: #1d2935;
+            --text-primary: #edf3f8;
+            --text-muted: #b8c3cf;
+            --border: #344454;
+            --table-header-bg: #3b82f6;
+            --table-header-text: #ffffff;
+            --progress-track: #2e3a46;
+            --recommendation-bg: #322b14;
+            --recommendation-border: #806b24;
+            --recommendation-heading: #f7d66a;
+            --shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+            color-scheme: dark;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: white;
+            background-color: var(--panel-bg);
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+        }
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .toolbar label {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .toolbar select {
+            min-width: 170px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--panel-bg);
+            color: var(--text-primary);
+            font: inherit;
         }
         .header {
             text-align: center;
             margin-bottom: 40px;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 2px solid var(--border);
             padding-bottom: 20px;
         }
         .header h1 {
-            color: #2c3e50;
+            color: var(--text-primary);
             margin: 0;
             font-size: 2.5em;
         }
         .header p {
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin: 10px 0 0 0;
             font-size: 1.2em;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .toolbar label {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .toolbar select {
+            min-width: 180px;
+            padding: 8px 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            background: white;
+            color: #2c3e50;
+            font: inherit;
         }
         .section {
             margin-bottom: 30px;
             padding: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            background-color: #fafafa;
+            background-color: var(--section-bg);
         }
         .section h2 {
-            color: #2c3e50;
+            color: var(--text-primary);
             margin-top: 0;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
         }
         .coverage-table {
@@ -367,17 +441,17 @@ generate_html_dashboard() {
         .coverage-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border);
         }
         .coverage-table th {
-            background-color: #3498db;
-            color: white;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
             font-weight: bold;
         }
         .coverage-bar {
             width: 100%;
             height: 20px;
-            background-color: #ecf0f1;
+            background-color: var(--progress-track);
             border-radius: 10px;
             overflow: hidden;
         }
@@ -398,62 +472,81 @@ generate_html_dashboard() {
             margin-top: 15px;
         }
         .metric-card {
-            background-color: white;
+            background-color: var(--panel-bg);
             padding: 20px;
             border-radius: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             text-align: center;
         }
         .metric-value {
             font-size: 2em;
             font-weight: bold;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
         .metric-label {
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin-top: 5px;
         }
         .recommendations {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
+            background-color: var(--recommendation-bg);
+            border: 1px solid var(--recommendation-border);
             border-radius: 8px;
             padding: 15px;
         }
         .recommendations h3 {
-            color: #856404;
+            color: var(--recommendation-heading);
             margin-top: 0;
         }
         .recommendation-item {
             margin: 10px 0;
             padding: 10px;
-            background-color: white;
+            background-color: var(--panel-bg);
             border-radius: 5px;
             border-left: 4px solid #f39c12;
         }
         .last-updated {
             text-align: center;
-            color: #7f8c8d;
+            color: var(--text-muted);
             margin-top: 30px;
             font-size: 0.9em;
+        }
+        [dir="rtl"] .coverage-table th,
+        [dir="rtl"] .coverage-table td {
+            text-align: right;
+        }
+        [dir="rtl"] .toolbar {
+            justify-content: flex-start;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="toolbar">
+            <label for="locale-select" data-i18n="languageLabel">Language</label>
+            <select id="locale-select" aria-label="Language">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="zh-CN">中文（普通话）</option>
+                <option value="ja">日本語</option>
+                <option value="ar">العربية</option>
+            </select>
+        </div>
         <div class="header">
-            <h1>🧪 StrellerMinds Test Coverage Dashboard</h1>
-            <p>Comprehensive test coverage analysis and quality metrics</p>
+            <h1 data-i18n="title">🧪 StrellerMinds Test Coverage Dashboard</h1>
+            <p data-i18n="subtitle">Comprehensive test coverage analysis and quality metrics</p>
         </div>
         
         <div class="section">
-            <h2>📊 Contract Coverage Summary</h2>
+            <h2 data-i18n="contractSummary">📊 Contract Coverage Summary</h2>
             <table class="coverage-table" id="contract-table">
                 <thead>
                     <tr>
-                        <th>Contract</th>
-                        <th>Coverage</th>
-                        <th>Status</th>
-                        <th>Progress</th>
+                        <th data-i18n="contract">Contract</th>
+                        <th data-i18n="coverage">Coverage</th>
+                        <th data-i18n="status">Status</th>
+                        <th data-i18n="progress">Progress</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -463,28 +556,147 @@ generate_html_dashboard() {
         </div>
         
         <div class="section">
-            <h2>🎯 Quality Metrics</h2>
+            <h2 data-i18n="qualityMetrics">🎯 Quality Metrics</h2>
             <div class="metrics-grid" id="metrics-grid">
                 <!-- Metrics will be inserted here -->
             </div>
         </div>
         
         <div class="section">
-            <h2>💡 Recommendations</h2>
+            <h2 data-i18n="recommendations">💡 Recommendations</h2>
             <div class="recommendations" id="recommendations">
                 <!-- Recommendations will be inserted here -->
             </div>
         </div>
         
         <div class="last-updated">
-            Last updated: <span id="last-updated-time"></span>
+            <span data-i18n="lastUpdated">Last updated</span>: <span id="last-updated-time"></span>
         </div>
     </div>
     
     <script>
-        // This would be populated by the script with actual data
-        // For now, showing static structure
-        document.getElementById('last-updated-time').textContent = new Date().toLocaleString();
+        const translations = {
+            en: {
+                languageLabel: 'Language',
+                title: '🧪 StrellerMinds Test Coverage Dashboard',
+                subtitle: 'Comprehensive test coverage analysis and quality metrics',
+                contractSummary: '📊 Contract Coverage Summary',
+                contract: 'Contract',
+                coverage: 'Coverage',
+                status: 'Status',
+                progress: 'Progress',
+                qualityMetrics: '🎯 Quality Metrics',
+                recommendations: '💡 Recommendations',
+                lastUpdated: 'Last updated'
+            },
+            es: {
+                languageLabel: 'Idioma',
+                title: '🧪 Panel de cobertura de pruebas de StrellerMinds',
+                subtitle: 'Análisis completo de cobertura de pruebas y métricas de calidad',
+                contractSummary: '📊 Resumen de cobertura de contratos',
+                contract: 'Contrato',
+                coverage: 'Cobertura',
+                status: 'Estado',
+                progress: 'Progreso',
+                qualityMetrics: '🎯 Métricas de calidad',
+                recommendations: '💡 Recomendaciones',
+                lastUpdated: 'Última actualización'
+            },
+            fr: {
+                languageLabel: 'Langue',
+                title: '🧪 Tableau de couverture des tests StrellerMinds',
+                subtitle: 'Analyse complète de la couverture des tests et des métriques de qualité',
+                contractSummary: '📊 Résumé de la couverture des contrats',
+                contract: 'Contrat',
+                coverage: 'Couverture',
+                status: 'Statut',
+                progress: 'Progression',
+                qualityMetrics: '🎯 Métriques de qualité',
+                recommendations: '💡 Recommandations',
+                lastUpdated: 'Dernière mise à jour'
+            },
+            de: {
+                languageLabel: 'Sprache',
+                title: '🧪 StrellerMinds Testabdeckungs-Dashboard',
+                subtitle: 'Umfassende Analyse der Testabdeckung und Qualitätsmetriken',
+                contractSummary: '📊 Zusammenfassung der Vertragsabdeckung',
+                contract: 'Vertrag',
+                coverage: 'Abdeckung',
+                status: 'Status',
+                progress: 'Fortschritt',
+                qualityMetrics: '🎯 Qualitätsmetriken',
+                recommendations: '💡 Empfehlungen',
+                lastUpdated: 'Zuletzt aktualisiert'
+            },
+            'zh-CN': {
+                languageLabel: '语言',
+                title: '🧪 StrellerMinds 测试覆盖率仪表板',
+                subtitle: '全面的测试覆盖率分析和质量指标',
+                contractSummary: '📊 合约覆盖率摘要',
+                contract: '合约',
+                coverage: '覆盖率',
+                status: '状态',
+                progress: '进度',
+                qualityMetrics: '🎯 质量指标',
+                recommendations: '💡 建议',
+                lastUpdated: '最后更新'
+            },
+            ja: {
+                languageLabel: '言語',
+                title: '🧪 StrellerMinds テストカバレッジダッシュボード',
+                subtitle: 'テストカバレッジと品質指標の包括的な分析',
+                contractSummary: '📊 コントラクトカバレッジ概要',
+                contract: 'コントラクト',
+                coverage: 'カバレッジ',
+                status: 'ステータス',
+                progress: '進捗',
+                qualityMetrics: '🎯 品質指標',
+                recommendations: '💡 推奨事項',
+                lastUpdated: '最終更新'
+            },
+            ar: {
+                languageLabel: 'اللغة',
+                title: '🧪 لوحة تغطية اختبارات StrellerMinds',
+                subtitle: 'تحليل شامل لتغطية الاختبارات ومقاييس الجودة',
+                contractSummary: '📊 ملخص تغطية العقود',
+                contract: 'العقد',
+                coverage: 'التغطية',
+                status: 'الحالة',
+                progress: 'التقدم',
+                qualityMetrics: '🎯 مقاييس الجودة',
+                recommendations: '💡 التوصيات',
+                lastUpdated: 'آخر تحديث'
+            }
+        };
+
+        const localeSelect = document.getElementById('locale-select');
+        const savedLocale = localStorage.getItem('coverage-dashboard-locale') || 'en';
+        const generatedAt = new Date();
+
+        function formatDateTime(locale) {
+            return new Intl.DateTimeFormat(locale, {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }).format(generatedAt);
+        }
+
+        function applyLocale(locale) {
+            const messages = translations[locale] || translations.en;
+            document.documentElement.lang = locale;
+            document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-i18n]').forEach((node) => {
+                node.textContent = messages[node.dataset.i18n] || translations.en[node.dataset.i18n];
+            });
+            document.getElementById('last-updated-time').textContent = formatDateTime(locale);
+            localeSelect.value = locale;
+            localStorage.setItem('coverage-dashboard-locale', locale);
+        }
+
+        localeSelect.addEventListener('change', (event) => {
+            applyLocale(event.target.value);
+        });
+
+        applyLocale(translations[savedLocale] ? savedLocale : 'en');
     </script>
 </body>
 </html>

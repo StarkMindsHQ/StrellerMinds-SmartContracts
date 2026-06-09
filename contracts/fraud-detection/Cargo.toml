@@ -1,0 +1,31 @@
+[package]
+name = "fraud-detection"
+version = "0.1.0"
+edition = "2021"
+description = "ML-based fraud detection system for fake credentials in the StarkMinds ecosystem"
+license = "Apache-2.0"
+repository = "https://github.com/Ardecrownn/StrellerMinds-SmartContracts"
+readme = "README.md"
+homepage = "https://github.com/Ardecrownn/StrellerMinds-SmartContracts"
+documentation = "https://docs.rs/fraud-detection"
+keywords = ["stellar", "blockchain", "education", "fraud-detection", "soroban"]
+categories = ["cryptography::cryptocurrencies", "web-programming"]
+
+[lib]
+crate-type = ["lib"]
+
+[features]
+testutils = []
+
+[dependencies]
+soroban-sdk = { workspace = true }
+shared = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+proptest = { workspace = true }
+
+[package.metadata.docs.rs]
+all-features = true
