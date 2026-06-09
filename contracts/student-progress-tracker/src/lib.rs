@@ -8,6 +8,7 @@ use shared::event_schema::{
 };
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::{emit_access_control_event, emit_progress_event};
+use shared::gas_optimizer::{TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR};
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Map, Symbol};
 
 #[derive(Clone)]
@@ -43,9 +44,13 @@ impl ProgressTracker {
     /// client.initialize(&admin);
     /// ```
     pub fn initialize(env: Env, admin: Address) -> Result<(), StudentProgressError> {
+        if env.storage().instance().has(&DataKey::Admin) {
+            return Err(StudentProgressError::AlreadyInitialized);
+        }
         admin.require_auth();
 
         env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
         emit_access_control_event!(
             &env,
             symbol_short!("progress"),
@@ -100,6 +105,8 @@ impl ProgressTracker {
 
         progress_map.set(module_id.clone(), percent);
         env.storage().persistent().set(&key, &progress_map);
+        env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+        env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
 
         emit_progress_event!(
             &env,
@@ -129,6 +136,10 @@ impl ProgressTracker {
     /// ```
     pub fn get_progress(env: Env, student: Address, course_id: Symbol) -> Map<Symbol, u32> {
         let key = DataKey::Progress(student, course_id);
+        if env.storage().persistent().has(&key) {
+            env.storage().persistent().extend_ttl(&key, TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
+        }
+        env.storage().instance().extend_ttl(TTL_BUMP_THRESHOLD, TTL_PERSISTENT_YEAR);
         env.storage().persistent().get(&key).unwrap_or(Map::new(&env))
     }
 

@@ -14,6 +14,7 @@ graph LR
 ```
 
 ## 🚀 Getting Started
+- **Smart Contract Development Guide**: [SMART_CONTRACT_DEVELOPMENT_GUIDE.md](SMART_CONTRACT_DEVELOPMENT_GUIDE.md)
 - Development workflow: [development.md](development.md)
 - Developer tools and CLI: [developer-tools.md](developer-tools.md)
 - Contributor onboarding and workshops: [developer-training.md](developer-training.md)

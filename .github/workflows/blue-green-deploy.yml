@@ -1,0 +1,63 @@
+name: Blue-Green Deploy to EKS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}/myapp
+      K8S_NAMESPACE: default
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        if: env.AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: |
+            "${{ env.IMAGE_NAME }}:latest"
+            "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+      - name: Configure kubectl (EKS)
+        if: env.AWS_REGION != ''
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Deploy (Blue-Green)
+        env:
+          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          K8S_NAMESPACE: ${{ env.K8S_NAMESPACE }}
+        run: |
+          chmod +x ./scripts/blue-green-deploy.sh
+          ./scripts/blue-green-deploy.sh "$IMAGE" "$K8S_NAMESPACE"
+
+      - name: Notify on failure and rollback
+        if: failure()
+        run: |
+          chmod +x ./scripts/blue-green-rollback.sh
+          ./scripts/blue-green-rollback.sh "$K8S_NAMESPACE"

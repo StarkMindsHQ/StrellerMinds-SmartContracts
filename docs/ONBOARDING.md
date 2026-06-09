@@ -1,5 +1,7 @@
 # Developer Onboarding Guide
 
+> **Version:** 2.0 | **Last Updated:** April 2026 | **Maintainer:** @LaGodxy
+
 Welcome to the StrellerMinds development team. This comprehensive guide will take you from zero to productive contributor in the StrellerMinds-SmartContracts codebase.
 
 ## Table of Contents
@@ -12,8 +14,10 @@ Welcome to the StrellerMinds development team. This comprehensive guide will tak
 6. [Testing Guidelines](#testing-guidelines)
 7. [Deployment Procedures](#deployment-procedures)
 8. [Code Standards](#code-standards)
-9. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
-10. [Getting Help](#getting-help)
+9. [Best Practices](#best-practices)
+10. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
+11. [Getting Help](#getting-help)
+12. [Verification Checklist](#verification-checklist)
 
 ---
 
@@ -447,6 +451,188 @@ See [contributing.md](contributing.md) for the full documentation checklist.
 
 ---
 
+## Best Practices
+
+### Security-First Development
+
+Always consider security implications in smart contract development:
+
+```rust
+// ✅ GOOD: Validate all inputs
+fn process_transfer(from: Address, to: Address, amount: u32) -> Result<(), Error> {
+    // Validate addresses are not zero
+    if from == Address::from_bytes([0u8; 32]) {
+        return Err(Error::InvalidFromAddress);
+    }
+    if to == Address::from_bytes([0u8; 32]) {
+        return Err(Error::InvalidToAddress);
+    }
+    
+    // Validate amount
+    if amount == 0 {
+        return Err(Error::ZeroAmount);
+    }
+    
+    // Check permissions via RBAC
+    if !Shared::has_role(from, Role::Admin) && !Shared::has_role(from, Role::Minter) {
+        return Err(Error::Unauthorized);
+    }
+    
+    // Proceed with transfer
+    Ok(())
+}
+
+// ❌ BAD: Missing validation
+fn process_transfer(from: Address, to: Address, amount: u32) -> Result<(), Error> {
+    // No validation - vulnerable to attacks!
+    Ok(())
+}
+```
+
+### Reentrancy Protection
+
+Always use the reentrancy guard from the Shared contract:
+
+```rust
+use crate::storage::ReentrancyGuard;
+
+fn sensitive_operation(&self) -> Result<(), Error> {
+    // Acquire lock at start
+    self.reentrancy_guard.assert_not_entered()?;
+    
+    // ... perform operations ...
+    
+    // Lock automatically released when guard goes out of scope
+    Ok(())
+}
+```
+
+### Error Handling
+
+Use descriptive error types:
+
+```rust
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Error {
+    // Authentication errors
+    NotAuthorized = 1,
+    InvalidSignature = 2,
+    ExpiredSession = 3,
+    
+    // Validation errors
+    InvalidInput = 10,
+    OutOfBounds = 11,
+    DuplicateEntry = 12,
+    
+    // State errors
+    ContractNotInitialized = 20,
+    StorageOverflow = 21,
+    LedgerSequenceTooOld = 22,
+}
+```
+
+### Gas Optimization
+
+Follow these patterns to minimize gas costs:
+
+```rust
+// ✅ GOOD: Use u32 instead of u64 when possible
+struct Config {
+    max_supply: u32,  // Sufficient for most token contracts
+    min_stake: u32,
+}
+
+// ✅ GOOD: Batch storage operations
+fn batch_update(&self, updates: Vec<Update>) -> Result<(), Error> {
+    // Single storage commit for multiple changes
+    let mut storage = self.storage.bump_mut();
+    for update in updates {
+        storage.set(&update.key, &update.value)?;
+    }
+    // Single commit at end
+    storage.commit()?;  // One ledger write instead of N
+    Ok(())
+}
+
+// ❌ BAD: Commit after each update
+fn individual_update(&self, updates: Vec<Update>) -> Result<(), Error> {
+    for update in updates {
+        self.storage.set(&update.key, &update.value)?;
+        self.storage.commit()?;  // N ledger writes - expensive!
+    }
+    Ok(())
+}
+```
+
+### Testing Best Practices
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    // ✅ Use setup functions for common test state
+    fn setup_test_env() -> (Env, Address, Address) {
+        let env = Env::default();
+        env.ledger().set().sequence(100);
+        let admin = Address::from_array([1u8; 32]);
+        let user = Address::from_array([2u8; 32]);
+        (env, admin, user)
+    }
+    
+    #[test]
+    fn test_transfer_success() {
+        let (env, admin, user) = setup_test_env();
+        let contract = Contract::new(&env, admin);
+        
+        // Act
+        contract.transfer(&admin, &user, 100).unwrap();
+        
+        // Assert
+        assert_eq!(contract.balance(&user), 100);
+    }
+    
+    #[test]
+    fn test_transfer_insufficient_balance() {
+        let (env, admin, user) = setup_test_env();
+        let contract = Contract::new(&env, admin);
+        
+        // Act & Assert
+        let result = contract.transfer(&admin, &user, 1000);
+        assert!(result.is_err());
+    }
+}
+```
+
+### Documentation Standards
+
+Every public function should have:
+
+```rust
+/// Transfers tokens from one address to another.
+///
+/// # Arguments
+/// * `from` - The source address (must have sufficient balance)
+/// * `to` - The destination address (cannot be zero address)
+/// * `amount` - Number of tokens to transfer (must be > 0)
+///
+/// # Returns
+/// * `Ok(())` - Transfer successful
+/// * `Err(Error::NotAuthorized)` - Caller not authorized
+/// * `Err(Error::InsufficientBalance)` - Source has insufficient balance
+/// * `Err(Error::InvalidInput)` - Invalid address or amount
+///
+/// # Notes
+/// - This function emits a `Transfer` event
+/// - Reentrancy is protected via the Shared contract
+/// - Gas cost: ~1000-1500 gas units depending on storage state
+pub fn transfer(&self, from: &Address, to: &Address, amount: u32) -> Result<(), Error> {
+    // Implementation
+}
+```
+
+---
+
 ## Common Issues & Troubleshooting
 
 ### wasm32 Target Not Found
@@ -546,6 +732,190 @@ make localnet-stop    # Stop local network
 
 # Deployment
 ./scripts/deploy.sh --network testnet --contract <name> --wasm <path>
+```
+
+---
+
+## Verification Checklist
+
+Use this checklist to verify you've successfully completed your onboarding. Each step includes commands to run and expected outputs.
+
+### Phase 1: Environment Setup ✅
+
+| Step | Task | Verification Command | Expected Output |
+|------|------|---------------------|-----------------|
+| 1.1 | Clone repository | `git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git` | Directory created |
+| 1.2 | Navigate to project | `cd StrellerMinds-SmartContracts && ls` | Shows `Cargo.toml`, `Makefile`, `contracts/` |
+| 1.3 | Install Rust | `rustc --version` | Version v1.75+ |
+| 1.4 | Add WASM target | `rustup target add wasm32-unknown-unknown` | Success message |
+| 1.5 | Install Soroban CLI | `soroban --version` | v21.5.0 |
+| 1.6 | Install Stellar CLI | `stellar --version` | v21.5.0 |
+| 1.7 | Run setup script | `./scripts/setup.sh` | "Environment ready" |
+
+### Phase 2: Build & Test ✅
+
+| Step | Task | Verification Command | Expected Output |
+|------|------|---------------------|-----------------|
+| 2.1 | Build contracts | `make build` or `./scripts/build.sh` | "Finished" + WASM files in `target/` |
+| 2.2 | Run unit tests | `make unit-test` or `cargo test` | "test result: ok" |
+| 2.3 | Format code | `cargo fmt --all` | No diff output |
+| 2.4 | Run clippy | `cargo clippy --workspace --all-targets --all-features -- -D warnings` | No warnings |
+
+### Phase 3: Development Workflow ✅
+
+| Step | Task | Verification Command | Expected Output |
+|------|------|---------------------|-----------------|
+| 3.1 | Create feature branch | `git checkout -b feature/test-onboarding` | Switched to new branch |
+| 3.2 | Make a small change | Edit any test file | File modified |
+| 3.3 | Run tests on change | `cargo test` | Tests pass |
+| 3.4 | Commit change | `git commit -m "test: verify onboarding"` | Commit created |
+| 3.5 | Clean up | `git checkout main && git branch -d feature/test-onboarding` | Branch deleted |
+
+### Phase 4: E2E Testing (Optional) ✅
+
+| Step | Task | Verification Command | Expected Output |
+|------|------|---------------------|-----------------|
+| 4.1 | Start localnet | `make localnet-start` | "Started" + RPC at port 8000 |
+| 4.2 | Run E2E tests | `make e2e-test-quick` | "passed" |
+| 4.3 | Stop localnet | `make localnet-stop` | "Stopped" |
+
+---
+
+## Step-by-Step Process to Complete Your Assignment
+
+Follow these steps in order to complete your onboarding assignment:
+
+### Step 1: Clone and Setup (10 minutes)
+
+```bash
+# Clone the repository
+git clone https://github.com/StarkMindsHQ/StrellerMinds-SmartContracts.git
+cd StrellerMinds-SmartContracts
+
+# Run automated setup
+./scripts/setup.sh
+```
+
+**Verification:**
+```bash
+# Confirm setup completed
+soroban --version  # Should show v21.5.0
+stellar --version  # Should show v21.5.0
+```
+
+### Step 2: Build Contracts (5 minutes)
+
+```bash
+# Build all contracts
+make build
+
+# Verify build output
+ls -la target/wasm32-unknown-unknown/release/*.wasm
+```
+
+**Expected Output:**
+```
+analytics.wasm    token.wasm    shared.wasm    mobile_optimizer.wasm
+progress.wasm     proxy.wasm     search.wasm    student_progress_tracker.wasm
+```
+
+### Step 3: Run Tests (10 minutes)
+
+```bash
+# Run all unit tests
+cargo test --workspace --exclude e2e-tests
+
+# Verify no failures
+# Look for: "test result: ok. 0 failed; 0 ignored; 0 measured; 0 filtered out"
+```
+
+### Step 4: Code Quality Checks (5 minutes)
+
+```bash
+# Format code
+cargo fmt --all
+
+# Run linter
+cargo clippy --workspace --all-targets --all-features -- -D warnings -D nonstandard-style
+```
+
+**Expected:** No output means success.
+
+### Step 5: Explore Contract Structure (15 minutes)
+
+```bash
+# List all contracts
+ls -la contracts/
+
+# Explore a specific contract (e.g., token)
+ls -la contracts/token/src/
+cat contracts/token/README.md
+```
+
+### Step 6: Make Your First Contribution (20 minutes)
+
+```bash
+# Create a new branch
+git checkout -b feature/onboarding-verification
+
+# Add a simple test verification comment
+echo "# Onboarding Verification - $(date)" >> VERIFICATION.md
+
+# Commit
+git add VERIFICATION.md
+git commit -m "docs: add onboarding verification marker"
+
+# Push
+git push -u origin feature/onboarding-verification
+```
+
+### Step 7: Review Architecture (15 minutes)
+
+```bash
+# Read architecture overview
+cat docs/ARCHITECTURE.md
+
+# Read code style guide
+cat docs/CODE_STYLE.md
+```
+
+---
+
+## Quick Reference Card
+
+Print or save this quick reference:
+
+```bash
+# === DAILY DEVELOPMENT COMMANDS ===
+
+# Build
+make build
+
+# Test (fast)
+make unit-test
+
+# Test (full including E2E)
+make test
+
+# Format + Lint
+cargo fmt --all && cargo clippy -- -D warnings
+
+# Start local network
+make localnet-start
+
+# Stop local network
+make localnet-stop
+
+# Deploy to testnet
+./scripts/deploy.sh --network testnet --contract <name> --wasm <path>
+
+# === FILE LOCATIONS ===
+
+# Contracts:     contracts/<name>/
+# Tests:         contracts/<name>/src/test.rs
+# Docs:          docs/
+# Scripts:       scripts/
+# Build output:  target/wasm32-unknown-unknown/release/
 ```
 
 ---

@@ -238,11 +238,13 @@ impl SearchAnalytics {
 
     /// Storage key generators
     fn search_event_key(env: &Env, _timestamp: u64) -> String {
-        String::from_str(env, "search_evt")
+        let s = format!("search_evt:{}", _timestamp);
+        String::from_str(env, &s)
     }
 
     fn click_event_key(env: &Env, _timestamp: u64) -> String {
-        String::from_str(env, "click_evt")
+        let s = format!("click_evt:{}", _timestamp);
+        String::from_str(env, &s)
     }
 
     fn ctr_key(env: &Env, _query: &String, _content_id: &String) -> String {

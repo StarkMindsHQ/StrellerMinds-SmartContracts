@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "language": "العربية",
+    "locale": "ar",
+    "direction": "rtl",
+    "dateFormat": "DD/MM/YYYY",
+    "timeFormat": "HH:mm",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "currency": "SAR"
+    }
+  },
+  "errors": {
+    "AUTH_REQUIRED": "رأس التفويض مطلوب",
+    "TOKEN_EXPIRED": "انتهت صلاحية رمز الوصول",
+    "TOKEN_INVALID": "رمز الوصول غير صالح",
+    "INSUFFICIENT_SCOPE": "النطاق المطلوب: {{scope}}",
+    "INVALID_CERTIFICATE_ID": "يجب أن يكون معرف الشهادة سلسلة سداسية عشرية مكونة من 64 حرفاً",
+    "INVALID_ADDRESS": "عنوان Stellar غير صالح",
+    "CERTIFICATE_NOT_FOUND": "الشهادة غير موجودة",
+    "REVOCATION_NOT_FOUND": "لم يتم العثور على سجل إلغاء لهذه الشهادة",
+    "CONTRACT_ERROR": "فشل الاستعلام عن سلسلة الكتل. يرجى المحاولة مرة أخرى.",
+    "VALIDATION_ERROR": "نص الطلب غير صالح",
+    "INVALID_API_KEY": "مفتاح API غير صالح",
+    "RATE_LIMIT_EXCEEDED": "طلبات كثيرة جداً. يرجى المحاولة لاحقاً.",
+    "INTERNAL_ERROR": "حدث خطأ داخلي في الخادم"
+  },
+  "health": {
+    "status_ok": "موافق",
+    "status_ready": "جاهز",
+    "status_not_ready": "غير_جاهز",
+    "cannot_reach_contract": "لا يمكن الوصول إلى عقد Soroban"
+  },
+  "certificate": {
+    "verified": "تم التحقق من الشهادة بنجاح",
+    "not_found": "الشهادة غير موجودة",
+    "revoked": "تم إلغاء الشهادة",
+    "expired": "انتهت صلاحية الشهادة"
+  },
+  "formats": {
+    "date_short": "{{day}}/{{month}}/{{year}}",
+    "date_long": "{{day}} {{monthName}} {{year}}",
+    "number": "{{value}}",
+    "currency": "{{value}} ر.س"
+  }
+}

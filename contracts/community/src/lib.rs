@@ -17,7 +17,21 @@ mod tests;
 
 use shared::monitoring::{ContractHealthReport, Monitor};
 use shared::rate_limiter::{enforce_rate_limit, RateLimitConfig};
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct CommunityExport {
+    pub posts_created: u32,
+    pub replies_given: u32,
+    pub solutions_provided: u32,
+    pub contributions_made: u32,
+    pub events_attended: u32,
+    pub mentorship_sessions: u32,
+    pub helpful_votes_received: u32,
+    pub reputation_score: u32,
+    pub joined_at: u64,
+}
 
 pub use errors::CommunityError;
 pub use errors::Error;
@@ -1119,6 +1133,21 @@ impl Community {
     /// ```
     pub fn get_config(env: Env) -> CommunityConfig {
         CommunityStorage::get_config(&env)
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> CommunityExport {
+        let stats = AnalyticsManager::get_user_stats(&env, &user);
+        CommunityExport {
+            posts_created: stats.posts_created,
+            replies_given: stats.replies_given,
+            solutions_provided: stats.solutions_provided,
+            contributions_made: stats.contributions_made,
+            events_attended: stats.events_attended,
+            mentorship_sessions: stats.mentorship_sessions,
+            helpful_votes_received: stats.helpful_votes_received,
+            reputation_score: stats.reputation_score,
+            joined_at: stats.joined_at,
+        }
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

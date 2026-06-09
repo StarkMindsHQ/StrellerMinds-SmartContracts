@@ -15,7 +15,7 @@ From repository root:
 
 ```bash
 npm install
-npm run visual:test:update
+npm run visual:test:update   # update committed baseline screenshots when UI changes are intentional
 npm run visual:test
 ```
 
@@ -24,6 +24,8 @@ To inspect diffs:
 ```bash
 npm run visual:test:report
 ```
+
+> Note: CI runs visual tests against the committed baselines and does not update snapshots automatically.
 
 ## CI Integration
 

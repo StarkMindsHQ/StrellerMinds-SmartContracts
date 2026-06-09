@@ -8,6 +8,7 @@ use crate::types::{
     ActivityType, AdaptiveDifficulty, ChallengeDifficulty, GamificationKey, GamificationProfile,
     UserAchievement,
 };
+use shared::timestamp_utils::utc_day_index;
 
 /// First 25 IDs are reserved for milestone achievements seeded at init.
 const MILESTONE_RESERVE: u64 = 25;
@@ -615,9 +616,6 @@ impl AchievementManager {
         now: u64,
         config: &crate::types::GamificationConfig,
     ) -> u32 {
-        let one_day = 86_400u64;
-        let two_days = one_day * 2;
-
         if profile.current_streak == 0 {
             // Very first activity ever recorded for this user
             profile.current_streak = 1;
@@ -625,12 +623,17 @@ impl AchievementManager {
             return 0;
         }
 
-        let elapsed = now.saturating_sub(profile.last_activity);
+        // Compare UTC day indices so that a user active at 23:00 UTC and again
+        // at 01:00 UTC the next day (elapsed = 7 200 s < 86 400 s) is correctly
+        // treated as a new day rather than the same day.
+        let last_day = utc_day_index(profile.last_activity);
+        let now_day = utc_day_index(now);
+        let day_diff = now_day.saturating_sub(last_day);
 
-        if elapsed < one_day {
-            // Same day — streak already counted, no change, no bonus
-        } else if elapsed <= two_days {
-            // Consecutive day — extend streak
+        if day_diff == 0 {
+            // Same UTC day — streak already counted, no change, no bonus
+        } else if day_diff == 1 {
+            // Consecutive UTC day — extend streak
             profile.current_streak += 1;
             if profile.current_streak > profile.max_streak {
                 profile.max_streak = profile.current_streak;
@@ -648,7 +651,7 @@ impl AchievementManager {
                 );
             }
         } else {
-            // Streak broken
+            // Streak broken (gap of 2+ UTC days)
             profile.current_streak = 1;
         }
 

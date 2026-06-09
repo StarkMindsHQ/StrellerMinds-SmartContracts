@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Bytes, BytesN, String, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Map, String, Vec};
 
 // ─────────────────────────────────────────────────────────────
 // Certificate Priority Levels
@@ -162,6 +162,8 @@ pub enum CertificateStatus {
     Suspended,
     /// Certificate was revoked and then reissued as a new version.
     Reissued,
+    /// Certificate has been flagged as non-compliant by an auditor.
+    NonCompliant,
 }
 
 /// An on-chain record of an issued certificate.
@@ -219,6 +221,9 @@ pub struct CertificateTemplate {
     pub created_at: u64,
     /// Whether the template is available for use.
     pub is_active: bool,
+    pub version: u32,
+    pub parent_version: Option<u32>,
+    pub changelog: String,
 }
 
 /// A single field definition within a certificate template.
@@ -288,38 +293,30 @@ pub struct BatchResult {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Batch Export
+// Batch Operation Progress Tracking
 // ─────────────────────────────────────────────────────────────
-/// Optional compliance record wrapper (Soroban does not support `Option<CustomType>`).
+/// Types of batch operations that can be tracked.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum OptionalCompliance {
-    None,
-    Some(ComplianceRecord),
+pub enum BatchOperationType {
+    Issue,
+    Revoke,
+    Verify,
 }
 
-/// Optional revocation record wrapper (Soroban does not support `Option<CustomType>`).
+/// Progress tracking record for long-running or chunked batch operations.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum OptionalRevocation {
-    None,
-    Some(RevocationRecord),
-}
-
-/// A single entry in a batch certificate export, bundling the certificate with its
-/// associated compliance and revocation metadata for ZIP packaging by the client.
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BatchExportEntry {
-    /// The full certificate record.
-    pub certificate: Certificate,
-    /// Compliance record, if one exists for this certificate.
-    pub compliance: OptionalCompliance,
-    /// Revocation record, if the certificate has been revoked.
-    pub revocation: OptionalRevocation,
-    /// Suggested filename for this certificate in the ZIP archive
-    /// (e.g. `"<course_id>_<student_short>.json"`).
-    pub filename: String,
+pub struct BatchProgress {
+    pub job_id: BytesN<32>,
+    pub operation_type: BatchOperationType,
+    pub total_items: u32,
+    pub processed_items: u32,
+    pub successful_items: u32,
+    pub failed_items: u32,
+    pub is_completed: bool,
+    pub started_at: u64,
+    pub updated_at: u64,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -347,6 +344,8 @@ pub struct CertificateAnalytics {
     pub pending_requests: u32,
     /// Rolling average time (seconds) from request creation to execution.
     pub avg_approval_time: u64,
+    /// Total number of compliance violations detected.
+    pub compliance_violations_count: u32,
     /// Unix timestamp (seconds) when these analytics were last updated.
     pub last_updated: u64,
 }
@@ -436,6 +435,8 @@ pub enum AuditAction {
     ComplianceChecked,
     /// A new certificate template was created.
     TemplateCreated,
+    /// An existing certificate template was updated.
+    TemplateUpdated,
     /// The multi-sig configuration for a course was updated.
     ConfigUpdated,
     /// The certificate passed its expiry date.
@@ -459,6 +460,20 @@ pub struct MultiSigAuditEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Template Version History
+// ─────────────────────────────────────────────────────────────
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TemplateVersion {
+    pub template_id: String,
+    pub version: u32,
+    pub created_at: u64,
+    pub created_by: Address,
+    pub fields: Vec<TemplateField>,
+    pub changelog: String,
+    pub is_rollback_target: bool,
+}
+
 // Certificate Recovery
 // ─────────────────────────────────────────────────────────────
 /// Status of a certificate recovery request.
@@ -558,6 +573,8 @@ pub enum CertDataKey {
     Template(String),
     /// List of all registered template IDs.
     TemplateList,
+    TemplateVersionHistory(String),
+    LatestTemplateVersion(String),
 
     // Revocations
     /// Revocation record for a specific certificate.
@@ -598,6 +615,12 @@ pub enum CertDataKey {
     RecoveryRequest(BytesN<32>),
     /// List of pending recovery request IDs.
     PendingRecoveryRequests,
+
+    /// Progress tracking for batch operations keyed by Job ID.
+    BatchJobProgress(BytesN<32>),
+
+    /// Global list of all issued certificate IDs (used for expiry cleanup).
+    AllCertificates,
 }
 
 /// Configurable rate limits for certificate operations.

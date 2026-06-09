@@ -48,8 +48,17 @@ impl SemanticSearch {
 
     /// Store semantic metadata from oracle
     pub fn store_semantic_metadata(env: &Env, content_id: String, metadata: SemanticMetadata) {
-        let key = DataKey::SemanticMetadata(content_id);
+        let key = DataKey::SemanticMetadata(content_id.clone());
         env.storage().persistent().set(&key, &metadata);
+        
+        // Add to index
+        let index_key = DataKey::IndexMetadata(String::from_str(env, "semantic_index"));
+        let mut index: Vec<String> = env.storage().persistent().get(&index_key).unwrap_or(Vec::new(env));
+        
+        if !index.contains(&content_id) {
+            index.push_back(content_id);
+            env.storage().persistent().set(&index_key, &index);
+        }
     }
 
     /// Retrieve semantic metadata for content
@@ -226,10 +235,9 @@ impl SemanticSearch {
 
     /// Apply search filters to metadata
     fn passes_filters(metadata: &SemanticMetadata, filters: &SearchFilters) -> bool {
-        // Check complexity filter if difficulty levels specified
+        // Check difficulty levels
         if !filters.difficulty_levels.is_empty() {
             let complexity = metadata.complexity_score;
-            // Map complexity to difficulty (simplified)
             let matches_difficulty = if complexity < 30 {
                 filters.difficulty_levels.contains(&DifficultyLevel::Beginner)
             } else if complexity < 60 {
@@ -245,26 +253,74 @@ impl SemanticSearch {
             }
         }
 
-        // Check date filters (Issue #374)
-        if let MaybeDateRange::Some(range) = &filters.issue_date_range {
-            // In a real system, we'd fetch the actual issue date.
-            // Here we assume it passes if it overlaps with the metadata update time for demonstration.
-            if range.start_date > 0 && metadata.last_updated < range.start_date {
-                return false;
-            }
-            if range.end_date > 0 && metadata.last_updated > range.end_date {
+        // Check categories
+        if !filters.categories.is_empty() {
+            if !filters.categories.contains(&metadata.category) {
                 return false;
             }
         }
 
-        // Check certificate status (Issue #374)
+        // Check languages
+        if !filters.languages.is_empty() {
+            if !filters.languages.contains(&metadata.language) {
+                return false;
+            }
+        }
+
+        // Check instructor IDs
+        if !filters.instructor_ids.is_empty() {
+            if !filters.instructor_ids.contains(&metadata.instructor_id) {
+                return false;
+            }
+        }
+
+        // Check price range
+        if let MaybePriceRange::Some(range) = &filters.price_range {
+            if metadata.price < range.min_price || metadata.price > range.max_price {
+                return false;
+            }
+        }
+
+        // Check rating range
+        if let MaybeRatingRange::Some(range) = &filters.rating_range {
+            if metadata.rating < range.min_rating || metadata.rating > range.max_rating {
+                return false;
+            }
+        }
+
+        // Check duration range
+        if let MaybeDurationRange::Some(range) = &filters.duration_range {
+            if (range.min_hours > 0 && metadata.duration_hours < range.min_hours) ||
+               (range.max_hours > 0 && metadata.duration_hours > range.max_hours) {
+                return false;
+            }
+        }
+
+        // Check certificate status
         if !filters.certificate_status.is_empty() {
-            // Assume metadata contains some status info or fetch it
-            // For now, if "Active" is requested, we allow it if complexity is not "expert" (dummy logic)
-            if filters.certificate_status.contains(&CertificateStatus::Active)
-                && metadata.complexity_score > 90
-            {
-                // return false; // expert might be "suspended" in this dummy logic
+            let mut found = false;
+            for status in filters.certificate_status.iter() {
+                if metadata.certificate_status.contains(status) {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                return false;
+            }
+        }
+
+        // Check certificate types
+        if !filters.certificate_types.is_empty() {
+            let mut found = false;
+            for cert_type in filters.certificate_types.iter() {
+                if metadata.certificate_types.contains(cert_type) {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                return false;
             }
         }
 
@@ -278,6 +334,39 @@ impl SemanticSearch {
                 }
             }
             if !found {
+                return false;
+            }
+        }
+
+        // Check boolean filters
+        if let MaybeBool::Some(required) = filters.has_prerequisites {
+            if metadata.has_prerequisites != required {
+                return false;
+            }
+        }
+
+        if let MaybeBool::Some(required) = filters.has_certificate {
+            if metadata.has_certificate != required {
+                return false;
+            }
+        }
+
+        if let MaybeBool::Some(required) = filters.is_premium {
+            if metadata.is_premium != required {
+                return false;
+            }
+        }
+
+        if let MaybeBool::Some(required) = filters.is_featured {
+            if metadata.is_featured != required {
+                return false;
+            }
+        }
+
+        // Check date filters
+        if let MaybeDateRange::Some(range) = &filters.issue_date_range {
+            if (range.start_date > 0 && metadata.last_updated < range.start_date) ||
+               (range.end_date > 0 && metadata.last_updated > range.end_date) {
                 return false;
             }
         }
@@ -302,26 +391,31 @@ impl SemanticSearch {
             relevance_score: score,
             metadata: SearchResultMetadata::Course(CourseMetadata {
                 course_id: content_id.clone(),
-                instructor_id: Address::from_str(
-                    env,
-                    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
-                ),
-                instructor_name: String::from_str(env, "Instructor"),
-                category: String::from_str(env, "Category"),
-                difficulty: DifficultyLevel::Intermediate,
-                duration_hours: 10,
-                price: 0,
-                rating: 40,
-                enrollment_count: 100,
-                completion_rate: 75,
-                created_date: env.ledger().timestamp(),
-                updated_date: env.ledger().timestamp(),
-                tags: Vec::new(env),
-                language: String::from_str(env, "en"),
-                has_certificate: true,
-                has_prerequisites: false,
-                is_premium: false,
-                is_featured: false,
+                instructor_id: metadata.instructor_id.clone(),
+                instructor_name: String::from_str(env, "Instructor"), // In production, fetch name
+                category: metadata.category.clone(),
+                difficulty: if metadata.complexity_score < 30 {
+                    DifficultyLevel::Beginner
+                } else if metadata.complexity_score < 60 {
+                    DifficultyLevel::Intermediate
+                } else if metadata.complexity_score < 85 {
+                    DifficultyLevel::Advanced
+                } else {
+                    DifficultyLevel::Expert
+                },
+                duration_hours: metadata.duration_hours,
+                price: metadata.price,
+                rating: metadata.rating,
+                enrollment_count: 100, // Dummy
+                completion_rate: 75, // Dummy
+                created_date: metadata.last_updated,
+                updated_date: metadata.last_updated,
+                tags: metadata.semantic_tags.clone(),
+                language: metadata.language.clone(),
+                has_certificate: metadata.has_certificate,
+                has_prerequisites: metadata.has_prerequisites,
+                is_premium: metadata.is_premium,
+                is_featured: metadata.is_featured,
             }),
             highlights: Vec::new(env),
             thumbnail_url: None,
@@ -350,9 +444,8 @@ impl SemanticSearch {
 
     /// Get list of indexed content IDs
     fn get_indexed_content(env: &Env) -> Vec<String> {
-        // In production, this would query an index
-        // For now, return empty vector
-        Vec::new(env)
+        let index_key = DataKey::IndexMetadata(String::from_str(env, "semantic_index"));
+        env.storage().persistent().get(&index_key).unwrap_or(Vec::new(env))
     }
 
     /// Expand query with synonyms (using pre-computed synonym data)

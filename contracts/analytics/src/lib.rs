@@ -27,10 +27,26 @@ use shared::event_schema::{
     SessionRecordedEvent,
 };
 use shared::monitoring::{ContractHealthReport, Monitor};
+use shared::timestamp_utils::{utc_day_index, validate_utc_timestamp};
 use shared::{emit_access_control_event, emit_analytics_event};
 use soroban_sdk::{
-    contract, contractimpl, symbol_short, Address, BytesN, Env, String, Symbol, Vec,
+    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, String, Symbol, Vec,
 };
+
+#[contracttype]
+#[derive(Clone)]
+pub struct AnalyticsExport {
+    pub total_sessions: u32,
+    pub total_time_spent: u64,
+    pub average_session_time: u64,
+    pub completed_modules: u32,
+    pub total_modules: u32,
+    pub completion_percentage: u32,
+    pub average_score: u32,
+    pub has_average_score: bool,
+    pub streak_days: u32,
+    pub performance_trend: PerformanceTrend,
+}
 
 #[contract]
 pub struct Analytics;
@@ -105,11 +121,12 @@ fn update_progress_analytics(
         });
     }
 
-    // Streak calculation
-    let current_day = end_time / 86400;
+    // Streak calculation — use UTC day index to avoid DST off-by-one (Issue #442).
+    // utc_day_index() divides by SECS_PER_DAY after normalising to UTC midnight,
+    // so a DST transition never shifts the day boundary.
+    let current_day = utc_day_index(end_time);
     let prev_day = if analytics.total_sessions > 1 {
-        let prev_last = analytics.last_activity.saturating_sub(time_spent);
-        prev_last / 86400
+        utc_day_index(analytics.last_activity)
     } else {
         current_day
     };
@@ -358,6 +375,10 @@ impl Analytics {
         require_initialized(&env)?;
         session.student.require_auth();
 
+        // Issue #414: validate that start_time is a plausible UTC epoch second so
+        // that achievement earned_date and streak calculations are timezone-safe.
+        validate_utc_timestamp(session.start_time).map_err(|_| AnalyticsError::InvalidTimestamp)?;
+
         if AnalyticsStorage::has_session(&env, &session.session_id) {
             return Err(AnalyticsError::SessionAlreadyExists);
         }
@@ -405,6 +426,11 @@ impl Analytics {
             .ok_or(AnalyticsError::SessionNotFound)?;
 
         session.student.require_auth();
+
+        // Issue #442: validate that end_time is a plausible UTC epoch second.
+        // This rejects millisecond-precision values and local-time offsets that
+        // would cause DST off-by-one errors in streak / day-range calculations.
+        validate_utc_timestamp(end_time).map_err(|_| AnalyticsError::InvalidTimestamp)?;
 
         let time_spent = end_time.saturating_sub(session.start_time);
 
@@ -850,13 +876,13 @@ impl Analytics {
         if start_date >= end_date {
             return result;
         }
-        let mut current = (start_date / 86400) * 86400;
-        let end_day = (end_date / 86400) * 86400;
+        let mut current = utc_day_index(start_date) * shared::timestamp_utils::SECS_PER_DAY;
+        let end_day = utc_day_index(end_date) * shared::timestamp_utils::SECS_PER_DAY;
         while current <= end_day {
             if let Some(metrics) = AnalyticsStorage::get_daily_metrics(&env, &course_id, current) {
                 result.push_back(metrics);
             }
-            current += 86400;
+            current += shared::timestamp_utils::SECS_PER_DAY;
         }
         result
     }
@@ -1163,6 +1189,7 @@ impl Analytics {
         Ok(())
     }
 
+<<<<<<< HEAD
     // ─────────────────────────────────────────────────────────
     // Learning Path Recommendations (Issue #370)
     // ─────────────────────────────────────────────────────────
@@ -1388,40 +1415,50 @@ impl Analytics {
         course_id: Symbol,
     ) -> Result<MLInsight, AnalyticsError> {
         require_initialized(&env)?;
-
-        let analytics = AnalyticsStorage::get_progress_analytics(&env, &student, &course_id)
-            .ok_or(AnalyticsError::StudentNotFound)?;
-
-        // Heuristic probability: weight completion%, avg score and streak
-        let completion_weight = analytics.completion_percentage as u64;
-        let score_weight = analytics.average_score.unwrap_or(0) as u64;
-        let streak_weight = (analytics.streak_days.min(30) as u64).saturating_mul(2);
-
-        let probability = ((completion_weight * 40 + score_weight * 40 + streak_weight * 20) / 100)
-            .min(100) as u32;
-
-        let data_str = if probability >= 75 {
-            String::from_str(&env, "HIGH: on track to complete")
-        } else if probability >= 50 {
-            String::from_str(&env, "MEDIUM: at risk, intervention recommended")
-        } else {
-            String::from_str(&env, "LOW: high dropout risk, immediate support needed")
-        };
-
-        let insight = MLInsight {
-            insight_id: AnalyticsEngine::generate_insight_id(&env),
-            student: analytics.student.clone(),
-            course_id: analytics.course_id.clone(),
-            insight_type: InsightType::CompletionPrediction,
-            data: data_str,
-            confidence: probability,
-            timestamp: env.ledger().timestamp(),
-            model_version: 1,
-            metadata: Vec::new(&env),
-        };
-
+        let insight = AnalyticsEngine::predict_completion_rates(&env, &student, &course_id)?;
         AnalyticsStorage::set_ml_insight(&env, &insight);
         Ok(insight)
+    }
+
+    /// Predicts time to completion for a student in a course.
+    pub fn predict_time_to_completion(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_time_to_completion(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
+
+    /// Predicts the dropout risk for a student in a course.
+    pub fn predict_dropout_risk(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_dropout_risk(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
+
+    /// Predicts the skill progression for a student in a course.
+    pub fn predict_skill_progression(
+        env: Env,
+        student: Address,
+        course_id: Symbol,
+    ) -> Result<MLInsight, AnalyticsError> {
+        require_initialized(&env)?;
+        let insight = AnalyticsEngine::predict_skill_progression(&env, &student, &course_id)?;
+        AnalyticsStorage::set_ml_insight(&env, &insight);
+        Ok(insight)
+    }
+
+    pub fn export_user_data(env: Env, user: Address) -> Vec<Achievement> {
+        require_initialized(&env).ok();
+        AnalyticsStorage::get_student_achievements(&env, &user)
     }
 
     pub fn health_check(env: Env) -> ContractHealthReport {

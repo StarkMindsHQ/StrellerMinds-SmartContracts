@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Optimization Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 2.5em;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+
+    h3 {
+      color: #555;
+      margin: 20px 0 10px;
+      font-size: 1.1em;
+    }
+
+    .upload-area {
+      border: 3px dashed #667eea;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      background: #f8f9ff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+      border-color: #764ba2;
+      background: #f0f2ff;
+    }
+
+    .upload-area.dragover {
+      border-color: #764ba2;
+      background: #e8ebff;
+      transform: scale(1.02);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .results {
+      display: none;
+      margin-top: 30px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .metric {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .metric-value {
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+
+    .images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .image-card {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .image-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .image-wrapper {
+      position: relative;
+      background: #ddd;
+      aspect-ratio: 1;
+      overflow: hidden;
+    }
+
+    .image-placeholder {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(10px);
+      transition: opacity 0.3s ease;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-main {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      object-fit: cover;
+    }
+
+    .image-main.loaded {
+      opacity: 1;
+    }
+
+    .image-info {
+      padding: 15px;
+      background: white;
+    }
+
+    .image-info p {
+      color: #666;
+      font-size: 0.9em;
+      margin: 5px 0;
+    }
+
+    .image-info strong {
+      color: #333;
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      display: none;
+      border-left: 4px solid #c33;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .success {
+      background: #efe;
+      color: #3c3;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      display: none;
+      border-left: 4px solid #3c3;
+    }
+
+    .success.show {
+      display: block;
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+
+    .stats-table th,
+    .stats-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .stats-table th {
+      background: #f5f5f5;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .code-block {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      margin: 10px 0;
+    }
+
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ Image Optimization Pipeline</h1>
+
+    <!-- Upload Section -->
+    <div class="section">
+      <h2>📤 Upload & Process Image</h2>
+      <p style="color: #666; margin-bottom: 20px;">
+        Upload an image to experience optimized processing with WebP conversion, parallel resizing, 
+        and CDN integration. <span class="highlight">Target: &lt;1 second processing time</span>
+      </p>
+      
+      <div class="upload-area" id="uploadArea">
+        <p style="font-size: 1.2em; margin-bottom: 10px;">📁 Drop image here or click to select</p>
+        <p style="color: #999; margin-bottom: 15px;">Supported: JPEG, PNG, WebP, GIF (max 50MB)</p>
+        <input type="file" id="fileInput" accept="image/*">
+        <button type="button" onclick="uploadArea.querySelector('#fileInput').click()">
+          Select File
+        </button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 10px; color: #667eea;">Processing image...</p>
+        <p style="margin-top: 5px; font-size: 0.9em; color: #999;">
+          Executing: Resize + WebP Conversion + Compression (parallel)
+        </p>
+      </div>
+
+      <div class="success" id="success"></div>
+      <div class="error" id="error"></div>
+
+      <div class="results" id="results">
+        <h3>✅ Processing Results</h3>
+
+        <div class="metrics" id="metricsContainer"></div>
+
+        <h3>📊 Detailed Statistics</h3>
+        <table class="stats-table" id="statsTable"></table>
+
+        <h3>🖼️ Optimized Image Variants</h3>
+        <div class="images-grid" id="imagesGrid"></div>
+
+        <div style="margin-top: 20px;">
+          <button onclick="resetUpload()">🔄 Upload Another Image</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Information Section -->
+    <div class="section">
+      <h2>⚡ Optimization Features</h2>
+      <ul style="color: #666; line-height: 1.8;">
+        <li><strong>Parallel Processing:</strong> Simultaneous resizing, compression, and format conversion</li>
+        <li><strong>WebP Conversion:</strong> Modern format with 25-35% better compression than JPEG</li>
+        <li><strong>Responsive Images:</strong> Multiple sizes for different devices and displays</li>
+        <li><strong>Progressive Loading:</strong> LQIP (Low-Quality Image Placeholder) for perceived speed</li>
+        <li><strong>CDN Integration:</strong> Global distribution with aggressive caching</li>
+        <li><strong>Lazy Loading:</strong> Images load only when needed</li>
+      </ul>
+    </div>
+
+    <!-- Integration Example -->
+    <div class="section">
+      <h2>💻 Integration Example</h2>
+      <p style="color: #666; margin-bottom: 15px;">Use this HTML in your project:</p>
+      <div class="code-block" style="background: #f8f8f8; border: 1px solid #ddd;">
+&lt;!-- Progressive Image with LQIP --&gt;
+&lt;img 
+  src="image-large.webp"
+  srcset="image-small.webp 400w, image-medium.webp 800w, image-large.webp 1200w"
+  sizes="(max-width: 600px) 100vw, 50vw"
+  alt="Description"
+  loading="lazy"
+  style="width: 100%; height: auto;"
+/&gt;
+
+&lt;!-- Or use picture element for fallback --&gt;
+&lt;picture&gt;
+  &lt;source srcset="image.webp" type="image/webp"&gt;
+  &lt;source srcset="image.jpg" type="image/jpeg"&gt;
+  &lt;img src="image.jpg" alt="Description" loading="lazy"&gt;
+&lt;/picture&gt;
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const error = document.getElementById('error');
+    const success = document.getElementById('success');
+    const metricsContainer = document.getElementById('metricsContainer');
+    const imagesGrid = document.getElementById('imagesGrid');
+    const statsTable = document.getElementById('statsTable');
+
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Drag and drop handlers
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) await processFile(file);
+    });
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) processFile(file);
+    });
+
+    async function processFile(file) {
+      error.classList.remove('show');
+      success.classList.remove('show');
+      results.style.display = 'none';
+      loading.style.display = 'block';
+      uploadArea.style.display = 'none';
+
+      try {
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Please upload an image file');
+        }
+
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error('File size exceeds 50MB limit');
+        }
+
+        const startTime = Date.now();
+        const formData = new FormData();
+        formData.append('image', file);
+
+        console.log('📤 Uploading:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+        const response = await fetch('/api/images/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+
+        const result = await response.json();
+        const totalTime = Date.now() - startTime;
+
+        console.log('✅ Processing complete:', result.data.metrics);
+
+        displayResults(result.data);
+        loading.style.display = 'none';
+        results.style.display = 'block';
+
+        // Show success message
+        success.textContent = `✅ Successfully processed in ${totalTime}ms`;
+        success.classList.add('show');
+      } catch (err) {
+        console.error('❌ Error:', err.message);
+        loading.style.display = 'none';
+        error.textContent = '❌ Error: ' + err.message;
+        error.classList.add('show');
+        uploadArea.style.display = 'block';
+      }
+    }
+
+    function displayResults(data) {
+      const metrics = data.metrics;
+      const isUnder1Second = metrics.processingTimeMs < 1000;
+
+      // Metrics cards
+      metricsContainer.innerHTML = `
+        <div class="metric">
+          <div class="metric-label">Processing Time</div>
+          <div class="metric-value" style="color: ${isUnder1Second ? '#90EE90' : '#FFB6C1'}">
+            ${metrics.processingTimeMs}ms
+          </div>
+          <div style="font-size: 0.8em; margin-top: 5px;">
+            ${isUnder1Second ? '✅ Target met' : '⏱️ >1s'}
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Original Size</div>
+          <div class="metric-value">${metrics.originalSizeKB}KB</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Optimized Size</div>
+          <div class="metric-value">${metrics.optimizedSizeKB}KB</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Size Reduction</div>
+          <div class="metric-value" style="color: #90EE90">${metrics.reductionPercent}%</div>
+          <div style="font-size: 0.8em; margin-top: 5px;">
+            ${parseFloat(metrics.reductionPercent) >= 40 ? '✅ >40% target' : ''}
+          </div>
+        </div>
+      `;
+
+      // Detailed stats table
+      let statsHTML = `
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+          <th>Status</th>
+        </tr>
+        <tr>
+          <td>Processing Time</td>
+          <td>${metrics.processingTimeMs}ms</td>
+          <td>${isUnder1Second ? '✅' : '⚠️'}</td>
+        </tr>
+        <tr>
+          <td>Original Size</td>
+          <td>${metrics.originalSizeKB}KB</td>
+          <td>📊</td>
+        </tr>
+        <tr>
+          <td>Optimized Size</td>
+          <td>${metrics.optimizedSizeKB}KB</td>
+          <td>📉</td>
+        </tr>
+        <tr>
+          <td>Compression Ratio</td>
+          <td>${metrics.reductionPercent}%</td>
+          <td>${parseFloat(metrics.reductionPercent) >= 40 ? '✅' : '⚠️'}</td>
+        </tr>
+      `;
+      statsTable.innerHTML = statsHTML;
+
+      // Images grid
+      imagesGrid.innerHTML = '';
+      const variantEntries = Object.entries(data.variants || {});
+
+      for (const [sizeName, formats] of variantEntries) {
+        const webpFormat = formats.webp || formats.jpeg;
+        if (webpFormat) {
+          const card = document.createElement('div');
+          card.className = 'image-card';
+          card.innerHTML = `
+            <div class="image-wrapper">
+              ${data.lqip ? `<img class="image-placeholder" src="${data.lqip}" alt="blur">` : ''}
+              <img 
+                class="image-main" 
+                src="${webpFormat.url}" 
+                alt="${sizeName}"
+                loading="lazy"
+              >
+            </div>
+            <div class="image-info">
+              <p><strong>${sizeName.toUpperCase()}</strong></p>
+              <p>Size: ${(webpFormat.bytes / 1024).toFixed(1)}KB</p>
+              <p>Format: ${webpFormat.format.toUpperCase()}</p>
+              <p>Compressed: ${webpFormat.compressionRatio}%</p>
+            </div>
+          `;
+
+          const mainImg = card.querySelector('.image-main');
+          mainImg.addEventListener('load', () => {
+            mainImg.classList.add('loaded');
+          });
+
+          imagesGrid.appendChild(card);
+        }
+      }
+    }
+
+    function resetUpload() {
+      results.style.display = 'none';
+      uploadArea.style.display = 'block';
+      fileInput.value = '';
+      error.classList.remove('show');
+      success.classList.remove('show');
+    }
+  </script>
+</body>
+</html>

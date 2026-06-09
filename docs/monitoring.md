@@ -8,6 +8,7 @@ This repository now includes a modular monitoring baseline for smart contracts a
 - event-based metric hooks that can be scraped or forwarded by an off-chain collector
 - a Grafana dashboard definition in `monitoring/grafana/contracts-overview.json`
 - Prometheus alert rules in `monitoring/alerts/contract-observability.yml`
+- API query optimization monitoring documented in `docs/DATABASE_QUERY_OPTIMIZATION.md`
 
 ## Metrics Model
 
@@ -62,6 +63,7 @@ The default Prometheus rules cover:
 - sustained RPC latency
 - backlog growth for off-chain processing
 - ledger synchronization lag
+- API query latency, cache effectiveness, and pool saturation
 
 These are starter thresholds and should be tuned per environment.
 

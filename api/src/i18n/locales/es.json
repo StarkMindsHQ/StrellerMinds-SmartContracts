@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "language": "Español",
+    "locale": "es",
+    "direction": "ltr",
+    "dateFormat": "DD/MM/YYYY",
+    "timeFormat": "HH:mm",
+    "numberFormat": {
+      "decimal": ",",
+      "thousands": ".",
+      "currency": "EUR"
+    }
+  },
+  "errors": {
+    "AUTH_REQUIRED": "Se requiere el encabezado de autorización",
+    "TOKEN_EXPIRED": "El token de acceso ha expirado",
+    "TOKEN_INVALID": "El token de acceso no es válido",
+    "INSUFFICIENT_SCOPE": "Alcance requerido: {{scope}}",
+    "INVALID_CERTIFICATE_ID": "El ID del certificado debe ser una cadena hexadecimal de 64 caracteres",
+    "INVALID_ADDRESS": "Dirección Stellar no válida",
+    "CERTIFICATE_NOT_FOUND": "Certificado no encontrado",
+    "REVOCATION_NOT_FOUND": "No se encontró ningún registro de revocación para este certificado",
+    "CONTRACT_ERROR": "Error al consultar la cadena de bloques. Por favor, inténtelo de nuevo.",
+    "VALIDATION_ERROR": "Cuerpo de solicitud no válido",
+    "INVALID_API_KEY": "Clave API no válida",
+    "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Por favor, inténtelo más tarde.",
+    "INTERNAL_ERROR": "Se produjo un error interno del servidor"
+  },
+  "health": {
+    "status_ok": "ok",
+    "status_ready": "listo",
+    "status_not_ready": "no_listo",
+    "cannot_reach_contract": "No se puede acceder al contrato Soroban"
+  },
+  "certificate": {
+    "verified": "Certificado verificado correctamente",
+    "not_found": "Certificado no encontrado",
+    "revoked": "El certificado ha sido revocado",
+    "expired": "El certificado ha expirado"
+  },
+  "formats": {
+    "date_short": "{{day}}/{{month}}/{{year}}",
+    "date_long": "{{day}} de {{monthName}} de {{year}}",
+    "number": "{{value}}",
+    "currency": "{{value}} €"
+  }
+}

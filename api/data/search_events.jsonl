@@ -1,0 +1,6 @@
+{"type":"search","query":"rust tutorial","resultsCount":5,"experiment":"suggest_v1","variant":"control"}
+{"type":"search","query":"rust tutorial","resultsCount":5,"experiment":"suggest_v1","variant":"treatment"}
+{"type":"click","query":"rust tutorial","contentId":"course_123","rankPosition":1,"experiment":"suggest_v1","variant":"treatment"}
+{"type":"search","query":"blockchain basics","resultsCount":0}
+{"type":"search","query":"smart contracts","resultsCount":3}
+{"type":"click","query":"smart contracts","contentId":"course_999","rankPosition":2}
