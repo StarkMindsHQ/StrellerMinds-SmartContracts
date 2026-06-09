@@ -1006,3 +1006,108 @@ fn test_offline_then_sync_workflow() {
     let cleaned = client.cleanup_offline_operations(&user, &device_id);
     assert_eq!(cleaned, 3);
 }
+
+// ============================================================================
+// Notification Preferences Tests
+// ============================================================================
+
+fn seed_notification_config(env: &Env, client: &MobileOptimizerContractClient, user: &Address) {
+    let mut channel_prefs = Map::new(env);
+    channel_prefs.set(String::from_str(env, "push"), true);
+    channel_prefs.set(String::from_str(env, "email"), false);
+    channel_prefs.set(String::from_str(env, "in_app"), true);
+    let config = NotificationConfig {
+        user: user.clone(),
+        enabled: true,
+        quiet_hours_start: 22,
+        quiet_hours_end: 8,
+        max_daily_notifications: 10,
+        channel_preferences: channel_prefs,
+        priority_threshold: NotificationPriorityLevel::All,
+        language_preference: String::from_str(env, "en"),
+        marketing_consent: false,
+    };
+    client.update_notification_config(user, &config);
+}
+
+#[test]
+fn test_set_and_get_notification_preferences() {
+    let (env, client, _, user) = setup_contract();
+    seed_notification_config(&env, &client, &user);
+
+    let prefs = UserNotificationPreferences {
+        user: user.clone(),
+        email_enabled: true,
+        push_enabled: false,
+        max_daily: 5,
+        quiet_hours_start: 22,
+        quiet_hours_end: 7,
+        digest_frequency: DigestFrequency::Daily,
+        updated_at: 0,
+    };
+
+    client.set_notification_preferences(&user, &prefs);
+    let retrieved = client.get_notification_preferences(&user);
+
+    assert!(retrieved.email_enabled);
+    assert!(!retrieved.push_enabled);
+    assert_eq!(retrieved.max_daily, 5);
+    assert_eq!(retrieved.digest_frequency, DigestFrequency::Daily);
+}
+
+#[test]
+fn test_preferences_mirrored_into_notification_config() {
+    let (env, client, _, user) = setup_contract();
+    seed_notification_config(&env, &client, &user);
+
+    let prefs = UserNotificationPreferences {
+        user: user.clone(),
+        email_enabled: true,
+        push_enabled: true,
+        max_daily: 3,
+        quiet_hours_start: 23,
+        quiet_hours_end: 6,
+        digest_frequency: DigestFrequency::Weekly,
+        updated_at: 0,
+    };
+
+    client.set_notification_preferences(&user, &prefs);
+
+    // The underlying NotificationConfig should reflect the new values
+    let config = client.get_notification_config(&user);
+    assert_eq!(config.max_daily_notifications, 3);
+    assert_eq!(config.quiet_hours_start, 23);
+    assert_eq!(config.quiet_hours_end, 6);
+    assert!(config.channel_preferences.get(String::from_str(&env, "email")).unwrap());
+    assert!(config.channel_preferences.get(String::from_str(&env, "push")).unwrap());
+}
+
+#[test]
+fn test_get_preferences_before_set_fails() {
+    let (_env, client, _, user) = setup_contract();
+    let result = client.try_get_notification_preferences(&user);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_digest_frequency_none() {
+    let (env, client, _, user) = setup_contract();
+    seed_notification_config(&env, &client, &user);
+
+    let prefs = UserNotificationPreferences {
+        user: user.clone(),
+        email_enabled: false,
+        push_enabled: false,
+        max_daily: 0,
+        quiet_hours_start: 0,
+        quiet_hours_end: 0,
+        digest_frequency: DigestFrequency::None,
+        updated_at: 0,
+    };
+
+    client.set_notification_preferences(&user, &prefs);
+    let retrieved = client.get_notification_preferences(&user);
+    assert_eq!(retrieved.digest_frequency, DigestFrequency::None);
+    assert!(!retrieved.email_enabled);
+    assert!(!retrieved.push_enabled);
+}

@@ -1043,6 +1043,13 @@ pub struct ComplianceCheckedEvent {
 }
 #[contracttype]
 #[derive(Clone, Debug)]
+pub struct ComplianceViolationEvent {
+    pub certificate_id: BytesN<32>,
+    pub standard: String,
+    pub violation_details: String,
+}
+#[contracttype]
+#[derive(Clone, Debug)]
 pub struct TemplateCreatedEvent {
     pub template_id: String,
 }
@@ -1062,6 +1069,7 @@ pub enum CertificationEventData {
     BatchCompleted(BatchCompletedEvent),
     CertificateShared(CertificateSharedEvent),
     ComplianceChecked(ComplianceCheckedEvent),
+    ComplianceViolation(ComplianceViolationEvent),
     TemplateCreated(TemplateCreatedEvent),
 }
 
@@ -1594,6 +1602,7 @@ impl StandardEvent {
                 CertificationEventData::BatchCompleted(_) => "batch_completed",
                 CertificationEventData::CertificateShared(_) => "cert_shared",
                 CertificationEventData::ComplianceChecked(_) => "compliance_checked",
+                CertificationEventData::ComplianceViolation(_) => "compliance_violation",
                 CertificationEventData::TemplateCreated(_) => "template_created",
             },
             EventData::Gamification(data) => match data {

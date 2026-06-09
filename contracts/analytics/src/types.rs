@@ -481,3 +481,55 @@ pub struct ContentAnalysis {
     pub prerequisites: Vec<Symbol>,
     pub learning_objectives: Vec<String>,
 }
+
+// ─────────────────────────────────────────────────────────────
+// Progress Insights Report
+// ─────────────────────────────────────────────────────────────
+
+/// Learning velocity: how fast the student is progressing.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct LearningVelocity {
+    /// Average number of sessions per day over the measured window.
+    pub sessions_per_day: u32,
+    /// Average modules completed per week.
+    pub modules_per_week: u32,
+    /// Average time spent learning per day, in seconds.
+    pub avg_daily_time_secs: u64,
+    /// Current streak in days.
+    pub streak_days: u32,
+    /// Overall performance trend.
+    pub trend: PerformanceTrend,
+}
+
+/// Skill gap: a topic where the student is underperforming.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct SkillGap {
+    /// Module or topic identifier.
+    pub topic: Symbol,
+    /// 0–100 severity (100 = critical gap).
+    pub severity: u32,
+    /// Suggested action to close the gap.
+    pub remediation: String,
+}
+
+/// Consolidated progress insights report for a student in a course.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+pub struct ProgressInsightsReport {
+    pub student: Address,
+    pub course_id: Symbol,
+    /// Unix timestamp when this report was generated.
+    pub generated_at: u64,
+    /// How fast the student is progressing.
+    pub velocity: LearningVelocity,
+    /// Percentile rank among peers (0–100).
+    pub peer_percentile: u32,
+    /// Signed delta vs. course average score (positive = above average).
+    pub score_vs_avg: i32,
+    /// Identified skill gaps ordered by severity descending.
+    pub skill_gaps: Vec<SkillGap>,
+    /// Prioritised next-step recommendations.
+    pub next_steps: Vec<LearningRecommendation>,
+}

@@ -1,6 +1,8 @@
 use console::style;
 use inquire::{Confirm, Select, Text};
-use std::fs;
+use std::fs::{self, File};
+use std::io::{self, Write};
+use std::path::Path;
 use std::process::Command;
 
 fn main() {
@@ -249,11 +251,11 @@ fn view_performance_metrics() {
 fn identify_bottlenecks() {
     println!("\n{}", style("=== Identify Performance Bottlenecks ===").bold());
 
-    let contract_id = Text::new("Enter contract ID:")
+    let _contract_id = Text::new("Enter contract ID:")
         .prompt()
         .unwrap_or_default();
 
-    let operation_filter = Text::new("Filter by operation (optional):")
+    let _operation_filter = Text::new("Filter by operation (optional):")
         .prompt()
         .unwrap_or_default();
 
@@ -284,11 +286,11 @@ fn identify_bottlenecks() {
 fn detect_anomalies() {
     println!("\n{}", style("=== Detect Anomalies ===").bold());
 
-    let contract_id = Text::new("Enter contract ID:")
+    let _contract_id = Text::new("Enter contract ID:")
         .prompt()
         .unwrap_or_default();
 
-    let severity_filter = Select::new(
+    let _severity_filter = Select::new(
         "Filter by severity:",
         vec!["All", "Critical", "Error", "Warning", "Info"],
     )
@@ -374,7 +376,7 @@ fn view_call_trees() {
 fn generate_report() {
     println!("\n{}", style("=== Generate Performance Report ===").bold());
 
-    let contract_id = Text::new("Enter contract ID:")
+    let _contract_id = Text::new("Enter contract ID:")
         .prompt()
         .unwrap_or_default();
 
@@ -414,7 +416,7 @@ fn generate_report() {
 fn calculate_efficiency() {
     println!("\n{}", style("=== Calculate Efficiency Score ===").bold());
 
-    let contract_id = Text::new("Enter contract ID:")
+    let _contract_id = Text::new("Enter contract ID:")
         .prompt()
         .unwrap_or_default();
 
@@ -441,6 +443,11 @@ fn export_data() {
         .prompt()
         .unwrap_or_default();
 
+    if session_id.trim().is_empty() {
+        println!("{}", style("⚠ Session ID is required").yellow());
+        return;
+    }
+
     let format = Select::new("Select export format:", vec!["JSON", "CSV"])
         .prompt()
         .unwrap_or("JSON");
@@ -450,12 +457,142 @@ fn export_data() {
         style(&format!("📤 Exporting data as {}...", format)).dim()
     );
 
-    let filename = format!("diagnostics_export_{}.{}", session_id, format.to_lowercase());
+    match write_diagnostic_export(&session_id, format) {
+        Ok(path) => println!(
+            "{}",
+            style(&format!("✅ Data exported to: {}", path)).green()
+        ),
+        Err(error) => println!(
+            "{}",
+            style(&format!("❌ Export failed: {}", error)).red()
+        ),
+    }
+}
 
-    println!(
-        "{}",
-        style(&format!("✅ Data exported to: diagnostics/{}", filename)).green()
+#[derive(Debug, Clone)]
+struct DiagnosticExport {
+    session_id: String,
+    certificate_title: String,
+    recipient_name: String,
+    status: String,
+    notes: String,
+}
+
+fn write_diagnostic_export(session_id: &str, format: &str) -> io::Result<String> {
+    let export = build_diagnostic_export(session_id);
+    let diagnostics_dir = Path::new("diagnostics");
+    fs::create_dir_all(diagnostics_dir)?;
+
+    let extension = if format.eq_ignore_ascii_case("CSV") {
+        "csv"
+    } else {
+        "json"
+    };
+    let filename = format!(
+        "diagnostics_export_{}.{}",
+        sanitize_export_stem(session_id),
+        extension
     );
+    let path = diagnostics_dir.join(filename);
+    let mut file = File::create(&path)?;
+
+    if extension == "csv" {
+        file.write_all(&diagnostic_export_csv(&export))?;
+    } else {
+        file.write_all(diagnostic_export_json(&export).as_bytes())?;
+    }
+
+    Ok(path.display().to_string())
+}
+
+fn build_diagnostic_export(session_id: &str) -> DiagnosticExport {
+    DiagnosticExport {
+        session_id: session_id.to_string(),
+        certificate_title: "Certificat d'excellence - Español avanzado".to_string(),
+        recipient_name: "Zoë García".to_string(),
+        status: "Completed".to_string(),
+        notes: "Verified export preserves accents: café, naïve, résumé".to_string(),
+    }
+}
+
+fn sanitize_export_stem(value: &str) -> String {
+    let sanitized: String = value
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect();
+
+    let trimmed = sanitized.trim_matches('_');
+    if trimmed.is_empty() {
+        "session".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn diagnostic_export_json(export: &DiagnosticExport) -> String {
+    format!(
+        concat!(
+            "{{\n",
+            "  \"session_id\": \"{}\",\n",
+            "  \"certificate_title\": \"{}\",\n",
+            "  \"recipient_name\": \"{}\",\n",
+            "  \"status\": \"{}\",\n",
+            "  \"notes\": \"{}\"\n",
+            "}}\n"
+        ),
+        json_escape(&export.session_id),
+        json_escape(&export.certificate_title),
+        json_escape(&export.recipient_name),
+        json_escape(&export.status),
+        json_escape(&export.notes)
+    )
+}
+
+fn diagnostic_export_csv(export: &DiagnosticExport) -> Vec<u8> {
+    let mut csv = String::from(
+        "session_id,certificate_title,recipient_name,status,notes\r\n",
+    );
+    csv.push_str(&format!(
+        "{},{},{},{},{}\r\n",
+        csv_escape(&export.session_id),
+        csv_escape(&export.certificate_title),
+        csv_escape(&export.recipient_name),
+        csv_escape(&export.status),
+        csv_escape(&export.notes)
+    ));
+
+    let mut bytes = b"\xEF\xBB\xBF".to_vec();
+    bytes.extend_from_slice(csv.as_bytes());
+    bytes
+}
+
+fn csv_escape(value: &str) -> String {
+    if value.contains([',', '"', '\n', '\r']) {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
+    }
+}
+
+fn json_escape(value: &str) -> String {
+    value.chars().fold(String::new(), |mut escaped, ch| {
+        match ch {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            ch if ch.is_control() => escaped.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => escaped.push(ch),
+        }
+        escaped
+    })
 }
 
 fn configure_diagnostics() {
@@ -515,4 +652,45 @@ fn execute_command(cmd: &str, args: &[&str]) {
 
 fn execute_soroban_command(args: &[&str]) {
     execute_command("soroban", args);
+}
+
+#[cfg(test)]
+mod export_encoding_tests {
+    use super::*;
+
+    #[test]
+    fn csv_export_uses_utf8_bom_and_preserves_accents() {
+        let export = build_diagnostic_export("session-accented");
+        let csv = diagnostic_export_csv(&export);
+
+        assert!(csv.starts_with(b"\xEF\xBB\xBF"));
+
+        let text = String::from_utf8(csv[3..].to_vec()).expect("CSV should be UTF-8");
+        assert!(text.contains("Español avanzado"));
+        assert!(text.contains("Zoë García"));
+        assert!(text.contains("résumé"));
+    }
+
+    #[test]
+    fn csv_export_quotes_commas_and_quotes() {
+        let escaped = csv_escape("Advanced, \"verified\" certificate");
+        assert_eq!(escaped, "\"Advanced, \"\"verified\"\" certificate\"");
+    }
+
+    #[test]
+    fn json_export_escapes_syntax_without_corrupting_utf8() {
+        let export = DiagnosticExport {
+            session_id: "session\"42".to_string(),
+            certificate_title: "Español avanzado".to_string(),
+            recipient_name: "Zoë García".to_string(),
+            status: "Completed".to_string(),
+            notes: "Line one\nLine two".to_string(),
+        };
+
+        let json = diagnostic_export_json(&export);
+        assert!(json.contains("session\\\"42"));
+        assert!(json.contains("Español avanzado"));
+        assert!(json.contains("Zoë García"));
+        assert!(json.contains("Line one\\nLine two"));
+    }
 }
