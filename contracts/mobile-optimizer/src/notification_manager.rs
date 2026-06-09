@@ -207,6 +207,41 @@ impl NotificationManager {
             .ok_or(MobileOptimizerError::NotificationError)
     }
 
+    pub fn set_notification_preferences(
+        env: &Env,
+        user: &Address,
+        prefs: UserNotificationPreferences,
+    ) -> Result<(), MobileOptimizerError> {
+        env.storage().persistent().set(&DataKey::NotifPreferences(user.clone()), &prefs);
+
+        // Mirror email/push toggles and frequency into the underlying NotificationConfig
+        // so the existing delivery pipeline honours the new preferences automatically.
+        if let Some(mut config) = env
+            .storage()
+            .persistent()
+            .get::<_, NotificationConfig>(&DataKey::NotifConfig(user.clone()))
+        {
+            config.channel_preferences.set(String::from_str(env, "email"), prefs.email_enabled);
+            config.channel_preferences.set(String::from_str(env, "push"), prefs.push_enabled);
+            config.max_daily_notifications = prefs.max_daily;
+            config.quiet_hours_start = prefs.quiet_hours_start;
+            config.quiet_hours_end = prefs.quiet_hours_end;
+            env.storage().persistent().set(&DataKey::NotifConfig(user.clone()), &config);
+        }
+
+        Ok(())
+    }
+
+    pub fn get_notification_preferences(
+        env: &Env,
+        user: &Address,
+    ) -> Result<UserNotificationPreferences, MobileOptimizerError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::NotifPreferences(user.clone()))
+            .ok_or(MobileOptimizerError::NotificationError)
+    }
+
     pub fn create_streak_reminder(
         env: &Env,
         user: &Address,
